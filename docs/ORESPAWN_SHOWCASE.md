@@ -107,24 +107,24 @@ condition.
 | OS-036 | Augment placement mode | Add a few CakeWorld biomes while retaining the delegated source as a weighted fallback. | Sampler | 7 | Both source and CakeWorld biomes occur at deterministic weighted rates. |
 | OS-037 | `minecraft_only` replacement scope | Replace vanilla source biomes while allowing unrelated modded biomes to survive in a compatibility fixture. | Sampler | 7 | Vanilla source samples convert and a fixture namespace passes through unchanged. |
 | OS-038 | `selected_namespaces` replacement scope | Convert an explicit small namespace allow-list. | Sampler | 7 | Included namespaces convert; all others delegate unchanged. |
-| OS-039 | `all` replacement scope | Fulfil CakeWorld's total-conversion promise even when the delegated source comes from another biome framework. | Main | 1/3/4/5 | Vanilla and a fixture modded source both convert to CakeWorld biomes; unknown entities and resources are still governed separately. |
+| OS-039 | `all` replacement scope | Every adventure palette uses `scope=all`; CakeWorld itself is excluded to prevent repeat replacement. | Main | 1/3/4/5 | The active profile retained all-scope replacement, while fixed Nether and End regions were 6,400/6,400 CakeWorld surface columns and the sampled Overworld exposed every current target biome. A separate delegated mod-source fixture remains part of OS-052. |
 | OS-040 | Namespace include and exclude lists | Carve out or target source namespaces without per-biome callbacks. | Sampler | 7 | Include/exclude precedence matches the baked profile across fixed source-biome fixtures. |
 | OS-041 | Region sizes | Assign broad realm-scale palettes in the adventure and display tiny through huge region sizes side by side in the sampler. | Main/Sampler | 3/7 | Boundary spacing corresponds to 128, 256, 512, 1024, and 2048-block region classes. |
-| OS-042 | Coverage | Use full coverage for total conversion and partial coverage for the sampler's sprinkle-island demonstration. | Main/Sampler | 1/7 | Full conversion has no eligible gaps; partial coverage matches an agreed fixed-seed ratio. |
-| OS-043 | Fallback weight | Use zero in replace mode and a visible non-zero source weight in augment mode. | Main/Sampler | 1/7 | Statistical selection confirms zero source choices in main and weighted source choices in sampler. |
+| OS-042 | Coverage | **Adventure half verified:** all four production palettes retain full `coverage=1.0`; partial coverage remains a labelled Sampler fixture. | Main/Sampler | 1/7 | Main fixed-world surfaces and active profile prove full coverage. Do not mark the combined capability complete until the partial Sampler percentage is measured. |
+| OS-043 | Fallback weight | **Adventure half verified:** all production palettes retain `fallback_weight=0.0`; positive delegated-source pockets belong only in the Sampler. | Main/Sampler | 1/7 | Main fixed-world replacement proves the zero-fallback contract. Positive weighted fallback still requires the later diagnostic fixture. |
 | OS-044 | Weighted output biomes | Make common meadows broad and rare Cupcake Gardens or Jellybean islands special. | Main | 3 | A large fixed-seed sample falls within defined tolerance for each weight class. |
 | OS-045 | Similar-biome matching | Map edible outputs to appropriate vanilla climate/shape analogues without requiring those hints to exist. | Main | 3 | Present hints influence selection; a missing optional hint is ignored with no failure. |
 | OS-046 | Required-similar-biome matching | Provide one diagnostic output that correctly disables when its strict fixture biome is unavailable. | Sampler | 7 | Absent required ID disables only that output and emits one bake-time warning. |
 | OS-047 | Temperature and downfall ranges | Keep Ice-Cream Tundra cold, Sherbet Dunes dry, and Gummy Jungle warm and wet. | Main | 3 | Boundary fixtures at min/max and just outside them select or reject as specified. |
-| OS-048 | Surface top block | Use icing turf, crumb sand, fudge crust, meringue, and other biome signatures. | Main | 1/3/4/5 | Surface samples in every biome use the declared exposed block. |
-| OS-049 | Surface filler block and depth | Put chocolate sponge below icing and deeper biome-specific edible layers. | Main | 1/3/4/5 | Sections show the exact 0-16 configured depth and transition to terrain rock. |
-| OS-050 | Underwater surface block | Use biscuit crumbs beneath Soda Ocean and custard sediment along Custard Coast. | Main | 3 | Submerged exposed surfaces differ from dry top surfaces and persist after reload. |
+| OS-048 | Surface top block | Use icing turf, sponge, crumb sand, fudge crust, and meringue signatures. | Main | 1/3/4/5 | Revision-11 fixed sampling observed 115 Candy icing, 1,820 Cookie sponge, 2,197 Marshmallow icing, and all 6,400 sampled Fudge/6,400 Meringue declared tops. |
+| OS-049 | Surface filler block and depth | Put chocolate sponge below icing and deeper biome-specific edible layers. | Main | 1/3/4/5 | The active profile retained every 4/5-block depth and the fixed surface bands contained matching filler in all five dry/realm controls. |
+| OS-050 | Underwater surface block | Use biscuit crumbs beneath Soda Ocean and later custard sediment along Custard Coast. | Main | 3 | The active Soda rule retained all three crumb surface fields and the fixed Lemonade floor contained 14,690 Biscuit Crumbs after reload. |
 | OS-051 | Ceiling surface block | **Shelved:** OreSpawn 4.0.1 documents an underside material, but its surface feature scans downward from build height and replaces the first solid block—the inaccessible upper face of the Nether roof—not a player-facing ceiling underside. | Main | 2/4 | Re-enter after OreSpawn targets solid blocks exposed to air or fluid below without replacing structures. A revision-11 diagnostic marker appeared on 20,716/20,736 topmost columns and 0/29,607 downward-exposed ceiling faces, so the accepted adventure does not claim this as a working example. |
 | OS-052 | Delegated-source composition | Wrap the final dimension biome source without adding TerraBlender to CakeWorld. | Main | 7 | Vanilla and a TerraBlender/fixture source both load; OreSpawn applies its baked overlay after delegation. |
 | OS-053 | Default aquifer fluid | Use lemonade aquifers where water would normally form in the Overworld. | Main | 2 | New aquifer cavities contain the registered lemonade fluid block. |
 | OS-054 | Deep aquifer fluid and threshold | Use deep hot fudge below the configured Y threshold. | Main | 2 | Samples immediately above and below the threshold use the correct fluids. |
-| OS-055 | Snow material | Replace accumulating vanilla snow products with icing in eligible loaded CakeWorld chunks. | Main | 1/3 | Weather accumulation and player-area conversion produce icing, including after save/reload. |
-| OS-056 | Ice material | Replace freezing products with frozen lemonade. | Main | 1/3 | Cold-biome freeze events produce the registered fluid-compatible ice block. |
+| OS-055 | Snow material | **Shelved at runtime:** the profile retains `snow_block=cakeworld:icing_layer`, but neither the public chunk-load/world-tick routes nor a temporary direct handler diagnostic converted a top-of-column vanilla snow fixture. | Main | 1/3 | Re-enter after OreSpawn exposes/fixes the baked weather-material conversion and a real load/tick changes snow to icing across save/reload. |
+| OS-056 | Ice material | **Shelved at runtime:** the profile retains `ice_block=cakeworld:frozen_lemonade`, but the same public and direct-handler diagnostics left a top-of-column vanilla ice fixture unchanged. | Main | 1/3 | Re-enter with OS-055 after CakeWorld and other integrated mods prove the uncommitted OreSpawn repair stable. |
 
 ### Ore placement
 
@@ -283,6 +283,15 @@ object, so horizontal size, thickness, waviness, edge irregularity, and
 continuity apply to every geome in that profile. CakeWorld retains the stable
 global defaults and the per-geome creative goal, but must not claim
 per-geome-preset proof until OreSpawn supports baked geome-level overrides.
+
+`OS-055` and `OS-056` remain valid declarative profile examples but are not
+working runtime examples under the tested OreSpawn build. CakeWorld placed
+vanilla snow and ice at the live motion-blocking top of a loaded player chunk.
+A public chunk-load event, a public end-of-world tick, and one temporary
+diagnostic invocation of OreSpawn's own handler all left both blocks
+unchanged. The internal call was removed immediately; CakeWorld must not
+publish it as an integration pattern. Re-enter only after OreSpawn's baked
+weather materials are fixed or exposed through a supported test fixture.
 
 `OS-061` remains useful descriptive metadata, but source inspection confirms
 that OreSpawn 4.0.1 reads `source_mod` only in configuration, editor, and

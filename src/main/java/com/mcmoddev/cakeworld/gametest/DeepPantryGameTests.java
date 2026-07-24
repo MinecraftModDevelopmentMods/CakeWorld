@@ -505,6 +505,94 @@ public final class DeepPantryGameTests {
 	}
 
 	@GameTest(template = EMPTY, timeoutTicks = 2400)
+	public static void focusedBiomeSurfaceAndPaletteAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean("cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed biome surface/palette audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel overworld = helper.getLevel();
+		ServerLevel nether = overworld.getServer().getLevel(Level.NETHER);
+		ServerLevel end = overworld.getServer().getLevel(Level.END);
+		require(helper, nether != null && end != null,
+				"Surface audit could not resolve Nether and End levels");
+		JsonObject profile = OreSpawnApi.getActiveProfile(
+				overworld.getServer()).orElseThrow().toJson();
+		JsonObject palettes = profile.getAsJsonObject("biome_palettes");
+		JsonObject materials = profile.getAsJsonObject(
+				"dimension_materials");
+		JsonObject overworldMaterials = materials.getAsJsonObject(
+				"cakeworld:overworld_materials");
+		require(helper, "cakeworld:icing_layer".equals(
+						overworldMaterials.get("snow_block").getAsString())
+						&& "cakeworld:frozen_lemonade".equals(
+								overworldMaterials.get("ice_block")
+										.getAsString()),
+				"Active profile lost its declarative icing/frozen-lemonade weather materials");
+
+		assertPaletteContract(helper, palettes, "cakeworld:overworld_oceans",
+				"cakeworld:soda_ocean", "cakeworld:biscuit_crumbs",
+				"cakeworld:biscuit_crumbs", "cakeworld:biscuit_crumbs", 4);
+		assertPaletteContract(helper, palettes, "cakeworld:overworld_land",
+				"cakeworld:candy_plains", "cakeworld:icing_layer",
+				"cakeworld:chocolate_sponge", "cakeworld:biscuit_crumbs", 4);
+		assertPaletteContract(helper, palettes, "cakeworld:overworld_land",
+				"cakeworld:cookie_forest", "cakeworld:chocolate_sponge",
+				"cakeworld:chocolate_sponge", "cakeworld:biscuit_crumbs", 5);
+		assertPaletteContract(helper, palettes, "cakeworld:overworld_land",
+				"cakeworld:marshmallow_peaks", "cakeworld:icing_layer",
+				"cakeworld:biscuit_stone", "cakeworld:biscuit_crumbs", 5);
+		assertPaletteContract(helper, palettes, "cakeworld:nether",
+				"cakeworld:fudge_wastes", "cakeworld:fudge_rock",
+				"cakeworld:fudge_rock", null, 5);
+		assertPaletteContract(helper, palettes, "cakeworld:end",
+				"cakeworld:meringue_islands", "cakeworld:icing_layer",
+				"cakeworld:biscuit_stone", "cakeworld:biscuit_stone", 5);
+
+		Map<String, SurfaceAudit> surfaces = new LinkedHashMap<>();
+		surfaces.put("candy_plains", auditSurface(overworld,
+				locateBiome(helper, overworld, id("candy_plains")),
+				id("candy_plains"), CakeWorldBlocks.ICING_LAYER.get(),
+				CakeWorldBlocks.CHOCOLATE_SPONGE.get(), 2));
+		surfaces.put("cookie_forest", auditSurface(overworld,
+				locateBiome(helper, overworld, id("cookie_forest")),
+				id("cookie_forest"), CakeWorldBlocks.CHOCOLATE_SPONGE.get(),
+				CakeWorldBlocks.CHOCOLATE_SPONGE.get(), 2));
+		surfaces.put("marshmallow_peaks", auditSurface(overworld,
+				locateBiome(helper, overworld, id("marshmallow_peaks")),
+				id("marshmallow_peaks"), CakeWorldBlocks.ICING_LAYER.get(),
+				CakeWorldBlocks.BISCUIT_STONE.get(), 2));
+		surfaces.put("fudge_wastes", auditSurface(nether,
+				new BlockPos(0, 64, 0), id("fudge_wastes"),
+				CakeWorldBlocks.FUDGE_ROCK.get(),
+				CakeWorldBlocks.FUDGE_ROCK.get(), 2));
+		surfaces.put("meringue_islands", auditSurface(end,
+				new BlockPos(0, 64, 0), id("meringue_islands"),
+				CakeWorldBlocks.ICING_LAYER.get(),
+				CakeWorldBlocks.BISCUIT_STONE.get(), 2));
+		for (Map.Entry<String, SurfaceAudit> entry : surfaces.entrySet()) {
+			require(helper, entry.getValue().biomeColumns() > 0
+							&& entry.getValue().topMatches() > 0
+							&& entry.getValue().fillerMatches() > 0,
+					"Fixed world did not expose the declared top/filler pair for "
+							+ entry.getKey() + ": " + entry.getValue());
+		}
+
+		BlockPos sodaOcean = locateBiome(helper, overworld, id("soda_ocean"));
+		Map<Block, Integer> lemonadeFloor = countBlocksDirectlyUnderFluid(
+				overworld, CakeWorldFluids.LEMONADE.get(),
+				Math.floorDiv(sodaOcean.getX(), 16),
+				Math.floorDiv(sodaOcean.getZ(), 16), 4, -64, 96);
+		require(helper, lemonadeFloor.getOrDefault(
+						CakeWorldBlocks.BISCUIT_CRUMBS.get(), 0) > 0,
+				"Soda Ocean exposed no Biscuit Crumbs underwater surface");
+		LOGGER.info("Focused biome surface/palette audit: surfaces={}, soda_floor={}",
+				surfaces, describe(lemonadeFloor));
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 2400)
 	public static void focusedGeomeAndRockDepthDistributionAudit(
 			GameTestHelper helper) {
 		if (!Boolean.getBoolean("cakeworld.fixedWorldgenEvidence")) {
@@ -1215,6 +1303,94 @@ public final class DeepPantryGameTests {
 			String depositId) {
 		return fluidDimensionRule(deposits, depositId,
 				"minecraft:overworld");
+	}
+
+	private static void assertPaletteContract(GameTestHelper helper,
+			JsonObject palettes, String paletteId, String biomeId,
+			String topBlock, String fillerBlock, String underwaterBlock,
+			int fillerDepth) {
+		require(helper, palettes != null && palettes.has(paletteId),
+				"Missing biome palette " + paletteId);
+		JsonObject palette = palettes.getAsJsonObject(paletteId);
+		require(helper, "replace".equals(
+						palette.get("mode").getAsString())
+						&& "all".equals(palette.get("scope").getAsString())
+						&& palette.get("coverage").getAsDouble() == 1.0D
+						&& palette.get("fallback_weight").getAsDouble()
+								== 0.0D,
+				"Palette lost replace/all/full-coverage/zero-fallback contract: "
+						+ paletteId);
+		JsonObject biomes = palette.getAsJsonObject("biomes");
+		require(helper, biomes != null && biomes.has(biomeId),
+				"Palette " + paletteId + " lost biome " + biomeId);
+		JsonObject surface = biomes.getAsJsonObject(biomeId)
+				.getAsJsonObject("surface");
+		boolean underwaterMatches = underwaterBlock == null
+				? !surface.has("underwater_block")
+				: underwaterBlock.equals(
+						surface.get("underwater_block").getAsString());
+		require(helper, topBlock.equals(
+						surface.get("top_block").getAsString())
+						&& fillerBlock.equals(
+								surface.get("filler_block").getAsString())
+						&& underwaterMatches
+						&& surface.get("filler_depth").getAsInt()
+								== fillerDepth,
+				"Biome lost its declared surface contract: " + biomeId);
+	}
+
+	private static SurfaceAudit auditSurface(ServerLevel level,
+			BlockPos center, ResourceLocation biomeId, Block expectedTop,
+			Block expectedFiller, int radius) {
+		int centerChunkX = Math.floorDiv(center.getX(), 16);
+		int centerChunkZ = Math.floorDiv(center.getZ(), 16);
+		int biomeColumns = 0;
+		int topMatches = 0;
+		int fillerMatches = 0;
+		for (int chunkX = centerChunkX - radius;
+				chunkX <= centerChunkX + radius; chunkX++) {
+			for (int chunkZ = centerChunkZ - radius;
+					chunkZ <= centerChunkZ + radius; chunkZ++) {
+				level.getChunk(chunkX, chunkZ);
+				for (int x = chunkX << 4; x < (chunkX + 1) << 4; x++) {
+					for (int z = chunkZ << 4; z < (chunkZ + 1) << 4; z++) {
+						int surfaceY = level.getHeight(
+								Heightmap.Types.WORLD_SURFACE, x, z) - 1;
+						if (surfaceY < level.getMinBuildHeight()) {
+							continue;
+						}
+						BlockPos surfacePos = new BlockPos(x, surfaceY, z);
+						ResourceLocation actualBiome = level.getBiome(surfacePos)
+								.unwrapKey().map(ResourceKey::location)
+								.orElse(null);
+						if (!biomeId.equals(actualBiome)) {
+							continue;
+						}
+						biomeColumns++;
+						int matchedTopY = Integer.MIN_VALUE;
+						for (int offset = 1; offset >= -2; offset--) {
+							BlockPos candidate = surfacePos.above(offset);
+							if (level.getBlockState(candidate).is(expectedTop)) {
+								matchedTopY = candidate.getY();
+								topMatches++;
+								break;
+							}
+						}
+						BlockPos fillerOrigin = matchedTopY == Integer.MIN_VALUE
+								? surfacePos
+								: new BlockPos(x, matchedTopY, z);
+						for (int depth = 1; depth <= 6; depth++) {
+							if (level.getBlockState(
+										fillerOrigin.below(depth))
+									.is(expectedFiller)) {
+								fillerMatches++;
+							}
+						}
+					}
+				}
+			}
+		}
+		return new SurfaceAudit(biomeColumns, topMatches, fillerMatches);
 	}
 
 	private static JsonObject fluidDimensionRule(JsonObject deposits,
@@ -2119,6 +2295,10 @@ public final class DeepPantryGameTests {
 			BlockPos firstViolation, String firstViolationDetail,
 			Map<ResourceLocation, Integer> outputsByBlock,
 			Map<ResourceLocation, Integer> violationsByBlock) {
+	}
+
+	private record SurfaceAudit(int biomeColumns, int topMatches,
+			int fillerMatches) {
 	}
 
 	private static final class GeologySurvey {
