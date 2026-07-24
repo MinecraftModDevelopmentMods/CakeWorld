@@ -4,6 +4,7 @@ import com.mcmoddev.cakeworld.init.CakeWorldBiomes;
 import com.mcmoddev.cakeworld.init.CakeWorldBlocks;
 import com.mcmoddev.cakeworld.init.CakeWorldFluids;
 import com.mcmoddev.cakeworld.init.CakeWorldItems;
+import com.mcmoddev.cakeworld.network.CakeWorldNetwork;
 
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
@@ -19,5 +20,6 @@ public final class CakeWorld {
 		CakeWorldFluids.register(modBus);
 		CakeWorldItems.register(modBus);
 		CakeWorldBiomes.register(modBus);
+		CakeWorldNetwork.register();
 	}
 }

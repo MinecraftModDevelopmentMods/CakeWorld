@@ -1,9 +1,16 @@
 package com.mcmoddev.cakeworld.gametest;
 
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+import com.mojang.authlib.GameProfile;
 import com.mcmoddev.cakeworld.CakeWorld;
 import com.mcmoddev.cakeworld.block.BiscuitCrumbsBlock;
 import com.mcmoddev.cakeworld.block.ChocolateSpongeBlock;
 import com.mcmoddev.cakeworld.block.IcingLayerBlock;
+import com.mcmoddev.cakeworld.cookbook.CookbookProgress;
+import com.mcmoddev.cakeworld.cookbook.DiscoveryType;
 import com.mcmoddev.cakeworld.init.CakeWorldBlocks;
 import com.mcmoddev.cakeworld.init.CakeWorldItems;
 
@@ -11,6 +18,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntityType;
@@ -27,6 +37,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
+import net.minecraftforge.common.util.FakePlayerFactory;
 
 @GameTestHolder(CakeWorld.MODID)
 @PrefixGameTestTemplate(false)
@@ -148,6 +159,71 @@ public final class FirstBiteGameTests {
 		require(helper, CakeWorldItems.LEMONADE_BOTTLE.get().getCraftingRemainingItem()
 						== Items.GLASS_BOTTLE,
 				"Lemonade bottles do not return their container in crafting");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void cookbookProgressIsPlayerOwnedAndHasSixEventTypes(GameTestHelper helper) {
+		ServerPlayer player = FakePlayerFactory.getMinecraft(helper.getLevel());
+		for (DiscoveryType type : DiscoveryType.values()) {
+			ResourceLocation page = new ResourceLocation(CakeWorld.MODID,
+					"gametest/" + type.name().toLowerCase());
+			require(helper, CookbookProgress.discover(player, type, page),
+					type + " did not add its first page");
+			require(helper, !CookbookProgress.discover(player, type, page),
+					type + " accepted a duplicate page");
+		}
+
+		CookbookProgress.grantStarterBook(player);
+		player.getInventory().clearContent();
+		CompoundTag snapshot = CookbookProgress.snapshot(player);
+		Map<DiscoveryType, Set<ResourceLocation>> discoveries =
+				CookbookProgress.read(snapshot);
+		require(helper, discoveries.size() == DiscoveryType.values().length,
+				"The Cookbook does not expose all six discovery tabs");
+		for (DiscoveryType type : DiscoveryType.values()) {
+			require(helper, discoveries.get(type).size() == 1,
+					type + " progress was lost with the physical book");
+		}
+		require(helper, CookbookProgress.recoverBook(player),
+				"The kiosk recovery path did not replace a lost Cookbook");
+		require(helper, player.getInventory().contains(
+				CakeWorldItems.EXPLORERS_COOKBOOK.get().getDefaultInstance()),
+				"The recovered Cookbook did not reach the player");
+
+		ServerPlayer replacement = FakePlayerFactory.get(helper.getLevel(),
+				new GameProfile(UUID.fromString("1978cafe-cafe-4bad-babe-1978cafe1978"),
+						"CakeWorldRespawnTest"));
+		Map<DiscoveryType, Set<ResourceLocation>> isolated =
+				CookbookProgress.read(CookbookProgress.snapshot(replacement));
+		for (DiscoveryType type : DiscoveryType.values()) {
+			require(helper, isolated.get(type).isEmpty(),
+					type + " leaked between players");
+		}
+		CookbookProgress.copyForRespawn(player, replacement);
+		Map<DiscoveryType, Set<ResourceLocation>> copied =
+				CookbookProgress.read(CookbookProgress.snapshot(replacement));
+		for (DiscoveryType type : DiscoveryType.values()) {
+			require(helper, copied.get(type).size() == 1,
+					type + " did not survive the respawn copy");
+		}
+
+		String[] expectedRecipes = {
+			"chocolate_sponge_from_slices",
+			"chocolate_sponge_slices",
+			"chocolate_sponge_sundae",
+			"cookbook_kiosk",
+			"explorers_cookbook",
+			"icing_from_spoonfuls",
+			"icing_spoonful",
+			"lemonade_bottles",
+			"simple_biscuit"
+		};
+		for (String recipe : expectedRecipes) {
+			require(helper, helper.getLevel().getRecipeManager().byKey(
+					new ResourceLocation(CakeWorld.MODID, recipe)).isPresent(),
+					"Recipe did not load: " + recipe);
+		}
 		helper.succeed();
 	}
 

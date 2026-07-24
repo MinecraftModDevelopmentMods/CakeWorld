@@ -1,6 +1,7 @@
 package com.mcmoddev.cakeworld.init;
 
 import com.mcmoddev.cakeworld.CakeWorld;
+import com.mcmoddev.cakeworld.item.ExplorersCookbookItem;
 import com.mcmoddev.cakeworld.item.LemonadeBottleItem;
 
 import net.minecraft.world.food.FoodProperties;
@@ -29,6 +30,10 @@ public final class CakeWorldItems {
 	public static final RegistryObject<Item> CHOCOLATE_SPONGE_SUNDAE =
 			ITEMS.register("chocolate_sponge_sundae",
 					() -> new BowlFoodItem(foodProperties(8, 0.8F).stacksTo(1)));
+	public static final RegistryObject<Item> EXPLORERS_COOKBOOK =
+			ITEMS.register("explorers_cookbook",
+					() -> new ExplorersCookbookItem(new Item.Properties()
+							.tab(CreativeModeTab.TAB_MISC).stacksTo(1)));
 
 	private CakeWorldItems() {
 	}

@@ -5,6 +5,7 @@ import java.util.function.Supplier;
 import com.mcmoddev.cakeworld.CakeWorld;
 import com.mcmoddev.cakeworld.block.BiscuitCrumbsBlock;
 import com.mcmoddev.cakeworld.block.ChocolateSpongeBlock;
+import com.mcmoddev.cakeworld.block.CookbookKioskBlock;
 import com.mcmoddev.cakeworld.block.IcingLayerBlock;
 
 import net.minecraft.world.item.BlockItem;
@@ -50,6 +51,9 @@ public final class CakeWorldBlocks {
 	public static final RegistryObject<Block> FUDGE_ROCK = block("fudge_rock",
 			BlockBehaviour.Properties.of(Material.STONE).requiresCorrectToolForDrops()
 					.strength(2.0F, 6.0F).sound(SoundType.NETHERRACK));
+	public static final RegistryObject<Block> COOKBOOK_KIOSK = block("cookbook_kiosk",
+			() -> new CookbookKioskBlock(BlockBehaviour.Properties.of(Material.WOOD)
+					.strength(2.0F).sound(SoundType.WOOD)));
 
 	private CakeWorldBlocks() {
 	}
