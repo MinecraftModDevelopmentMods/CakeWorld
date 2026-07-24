@@ -112,11 +112,33 @@ canonical adventure profile plus the BaseMetals output overlay. CakeWorld code
 does not import BaseMetals implementation classes.
 
 Every themed block joins the corresponding `forge:ores/<metal>` block and item
-tags. By default it drops itself under the same mining constraints as the
-source BaseMetals ore, allowing BaseMetals' tag-based smelting, blasting,
-crushing, and recipe-viewer integrations to accept it. If a future BaseMetals
-version uses a raw-resource drop, CakeWorld must update deliberately and test
-both behaviors.
+tags. The twelve BaseMetals-only counterparts drop themselves under the same
+mining constraints as the source BaseMetals ore. Shared Copper-Caramel retains
+its vanilla-compatible raw-copper drop and can be processed as an ore block
+when harvested with Silk Touch. BaseMetals' tag-based smelting, blasting,
+crushing, and recipe-viewer integrations accept all thirteen block items. If a
+future BaseMetals version changes its resource-drop contract, CakeWorld must
+update deliberately and test both behaviors.
+
+### Current implementation
+
+Provider revision 5 builds both adventure templates from
+`src/main/orespawn/provider.json` and the small
+`src/main/orespawn/basemetals-overlay.json`. The compatibility overlay keeps
+the ten currently enabled BaseMetals resources enabled, keeps Copper,
+Antimony, and Bismuth non-generating, and replaces the Nether and End host
+lists with CakeWorld edible geology.
+
+The automated integration scenario verifies:
+
+- CakeWorld without BaseMetals still selects `cakeworld:edible_world`;
+- CakeWorld with BaseMetals selects
+  `cakeworld:edible_world_basemetals`;
+- all thirteen block and item tags resolve;
+- all thirteen smelting, blasting, and crushing recipe families accept the
+  themed block item and return the BaseMetals resource;
+- enabled counterparts generate in edible Overworld, Nether, and End geology;
+- Copper, Antimony, and Bismuth remain present but non-generating.
 
 ### Thirteen-ore matrix
 
@@ -138,9 +160,10 @@ both behaviors.
 
 ### Provider ownership
 
-The compatibility generator must inspect the supported BaseMetals provider
-contract at build/data-generation time and emit overrides by stable source rule
-identity, not by copying opaque runtime objects.
+The compatibility generator emits overrides by stable BaseMetals source-rule
+identity, not by copying opaque runtime objects. The overlay is intentionally
+small enough to compare directly with the supported BaseMetals provider when
+that contract changes.
 
 For the eleven resources with current BaseMetals OreSpawn rules, CakeWorld
 changes the generated output to the corresponding CakeWorld block while

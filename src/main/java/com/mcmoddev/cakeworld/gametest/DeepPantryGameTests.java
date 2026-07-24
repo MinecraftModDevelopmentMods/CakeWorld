@@ -10,6 +10,8 @@ import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.mojang.authlib.GameProfile;
 import com.mcmoddev.cakeworld.CakeWorld;
 import com.mcmoddev.cakeworld.compat.VanillaResourceAdvancements;
@@ -26,6 +28,7 @@ import net.minecraft.advancements.Advancement;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
@@ -34,6 +37,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RedStoneOreBlock;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -42,6 +47,7 @@ import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
@@ -52,6 +58,8 @@ public final class DeepPantryGameTests {
 	private static final String EMPTY = "empty";
 	private static final ResourceLocation EDIBLE_WORLD =
 			new ResourceLocation(CakeWorld.MODID, "edible_world");
+	private static final ResourceLocation EDIBLE_WORLD_BASEMETALS =
+			new ResourceLocation(CakeWorld.MODID, "edible_world_basemetals");
 
 	private static final Set<ResourceLocation> EXPECTED_ROCK_IDS = Set.of(
 			id("rock/chocolate_sponge"),
@@ -96,8 +104,11 @@ public final class DeepPantryGameTests {
 		require(helper, profileResult.isPresent(),
 				"OreSpawn did not expose the active fresh-world profile");
 		GeologyProfileView profile = profileResult.orElseThrow();
-		require(helper, profile.selectedTemplate().filter(EDIBLE_WORLD::equals).isPresent(),
-				"The fresh world did not select cakeworld:edible_world");
+		ResourceLocation expectedTemplate = ModList.get().isLoaded("basemetals")
+				? EDIBLE_WORLD_BASEMETALS : EDIBLE_WORLD;
+		require(helper, profile.selectedTemplate().filter(
+						expectedTemplate::equals).isPresent(),
+				"The fresh world did not select " + expectedTemplate);
 		require(helper, profile.rockIds().containsAll(EXPECTED_ROCK_IDS),
 				"The active profile is missing CakeWorld rock families: "
 						+ missing(EXPECTED_ROCK_IDS, profile.rockIds()));
@@ -196,6 +207,184 @@ public final class DeepPantryGameTests {
 				sampledCakeWorldRocks, describe(generatedRocks),
 				describe(generatedDeposits), describe(generatedFluidDeposits));
 		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 1200)
+	public static void baseMetalsCounterpartsPreserveTagsRecipesAndGeneration(
+			GameTestHelper helper) {
+		Map<String, Block> counterparts = new LinkedHashMap<>();
+		counterparts.put("coldiron", CakeWorldBlocks.FROSTED_COLD_IRON.get());
+		counterparts.put("adamantine",
+				CakeWorldBlocks.JAWBREAKER_ADAMANTINE.get());
+		counterparts.put("starsteel", CakeWorldBlocks.STARLIGHT_STARSTEEL.get());
+		counterparts.put("tin", CakeWorldBlocks.SILVER_DRAGEE_TIN.get());
+		counterparts.put("lead", CakeWorldBlocks.LIQUORICE_LEAD.get());
+		counterparts.put("zinc", CakeWorldBlocks.LEMON_DROP_ZINC.get());
+		counterparts.put("silver", CakeWorldBlocks.SILVER_LEAF_SILVER.get());
+		counterparts.put("mercury", CakeWorldBlocks.MIRROR_GLAZE_MERCURY.get());
+		counterparts.put("nickel", CakeWorldBlocks.MINT_WAFER_NICKEL.get());
+		counterparts.put("platinum", CakeWorldBlocks.SUGAR_STAR_PLATINUM.get());
+		counterparts.put("copper", CakeWorldBlocks.COPPER_CARAMEL.get());
+		counterparts.put("antimony", CakeWorldBlocks.ANISEED_ANTIMONY.get());
+		counterparts.put("bismuth", CakeWorldBlocks.RAINBOW_ROCK_BISMUTH.get());
+
+		for (Map.Entry<String, Block> entry : counterparts.entrySet()) {
+			String metal = entry.getKey();
+			Block block = entry.getValue();
+			TagKey<Block> blockTag = TagKey.create(Registry.BLOCK_REGISTRY,
+					new ResourceLocation("forge", "ores/" + metal));
+			TagKey<Item> itemTag = TagKey.create(Registry.ITEM_REGISTRY,
+					new ResourceLocation("forge", "ores/" + metal));
+			require(helper, block.defaultBlockState().is(
+							BlockTags.MINEABLE_WITH_PICKAXE),
+					Registry.BLOCK.getKey(block) + " is not pickaxe-mineable");
+			require(helper, block.defaultBlockState().is(blockTag)
+							&& new ItemStack(block).is(itemTag),
+					Registry.BLOCK.getKey(block)
+							+ " does not preserve forge:ores/" + metal);
+		}
+		require(helper, CakeWorldBlocks.SILVER_LEAF_SILVER.get()
+						.defaultBlockState().is(BlockTags.NEEDS_STONE_TOOL)
+						&& CakeWorldBlocks.MINT_WAFER_NICKEL.get()
+								.defaultBlockState().is(BlockTags.NEEDS_STONE_TOOL),
+				"BaseMetals stone-tier counterparts are incomplete");
+		require(helper, CakeWorldBlocks.FROSTED_COLD_IRON.get()
+						.defaultBlockState().is(BlockTags.NEEDS_IRON_TOOL),
+				"Frosted Cold-Iron lost BaseMetals' iron-tier requirement");
+		require(helper, CakeWorldBlocks.JAWBREAKER_ADAMANTINE.get()
+						.defaultBlockState().is(BlockTags.NEEDS_DIAMOND_TOOL)
+						&& CakeWorldBlocks.STARLIGHT_STARSTEEL.get()
+								.defaultBlockState().is(BlockTags.NEEDS_DIAMOND_TOOL),
+				"BaseMetals diamond-tier counterparts are incomplete");
+
+		if (!ModList.get().isLoaded("basemetals")) {
+			helper.succeed();
+			return;
+		}
+
+		GeologyProfileView profile = OreSpawnApi.getActiveProfile(
+				helper.getLevel().getServer()).orElseThrow();
+		require(helper, profile.selectedTemplate().filter(
+						EDIBLE_WORLD_BASEMETALS::equals).isPresent(),
+				"BaseMetals did not select the higher-priority compatibility template");
+		JsonObject ores = profile.toJson().getAsJsonObject("ores");
+		Set<String> deliberatelyDisabled =
+				Set.of("copper", "antimony", "bismuth");
+		for (Map.Entry<String, Block> entry : counterparts.entrySet()) {
+			String metal = entry.getKey();
+			JsonObject rule = ores.getAsJsonObject(
+					"basemetals:ore/" + metal);
+			require(helper, rule != null
+							&& Registry.BLOCK.getKey(entry.getValue()).toString()
+									.equals(rule.get("block").getAsString()),
+					"Compatibility template did not map BaseMetals " + metal);
+			require(helper, hasEnabledPlacement(rule)
+							!= deliberatelyDisabled.contains(metal),
+					"BaseMetals " + metal
+							+ " did not preserve its intended generation state");
+
+			ItemStack input = new ItemStack(entry.getValue());
+			assertRecipe(helper, metal + "_ore_smelting", input,
+					"basemetals:" + metal + "_ingot", 1);
+			assertRecipe(helper, metal + "_ore_blasting", input,
+					"basemetals:" + metal + "_ingot", 1);
+			assertRecipe(helper, metal + "_ore_crushing", input,
+					"basemetals:" + metal + "_powder", 2);
+		}
+
+		Map<Block, Integer> overworld = scanDimension(helper.getLevel(),
+				Set.of(
+						CakeWorldBlocks.SILVER_DRAGEE_TIN.get(),
+						CakeWorldBlocks.LIQUORICE_LEAD.get(),
+						CakeWorldBlocks.LEMON_DROP_ZINC.get(),
+						CakeWorldBlocks.SILVER_LEAF_SILVER.get(),
+						CakeWorldBlocks.MIRROR_GLAZE_MERCURY.get(),
+						CakeWorldBlocks.MINT_WAFER_NICKEL.get(),
+						CakeWorldBlocks.SUGAR_STAR_PLATINUM.get()),
+				0, 0, 3, -64, 128);
+		Map<Block, Integer> nether = scanDimension(
+				helper.getLevel().getServer().getLevel(Level.NETHER),
+				Set.of(
+						CakeWorldBlocks.FROSTED_COLD_IRON.get(),
+						CakeWorldBlocks.JAWBREAKER_ADAMANTINE.get()),
+				0, 0, 2, 0, 127);
+		Map<Block, Integer> end = scanDimension(
+				helper.getLevel().getServer().getLevel(Level.END),
+				Set.of(CakeWorldBlocks.STARLIGHT_STARSTEEL.get()),
+				0, 0, 2, 0, 254);
+		require(helper, !overworld.isEmpty(),
+				"Fresh BaseMetals profile generated no themed Overworld ores");
+		require(helper, !nether.isEmpty(),
+				"Fresh BaseMetals profile generated no themed Nether ores");
+		require(helper, !end.isEmpty(),
+				"Fresh BaseMetals profile generated no themed End ores");
+		LOGGER.info("BaseMetals CakeWorld audit: overworld={}, nether={}, end={}",
+				describe(overworld), describe(nether), describe(end));
+		helper.succeed();
+	}
+
+	private static boolean hasEnabledPlacement(JsonObject rule) {
+		if (rule.has("enabled") && !rule.get("enabled").getAsBoolean()) {
+			return false;
+		}
+		for (String sectionName : List.of("dimensions", "dimension_selectors")) {
+			if (!rule.has(sectionName)
+					|| !rule.get(sectionName).isJsonObject()) {
+				continue;
+			}
+			for (JsonElement value : rule.getAsJsonObject(sectionName)
+					.entrySet().stream().map(Map.Entry::getValue).toList()) {
+				if (value.isJsonObject()
+						&& (!value.getAsJsonObject().has("enabled")
+								|| value.getAsJsonObject().get("enabled")
+										.getAsBoolean())) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	private static void assertRecipe(GameTestHelper helper, String path,
+			ItemStack input, String expectedItem, int expectedCount) {
+		Recipe<?> recipe = helper.getLevel().getRecipeManager().byKey(
+				new ResourceLocation("basemetals", path)).orElse(null);
+		require(helper, recipe != null
+						&& recipe.getIngredients().stream()
+								.anyMatch(ingredient -> ingredient.test(input)),
+				"BaseMetals recipe does not accept "
+						+ Registry.ITEM.getKey(input.getItem()) + ": " + path);
+		require(helper, Registry.ITEM.getKey(recipe.getResultItem().getItem())
+						.equals(new ResourceLocation(expectedItem))
+						&& recipe.getResultItem().getCount() == expectedCount,
+				"BaseMetals recipe has the wrong result: " + path);
+	}
+
+	private static Map<Block, Integer> scanDimension(ServerLevel level,
+			Set<Block> targets, int centerChunkX, int centerChunkZ, int radius,
+			int requestedMinY, int requestedMaxY) {
+		Map<Block, Integer> counts = new LinkedHashMap<>();
+		int minY = Math.max(level.getMinBuildHeight(), requestedMinY);
+		int maxY = Math.min(level.getMaxBuildHeight() - 1, requestedMaxY);
+		for (int chunkX = centerChunkX - radius;
+				chunkX <= centerChunkX + radius; chunkX++) {
+			for (int chunkZ = centerChunkZ - radius;
+					chunkZ <= centerChunkZ + radius; chunkZ++) {
+				level.getChunk(chunkX, chunkZ);
+				for (int x = chunkX << 4; x < (chunkX + 1) << 4; x++) {
+					for (int z = chunkZ << 4; z < (chunkZ + 1) << 4; z++) {
+						for (int y = minY; y <= maxY; y++) {
+							Block block = level.getBlockState(
+									new BlockPos(x, y, z)).getBlock();
+							if (targets.contains(block)) {
+								counts.merge(block, 1, Integer::sum);
+							}
+						}
+					}
+				}
+			}
+		}
+		return counts;
 	}
 
 	@GameTest(template = EMPTY)

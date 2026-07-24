@@ -20,8 +20,9 @@ provider definition.
 
 ## Showcase Profiles
 
-CakeWorld exposes three templates, all generated from one canonical profile
-model so common settings cannot drift.
+CakeWorld defines three templates around one canonical profile model so common
+settings cannot drift. Provider revision 5 currently packages the two
+adventure templates; the diagnostic Sampler remains a Slice 7 feature.
 
 | ID | Template | Selection | Purpose |
 |---|---|---|---|
@@ -35,7 +36,9 @@ Selecting or migrating an existing world is an explicit administrative action.
 
 The BaseMetals template is an overlay generated from the same canonical
 `edible_world` definition. It must not become a separately maintained fork of
-the adventure profile.
+the adventure profile. A deterministic build check removes the thirteen
+BaseMetals rule overrides from the generated compatibility profile and requires
+the remaining serialized profile to match the normal adventure exactly.
 
 ## Capability Matrix
 

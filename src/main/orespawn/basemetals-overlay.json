@@ -1,0 +1,87 @@
+{
+  "name_key": "template.cakeworld.edible_world_basemetals",
+  "description_key": "template.cakeworld.edible_world_basemetals.description",
+  "required_mods": ["cakeworld", "basemetals"],
+  "auto_select": true,
+  "auto_select_priority": 200,
+  "profile": {
+    "ores": {
+      "basemetals:ore/coldiron": {
+        "block": "cakeworld:frosted_cold_iron",
+        "dimensions": {
+          "minecraft:the_nether": {
+            "host_blocks": [
+              "cakeworld:fudge_rock",
+              "cakeworld:burnt_sugar_rock"
+            ],
+            "host_tags": []
+          }
+        }
+      },
+      "basemetals:ore/adamantine": {
+        "block": "cakeworld:jawbreaker_adamantine",
+        "dimensions": {
+          "minecraft:the_nether": {
+            "host_blocks": [
+              "cakeworld:fudge_rock",
+              "cakeworld:burnt_sugar_rock"
+            ],
+            "host_tags": []
+          }
+        }
+      },
+      "basemetals:ore/starsteel": {
+        "block": "cakeworld:starlight_starsteel",
+        "dimensions": {
+          "minecraft:the_end": {
+            "host_blocks": [],
+            "host_tags": [],
+            "host_families": [
+              "sedimentary",
+              "metamorphic",
+              "igneous_intrusive"
+            ]
+          }
+        }
+      },
+      "basemetals:ore/tin": {
+        "block": "cakeworld:silver_dragee_tin"
+      },
+      "basemetals:ore/lead": {
+        "block": "cakeworld:liquorice_lead"
+      },
+      "basemetals:ore/zinc": {
+        "block": "cakeworld:lemon_drop_zinc"
+      },
+      "basemetals:ore/silver": {
+        "block": "cakeworld:silver_leaf_silver"
+      },
+      "basemetals:ore/mercury": {
+        "block": "cakeworld:mirror_glaze_mercury"
+      },
+      "basemetals:ore/nickel": {
+        "block": "cakeworld:mint_wafer_nickel"
+      },
+      "basemetals:ore/platinum": {
+        "block": "cakeworld:sugar_star_platinum"
+      },
+      "basemetals:ore/copper": {
+        "block": "cakeworld:copper_caramel"
+      },
+      "basemetals:ore/antimony": {
+        "block": "cakeworld:aniseed_antimony",
+        "enabled": false,
+        "source_mod": "basemetals",
+        "retrogen": false,
+        "dimension_selectors": {}
+      },
+      "basemetals:ore/bismuth": {
+        "block": "cakeworld:rainbow_rock_bismuth",
+        "enabled": false,
+        "source_mod": "basemetals",
+        "retrogen": false,
+        "dimension_selectors": {}
+      }
+    }
+  }
+}

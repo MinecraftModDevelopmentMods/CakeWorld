@@ -103,6 +103,30 @@ public final class CakeWorldBlocks {
 			block("ancient_nougat", BlockBehaviour.Properties.of(Material.METAL)
 					.requiresCorrectToolForDrops().strength(30.0F, 1200.0F)
 					.sound(SoundType.ANCIENT_DEBRIS));
+	public static final RegistryObject<Block> FROSTED_COLD_IRON =
+			ore("frosted_cold_iron");
+	public static final RegistryObject<Block> JAWBREAKER_ADAMANTINE =
+			ore("jawbreaker_adamantine");
+	public static final RegistryObject<Block> STARLIGHT_STARSTEEL =
+			ore("starlight_starsteel");
+	public static final RegistryObject<Block> SILVER_DRAGEE_TIN =
+			ore("silver_dragee_tin");
+	public static final RegistryObject<Block> LIQUORICE_LEAD =
+			ore("liquorice_lead");
+	public static final RegistryObject<Block> LEMON_DROP_ZINC =
+			ore("lemon_drop_zinc");
+	public static final RegistryObject<Block> SILVER_LEAF_SILVER =
+			ore("silver_leaf_silver");
+	public static final RegistryObject<Block> MIRROR_GLAZE_MERCURY =
+			ore("mirror_glaze_mercury");
+	public static final RegistryObject<Block> MINT_WAFER_NICKEL =
+			ore("mint_wafer_nickel");
+	public static final RegistryObject<Block> SUGAR_STAR_PLATINUM =
+			ore("sugar_star_platinum");
+	public static final RegistryObject<Block> ANISEED_ANTIMONY =
+			ore("aniseed_antimony");
+	public static final RegistryObject<Block> RAINBOW_ROCK_BISMUTH =
+			ore("rainbow_rock_bismuth");
 	public static final RegistryObject<Block> COOKBOOK_KIOSK = block("cookbook_kiosk",
 			() -> new CookbookKioskBlock(BlockBehaviour.Properties.of(Material.WOOD)
 					.strength(2.0F).sound(SoundType.WOOD)));

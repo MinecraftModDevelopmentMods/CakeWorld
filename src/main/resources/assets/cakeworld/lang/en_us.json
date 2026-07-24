@@ -30,6 +30,18 @@
   "block.cakeworld.vanilla_quartz": "Vanilla Quartz Ore",
   "block.cakeworld.fudge_gold": "Fudge Gold Ore",
   "block.cakeworld.ancient_nougat": "Ancient Nougat",
+  "block.cakeworld.frosted_cold_iron": "Frosted Cold-Iron Ore",
+  "block.cakeworld.jawbreaker_adamantine": "Jawbreaker Adamantine Ore",
+  "block.cakeworld.starlight_starsteel": "Starlight Starsteel Ore",
+  "block.cakeworld.silver_dragee_tin": "Silver-Dragée Tin Ore",
+  "block.cakeworld.liquorice_lead": "Liquorice Lead Ore",
+  "block.cakeworld.lemon_drop_zinc": "Lemon-Drop Zinc Ore",
+  "block.cakeworld.silver_leaf_silver": "Silver-Leaf Silver Ore",
+  "block.cakeworld.mirror_glaze_mercury": "Mirror-Glaze Mercury Ore",
+  "block.cakeworld.mint_wafer_nickel": "Mint-Wafer Nickel Ore",
+  "block.cakeworld.sugar_star_platinum": "Sugar-Star Platinum Ore",
+  "block.cakeworld.aniseed_antimony": "Aniseed Antimony Ore",
+  "block.cakeworld.rainbow_rock_bismuth": "Rainbow-Rock Bismuth Ore",
   "block.cakeworld.lemonade": "Lemonade",
   "block.cakeworld.hot_fudge": "Hot Fudge",
   "block.cakeworld.jam": "Strawberry Jam",
@@ -75,5 +87,7 @@
   "biome.cakeworld.fudge_wastes": "Fudge Wastes",
   "biome.cakeworld.meringue_islands": "Meringue Islands",
   "template.cakeworld.edible_world": "Cake World",
-  "template.cakeworld.edible_world.description": "Turns the Overworld, Nether, and End into edible worlds."
+  "template.cakeworld.edible_world.description": "Turns the Overworld, Nether, and End into edible worlds.",
+  "template.cakeworld.edible_world_basemetals": "Cake World with Base Metals",
+  "template.cakeworld.edible_world_basemetals.description": "The edible adventure with confectionery counterparts for Base Metals ores."
 }

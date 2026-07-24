@@ -3,16 +3,22 @@
 ## Architecture
 
 CakeWorld is a child mod of OreSpawn. It registers content through normal Forge
-registries and declares world-generation intent through a packaged provider:
+registries and declares world-generation intent in the canonical provider
+source:
 
 ```text
-data/cakeworld/orespawn/provider.json
+src/main/orespawn/provider.json
 ```
 
-OreSpawn discovers that file during mod loading, validates all referenced
-registry IDs, merges provider-owned entries, and snapshots the selected
-template into each new world's server configuration. Generation does not call
-back into CakeWorld.
+`generateCakeWorldOreSpawnProvider` copies the normal adventure and applies
+`src/main/orespawn/basemetals-overlay.json` to create the conditional
+compatibility template. The build packages the result at
+`data/cakeworld/orespawn/provider.json`.
+
+OreSpawn discovers the packaged result during mod loading, validates all
+referenced registry IDs, merges provider-owned entries, and snapshots the
+selected template into each new world's server configuration. Generation does
+not call back into CakeWorld.
 
 Only `com.mcmoddev.orespawn.api` is a supported Java API. Other OreSpawn
 packages are internal.

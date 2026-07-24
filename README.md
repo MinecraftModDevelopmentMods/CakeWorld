@@ -58,7 +58,8 @@ The jar is written under `build/libs/`.
 ## Integration
 
 The packaged declaration is
-`src/main/resources/data/cakeworld/orespawn/provider.json`. It uses provider
+`src/main/orespawn/provider.json`. The build packages its generated result at
+`data/cakeworld/orespawn/provider.json`. It uses provider
 schema 4 and selects `cakeworld:edible_world` for fresh worlds unless a pack
 author has explicitly chosen another default template.
 
