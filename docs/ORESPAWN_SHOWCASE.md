@@ -21,7 +21,7 @@ provider definition.
 ## Showcase Profiles
 
 CakeWorld defines three templates around one canonical profile model so common
-settings cannot drift. Provider revision 5 currently packages the two
+settings cannot drift. Provider revision 10 currently packages the two
 adventure templates; the diagnostic Sampler remains a Slice 7 feature.
 
 | ID | Template | Selection | Purpose |
@@ -150,7 +150,7 @@ condition.
 | OS-074 | Explicit host blocks | Target a precise edible substrate where family matching would be too broad. | Main | 2 | Only listed block states are replaced. |
 | OS-075 | Host tags | Use CakeWorld and Forge replaceable tags to preserve pack extensibility. | Main | 2 | A tagged fixture block becomes eligible without changing the provider file. |
 | OS-076 | Weighted host blocks and tags | Bias a diagnostic rule between two eligible host sources. | Sampler | 7 | Successful host selections approximate their weights. |
-| OS-077 | Biome include/exclude IDs | Restrict Fizzy Pearls to Soda Ocean and exclude a protected starter biome. | Main | 2/3 | Included biome places, excluded biome does not, and neutral control follows base behavior. |
+| OS-077 | Biome include/exclude IDs | **Shelved:** intended to allow Sprinkle Clusters in Candy Plains and exclude protected Cookie Forest. OreSpawn 4.0.1 currently resolves ore-filter IDs to Forge-registry biome objects, but generation receives dynamic-registry biome instances and compares by identity. | Main | 2 | Re-enter after OreSpawn compares stable biome keys: included biome places, excluded biome does not, and neutral control does not place. CakeWorld revision 10 proved the current include rule bakes but produces zero output; the normal profile therefore leaves Sprinkle unfiltered rather than claiming a broken example. |
 | OS-078 | Forge biome-dictionary filters | Demonstrate a category-based compatibility placement. | Sampler | 7 | Matching category places across two registered fixture biomes; non-matching category does not. |
 | OS-079 | Geome filters and weights | Favour Cocoa deposits in Cocoa Basin and Mint in Peppermint Fold. | Main | 2 | Counts demonstrate positive weighting without violating biome or host filters. |
 | OS-080 | Default pattern | Use the standard compiled default for an ordinary starter resource. | Main | 2 | Fixed-seed snapshot and block budget match the documented baseline. |

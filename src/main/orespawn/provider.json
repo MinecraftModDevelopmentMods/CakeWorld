@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "provider_modid": "cakeworld",
-  "provider_revision": 9,
+  "provider_revision": 10,
   "templates": {
     "cakeworld:edible_world": {
       "name_key": "template.cakeworld.edible_world",
@@ -412,8 +412,7 @@
                 },
                 "height_distribution": "uniform",
                 "discard_chance_on_air_exposure": 0.1,
-                "host_tags": ["cakeworld:edible_ore_hosts"],
-                "excluded_biome_ids": ["cakeworld:candy_plains"]
+                "host_tags": ["cakeworld:edible_ore_hosts"]
               }
             }
           },

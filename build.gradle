@@ -330,7 +330,9 @@ def prepareFreshWorldgenServer = tasks.register(
     onlyIf { freshWorldgenIntegration }
     from layout.projectDirectory.file(
             'src/gametest/resources/fixed-worldgen-server.properties')
-    into layout.projectDirectory.dir(freshWorldgenRunDirectory)
+    into layout.projectDirectory.dir(baseMetalsIntegration
+            ? baseMetalsRunDirectory
+            : freshWorldgenRunDirectory)
     rename { 'server.properties' }
 }
 
