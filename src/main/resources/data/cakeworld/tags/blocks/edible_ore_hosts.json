@@ -1,0 +1,12 @@
+{
+  "replace": false,
+  "values": [
+    "cakeworld:biscuit_stone",
+    "cakeworld:wafer_rock",
+    "cakeworld:nougat_rock",
+    "cakeworld:peppermint_rock",
+    "cakeworld:rock_candy",
+    "cakeworld:fudge_rock",
+    "cakeworld:burnt_sugar_rock"
+  ]
+}

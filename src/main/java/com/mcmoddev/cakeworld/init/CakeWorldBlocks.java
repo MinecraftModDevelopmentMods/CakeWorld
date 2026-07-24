@@ -51,6 +51,28 @@ public final class CakeWorldBlocks {
 	public static final RegistryObject<Block> FUDGE_ROCK = block("fudge_rock",
 			BlockBehaviour.Properties.of(Material.STONE).requiresCorrectToolForDrops()
 					.strength(2.0F, 6.0F).sound(SoundType.NETHERRACK));
+	public static final RegistryObject<Block> WAFER_ROCK = stone("wafer_rock", 1.0F);
+	public static final RegistryObject<Block> NOUGAT_ROCK = stone("nougat_rock", 2.5F);
+	public static final RegistryObject<Block> PEPPERMINT_ROCK =
+			stone("peppermint_rock", 1.8F);
+	public static final RegistryObject<Block> ROCK_CANDY = stone("rock_candy", 2.2F);
+	public static final RegistryObject<Block> BURNT_SUGAR_ROCK =
+			stone("burnt_sugar_rock", 2.8F);
+
+	public static final RegistryObject<Block> ROCK_CANDY_DEPOSIT =
+			stone("rock_candy_deposit", 2.5F);
+	public static final RegistryObject<Block> LIQUORICE_VEIN =
+			stone("liquorice_vein", 2.0F);
+	public static final RegistryObject<Block> COCOA_CLOUD =
+			stone("cocoa_cloud", 1.5F);
+	public static final RegistryObject<Block> MINT_CRYSTAL =
+			stone("mint_crystal", 2.5F);
+	public static final RegistryObject<Block> SPRINKLE_CLUSTER =
+			stone("sprinkle_cluster", 1.8F);
+	public static final RegistryObject<Block> RICH_SPRINKLE_CLUSTER =
+			stone("rich_sprinkle_cluster", 2.0F);
+	public static final RegistryObject<Block> FIZZY_PEARL =
+			stone("fizzy_pearl", 2.5F);
 	public static final RegistryObject<Block> COOKBOOK_KIOSK = block("cookbook_kiosk",
 			() -> new CookbookKioskBlock(BlockBehaviour.Properties.of(Material.WOOD)
 					.strength(2.0F).sound(SoundType.WOOD)));
@@ -73,5 +95,11 @@ public final class CakeWorldBlocks {
 		ITEMS.register(name, () -> new BlockItem(block.get(),
 				new Item.Properties().tab(CreativeModeTab.TAB_BUILDING_BLOCKS)));
 		return block;
+	}
+
+	private static RegistryObject<Block> stone(String name, float strength) {
+		return block(name, BlockBehaviour.Properties.of(Material.STONE)
+				.requiresCorrectToolForDrops().strength(strength, 6.0F)
+				.sound(SoundType.STONE));
 	}
 }

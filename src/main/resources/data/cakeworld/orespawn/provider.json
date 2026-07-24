@@ -1,48 +1,7 @@
 {
   "schema_version": 4,
   "provider_modid": "cakeworld",
-  "provider_revision": 2,
-  "rocks": {
-    "cakeworld:rock/chocolate_sponge": {
-      "block": "cakeworld:chocolate_sponge",
-      "enabled": true,
-      "family": "sedimentary",
-      "depth_peak": 72,
-      "depth_spread": 48,
-      "min_y": -64,
-      "max_y": 319,
-      "weight": 1.0,
-      "ore_replaceable": true,
-      "geomes": {},
-      "dimensions": ["minecraft:overworld"]
-    },
-    "cakeworld:rock/biscuit_stone": {
-      "block": "cakeworld:biscuit_stone",
-      "enabled": true,
-      "family": "igneous_intrusive",
-      "depth_peak": 16,
-      "depth_spread": 80,
-      "min_y": -64,
-      "max_y": 319,
-      "weight": 1.4,
-      "ore_replaceable": true,
-      "geomes": {},
-      "dimensions": ["minecraft:overworld", "minecraft:the_end"]
-    },
-    "cakeworld:rock/fudge_rock": {
-      "block": "cakeworld:fudge_rock",
-      "enabled": true,
-      "family": "igneous_volcanic",
-      "depth_peak": 48,
-      "depth_spread": 96,
-      "min_y": 0,
-      "max_y": 255,
-      "weight": 1.0,
-      "ore_replaceable": true,
-      "geomes": {},
-      "dimensions": ["minecraft:the_nether"]
-    }
-  },
+  "provider_revision": 4,
   "templates": {
     "cakeworld:edible_world": {
       "name_key": "template.cakeworld.edible_world",
@@ -53,6 +12,523 @@
       "profile": {
         "geology_mode": "geome",
         "manage_vanilla_ores": false,
+        "rocks": {
+          "cakeworld:rock/chocolate_sponge": {
+            "block": "cakeworld:chocolate_sponge",
+            "enabled": true,
+            "family": "sedimentary",
+            "depth_peak": 72,
+            "depth_spread": 48,
+            "min_y": -64,
+            "max_y": 319,
+            "weight": 0.8,
+            "ore_replaceable": true,
+            "geomes": {
+              "cakeworld:cocoa_basin": 3.0,
+              "cakeworld:wafer_shelf": 0.5
+            },
+            "dimensions": ["minecraft:overworld"]
+          },
+          "cakeworld:rock/biscuit_stone": {
+            "block": "cakeworld:biscuit_stone",
+            "enabled": true,
+            "family": "igneous_intrusive",
+            "depth_peak": 16,
+            "depth_spread": 80,
+            "min_y": -64,
+            "max_y": 319,
+            "weight": 0.8,
+            "ore_replaceable": true,
+            "geomes": {
+              "cakeworld:cocoa_basin": 0.8,
+              "cakeworld:meringue_crust": 1.2
+            },
+            "dimensions": ["minecraft:overworld", "minecraft:the_end"]
+          },
+          "cakeworld:rock/wafer": {
+            "block": "cakeworld:wafer_rock",
+            "enabled": true,
+            "family": "sedimentary",
+            "depth_peak": 52,
+            "depth_spread": 70,
+            "min_y": -64,
+            "max_y": 319,
+            "weight": 1.2,
+            "ore_replaceable": true,
+            "geomes": {
+              "cakeworld:wafer_shelf": 4.0,
+              "cakeworld:meringue_crust": 1.5
+            },
+            "dimensions": ["minecraft:overworld", "minecraft:the_end"]
+          },
+          "cakeworld:rock/nougat": {
+            "block": "cakeworld:nougat_rock",
+            "enabled": true,
+            "family": "metamorphic",
+            "depth_peak": -16,
+            "depth_spread": 58,
+            "min_y": -64,
+            "max_y": 160,
+            "weight": 1.4,
+            "ore_replaceable": true,
+            "geomes": {
+              "cakeworld:cocoa_basin": 1.3,
+              "cakeworld:rock_candy_uplift": 1.6,
+              "cakeworld:meringue_crust": 2.4
+            },
+            "dimensions": ["minecraft:overworld", "minecraft:the_end"]
+          },
+          "cakeworld:rock/peppermint": {
+            "block": "cakeworld:peppermint_rock",
+            "enabled": true,
+            "family": "igneous_intrusive",
+            "depth_peak": 32,
+            "depth_spread": 55,
+            "min_y": -48,
+            "max_y": 196,
+            "weight": 0.8,
+            "ore_replaceable": true,
+            "geomes": {
+              "cakeworld:peppermint_fold": 5.0
+            },
+            "dimensions": ["minecraft:overworld"]
+          },
+          "cakeworld:rock/rock_candy": {
+            "block": "cakeworld:rock_candy",
+            "enabled": true,
+            "family": "metamorphic",
+            "depth_peak": 0,
+            "depth_spread": 72,
+            "min_y": -64,
+            "max_y": 220,
+            "weight": 0.6,
+            "ore_replaceable": true,
+            "geomes": {
+              "cakeworld:rock_candy_uplift": 5.0,
+              "cakeworld:meringue_crust": 1.8
+            },
+            "dimensions": ["minecraft:overworld", "minecraft:the_end"]
+          },
+          "cakeworld:rock/fudge_rock": {
+            "block": "cakeworld:fudge_rock",
+            "enabled": true,
+            "family": "igneous_volcanic",
+            "depth_peak": 48,
+            "depth_spread": 96,
+            "min_y": 0,
+            "max_y": 255,
+            "weight": 1.3,
+            "ore_replaceable": true,
+            "geomes": {
+              "cakeworld:fudge_mantle": 4.0
+            },
+            "dimensions": ["minecraft:the_nether"]
+          },
+          "cakeworld:rock/burnt_sugar": {
+            "block": "cakeworld:burnt_sugar_rock",
+            "enabled": true,
+            "family": "igneous_volcanic",
+            "depth_peak": 24,
+            "depth_spread": 68,
+            "min_y": 0,
+            "max_y": 255,
+            "weight": 0.8,
+            "ore_replaceable": true,
+            "geomes": {
+              "cakeworld:fudge_mantle": 2.5
+            },
+            "dimensions": ["minecraft:the_nether"]
+          }
+        },
+        "geomes": {
+          "cakeworld:cocoa_basin": {
+            "base": 0.8,
+            "families": {
+              "sedimentary": 3.0,
+              "metamorphic": 1.0,
+              "igneous_intrusive": 0.7,
+              "igneous_volcanic": 0.1
+            }
+          },
+          "cakeworld:wafer_shelf": {
+            "base": 0.7,
+            "families": {
+              "sedimentary": 4.0,
+              "metamorphic": 0.7,
+              "igneous_intrusive": 0.5,
+              "igneous_volcanic": 0.1
+            }
+          },
+          "cakeworld:peppermint_fold": {
+            "base": 0.5,
+            "families": {
+              "sedimentary": 0.5,
+              "metamorphic": 1.2,
+              "igneous_intrusive": 4.0,
+              "igneous_volcanic": 0.2
+            }
+          },
+          "cakeworld:rock_candy_uplift": {
+            "base": 0.5,
+            "families": {
+              "sedimentary": 0.4,
+              "metamorphic": 4.0,
+              "igneous_intrusive": 1.2,
+              "igneous_volcanic": 0.2
+            }
+          },
+          "cakeworld:fudge_mantle": {
+            "base": 1.0,
+            "families": {
+              "sedimentary": 0.1,
+              "metamorphic": 0.4,
+              "igneous_intrusive": 0.6,
+              "igneous_volcanic": 5.0
+            }
+          },
+          "cakeworld:meringue_crust": {
+            "base": 1.0,
+            "families": {
+              "sedimentary": 1.6,
+              "metamorphic": 2.8,
+              "igneous_intrusive": 1.0,
+              "igneous_volcanic": 0.1
+            }
+          }
+        },
+        "biomes": {
+          "cakeworld:candy_plains": {
+            "cakeworld:cocoa_basin": 3.0,
+            "cakeworld:wafer_shelf": 1.5
+          },
+          "cakeworld:cookie_forest": {
+            "cakeworld:cocoa_basin": 2.0,
+            "cakeworld:wafer_shelf": 2.5
+          },
+          "cakeworld:marshmallow_peaks": {
+            "cakeworld:peppermint_fold": 3.0,
+            "cakeworld:rock_candy_uplift": 3.0
+          },
+          "cakeworld:soda_ocean": {
+            "cakeworld:wafer_shelf": 3.0,
+            "cakeworld:rock_candy_uplift": 1.2
+          },
+          "cakeworld:fudge_wastes": {
+            "cakeworld:fudge_mantle": 5.0
+          },
+          "cakeworld:meringue_islands": {
+            "cakeworld:meringue_crust": 5.0,
+            "cakeworld:rock_candy_uplift": 1.5
+          }
+        },
+        "ores": {
+          "cakeworld:ore/rock_candy_deposit": {
+            "block": "cakeworld:rock_candy_deposit",
+            "enabled": true,
+            "source_mod": "cakeworld",
+            "retrogen": false,
+            "dimensions": {
+              "minecraft:overworld": {
+                "enabled": true,
+                "min_y": -32,
+                "max_y": 96,
+                "frequency": 1.5,
+                "quantity": 6,
+                "pattern": {
+                  "type": "orespawn:default",
+                  "settings": {
+                    "spread": 3,
+                    "vertical_spread": 2,
+                    "node_size": 4,
+                    "length": 8
+                  }
+                },
+                "height_distribution": "triangle",
+                "discard_chance_on_air_exposure": 0.35,
+                "host_families": ["metamorphic"],
+                "geomes": {
+                  "cakeworld:rock_candy_uplift": 4.0,
+                  "cakeworld:peppermint_fold": 0.5
+                }
+              }
+            }
+          },
+          "cakeworld:ore/liquorice_vein": {
+            "block": "cakeworld:liquorice_vein",
+            "enabled": true,
+            "source_mod": "cakeworld",
+            "retrogen": false,
+            "dimensions": {
+              "minecraft:overworld": {
+                "enabled": true,
+                "min_y": -48,
+                "max_y": 72,
+                "frequency": 1.2,
+                "min_quantity": 8,
+                "max_quantity": 20,
+                "pattern": {
+                  "type": "orespawn:vein",
+                  "settings": {
+                    "spread": 10,
+                    "vertical_spread": 5,
+                    "node_size": 3,
+                    "length": 24
+                  }
+                },
+                "height_distribution": "uniform_bottom_triangle",
+                "discard_chance_on_air_exposure": 0.2,
+                "host_families": ["sedimentary", "metamorphic"],
+                "geomes": {
+                  "cakeworld:cocoa_basin": 2.5,
+                  "cakeworld:wafer_shelf": 1.2
+                }
+              }
+            }
+          },
+          "cakeworld:ore/cocoa_cloud": {
+            "block": "cakeworld:cocoa_cloud",
+            "enabled": true,
+            "source_mod": "cakeworld",
+            "retrogen": false,
+            "dimensions": {
+              "minecraft:overworld": {
+                "enabled": true,
+                "min_y": -24,
+                "max_y": 112,
+                "frequency": 0.65,
+                "quantity": 32,
+                "pattern": {
+                  "type": "orespawn:normal_cloud",
+                  "settings": {
+                    "spread": 14,
+                    "vertical_spread": 7,
+                    "node_size": 4,
+                    "length": 16
+                  }
+                },
+                "height_distribution": "uniform_bottom_triangle",
+                "discard_chance_on_air_exposure": 0.0,
+                "host_families": ["sedimentary"],
+                "geomes": {
+                  "cakeworld:cocoa_basin": 4.0,
+                  "cakeworld:wafer_shelf": 0.4
+                }
+              }
+            }
+          },
+          "cakeworld:ore/mint_crystal": {
+            "block": "cakeworld:mint_crystal",
+            "deep_output": "cakeworld:rock_candy_deposit",
+            "deep_output_max_y": -24,
+            "enabled": true,
+            "source_mod": "cakeworld",
+            "retrogen": false,
+            "dimensions": {
+              "minecraft:overworld": {
+                "enabled": true,
+                "min_y": -56,
+                "max_y": 80,
+                "frequency": 1.0,
+                "quantity": 5,
+                "pattern": {
+                  "type": "orespawn:precision",
+                  "settings": {
+                    "spread": 4,
+                    "vertical_spread": 3,
+                    "node_size": 2,
+                    "length": 8
+                  }
+                },
+                "height_distribution": "bottom_triangle",
+                "discard_chance_on_air_exposure": 0.65,
+                "host_blocks": ["cakeworld:peppermint_rock"],
+                "geomes": {
+                  "cakeworld:peppermint_fold": 5.0,
+                  "cakeworld:cocoa_basin": 0.0
+                }
+              }
+            }
+          },
+          "cakeworld:ore/sprinkle_cluster": {
+            "block": "cakeworld:sprinkle_cluster",
+            "outputs": [
+              {
+                "block": "cakeworld:sprinkle_cluster",
+                "weight": 85
+              },
+              {
+                "block": "cakeworld:rich_sprinkle_cluster",
+                "weight": 15,
+                "min_y": -64,
+                "max_y": 24
+              }
+            ],
+            "enabled": true,
+            "source_mod": "cakeworld",
+            "retrogen": false,
+            "dimensions": {
+              "minecraft:overworld": {
+                "enabled": true,
+                "min_y": -48,
+                "max_y": 128,
+                "frequency": 2.5,
+                "min_quantity": 6,
+                "max_quantity": 14,
+                "pattern": {
+                  "type": "orespawn:clusters",
+                  "settings": {
+                    "spread": 8,
+                    "vertical_spread": 4,
+                    "node_size": 3,
+                    "length": 12
+                  }
+                },
+                "height_distribution": "uniform",
+                "discard_chance_on_air_exposure": 0.1,
+                "host_tags": ["cakeworld:edible_ore_hosts"],
+                "excluded_biome_ids": ["cakeworld:candy_plains"]
+              }
+            }
+          },
+          "cakeworld:ore/fizzy_pearl": {
+            "block": "cakeworld:fizzy_pearl",
+            "enabled": true,
+            "source_mod": "cakeworld",
+            "retrogen": false,
+            "dimensions": {
+              "minecraft:overworld": {
+                "enabled": true,
+                "min_y": -48,
+                "max_y": 80,
+                "frequency": 0.35,
+                "quantity": 4,
+                "pattern": {
+                  "type": "orespawn:underfluids",
+                  "settings": {
+                    "spread": 5,
+                    "vertical_spread": 4,
+                    "node_size": 2,
+                    "length": 8,
+                    "fluid": "cakeworld:lemonade"
+                  }
+                },
+                "height_distribution": "uniform",
+                "discard_chance_on_air_exposure": 0.0,
+                "host_families": ["sedimentary", "metamorphic"],
+                "biome_ids": ["cakeworld:soda_ocean"],
+                "geomes": {
+                  "cakeworld:wafer_shelf": 3.0
+                }
+              }
+            }
+          }
+        },
+        "fluid_deposits": {
+          "cakeworld:fluid_deposit/jam": {
+            "block": "cakeworld:jam",
+            "enabled": true,
+            "dimensions": {
+              "minecraft:overworld": {
+                "enabled": true,
+                "min_y": -40,
+                "max_y": 48,
+                "frequency": 0.12,
+                "min_radius": 4,
+                "max_radius": 9,
+                "min_vertical_radius": 2,
+                "max_vertical_radius": 4,
+                "max_lobes": 3,
+                "min_solid_cover": 3,
+                "min_solid_shell": 1,
+                "host_families": ["sedimentary", "metamorphic"],
+                "geomes": {
+                  "cakeworld:cocoa_basin": 3.0,
+                  "cakeworld:wafer_shelf": 1.0,
+                  "cakeworld:peppermint_fold": 0.5,
+                  "cakeworld:rock_candy_uplift": 0.5
+                }
+              }
+            }
+          },
+          "cakeworld:fluid_deposit/custard": {
+            "block": "cakeworld:custard",
+            "enabled": true,
+            "dimensions": {
+              "minecraft:overworld": {
+                "enabled": true,
+                "min_y": -24,
+                "max_y": 64,
+                "frequency": 0.1,
+                "min_radius": 5,
+                "max_radius": 11,
+                "min_vertical_radius": 2,
+                "max_vertical_radius": 5,
+                "max_lobes": 3,
+                "min_solid_cover": 2,
+                "min_solid_shell": 1,
+                "host_families": ["sedimentary", "igneous_intrusive"],
+                "geomes": {
+                  "cakeworld:cocoa_basin": 1.2,
+                  "cakeworld:wafer_shelf": 3.0,
+                  "cakeworld:peppermint_fold": 0.6,
+                  "cakeworld:rock_candy_uplift": 0.6
+                }
+              }
+            }
+          },
+          "cakeworld:fluid_deposit/caramel": {
+            "block": "cakeworld:caramel",
+            "enabled": true,
+            "dimensions": {
+              "minecraft:overworld": {
+                "enabled": true,
+                "min_y": -48,
+                "max_y": 32,
+                "frequency": 0.09,
+                "min_radius": 4,
+                "max_radius": 10,
+                "min_vertical_radius": 2,
+                "max_vertical_radius": 4,
+                "max_lobes": 4,
+                "min_solid_cover": 4,
+                "min_solid_shell": 2,
+                "host_families": ["sedimentary", "metamorphic"],
+                "geomes": {
+                  "cakeworld:cocoa_basin": 2.5,
+                  "cakeworld:wafer_shelf": 2.0,
+                  "cakeworld:peppermint_fold": 0.5,
+                  "cakeworld:rock_candy_uplift": 0.8
+                }
+              }
+            }
+          },
+          "cakeworld:fluid_deposit/syrup": {
+            "block": "cakeworld:syrup",
+            "enabled": true,
+            "dimensions": {
+              "minecraft:overworld": {
+                "enabled": true,
+                "min_y": -32,
+                "max_y": 56,
+                "frequency": 0.08,
+                "min_radius": 4,
+                "max_radius": 8,
+                "min_vertical_radius": 2,
+                "max_vertical_radius": 4,
+                "max_lobes": 3,
+                "min_solid_cover": 3,
+                "min_solid_shell": 1,
+                "host_families": ["sedimentary", "igneous_intrusive"],
+                "geomes": {
+                  "cakeworld:cocoa_basin": 1.5,
+                  "cakeworld:wafer_shelf": 2.5,
+                  "cakeworld:peppermint_fold": 0.8,
+                  "cakeworld:rock_candy_uplift": 0.5
+                }
+              }
+            }
+          }
+        },
         "terrain_dimensions": {
           "minecraft:overworld": {
             "enabled": true,

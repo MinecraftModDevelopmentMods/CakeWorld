@@ -1,7 +1,16 @@
 {
   "replace": false,
   "values": [
-    "cakeworld:biscuit_stone",
-    "cakeworld:fudge_rock"
+    "cakeworld:nougat_rock",
+    "cakeworld:peppermint_rock",
+    "cakeworld:rock_candy",
+    "cakeworld:burnt_sugar_rock",
+    "cakeworld:rock_candy_deposit",
+    "cakeworld:liquorice_vein",
+    "cakeworld:cocoa_cloud",
+    "cakeworld:mint_crystal",
+    "cakeworld:sprinkle_cluster",
+    "cakeworld:rich_sprinkle_cluster",
+    "cakeworld:fizzy_pearl"
   ]
 }
