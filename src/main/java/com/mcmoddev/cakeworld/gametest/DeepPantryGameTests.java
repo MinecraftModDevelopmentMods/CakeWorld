@@ -108,7 +108,8 @@ public final class DeepPantryGameTests {
 			id("fluid_deposit/jam"),
 			id("fluid_deposit/custard"),
 			id("fluid_deposit/caramel"),
-			id("fluid_deposit/syrup"));
+			id("fluid_deposit/syrup"),
+			id("fluid_deposit/hot_fudge"));
 
 	private DeepPantryGameTests() {
 	}
@@ -141,6 +142,26 @@ public final class DeepPantryGameTests {
 						+ missing(EXPECTED_FLUID_DEPOSIT_IDS,
 								profile.fluidDepositIds()));
 		JsonObject profileJson = profile.toJson();
+		JsonObject fluidDepositRules =
+				profileJson.getAsJsonObject("fluid_deposits");
+		JsonObject hotFudgeDeposit = fluidDepositRules.getAsJsonObject(
+				"cakeworld:fluid_deposit/hot_fudge");
+		JsonObject hotFudgeNether = fluidDimensionRule(fluidDepositRules,
+				"cakeworld:fluid_deposit/hot_fudge",
+				"minecraft:the_nether");
+		require(helper, "cakeworld:hot_fudge".equals(
+						hotFudgeDeposit.get("block").getAsString())
+						&& hotFudgeNether.get("enabled").getAsBoolean()
+						&& hotFudgeNether.get("min_y").getAsInt() == 16
+						&& hotFudgeNether.get("max_y").getAsInt() == 112
+						&& jsonArrayContains(hotFudgeNether,
+								"host_families", "igneous_volcanic")
+						&& jsonArrayContains(hotFudgeNether,
+								"biome_ids", "cakeworld:fudge_wastes")
+						&& hotFudgeNether.getAsJsonObject("geomes")
+								.get("cakeworld:fudge_mantle")
+								.getAsDouble() > 0.0D,
+				"Hot Fudge deposit lost its Nether block, range, host, biome, or geome contract");
 		JsonObject candyGlassRock = rockRule(profileJson,
 				"cakeworld:rock/candy_glass");
 		require(helper, candyGlassRock.has("ore_replaceable")
@@ -1192,15 +1213,22 @@ public final class DeepPantryGameTests {
 
 	private static JsonObject fluidDimensionRule(JsonObject deposits,
 			String depositId) {
+		return fluidDimensionRule(deposits, depositId,
+				"minecraft:overworld");
+	}
+
+	private static JsonObject fluidDimensionRule(JsonObject deposits,
+			String depositId, String dimensionId) {
 		if (deposits == null || !deposits.has(depositId)) {
 			throw new AssertionError("Missing fluid deposit " + depositId);
 		}
 		JsonObject deposit = deposits.getAsJsonObject(depositId);
 		JsonObject dimensions = deposit.getAsJsonObject("dimensions");
-		if (dimensions == null || !dimensions.has("minecraft:overworld")) {
-			throw new AssertionError("Missing Overworld rule for " + depositId);
+		if (dimensions == null || !dimensions.has(dimensionId)) {
+			throw new AssertionError("Missing " + dimensionId
+					+ " rule for " + depositId);
 		}
-		return dimensions.getAsJsonObject("minecraft:overworld");
+		return dimensions.getAsJsonObject(dimensionId);
 	}
 
 	private static JsonObject oreDimensionRule(JsonObject ores, String oreId) {

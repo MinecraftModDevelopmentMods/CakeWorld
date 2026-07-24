@@ -21,7 +21,7 @@ provider definition.
 ## Showcase Profiles
 
 CakeWorld defines three templates around one canonical profile model so common
-settings cannot drift. Provider revision 10 currently packages the two
+settings cannot drift. Provider revision 11 currently packages the two
 adventure templates; the diagnostic Sampler remains a Slice 7 feature.
 
 | ID | Template | Selection | Purpose |
@@ -167,7 +167,7 @@ condition.
 
 | ID | OreSpawn capability | CakeWorld example | Placement | Slice | Verification expectation |
 |---|---|---|---|---|---|
-| OS-089 | Provider-owned multi-dimension fluid deposit | Declare jam, custard, caramel, syrup, and hot-fudge reservoirs with stable rule IDs. | Main | 2/4 | Every enabled dimension resolves a real fluid block and its independent placement settings. |
+| OS-089 | Provider-owned multi-dimension fluid deposit | Five stable rules declare jam, custard, caramel, and syrup in the Overworld plus Hot Fudge in the Nether. | Main | 2/4 | Revision 11 baked five definitions across two dimensions; the fixed normal world gained 3,383 Hot Fudge cells over the revision-10 baseline and retained exactly 121,073 after reload. The BaseMetals template retained 121,068 plus all ten enabled counterparts after reload. |
 | OS-090 | Fluid Y range and frequency | Separate shallow custard pockets from deep jam or hot-fudge reservoirs. | Main | 2/4 | No blocks occur outside range; attempt statistics match rarity classes. |
 | OS-091 | Horizontal and vertical radius | Use broad shallow syrup lenses and compact deep jam bulbs. | Main | 2 | Fixed-seed sections visibly distinguish both geometries. |
 | OS-092 | Multi-lobe geometry | **Shelved as exact integrated proof:** the adventure keeps configured multi-lobe caramel and jam reservoirs, but merged final fluid components have no lobe or placement provenance. | Main | 2 | Re-enter when a deterministic public fixture or off-hot-path trace exposes the chosen lobe count; cover, shell, bounds, bake, and generated output remain separately verified. |
@@ -311,6 +311,15 @@ ocean floors. CakeWorld retains the declarative Fizzy Pearl example and a
 public-registry compiler test, but it must not claim generated-world proof
 until OreSpawn offers a surface/fluid-column anchor, an independent search
 range, or an equivalent compiled hot-path-safe setting.
+
+`OS-089` has independent source, bake, differential-world, reload, and
+integrated-mod evidence. Revision 11 adds
+`cakeworld:fluid_deposit/hot_fudge` only in the Nether, restricted to Fudge
+Wastes, Fudge Mantle, and volcanic edible hosts from Y 16 through 112. Against
+the otherwise identical fixed-seed revision-10 scan, Hot Fudge increased from
+117,690 to 121,073 cells and retained that count after reload. The BaseMetals
+template independently baked the same five deposits across two dimensions,
+retained 121,068 cells after reload, and kept every enabled metal counterpart.
 
 `OS-092` is implemented declaratively but cannot yet receive exact
 integrated-world lobe-count proof from the child-mod API. Final chunks retain
