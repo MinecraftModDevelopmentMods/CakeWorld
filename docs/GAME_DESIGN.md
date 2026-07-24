@@ -348,6 +348,7 @@ These are CakeWorld additions rather than vanilla replacements.
 | STRUCT-023 | Core | 2 | Rock-Candy Crystal Mine | Cavern landmark exposing safe examples of geology, host families, and compact deposits. |
 | STRUCT-024 | Core | 1 | Cookbook Kiosk | Small starter landmark that restores a lost Cookbook and teaches discovery without becoming a quest marker. |
 | STRUCT-025 | Expansion | 3/4/5 | Roadside Curiosity Set | Biome-specific tiny scenes, carts, picnic spots, wells, rescue shelters, and visual jokes that reward wandering without map clutter. |
+| STRUCT-026 | Core | 1 | First Bite Picnic Hamlet | Sparse Chocolate Sponge Meadows welcome stop containing a Cookbook Kiosk, two icing-roof shelters, cushioned seats, and a biscuit path; it is deliberately smaller than a village. |
 
 ## Delivery Slices
 

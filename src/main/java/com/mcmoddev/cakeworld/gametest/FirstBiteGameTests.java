@@ -1,6 +1,7 @@
 package com.mcmoddev.cakeworld.gametest;
 
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 
@@ -24,6 +25,7 @@ import com.mcmoddev.cakeworld.init.CakeWorldItems;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.gametest.framework.GameTest;
@@ -47,11 +49,14 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.MobSpawnSettings;
+import net.minecraft.world.level.levelgen.GenerationStep;
+import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import net.minecraftforge.common.util.FakePlayerFactory;
+import com.mcmoddev.cakeworld.world.StarterPicnicFeature;
 
 @GameTestHolder(CakeWorld.MODID)
 @PrefixGameTestTemplate(false)
@@ -345,6 +350,68 @@ public final class FirstBiteGameTests {
 				"minecraft:husbandry/bred_all_animals", "minecraft:sheep");
 		requireCriterion(helper, advancementPlayer,
 				"minecraft:adventure/kill_all_mobs", "minecraft:zombie");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void starterPicnicBuildsAReadableCookbookLandmark(
+			GameTestHelper helper) {
+		BlockPos relativeCentre = new BlockPos(5, 20, 5);
+		for (int x = 1; x <= 9; x++) {
+			for (int z = 1; z <= 9; z++) {
+				helper.setBlock(new BlockPos(x, 19, z), Blocks.STONE);
+				helper.setBlock(new BlockPos(x, 20, z),
+						CakeWorldBlocks.CHOCOLATE_SPONGE.get());
+				for (int y = 21; y <= 25; y++) {
+					helper.setBlock(new BlockPos(x, y, z), Blocks.AIR);
+				}
+			}
+		}
+		BlockPos absoluteCentre = helper.absolutePos(relativeCentre);
+		require(helper, StarterPicnicFeature.buildAt(helper.getLevel(),
+						new Random(1978L), absoluteCentre),
+				"The First Bite picnic refused a safe flat site");
+		helper.assertBlockPresent(CakeWorldBlocks.COOKBOOK_KIOSK.get(),
+				relativeCentre.above());
+
+		int spongeSeatsAndBorder = 0;
+		int icingRoof = 0;
+		for (int x = -4; x <= 4; x++) {
+			for (int z = -4; z <= 4; z++) {
+				for (int y = 0; y <= 3; y++) {
+					BlockState state = helper.getLevel().getBlockState(
+							absoluteCentre.offset(x, y, z));
+					if (state.is(CakeWorldBlocks.CHOCOLATE_SPONGE.get())) {
+						spongeSeatsAndBorder++;
+					}
+					if (state.is(CakeWorldBlocks.ICING.get())) {
+						icingRoof++;
+					}
+				}
+			}
+		}
+		// The biscuit approach deliberately replaces one of the 32 border
+		// blocks; the remaining 31 plus four seats total 35 sponge blocks.
+		require(helper, spongeSeatsAndBorder == 35 && icingRoof == 18,
+				"The picnic lost its cushioned border, seats, or two icing roofs: "
+						+ spongeSeatsAndBorder + " sponge, " + icingRoof + " icing");
+
+		Biome candyPlains = helper.getLevel().registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY)
+				.get(CakeWorldBiomes.CANDY_PLAINS.getId());
+		require(helper, candyPlains != null,
+				"Could not inspect the picnic's target biome");
+		boolean installed = false;
+		for (Holder<PlacedFeature> feature : candyPlains.getGenerationSettings()
+				.features().get(GenerationStep.Decoration.SURFACE_STRUCTURES.ordinal())) {
+			if (feature.unwrapKey().map(key -> key.location().equals(
+					StarterPicnicFeature.ID)).orElse(false)) {
+				installed = true;
+				break;
+			}
+		}
+		require(helper, installed,
+				"The First Bite picnic was not installed in Candy Plains worldgen");
 		helper.succeed();
 	}
 
