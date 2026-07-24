@@ -1,0 +1,298 @@
+{
+  "schema_version": 4,
+  "provider_modid": "cakeworld",
+  "provider_revision": 1,
+  "rocks": {
+    "cakeworld:rock/chocolate_sponge": {
+      "block": "cakeworld:chocolate_sponge",
+      "enabled": true,
+      "family": "sedimentary",
+      "depth_peak": 72,
+      "depth_spread": 48,
+      "min_y": -64,
+      "max_y": 319,
+      "weight": 1.0,
+      "ore_replaceable": true,
+      "geomes": {},
+      "dimensions": ["minecraft:overworld"]
+    },
+    "cakeworld:rock/icing": {
+      "block": "cakeworld:icing",
+      "enabled": true,
+      "family": "metamorphic",
+      "depth_peak": 48,
+      "depth_spread": 64,
+      "min_y": -64,
+      "max_y": 319,
+      "weight": 0.8,
+      "ore_replaceable": true,
+      "geomes": {},
+      "dimensions": ["minecraft:overworld", "minecraft:the_end"]
+    },
+    "cakeworld:rock/biscuit_stone": {
+      "block": "cakeworld:biscuit_stone",
+      "enabled": true,
+      "family": "igneous_intrusive",
+      "depth_peak": 16,
+      "depth_spread": 80,
+      "min_y": -64,
+      "max_y": 319,
+      "weight": 1.4,
+      "ore_replaceable": true,
+      "geomes": {},
+      "dimensions": ["minecraft:overworld", "minecraft:the_end"]
+    },
+    "cakeworld:rock/biscuit_sand": {
+      "block": "cakeworld:biscuit_sand",
+      "enabled": true,
+      "family": "sedimentary",
+      "depth_peak": 76,
+      "depth_spread": 34,
+      "min_y": -64,
+      "max_y": 319,
+      "weight": 0.75,
+      "ore_replaceable": true,
+      "geomes": {},
+      "dimensions": ["minecraft:overworld"]
+    },
+    "cakeworld:rock/fudge_rock": {
+      "block": "cakeworld:fudge_rock",
+      "enabled": true,
+      "family": "igneous_volcanic",
+      "depth_peak": 48,
+      "depth_spread": 96,
+      "min_y": 0,
+      "max_y": 255,
+      "weight": 1.0,
+      "ore_replaceable": true,
+      "geomes": {},
+      "dimensions": ["minecraft:the_nether"]
+    }
+  },
+  "templates": {
+    "cakeworld:edible_world": {
+      "name_key": "template.cakeworld.edible_world",
+      "description_key": "template.cakeworld.edible_world.description",
+      "required_mods": ["cakeworld"],
+      "auto_select": true,
+      "auto_select_priority": 100,
+      "profile": {
+        "geology_mode": "geome",
+        "manage_vanilla_ores": false,
+        "terrain_dimensions": {
+          "minecraft:overworld": {
+            "enabled": true,
+            "biome_ids": [],
+            "biome_namespaces": [],
+            "host_blocks": ["minecraft:stone", "minecraft:deepslate"],
+            "host_tags": []
+          },
+          "minecraft:the_nether": {
+            "enabled": true,
+            "biome_ids": [],
+            "biome_namespaces": [],
+            "host_blocks": ["minecraft:netherrack", "minecraft:basalt", "minecraft:blackstone"],
+            "host_tags": []
+          },
+          "minecraft:the_end": {
+            "enabled": true,
+            "biome_ids": [],
+            "biome_namespaces": [],
+            "host_blocks": ["minecraft:end_stone"],
+            "host_tags": []
+          }
+        },
+        "biome_palettes": {
+          "cakeworld:overworld_oceans": {
+            "dimension": "minecraft:overworld",
+            "enabled": true,
+            "mode": "replace",
+            "scope": "all",
+            "region_size": "large",
+            "coverage": 1.0,
+            "fallback_weight": 0.0,
+            "include_namespaces": [],
+            "exclude_namespaces": ["cakeworld"],
+            "biomes": {
+              "cakeworld:soda_ocean": {
+                "enabled": true,
+                "weight": 1.0,
+                "similar_biomes": [
+                  "minecraft:ocean",
+                  "minecraft:deep_ocean",
+                  "minecraft:cold_ocean",
+                  "minecraft:deep_cold_ocean",
+                  "minecraft:frozen_ocean",
+                  "minecraft:deep_frozen_ocean",
+                  "minecraft:lukewarm_ocean",
+                  "minecraft:deep_lukewarm_ocean",
+                  "minecraft:warm_ocean"
+                ],
+                "required_similar_biomes": [],
+                "min_temperature": -2.0,
+                "max_temperature": 2.0,
+                "min_downfall": 0.0,
+                "max_downfall": 1.0,
+                "surface": {
+                  "top_block": "cakeworld:biscuit_sand",
+                  "filler_block": "cakeworld:biscuit_sand",
+                  "underwater_block": "cakeworld:biscuit_sand",
+                  "filler_depth": 4
+                }
+              }
+            }
+          },
+          "cakeworld:overworld_land": {
+            "dimension": "minecraft:overworld",
+            "enabled": true,
+            "mode": "replace",
+            "scope": "all",
+            "region_size": "large",
+            "coverage": 1.0,
+            "fallback_weight": 0.0,
+            "include_namespaces": [],
+            "exclude_namespaces": ["cakeworld"],
+            "biomes": {
+              "cakeworld:candy_plains": {
+                "enabled": true,
+                "weight": 2.5,
+                "similar_biomes": [],
+                "required_similar_biomes": [],
+                "min_temperature": 0.25,
+                "max_temperature": 2.0,
+                "min_downfall": 0.0,
+                "max_downfall": 0.65,
+                "surface": {
+                  "top_block": "cakeworld:icing",
+                  "filler_block": "cakeworld:chocolate_sponge",
+                  "underwater_block": "cakeworld:biscuit_sand",
+                  "filler_depth": 4
+                }
+              },
+              "cakeworld:cookie_forest": {
+                "enabled": true,
+                "weight": 2.0,
+                "similar_biomes": [],
+                "required_similar_biomes": [],
+                "min_temperature": 0.15,
+                "max_temperature": 1.5,
+                "min_downfall": 0.55,
+                "max_downfall": 1.0,
+                "surface": {
+                  "top_block": "cakeworld:chocolate_sponge",
+                  "filler_block": "cakeworld:chocolate_sponge",
+                  "underwater_block": "cakeworld:biscuit_sand",
+                  "filler_depth": 5
+                }
+              },
+              "cakeworld:marshmallow_peaks": {
+                "enabled": true,
+                "weight": 1.0,
+                "similar_biomes": [
+                  "minecraft:jagged_peaks",
+                  "minecraft:frozen_peaks",
+                  "minecraft:stony_peaks",
+                  "minecraft:snowy_slopes",
+                  "minecraft:grove"
+                ],
+                "required_similar_biomes": [],
+                "min_temperature": -2.0,
+                "max_temperature": 0.35,
+                "min_downfall": 0.0,
+                "max_downfall": 1.0,
+                "surface": {
+                  "top_block": "cakeworld:icing",
+                  "filler_block": "cakeworld:biscuit_stone",
+                  "underwater_block": "cakeworld:biscuit_sand",
+                  "filler_depth": 5
+                }
+              }
+            }
+          },
+          "cakeworld:nether": {
+            "dimension": "minecraft:the_nether",
+            "enabled": true,
+            "mode": "replace",
+            "scope": "all",
+            "region_size": "huge",
+            "coverage": 1.0,
+            "fallback_weight": 0.0,
+            "include_namespaces": [],
+            "exclude_namespaces": ["cakeworld"],
+            "biomes": {
+              "cakeworld:fudge_wastes": {
+                "enabled": true,
+                "weight": 1.0,
+                "similar_biomes": [],
+                "required_similar_biomes": [],
+                "min_temperature": -2.0,
+                "max_temperature": 2.0,
+                "min_downfall": 0.0,
+                "max_downfall": 1.0,
+                "surface": {
+                  "top_block": "cakeworld:fudge_rock",
+                  "filler_block": "cakeworld:fudge_rock",
+                  "ceiling_block": "cakeworld:fudge_rock",
+                  "filler_depth": 5
+                }
+              }
+            }
+          },
+          "cakeworld:end": {
+            "dimension": "minecraft:the_end",
+            "enabled": true,
+            "mode": "replace",
+            "scope": "all",
+            "region_size": "huge",
+            "coverage": 1.0,
+            "fallback_weight": 0.0,
+            "include_namespaces": [],
+            "exclude_namespaces": ["cakeworld"],
+            "biomes": {
+              "cakeworld:meringue_islands": {
+                "enabled": true,
+                "weight": 1.0,
+                "similar_biomes": [],
+                "required_similar_biomes": [],
+                "min_temperature": -2.0,
+                "max_temperature": 2.0,
+                "min_downfall": 0.0,
+                "max_downfall": 1.0,
+                "surface": {
+                  "top_block": "cakeworld:icing",
+                  "filler_block": "cakeworld:biscuit_stone",
+                  "underwater_block": "cakeworld:biscuit_stone",
+                  "filler_depth": 5
+                }
+              }
+            }
+          }
+        },
+        "dimension_materials": {
+          "cakeworld:overworld_materials": {
+            "dimension": "minecraft:overworld",
+            "enabled": true,
+            "default_fluid": "cakeworld:lemonade",
+            "deep_aquifer_fluid": "cakeworld:hot_fudge",
+            "deep_aquifer_max_y": -40,
+            "snow_block": "cakeworld:icing",
+            "ice_block": "cakeworld:frozen_lemonade"
+          },
+          "cakeworld:nether_materials": {
+            "dimension": "minecraft:the_nether",
+            "enabled": true,
+            "default_fluid": "cakeworld:hot_fudge",
+            "deep_aquifer_fluid": "cakeworld:hot_fudge",
+            "deep_aquifer_max_y": 31
+          },
+          "cakeworld:end_materials": {
+            "dimension": "minecraft:the_end",
+            "enabled": true,
+            "snow_block": "cakeworld:icing",
+            "ice_block": "cakeworld:frozen_lemonade"
+          }
+        }
+      }
+    }
+  }
+}
