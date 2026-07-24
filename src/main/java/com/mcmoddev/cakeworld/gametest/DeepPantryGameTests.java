@@ -29,6 +29,7 @@ import com.mcmoddev.orespawn.api.OreSpawnApi;
 import com.mcmoddev.orespawn.api.OreSpawnPatternRegistry;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.advancements.Advancement;
@@ -448,6 +449,50 @@ public final class DeepPantryGameTests {
 		helper.succeed();
 	}
 
+	@GameTest(template = EMPTY, timeoutTicks = 2400)
+	public static void focusedCoveredFluidDepositEnvelopeAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean("cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed covered-fluid audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel();
+		int auditChunkX = 16;
+		int auditChunkZ = 16;
+		int auditRadius = 4;
+		Map<String, FluidEnvelopeResult> results = new LinkedHashMap<>();
+		results.put("jam", auditFluidEnvelope(level,
+				CakeWorldFluids.JAM_BLOCK.get(), auditChunkX, auditChunkZ,
+				auditRadius, -40, 48, 3, 1));
+		results.put("custard", auditFluidEnvelope(level,
+				CakeWorldFluids.CUSTARD_BLOCK.get(), auditChunkX, auditChunkZ,
+				auditRadius, -24, 64, 2, 1));
+		results.put("caramel", auditFluidEnvelope(level,
+				CakeWorldFluids.CARAMEL_BLOCK.get(), auditChunkX, auditChunkZ,
+				auditRadius, -48, 32, 4, 2));
+		results.put("syrup", auditFluidEnvelope(level,
+				CakeWorldFluids.SYRUP_BLOCK.get(), auditChunkX, auditChunkZ,
+				auditRadius, -32, 56, 3, 1));
+
+		for (Map.Entry<String, FluidEnvelopeResult> entry
+				: results.entrySet()) {
+			FluidEnvelopeResult result = entry.getValue();
+			require(helper, result.fluidBlocks() > 0,
+					"Fixed-seed region contained no " + entry.getKey()
+							+ " deposit blocks");
+			require(helper, result.boundaryFaces() > 0,
+					"Fixed-seed " + entry.getKey()
+							+ " deposit exposed no measurable boundary");
+			require(helper, result.violations() == 0,
+					"Fixed-seed " + entry.getKey()
+							+ " deposit violated its solid envelope at "
+							+ result.firstViolation());
+		}
+		LOGGER.info("Focused covered-fluid envelope audit: {}", results);
+		helper.succeed();
+	}
+
 	@GameTest(template = EMPTY, timeoutTicks = 1200)
 	public static void baseMetalsCounterpartsPreserveTagsRecipesAndGeneration(
 			GameTestHelper helper) {
@@ -676,6 +721,70 @@ public final class DeepPantryGameTests {
 			}
 		}
 		return counts;
+	}
+
+	private static FluidEnvelopeResult auditFluidEnvelope(ServerLevel level,
+			Block fluidBlock, int centerChunkX, int centerChunkZ, int radius,
+			int requestedMinY, int requestedMaxY, int minimumSolidCover,
+			int minimumSolidShell) {
+		int minY = Math.max(level.getMinBuildHeight(), requestedMinY);
+		int maxY = Math.min(level.getMaxBuildHeight() - 1, requestedMaxY);
+		int fluidBlocks = 0;
+		int boundaryFaces = 0;
+		int violations = 0;
+		BlockPos firstViolation = null;
+		for (int chunkX = centerChunkX - radius;
+				chunkX <= centerChunkX + radius; chunkX++) {
+			for (int chunkZ = centerChunkZ - radius;
+					chunkZ <= centerChunkZ + radius; chunkZ++) {
+				level.getChunk(chunkX, chunkZ);
+				for (int x = chunkX << 4; x < (chunkX + 1) << 4; x++) {
+					for (int z = chunkZ << 4; z < (chunkZ + 1) << 4; z++) {
+						for (int y = minY; y <= maxY; y++) {
+							BlockPos position = new BlockPos(x, y, z);
+							if (!level.getBlockState(position).is(fluidBlock)) {
+								continue;
+							}
+							fluidBlocks++;
+							for (Direction direction : Direction.values()) {
+								if (level.getBlockState(position.relative(
+										direction)).is(fluidBlock)) {
+									continue;
+								}
+								boundaryFaces++;
+								int requiredLayers = direction == Direction.UP
+										? Math.max(minimumSolidCover,
+												minimumSolidShell)
+										: minimumSolidShell;
+								boolean sealed = true;
+								for (int layer = 1;
+										layer <= requiredLayers; layer++) {
+									BlockState envelope = level.getBlockState(
+											position.relative(direction, layer));
+									if (!envelope.is(fluidBlock)
+											&& (!envelope.getFluidState()
+													.isEmpty()
+													|| !envelope.getMaterial()
+															.blocksMotion())) {
+										sealed = false;
+										break;
+									}
+								}
+								if (!sealed) {
+									violations++;
+									if (firstViolation == null) {
+										firstViolation = position.relative(
+												direction).immutable();
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		return new FluidEnvelopeResult(fluidBlocks, boundaryFaces, violations,
+				firstViolation);
 	}
 
 	private static BlockPos locateBiome(GameTestHelper helper, ServerLevel level,
@@ -1028,5 +1137,9 @@ public final class DeepPantryGameTests {
 
 	private record DropExpectation(Item item, int minimum, int maximum,
 			String oreTag) {
+	}
+
+	private record FluidEnvelopeResult(int fluidBlocks, int boundaryFaces,
+			int violations, BlockPos firstViolation) {
 	}
 }

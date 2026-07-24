@@ -279,10 +279,21 @@ public-registry compiler test, but it must not claim generated-world proof
 until OreSpawn offers a surface/fluid-column anchor, an independent search
 range, or an equivalent compiled hot-path-safe setting.
 
-## Current Scaffold: Verified Prototype Evidence
+`OS-092` is implemented declaratively but cannot yet receive exact
+integrated-world lobe-count proof from the child-mod API. Final chunks retain
+the generated fluid and its solid envelope, but overlapping lobes and nearby
+deposits merge into ordinary fluid components with no placement origin or lobe
+provenance. CakeWorld can verify the configured maximum, successful bake,
+generated output, cover, and shell; it must not infer an exact lobe count from
+the merged component. Re-enter strict lobe-count verification when OreSpawn
+offers a deterministic placement fixture or optional diagnostic placement
+trace that is absent from the generation hot path.
 
-The scaffold proves that the integration direction works; it is not the
-finished implementation of the wishlist.
+## Original Scaffold: Verified Prototype Evidence
+
+This table records the verified handover scaffold before the delivery slices.
+It proves that the integration direction worked; it is not a description of
+the later wishlist implementation state.
 
 | Prototype | Current evidence | Product status |
 |---|---|---|
