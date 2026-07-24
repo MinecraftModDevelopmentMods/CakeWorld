@@ -28,6 +28,15 @@ packages are internal.
 `CakeWorldBiomes` uses `OreSpawnBiomes.copyAndRegister` to copy stable vanilla
 biome definitions and adjust their climate. Copying is a convenience for
 registration; placement is controlled by `biome_palettes` in the provider.
+CakeWorld also registers appropriate Forge `BiomeDictionary` types during
+common setup. Those types are required when the geology profile uses
+`biome_dictionary` rules; copying a biome does not copy its registry-key
+dictionary membership.
+
+Exact `biomes` weights and matching `biome_dictionary` weights are additive.
+OreSpawn's built-in dictionary defaults may also contribute generic geology
+such as mountain belts or coastal shelves, so a total-conversion provider
+should give its exact biome identities enough weight to remain readable.
 
 OreSpawn wraps the biome source that the dimension already uses. This means
 CakeWorld does not own the base climate sampler and does not need TerraBlender.
@@ -76,9 +85,11 @@ For a new rock:
 For a new biome:
 
 1. Register it directly or use `OreSpawnBiomes.copyAndRegister`.
-2. Add it to a provider palette with weight, climate range, optional similar
+2. Register its Forge `BiomeDictionary` types during common setup if geology
+   or compatibility rules use dictionary names.
+3. Add it to a provider palette with weight, climate range, optional similar
    biomes, and surface materials.
-3. Decide whether missing comparison biomes are optional (`similar_biomes`) or
+4. Decide whether missing comparison biomes are optional (`similar_biomes`) or
    make the entry unavailable (`required_similar_biomes`).
 
 For a new fluid:

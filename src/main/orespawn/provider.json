@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "provider_modid": "cakeworld",
-  "provider_revision": 8,
+  "provider_revision": 9,
   "templates": {
     "cakeworld:edible_world": {
       "name_key": "template.cakeworld.edible_world",
@@ -213,27 +213,38 @@
         },
         "biomes": {
           "cakeworld:candy_plains": {
-            "cakeworld:cocoa_basin": 3.0,
-            "cakeworld:wafer_shelf": 1.5
+            "cakeworld:cocoa_basin": 8.0,
+            "cakeworld:wafer_shelf": 6.0
           },
           "cakeworld:cookie_forest": {
-            "cakeworld:cocoa_basin": 2.0,
-            "cakeworld:wafer_shelf": 2.5
+            "cakeworld:cocoa_basin": 6.0,
+            "cakeworld:wafer_shelf": 8.0
           },
           "cakeworld:marshmallow_peaks": {
-            "cakeworld:peppermint_fold": 3.0,
-            "cakeworld:rock_candy_uplift": 3.0
+            "cakeworld:peppermint_fold": 6.0,
+            "cakeworld:rock_candy_uplift": 14.0
           },
           "cakeworld:soda_ocean": {
-            "cakeworld:wafer_shelf": 3.0,
-            "cakeworld:rock_candy_uplift": 1.2
+            "cakeworld:wafer_shelf": 12.0,
+            "cakeworld:rock_candy_uplift": 6.0
           },
           "cakeworld:fudge_wastes": {
-            "cakeworld:fudge_mantle": 5.0
+            "cakeworld:fudge_mantle": 12.0
           },
           "cakeworld:meringue_islands": {
-            "cakeworld:meringue_crust": 5.0,
-            "cakeworld:rock_candy_uplift": 1.5
+            "cakeworld:meringue_crust": 12.0,
+            "cakeworld:rock_candy_uplift": 4.0
+          }
+        },
+        "biome_dictionary": {
+          "COLD": {
+            "cakeworld:peppermint_fold": 8.0
+          },
+          "HOT": {
+            "cakeworld:fudge_mantle": 8.0
+          },
+          "MUSHROOM": {
+            "cakeworld:meringue_crust": 8.0
           }
         },
         "ores": {
@@ -359,6 +370,7 @@
                 "host_blocks": ["cakeworld:peppermint_rock"],
                 "geomes": {
                   "cakeworld:peppermint_fold": 5.0,
+                  "cakeworld:rock_candy_uplift": 2.5,
                   "cakeworld:cocoa_basin": 0.0
                 }
               }

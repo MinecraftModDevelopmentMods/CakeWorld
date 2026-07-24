@@ -5,9 +5,13 @@ import java.util.Objects;
 import com.mcmoddev.cakeworld.CakeWorld;
 import com.mcmoddev.orespawn.api.OreSpawnBiomes;
 
+import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraftforge.common.BiomeDictionary;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
@@ -34,6 +38,42 @@ public final class CakeWorldBiomes {
 
 	public static void register(IEventBus modBus) {
 		BIOMES.register(modBus);
+	}
+
+	public static void commonSetup(FMLCommonSetupEvent event) {
+		event.enqueueWork(() -> {
+			BiomeDictionary.addTypes(key(CANDY_PLAINS),
+					BiomeDictionary.Type.OVERWORLD,
+					BiomeDictionary.Type.PLAINS);
+			BiomeDictionary.addTypes(key(COOKIE_FOREST),
+					BiomeDictionary.Type.OVERWORLD,
+					BiomeDictionary.Type.FOREST,
+					BiomeDictionary.Type.DENSE,
+					BiomeDictionary.Type.WET);
+			BiomeDictionary.addTypes(key(MARSHMALLOW_PEAKS),
+					BiomeDictionary.Type.OVERWORLD,
+					BiomeDictionary.Type.MOUNTAIN,
+					BiomeDictionary.Type.PEAK,
+					BiomeDictionary.Type.COLD,
+					BiomeDictionary.Type.SNOWY);
+			BiomeDictionary.addTypes(key(SODA_OCEAN),
+					BiomeDictionary.Type.OVERWORLD,
+					BiomeDictionary.Type.OCEAN,
+					BiomeDictionary.Type.WATER);
+			BiomeDictionary.addTypes(key(FUDGE_WASTES),
+					BiomeDictionary.Type.NETHER,
+					BiomeDictionary.Type.HOT,
+					BiomeDictionary.Type.DRY,
+					BiomeDictionary.Type.WASTELAND);
+			BiomeDictionary.addTypes(key(MERINGUE_ISLANDS),
+					BiomeDictionary.Type.END,
+					BiomeDictionary.Type.VOID,
+					BiomeDictionary.Type.MAGICAL);
+		});
+	}
+
+	private static ResourceKey<Biome> key(RegistryObject<Biome> biome) {
+		return ResourceKey.create(Registry.BIOME_REGISTRY, biome.getId());
 	}
 
 	private static RegistryObject<Biome> copy(String name, String vanilla,

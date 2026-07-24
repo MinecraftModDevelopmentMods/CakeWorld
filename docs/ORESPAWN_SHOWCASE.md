@@ -95,7 +95,7 @@ condition.
 | OS-029 | Custom formation values | Use deliberately extreme but bounded formation settings in a labelled sampler quadrant. | Sampler | 7 | Values survive serialization and produce the expected extreme section without timeouts. |
 | OS-030 | Geomes | Define Cocoa Basin, Wafer Shelf, Peppermint Fold, Rock-Candy Uplift, Fudge Mantle, and Meringue Crust. | Main | 2/4/5 | The sampler API can identify every geome in a fixed-seed survey. |
 | OS-031 | Geome rock weights and vertical identity | Give each geome a recognisable palette rather than merely renaming the same strata. | Main | 2 | Block counts and column samples distinguish all six canonical geomes. |
-| OS-032 | Biome rules and biome-dictionary matching | Bias geomes using biome IDs and Forge biome-dictionary names, such as cold peppermint folds and hot fudge mantle exposure. | Main | 2 | Included biomes match; excluded and dictionary-mismatched controls do not. |
+| OS-032 | Biome rules and biome-dictionary matching | Bias geomes using exact CakeWorld biome IDs plus Forge COLD and HOT dictionary names; retain an unmatched MUSHROOM control. | Main | 2 | The active profile retains both rule forms, registered types match only intended biomes, fixed-seed samples observe both dictionary-biased geomes, and the exact profile survives reload. |
 | OS-033 | Terrain-replacement dimension controls | Enable complete replacement independently in Overworld, Nether, and End. | Main | 2/4/5 | Fresh chunks in all three dimensions contain no unintended ordinary base geology within the declared scope. |
 
 ### Biome overlay and world materials
@@ -173,7 +173,7 @@ condition.
 | OS-092 | Multi-lobe geometry | Make natural-looking connected caramel and jam reservoirs. | Main | 2 | Deposits never exceed configured maximum lobes and remain within safety bounds. |
 | OS-093 | Solid cover | Keep covered jam reservoirs concealed until found. | Main | 2 | Too-shallow fixtures reject; deposits meeting minimum cover generate. |
 | OS-094 | Solid shell | Prevent exposed or leaking fluid bodies where a shell is required. | Main | 2 | Shell inspection finds the declared minimum except at an intentional access feature. |
-| OS-095 | Fluid host blocks and tags | Restrict Jam through an explicit Wafer Rock host plus a family, and Custard through the edible-host tag. | Main | 2/4 | The active snapshot retains both host forms, the rules bake, and generated reservoirs replace eligible geology; a deterministic negative-host fixture must prove that adjacent controls remain untouched. |
+| OS-095 | Fluid host blocks and tags | Restrict Jam through an explicit Wafer Rock host plus a family, and Custard through the edible-host tag. | Main | 2/4 | The active snapshot retains both host forms, the rules bake, and generated reservoirs replace eligible geology; strict negative-host proof resumes when the public API exposes a compiled acceptance predicate or deterministic deposit fixture. |
 | OS-096 | Fluid biome filters | Start Jam only from Cookie Forest chunks and exclude Syrup starts from Soda Ocean chunks. | Main | 2/3 | Fixed-seed surveys find allowed output and no excluded starts; final lobes may cross underground biome-cell boundaries after an accepted surface-biome start. |
 | OS-097 | Fluid geome weights | Bias covered strawberry jam toward Cocoa Basin and deep hot fudge toward Fudge Mantle. | Main | 2/4 | Survey counts demonstrate the declared geome preferences. |
 
@@ -312,9 +312,18 @@ not clip every underground block to a three-dimensional biome cell. CakeWorld
 therefore uses an explicit Wafer Rock plus metamorphic-family Jam rule, a
 tag-hosted Custard rule, a Cookie Forest Jam allow-list, and a Soda Ocean Syrup
 deny-list. Fixed-seed generation and save/reload prove the baked filters
-produce and suppress starts as intended. Host-negative proof remains open
-until a deterministic fixture can preserve known pre-placement controls
-without relying on final-world provenance.
+produce and suppress starts as intended.
+
+Strict `OS-095` negative-host proof is shelved at the child-mod boundary.
+OreSpawn 4.0.1 supports only `com.mcmoddev.orespawn.api`; that API exposes
+declarative fluid definitions, the active profile, and read-only geology
+sampling, but not a compiled deposit acceptance predicate or deterministic
+placement fixture. Calling `worldgen.FluidDepositFeature` directly would
+couple this example mod to an unsupported implementation package. Final chunks
+also contain no pre-placement host or lobe provenance, so CakeWorld must not
+infer a negative control from neighbouring final blocks. Re-enter when the
+public API can run a baked deposit against a controlled eligible/ineligible
+host grid, or expose an equivalent off-hot-path deterministic fixture.
 
 `OS-025` uses sparse Candy Glass as the production non-replaceable control.
 The public sampler predicts the rock before final chunk materialization, then
@@ -327,6 +336,16 @@ work. Candy Glass also remains outside CakeWorld's general ore-host tag.
 declared vertical range with the Rock-Candy-bearing metamorphic host band.
 Fixed-seed three-band sampling must show a genuine middle peak, and the exact
 histogram must survive save/reload before the example is considered verified.
+
+`OS-032` demonstrates that exact biome-ID and Forge biome-dictionary weights
+are additive. CakeWorld registers explicit dictionary types for its biomes
+during common setup, adds COLD Peppermint and HOT Fudge weights, and keeps a
+MUSHROOM rule which intentionally matches none of the current CakeWorld
+biomes. OreSpawn's built-in dictionary defaults also apply to registered
+types, so the exact CakeWorld biome weights remain deliberately stronger than
+generic MOUNTAIN, FOREST, or OCEAN tendencies. Fixed-seed sampling must retain
+both Rock-Candy Uplift and Peppermint Fold in Marshmallow Peaks while Fudge
+Wastes remains dominated by Fudge Mantle.
 
 ## Original Scaffold: Verified Prototype Evidence
 

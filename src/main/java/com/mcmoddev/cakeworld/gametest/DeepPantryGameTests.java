@@ -17,6 +17,7 @@ import com.mojang.datafixers.util.Pair;
 import com.mojang.authlib.GameProfile;
 import com.mcmoddev.cakeworld.CakeWorld;
 import com.mcmoddev.cakeworld.compat.VanillaResourceAdvancements;
+import com.mcmoddev.cakeworld.init.CakeWorldBiomes;
 import com.mcmoddev.cakeworld.init.CakeWorldBlocks;
 import com.mcmoddev.cakeworld.init.CakeWorldFluids;
 import com.mcmoddev.orespawn.api.CompiledOrePattern;
@@ -35,6 +36,7 @@ import net.minecraft.core.Registry;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -60,6 +62,7 @@ import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.common.BiomeDictionary;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
@@ -545,6 +548,76 @@ public final class DeepPantryGameTests {
 				"Fixed-seed survey found no integrated Candy Glass control");
 		require(helper, survey.candyGlassManagedOreReplacements == 0,
 				"An OreSpawn-managed ore replaced predicted non-replaceable Candy Glass");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 2400)
+	public static void biomeIdAndDictionaryGeomeRulesAreBakedAndObserved(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean("cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed biome/geome-rule audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel overworld = helper.getLevel();
+		ServerLevel nether = overworld.getServer().getLevel(Level.NETHER);
+		require(helper, nether != null,
+				"Nether level was unavailable for dictionary geome proof");
+		JsonObject profile = OreSpawnApi.getActiveProfile(
+				overworld.getServer()).orElseThrow().toJson();
+		JsonObject biomeRules = profile.getAsJsonObject("biomes");
+		JsonObject dictionaryRules =
+				profile.getAsJsonObject("biome_dictionary");
+		require(helper, biomeRules != null
+						&& biomeRules.has("cakeworld:candy_plains")
+						&& dictionaryWeight(dictionaryRules, "COLD",
+								"cakeworld:peppermint_fold") == 8.0D
+						&& dictionaryWeight(dictionaryRules, "HOT",
+								"cakeworld:fudge_mantle") == 8.0D
+						&& dictionaryWeight(dictionaryRules, "MUSHROOM",
+								"cakeworld:meringue_crust") == 8.0D,
+				"Active profile lost exact-biome or dictionary geome rules");
+
+		ResourceKey<Biome> marshmallowPeaks = biomeKey(
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId());
+		ResourceKey<Biome> fudgeWastes = biomeKey(
+				CakeWorldBiomes.FUDGE_WASTES.getId());
+		require(helper,
+				BiomeDictionary.hasType(marshmallowPeaks,
+						BiomeDictionary.Type.COLD)
+						&& BiomeDictionary.hasType(fudgeWastes,
+								BiomeDictionary.Type.HOT),
+				"CakeWorld matching biome dictionary types were not registered");
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS.getId())) {
+			require(helper, !BiomeDictionary.hasType(biomeKey(biomeId),
+							BiomeDictionary.Type.MUSHROOM),
+					"Mismatched MUSHROOM control unexpectedly matched "
+							+ biomeId);
+		}
+
+		BlockPos marshmallowCenter = locateBiome(helper, overworld,
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId());
+		BlockPos fudgeCenter = locateBiome(helper, nether,
+				CakeWorldBiomes.FUDGE_WASTES.getId());
+		Map<ResourceLocation, Integer> marshmallowGeomes =
+				countGeomesForBiome(overworld, marshmallowCenter,
+						CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(), 4);
+		Map<ResourceLocation, Integer> fudgeGeomes =
+				countGeomesForBiome(nether, fudgeCenter,
+						CakeWorldBiomes.FUDGE_WASTES.getId(), 4);
+		LOGGER.info("Biome ID/dictionary geome audit: marshmallow_peaks={}, fudge_wastes={}",
+				marshmallowGeomes, fudgeGeomes);
+		require(helper, marshmallowGeomes.getOrDefault(
+						id("peppermint_fold"), 0) > 0,
+				"COLD Marshmallow Peaks produced no Peppermint Fold columns");
+		require(helper, fudgeGeomes.getOrDefault(id("fudge_mantle"), 0) > 0,
+				"HOT Fudge Wastes produced no Fudge Mantle columns");
 		helper.succeed();
 	}
 
@@ -1216,6 +1289,46 @@ public final class DeepPantryGameTests {
 		require(helper, match != null,
 				"Could not locate " + biomeId + " within 16,384 blocks");
 		return match.getFirst();
+	}
+
+	private static Map<ResourceLocation, Integer> countGeomesForBiome(
+			ServerLevel level, BlockPos center, ResourceLocation targetBiome,
+			int chunkRadius) {
+		GeologySampler sampler = OreSpawnApi.createSampler(level).orElseThrow();
+		Map<ResourceLocation, Integer> result = new LinkedHashMap<>();
+		int centerChunkX = Math.floorDiv(center.getX(), 16);
+		int centerChunkZ = Math.floorDiv(center.getZ(), 16);
+		for (int chunkX = centerChunkX - chunkRadius;
+				chunkX <= centerChunkX + chunkRadius; chunkX++) {
+			for (int chunkZ = centerChunkZ - chunkRadius;
+					chunkZ <= centerChunkZ + chunkRadius; chunkZ++) {
+				int blockX = (chunkX << 4) + 8;
+				int blockZ = (chunkZ << 4) + 8;
+				int surfaceY = level.getHeight(
+						Heightmap.Types.WORLD_SURFACE, blockX, blockZ);
+				GeologyColumn column = sampler.sampleColumn(
+						blockX, blockZ, surfaceY);
+				if (targetBiome.equals(column.biome())) {
+					result.merge(column.geome(), 1, Integer::sum);
+				}
+			}
+		}
+		return result;
+	}
+
+	private static ResourceKey<Biome> biomeKey(ResourceLocation biomeId) {
+		return ResourceKey.create(Registry.BIOME_REGISTRY, biomeId);
+	}
+
+	private static double dictionaryWeight(JsonObject rules, String type,
+			String geome) {
+		if (rules == null || !rules.has(type)
+				|| !rules.get(type).isJsonObject()) {
+			return Double.NaN;
+		}
+		JsonObject weights = rules.getAsJsonObject(type);
+		return weights.has(geome) ? weights.get(geome).getAsDouble()
+				: Double.NaN;
 	}
 
 	private static void assertUnderFluidPatternResolvesLemonade(

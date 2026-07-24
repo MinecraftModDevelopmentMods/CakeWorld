@@ -22,6 +22,7 @@ public final class CakeWorld {
 		CakeWorldEntities.register(modBus);
 		CakeWorldItems.register(modBus);
 		CakeWorldBiomes.register(modBus);
+		modBus.addListener(CakeWorldBiomes::commonSetup);
 		CakeWorldNetwork.register();
 	}
 }
