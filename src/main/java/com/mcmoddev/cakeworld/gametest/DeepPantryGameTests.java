@@ -690,6 +690,36 @@ public final class DeepPantryGameTests {
 	}
 
 	@GameTest(template = EMPTY, timeoutTicks = 2400)
+	public static void focusedExplicitOreHostAttributionAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean("cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed explicit ore-host attribution audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel();
+		BlockPos marshmallowPeaks = locateBiome(helper, level,
+				id("marshmallow_peaks"));
+		int marshmallowChunkX = Math.floorDiv(
+				marshmallowPeaks.getX(), 16);
+		int marshmallowChunkZ = Math.floorDiv(
+				marshmallowPeaks.getZ(), 16);
+
+		HostAttributionResult explicitResult =
+				auditPredictedExplicitOreHosts(level,
+				Map.of(CakeWorldBlocks.MINT_CRYSTAL.get(),
+						Set.of(CakeWorldBlocks.PEPPERMINT_ROCK.get())),
+				marshmallowChunkX, marshmallowChunkZ, 4, -56, 80);
+		LOGGER.info("Focused explicit ore-host attribution audit: {}",
+				explicitResult);
+		require(helper, explicitResult.outputs() > 0
+						&& explicitResult.violations() == 0,
+				"Explicit-host output disagreed with sampled pre-ore geology at "
+						+ explicitResult.firstViolationDetail());
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 2400)
 	public static void focusedTerrainAndAquiferBoundaryAudit(
 			GameTestHelper helper) {
 		if (!Boolean.getBoolean("cakeworld.fixedWorldgenEvidence")) {
@@ -1453,6 +1483,76 @@ public final class DeepPantryGameTests {
 		return new GeomePlacementSurvey(chunks, blocks);
 	}
 
+	private static HostAttributionResult auditPredictedExplicitOreHosts(
+			ServerLevel level,
+			Map<Block, Set<Block>> allowedBlocks, int centerChunkX,
+			int centerChunkZ, int radius, int requestedMinY,
+			int requestedMaxY) {
+		GeologySampler sampler = OreSpawnApi.createSampler(level).orElseThrow();
+		Map<ResourceLocation, Integer> outputsByBlock =
+				new LinkedHashMap<>();
+		Map<ResourceLocation, Integer> violationsByBlock =
+				new LinkedHashMap<>();
+		int outputs = 0;
+		int violations = 0;
+		BlockPos firstViolation = null;
+		String firstViolationDetail = null;
+		int minY = Math.max(level.getMinBuildHeight(), requestedMinY);
+		int maxY = Math.min(level.getMaxBuildHeight() - 1, requestedMaxY);
+		for (int chunkX = centerChunkX - radius;
+				chunkX <= centerChunkX + radius; chunkX++) {
+			for (int chunkZ = centerChunkZ - radius;
+					chunkZ <= centerChunkZ + radius; chunkZ++) {
+				level.getChunk(chunkX, chunkZ);
+				for (int x = chunkX << 4; x < (chunkX + 1) << 4; x++) {
+					for (int z = chunkZ << 4; z < (chunkZ + 1) << 4; z++) {
+						int surfaceY = level.getHeight(
+								Heightmap.Types.WORLD_SURFACE, x, z);
+						GeologyColumn column = sampler.sampleColumn(
+								x, z, surfaceY);
+						for (int y = minY; y <= maxY; y++) {
+							Block actual = level.getBlockState(
+									new BlockPos(x, y, z)).getBlock();
+							Set<Block> blocks = allowedBlocks.get(actual);
+							if (blocks == null) {
+								continue;
+							}
+							outputs++;
+							outputsByBlock.merge(
+									Registry.BLOCK.getKey(actual), 1,
+									Integer::sum);
+							Block predicted = column.rockAt(y).getBlock();
+							boolean accepted = blocks.contains(predicted);
+							if (!accepted) {
+								violations++;
+								ResourceLocation actualId =
+										Registry.BLOCK.getKey(actual);
+								violationsByBlock.merge(actualId, 1,
+										Integer::sum);
+								if (firstViolation == null) {
+									firstViolation = new BlockPos(
+											x, y, z);
+									firstViolationDetail =
+											firstViolation
+											+ " output=" + actualId
+											+ " predicted="
+											+ Registry.BLOCK.getKey(predicted)
+											+ " family="
+											+ column.familyAt(y)
+													.map(Enum::name)
+													.orElse("none");
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		return new HostAttributionResult(outputs, violations,
+				firstViolation, firstViolationDetail, outputsByBlock,
+				violationsByBlock);
+	}
+
 	private static void assertUnderFluidPatternResolvesLemonade(
 			GameTestHelper helper) {
 		OrePatternType type = OreSpawnPatternRegistry.registry().getValue(
@@ -1985,6 +2085,12 @@ public final class DeepPantryGameTests {
 			int chunks = chunks(geome);
 			return chunks == 0 ? 0.0D : blocks(geome) / (double) chunks;
 		}
+	}
+
+	private record HostAttributionResult(int outputs, int violations,
+			BlockPos firstViolation, String firstViolationDetail,
+			Map<ResourceLocation, Integer> outputsByBlock,
+			Map<ResourceLocation, Integer> violationsByBlock) {
 	}
 
 	private static final class GeologySurvey {

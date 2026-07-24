@@ -134,7 +134,7 @@ condition.
 | OS-058 | Single block output | Use one Rock-Candy Diamond output for its ordinary rule. | Main | 2 | Every successful placement uses the declared block. |
 | OS-059 | Weighted outputs | Mix ordinary and rich Sprinkle Cluster variants or flavour colours from one rule. | Main | 2 | Large fixed-seed counts match declared weights within tolerance. |
 | OS-060 | Deep output | Change vanilla-compatible resources to explicit deep CakeWorld ore blocks below the threshold. | Main | 2 | Adjacent samples above and below the cutoff use normal and deep outputs while keeping the same resource role. |
-| OS-061 | Source-mod ownership metadata | Associate conversion rules with the mod whose native generation they replace. | Main/BaseMetals | 2 | Takeover state is active only when the complete owning-provider rule set is valid. |
+| OS-061 | Source-mod ownership metadata | **Shelved as an ownership gate:** CakeWorld retains descriptive `source_mod` values, but OreSpawn 4.0.1 does not consult them when baking placement or takeover state. | Main/BaseMetals | 2 | Re-enter after OreSpawn validates the owning mod and complete rule set before enabling takeover; metadata acceptance alone is not behavioural proof. |
 | OS-062 | Native-generation suppression contract | Disable native vanilla/BaseMetals placement only after OreSpawn takeover is confirmed. | Main/BaseMetals | 2 | Chunk counts show one generation source, while an invalid profile falls safely back to native ownership. |
 | OS-063 | OS3-style ordinary-dimension selector | Demonstrate `orespawn:all_except_nether_end` with a harmless sprinkle resource. | Sampler | 7 | Fixture custom dimensions receive the rule; Nether and End do not. |
 | OS-064 | Explicit dimension override | Override or explicitly disable a selector-derived rule in one named dimension. | Sampler | 7 | The named dimension follows the explicit entry with no duplicate selector placement. |
@@ -145,9 +145,9 @@ condition.
 | OS-069 | Triangle height distribution | Use a Rock-Candy resource range centred on its actual metamorphic hosts. | Main | 2 | A fixed-seed three-band histogram peaks in the middle third and tapers toward both ends across save/reload. |
 | OS-070 | Bottom-triangle height distribution | Concentrate a precious resource toward the bottom of its range. | Main | 2 | Histogram strongly favours lower Y without escaping the range. |
 | OS-071 | Uniform-bottom-triangle height distribution | Use a mixed distribution for varied Cocoa or Mint deposits. | Main | 2 | Histogram shows both uniform coverage and a lower-Y bias. |
-| OS-072 | Air-exposure discard chance | Keep selected crystals mostly buried while leaving an accessible introductory resource visible. | Main | 2 | Controlled exposed/covered hosts show the configured discard behavior at 0, partial, and 1.0 fixtures. |
-| OS-073 | Host geology family | Put resources in wafer, nougat, peppermint, rock-candy, fudge, or burnt-sugar family rocks. | Main | 2/4/5 | Family-matched hosts place; non-matching families remain unchanged. |
-| OS-074 | Explicit host blocks | Target a precise edible substrate where family matching would be too broad. | Main | 2 | Only listed block states are replaced. |
+| OS-072 | Air-exposure discard chance | **Shelved as strict showcase proof:** production rules retain their declarative chances, but the full baked acceptance predicate is private to OreSpawn's compiled pattern context. | Main | 2 | Re-enter when a public controlled-host fixture can exercise 0, partial, and 1.0 values without calling internal generation code. |
+| OS-073 | Host geology family | **Shelved as strict negative proof:** production resources still use family hosts, but final blocks discard their original host and placement provenance. | Main | 2/4/5 | The public sampler agreed for 2,432/2,441 representative outputs; nine Cocoa/Liquorice cells could be later overlap or a real mismatch and cannot be classified honestly without a public controlled-host fixture. |
+| OS-074 | Explicit host blocks | Mint Crystal targets Peppermint Rock where family matching would be too broad. | Main | 2 | The fixed revision-10 world found 25 Mint outputs and the public pre-ore sampler attributed all 25 to Peppermint Rock, with zero violations. |
 | OS-075 | Host tags | Use CakeWorld and Forge replaceable tags to preserve pack extensibility. | Main | 2 | A tagged fixture block becomes eligible without changing the provider file. |
 | OS-076 | Weighted host blocks and tags | Bias a diagnostic rule between two eligible host sources. | Sampler | 7 | Successful host selections approximate their weights. |
 | OS-077 | Biome include/exclude IDs | **Shelved:** intended to allow Sprinkle Clusters in Candy Plains and exclude protected Cookie Forest. OreSpawn 4.0.1 currently resolves ore-filter IDs to Forge-registry biome objects, but generation receives dynamic-registry biome instances and compares by identity. | Main | 2 | Re-enter after OreSpawn compares stable biome keys: included biome places, excluded biome does not, and neutral control does not place. CakeWorld revision 10 proved the current include rule bakes but produces zero output; the normal profile therefore leaves Sprinkle unfiltered rather than claiming a broken example. |
@@ -170,7 +170,7 @@ condition.
 | OS-089 | Provider-owned multi-dimension fluid deposit | Declare jam, custard, caramel, syrup, and hot-fudge reservoirs with stable rule IDs. | Main | 2/4 | Every enabled dimension resolves a real fluid block and its independent placement settings. |
 | OS-090 | Fluid Y range and frequency | Separate shallow custard pockets from deep jam or hot-fudge reservoirs. | Main | 2/4 | No blocks occur outside range; attempt statistics match rarity classes. |
 | OS-091 | Horizontal and vertical radius | Use broad shallow syrup lenses and compact deep jam bulbs. | Main | 2 | Fixed-seed sections visibly distinguish both geometries. |
-| OS-092 | Multi-lobe geometry | Make natural-looking connected caramel and jam reservoirs. | Main | 2 | Deposits never exceed configured maximum lobes and remain within safety bounds. |
+| OS-092 | Multi-lobe geometry | **Shelved as exact integrated proof:** the adventure keeps configured multi-lobe caramel and jam reservoirs, but merged final fluid components have no lobe or placement provenance. | Main | 2 | Re-enter when a deterministic public fixture or off-hot-path trace exposes the chosen lobe count; cover, shell, bounds, bake, and generated output remain separately verified. |
 | OS-093 | Solid cover | Keep covered jam reservoirs concealed until found. | Main | 2 | Too-shallow fixtures reject; deposits meeting minimum cover generate. |
 | OS-094 | Solid shell | Prevent exposed or leaking fluid bodies where a shell is required. | Main | 2 | Shell inspection finds the declared minimum except at an intentional access feature. |
 | OS-095 | Fluid host blocks and tags | Restrict Jam through an explicit Wafer Rock host plus a family, and Custard through the edible-host tag. | Main | 2/4 | The active snapshot retains both host forms, the rules bake, and generated reservoirs replace eligible geology; strict negative-host proof resumes when the public API exposes a compiled acceptance predicate or deterministic deposit fixture. |
@@ -283,6 +283,24 @@ object, so horizontal size, thickness, waviness, edge irregularity, and
 continuity apply to every geome in that profile. CakeWorld retains the stable
 global defaults and the per-geome creative goal, but must not claim
 per-geome-preset proof until OreSpawn supports baked geome-level overrides.
+
+`OS-061` remains useful descriptive metadata, but source inspection confirms
+that OreSpawn 4.0.1 reads `source_mod` only in configuration, editor, and
+migration paths. Ore placement and takeover bake from native-generation,
+suppression, management, and output-block settings without validating that
+the named source mod owns the rule. CakeWorld therefore must not present
+metadata acceptance as a safe ownership gate.
+
+`OS-072`, `OS-073`, and `OS-074` distinguish three different evidence
+boundaries. Air-exposure rejection and full host acceptance run inside
+OreSpawn's internal compiled placement context, which has no public
+controlled-block fixture. Final output also loses its original host and
+placement origin. A public-sampler comparison consequently left nine
+unclassifiable family-host cells among 2,441 Cocoa Cloud and Liquorice Vein
+outputs. By contrast, Mint Crystal's explicit-block rule had a sound
+representative result: all 25 fixed-world outputs sampled Peppermint Rock and
+none sampled another host. CakeWorld verifies that explicit example while
+shelving stricter exposure and family-negative claims.
 
 `OS-085` is currently blocked at integrated-world verification. OreSpawn's
 under-fluids pattern samples only two blocks vertically from an ordinary
