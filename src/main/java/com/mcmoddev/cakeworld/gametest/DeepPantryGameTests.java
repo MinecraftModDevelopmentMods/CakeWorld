@@ -622,6 +622,74 @@ public final class DeepPantryGameTests {
 	}
 
 	@GameTest(template = EMPTY, timeoutTicks = 2400)
+	public static void focusedGeomeWeightedPlacementAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean("cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed geome-weighted placement audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel();
+		JsonObject profile = OreSpawnApi.getActiveProfile(
+				level.getServer()).orElseThrow().toJson();
+		JsonObject ores = profile.getAsJsonObject("ores");
+		JsonObject deposits = profile.getAsJsonObject("fluid_deposits");
+		JsonObject mint = oreDimensionRule(ores,
+				"cakeworld:ore/mint_crystal");
+		JsonObject custard = fluidDimensionRule(deposits,
+				"cakeworld:fluid_deposit/custard");
+		require(helper,
+				geomeWeight(mint,
+								"cakeworld:peppermint_fold") == 5.0D
+						&& geomeWeight(mint,
+								"cakeworld:rock_candy_uplift") == 2.5D
+						&& geomeWeight(mint,
+								"cakeworld:cocoa_basin") == 0.0D
+						&& geomeWeight(custard,
+								"cakeworld:cocoa_basin") == 1.2D
+						&& geomeWeight(custard,
+								"cakeworld:wafer_shelf") == 3.0D,
+				"Active profile lost the representative ore or fluid geome weights");
+
+		BlockPos marshmallowPeaks = locateBiome(helper, level,
+				id("marshmallow_peaks"));
+		int marshmallowChunkX = Math.floorDiv(
+				marshmallowPeaks.getX(), 16);
+		int marshmallowChunkZ = Math.floorDiv(
+				marshmallowPeaks.getZ(), 16);
+
+		GeomePlacementSurvey mintSurvey = surveyTargetBlocksByGeome(
+				level, Set.of(CakeWorldBlocks.MINT_CRYSTAL.get()),
+				marshmallowChunkX, marshmallowChunkZ, 4, -56, 80,
+				false);
+		GeomePlacementSurvey custardSurvey = surveyTargetBlocksByGeome(
+				level, Set.of(CakeWorldFluids.CUSTARD_BLOCK.get()),
+				16, 16, 4, -24, 64, true);
+
+		LOGGER.info("Focused geome-weighted placement audit: mint_crystal={}, custard={}",
+				mintSurvey, custardSurvey);
+		ResourceLocation cocoaBasin = id("cocoa_basin");
+		ResourceLocation waferShelf = id("wafer_shelf");
+		ResourceLocation peppermintFold = id("peppermint_fold");
+		ResourceLocation rockCandyUplift = id("rock_candy_uplift");
+		require(helper, mintSurvey.chunks(peppermintFold) > 0
+						&& mintSurvey.chunks(rockCandyUplift) > 0
+						&& mintSurvey.chunks(cocoaBasin) > 0
+						&& mintSurvey.blocks(peppermintFold) > 0
+						&& mintSurvey.blocks(cocoaBasin) == 0,
+				"Mint Crystal positive/zero geome controls were not observed");
+		require(helper, custardSurvey.chunks(cocoaBasin) > 0
+						&& custardSurvey.chunks(waferShelf) > 0
+						&& custardSurvey.blocks(cocoaBasin) > 0
+						&& custardSurvey.blocks(waferShelf) > 0,
+				"Custard survey did not cover and place in both weighted geomes");
+		require(helper, custardSurvey.blocksPerChunk(waferShelf)
+						> custardSurvey.blocksPerChunk(cocoaBasin),
+				"Custard 3.0/1.2 weights did not favour Wafer Shelf");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 2400)
 	public static void focusedTerrainAndAquiferBoundaryAudit(
 			GameTestHelper helper) {
 		if (!Boolean.getBoolean("cakeworld.fixedWorldgenEvidence")) {
@@ -1331,6 +1399,60 @@ public final class DeepPantryGameTests {
 				: Double.NaN;
 	}
 
+	private static double geomeWeight(JsonObject rule, String geome) {
+		if (rule == null || !rule.has("geomes")
+				|| !rule.get("geomes").isJsonObject()) {
+			return Double.NaN;
+		}
+		JsonObject weights = rule.getAsJsonObject("geomes");
+		return weights.has(geome) ? weights.get(geome).getAsDouble()
+				: Double.NaN;
+	}
+
+	private static GeomePlacementSurvey surveyTargetBlocksByGeome(
+			ServerLevel level, Set<Block> targets, int centerChunkX,
+			int centerChunkZ, int radius, int requestedMinY,
+			int requestedMaxY, boolean classifyAtSurface) {
+		GeologySampler sampler = OreSpawnApi.createSampler(level).orElseThrow();
+		Map<ResourceLocation, Integer> chunks = new LinkedHashMap<>();
+		Map<ResourceLocation, Integer> blocks = new LinkedHashMap<>();
+		int minY = Math.max(level.getMinBuildHeight(), requestedMinY);
+		int maxY = Math.min(level.getMaxBuildHeight() - 1, requestedMaxY);
+		for (int chunkX = centerChunkX - radius;
+				chunkX <= centerChunkX + radius; chunkX++) {
+			for (int chunkZ = centerChunkZ - radius;
+					chunkZ <= centerChunkZ + radius; chunkZ++) {
+				net.minecraft.world.level.chunk.LevelChunk chunk =
+						level.getChunk(chunkX, chunkZ);
+				int blockX = (chunkX << 4) + 8;
+				int blockZ = (chunkZ << 4) + 8;
+				int classificationY = classifyAtSurface
+						? chunk.getHeight(Heightmap.Types.WORLD_SURFACE_WG,
+								8, 8)
+						: Math.max(level.getMinBuildHeight(), 0);
+				GeologyColumn column = sampler.sampleColumn(
+						blockX, blockZ, classificationY);
+				ResourceLocation geome = column.geome();
+				chunks.merge(geome, 1, Integer::sum);
+				int targetCount = 0;
+				for (int x = chunkX << 4; x < (chunkX + 1) << 4; x++) {
+					for (int z = chunkZ << 4; z < (chunkZ + 1) << 4; z++) {
+						for (int y = minY; y <= maxY; y++) {
+							if (targets.contains(level.getBlockState(
+									new BlockPos(x, y, z)).getBlock())) {
+								targetCount++;
+							}
+						}
+					}
+				}
+				if (targetCount > 0) {
+					blocks.merge(geome, targetCount, Integer::sum);
+				}
+			}
+		}
+		return new GeomePlacementSurvey(chunks, blocks);
+	}
+
 	private static void assertUnderFluidPatternResolvesLemonade(
 			GameTestHelper helper) {
 		OrePatternType type = OreSpawnPatternRegistry.registry().getValue(
@@ -1846,6 +1968,23 @@ public final class DeepPantryGameTests {
 
 	private record RockDepthSummary(int samples, int minimumY, int maximumY,
 			double meanY) {
+	}
+
+	private record GeomePlacementSurvey(
+			Map<ResourceLocation, Integer> chunksByGeome,
+			Map<ResourceLocation, Integer> blocksByGeome) {
+		int chunks(ResourceLocation geome) {
+			return chunksByGeome.getOrDefault(geome, 0);
+		}
+
+		int blocks(ResourceLocation geome) {
+			return blocksByGeome.getOrDefault(geome, 0);
+		}
+
+		double blocksPerChunk(ResourceLocation geome) {
+			int chunks = chunks(geome);
+			return chunks == 0 ? 0.0D : blocks(geome) / (double) chunks;
+		}
 	}
 
 	private static final class GeologySurvey {
