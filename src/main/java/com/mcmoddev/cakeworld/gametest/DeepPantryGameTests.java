@@ -12,17 +12,23 @@ import org.apache.logging.log4j.Logger;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.mojang.datafixers.util.Pair;
 import com.mojang.authlib.GameProfile;
 import com.mcmoddev.cakeworld.CakeWorld;
 import com.mcmoddev.cakeworld.compat.VanillaResourceAdvancements;
 import com.mcmoddev.cakeworld.init.CakeWorldBlocks;
 import com.mcmoddev.cakeworld.init.CakeWorldFluids;
+import com.mcmoddev.orespawn.api.CompiledOrePattern;
 import com.mcmoddev.orespawn.api.GeologyColumn;
 import com.mcmoddev.orespawn.api.GeologyProfileView;
 import com.mcmoddev.orespawn.api.GeologySampler;
+import com.mcmoddev.orespawn.api.OrePatternType;
+import com.mcmoddev.orespawn.api.OrePlacementContext;
 import com.mcmoddev.orespawn.api.OreSpawnApi;
+import com.mcmoddev.orespawn.api.OreSpawnPatternRegistry;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.gametest.framework.GameTest;
@@ -41,6 +47,7 @@ import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RedStoneOreBlock;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.LootTable;
@@ -206,6 +213,84 @@ public final class DeepPantryGameTests {
 		LOGGER.info("Deep Pantry generated-world audit: sampler predictions={}, rocks={}, deposits={}, fluid deposits={}",
 				sampledCakeWorldRocks, describe(generatedRocks),
 				describe(generatedDeposits), describe(generatedFluidDeposits));
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 200)
+	public static void underFluidPatternResolvesCakeWorldLemonade(
+			GameTestHelper helper) {
+		assertUnderFluidPatternResolvesLemonade(helper);
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 2400)
+	public static void focusedBiomeWorldgenAuditsRareOutputs(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean("cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed rare-output survey; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel();
+		BlockPos marshmallowPeaks = locateBiome(helper, level,
+				id("marshmallow_peaks"));
+		BlockPos sodaOcean = locateBiome(helper, level, id("soda_ocean"));
+
+		int marshmallowChunkX = Math.floorDiv(marshmallowPeaks.getX(), 16);
+		int marshmallowChunkZ = Math.floorDiv(marshmallowPeaks.getZ(), 16);
+		Map<Block, Integer> mintRegion = scanDimension(level,
+				Set.of(
+						CakeWorldBlocks.PEPPERMINT_ROCK.get(),
+						CakeWorldBlocks.MINT_CRYSTAL.get(),
+						CakeWorldBlocks.ROCK_CANDY_DEPOSIT.get()),
+				marshmallowChunkX, marshmallowChunkZ, 4, -64, 96);
+		require(helper, mintRegion.getOrDefault(
+						CakeWorldBlocks.PEPPERMINT_ROCK.get(), 0) > 0,
+				"Marshmallow Peaks region contained no Peppermint Rock host");
+		require(helper, mintRegion.getOrDefault(
+						CakeWorldBlocks.MINT_CRYSTAL.get(), 0) > 0,
+				"Focused Marshmallow Peaks region generated no Mint Crystal");
+
+		int sodaChunkX = Math.floorDiv(sodaOcean.getX(), 16);
+		int sodaChunkZ = Math.floorDiv(sodaOcean.getZ(), 16);
+		Map<Block, Integer> sodaRegion = scanDimension(level,
+				Set.of(
+						CakeWorldBlocks.FIZZY_PEARL.get(),
+						CakeWorldFluids.LEMONADE_BLOCK.get()),
+				sodaChunkX, sodaChunkZ, 4, -64, 96);
+		Map<ResourceLocation, Integer> sodaSurfaceBiomes =
+				countChunkCenterBiomes(level, sodaChunkX, sodaChunkZ, 4, 64);
+		Map<ResourceLocation, Integer> sodaOreFilterBiomes =
+				countChunkCenterBiomes(level, sodaChunkX, sodaChunkZ, 4, 0);
+		Map<ResourceLocation, Integer> sodaSurfaceGeomes =
+				countChunkCenterGeomes(helper, level, sodaChunkX, sodaChunkZ,
+						4, 64);
+		Map<ResourceLocation, Integer> sodaOreFilterGeomes =
+				countChunkCenterGeomes(helper, level, sodaChunkX, sodaChunkZ,
+						4, 0);
+		Map<Block, Integer> lemonadeFloor = countBlocksDirectlyUnderFluid(
+				level, CakeWorldFluids.LEMONADE.get(),
+				sodaChunkX, sodaChunkZ, 4, -64, 96);
+		LOGGER.info("Focused Soda Ocean diagnostics: location={}, blocks={}, surface_biomes={}, ore_filter_biomes={}, surface_geomes={}, ore_filter_geomes={}, lemonade_floor={}",
+				sodaOcean, describe(sodaRegion), sodaSurfaceBiomes,
+				sodaOreFilterBiomes, sodaSurfaceGeomes, sodaOreFilterGeomes,
+				describe(lemonadeFloor));
+		int pearlsDirectlyUnderLemonade = countTargetUnderFluid(level,
+				CakeWorldBlocks.FIZZY_PEARL.get(),
+				CakeWorldFluids.LEMONADE.get(),
+				sodaChunkX, sodaChunkZ, 4, -64, 96);
+		int fizzyPearls = sodaRegion.getOrDefault(
+				CakeWorldBlocks.FIZZY_PEARL.get(), 0);
+		if (fizzyPearls > 0) {
+			require(helper, pearlsDirectlyUnderLemonade > 0,
+					"Fizzy Pearls generated without an observed under-lemonade origin");
+		} else {
+			LOGGER.warn("Known OS-085 integrated-world gap: fixed-seed Soda Ocean contained Lemonade and compatible floor hosts but generated no Fizzy Pearls; the public pattern compiler is tested separately");
+		}
+
+		LOGGER.info("Focused Deep Pantry audit: marshmallow_peaks={} mint_region={}, soda_ocean={} fizzy_region={}, pearls_under_lemonade={}",
+				marshmallowPeaks, describe(mintRegion), sodaOcean,
+				describe(sodaRegion), pearlsDirectlyUnderLemonade);
 		helper.succeed();
 	}
 
@@ -385,6 +470,149 @@ public final class DeepPantryGameTests {
 			}
 		}
 		return counts;
+	}
+
+	private static BlockPos locateBiome(GameTestHelper helper, ServerLevel level,
+			ResourceLocation biomeId) {
+		Pair<BlockPos, Holder<Biome>> match = level.findNearestBiome(
+				holder -> holder.unwrapKey().map(
+						key -> key.location().equals(biomeId)).orElse(false),
+				new BlockPos(0, 64, 0), 16384, 8);
+		require(helper, match != null,
+				"Could not locate " + biomeId + " within 16,384 blocks");
+		return match.getFirst();
+	}
+
+	private static void assertUnderFluidPatternResolvesLemonade(
+			GameTestHelper helper) {
+		OrePatternType type = OreSpawnPatternRegistry.registry().getValue(
+				new ResourceLocation("orespawn", "underfluids"));
+		require(helper, type != null,
+				"OreSpawn underfluids pattern is not registered");
+		JsonObject settings = new JsonObject();
+		settings.addProperty("fluid", "cakeworld:lemonade");
+		CompiledOrePattern pattern = type.decode(settings);
+		boolean placed = pattern.place(new OrePlacementContext() {
+			private final java.util.Random random = new java.util.Random(1L);
+
+			@Override public java.util.Random random() { return random; }
+			@Override public int originX() { return 0; }
+			@Override public int originY() { return 32; }
+			@Override public int originZ() { return 0; }
+			@Override public int minY() { return -64; }
+			@Override public int maxY() { return 96; }
+			@Override public int quantity() { return 4; }
+			@Override public int spread() { return 5; }
+			@Override public int verticalSpread() { return 4; }
+			@Override public int nodeSize() { return 2; }
+			@Override public boolean inside(int x, int y, int z) { return true; }
+			@Override public boolean isFluid(int x, int y, int z,
+					net.minecraft.world.level.material.Fluid fluid) {
+				return fluid == CakeWorldFluids.LEMONADE.get();
+			}
+			@Override public boolean tryPlace(int x, int y, int z) {
+				return true;
+			}
+		});
+		require(helper, placed,
+				"OreSpawn underfluids pattern did not resolve CakeWorld lemonade");
+	}
+
+	private static Map<ResourceLocation, Integer> countChunkCenterBiomes(
+			ServerLevel level, int centerChunkX, int centerChunkZ, int radius,
+			int y) {
+		Map<ResourceLocation, Integer> counts = new LinkedHashMap<>();
+		for (int chunkX = centerChunkX - radius;
+				chunkX <= centerChunkX + radius; chunkX++) {
+			for (int chunkZ = centerChunkZ - radius;
+					chunkZ <= centerChunkZ + radius; chunkZ++) {
+				BlockPos center = new BlockPos((chunkX << 4) + 8, y,
+						(chunkZ << 4) + 8);
+				level.getBiome(center).unwrapKey().ifPresent(key ->
+						counts.merge(key.location(), 1, Integer::sum));
+			}
+		}
+		return counts;
+	}
+
+	private static Map<Block, Integer> countBlocksDirectlyUnderFluid(
+			ServerLevel level, net.minecraft.world.level.material.Fluid fluid,
+			int centerChunkX, int centerChunkZ, int radius,
+			int requestedMinY, int requestedMaxY) {
+		Map<Block, Integer> counts = new LinkedHashMap<>();
+		int minY = Math.max(level.getMinBuildHeight(), requestedMinY);
+		int maxY = Math.min(level.getMaxBuildHeight() - 2, requestedMaxY);
+		for (int chunkX = centerChunkX - radius;
+				chunkX <= centerChunkX + radius; chunkX++) {
+			for (int chunkZ = centerChunkZ - radius;
+					chunkZ <= centerChunkZ + radius; chunkZ++) {
+				for (int x = chunkX << 4; x < (chunkX + 1) << 4; x++) {
+					for (int z = chunkZ << 4; z < (chunkZ + 1) << 4; z++) {
+						for (int y = minY; y <= maxY; y++) {
+							BlockPos position = new BlockPos(x, y, z);
+							if (level.getFluidState(position).isEmpty()
+									&& level.getFluidState(position.above())
+											.getType().isSame(fluid)) {
+								counts.merge(level.getBlockState(position)
+										.getBlock(), 1, Integer::sum);
+							}
+						}
+					}
+				}
+			}
+		}
+		return counts;
+	}
+
+	private static Map<ResourceLocation, Integer> countChunkCenterGeomes(
+			GameTestHelper helper, ServerLevel level, int centerChunkX,
+			int centerChunkZ, int radius, int biomeY) {
+		GeologySampler sampler = OreSpawnApi.createSampler(level)
+				.orElseThrow(() -> new AssertionError(
+						"OreSpawn sampler unavailable for focused region"));
+		Map<ResourceLocation, Integer> counts = new LinkedHashMap<>();
+		for (int chunkX = centerChunkX - radius;
+				chunkX <= centerChunkX + radius; chunkX++) {
+			for (int chunkZ = centerChunkZ - radius;
+					chunkZ <= centerChunkZ + radius; chunkZ++) {
+				int x = (chunkX << 4) + 8;
+				int z = (chunkZ << 4) + 8;
+				ResourceLocation geome = sampler.sampleColumn(x, z, biomeY)
+						.geome();
+				counts.merge(geome, 1, Integer::sum);
+			}
+		}
+		require(helper, !counts.isEmpty(),
+				"Focused region produced no geology samples");
+		return counts;
+	}
+
+	private static int countTargetUnderFluid(ServerLevel level, Block target,
+			net.minecraft.world.level.material.Fluid fluid,
+			int centerChunkX, int centerChunkZ, int radius,
+			int requestedMinY, int requestedMaxY) {
+		int count = 0;
+		int minY = Math.max(level.getMinBuildHeight(), requestedMinY);
+		int maxY = Math.min(level.getMaxBuildHeight() - 2, requestedMaxY);
+		for (int chunkX = centerChunkX - radius;
+				chunkX <= centerChunkX + radius; chunkX++) {
+			for (int chunkZ = centerChunkZ - radius;
+					chunkZ <= centerChunkZ + radius; chunkZ++) {
+				for (int x = chunkX << 4; x < (chunkX + 1) << 4; x++) {
+					for (int z = chunkZ << 4; z < (chunkZ + 1) << 4; z++) {
+						for (int y = minY; y <= maxY; y++) {
+							BlockPos position = new BlockPos(x, y, z);
+							if (level.getBlockState(position).is(target)
+									&& level.getFluidState(position.above())
+											.getType().isSame(fluid)) {
+								count++;
+							}
+						}
+					}
+				}
+			}
+		}
+		return count;
 	}
 
 	@GameTest(template = EMPTY)

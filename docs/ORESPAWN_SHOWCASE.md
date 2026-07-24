@@ -158,7 +158,7 @@ condition.
 | OS-082 | Normal-cloud pattern | Use broad Cocoa Clouds. | Main | 2 | Deposits form diffuse three-dimensional clouds with the expected density. |
 | OS-083 | Precision pattern | Use small, exact Mint Crystal placements. | Main | 2 | Shapes and successful-block budgets are reproducible at fixed seed. |
 | OS-084 | Cluster pattern | Use Sprinkle Clusters. | Main | 2 | Several compact local clusters form per placement attempt. |
-| OS-085 | Under-fluids pattern | Put Fizzy Pearls under lemonade and soda-floor surfaces. | Main | 2/3 | Placements occur below the required fluid and not under an air control. |
+| OS-085 | Under-fluids pattern | Put Fizzy Pearls under lemonade and soda-floor surfaces. | Main | 2/3 | The registered Lemonade fluid resolves through the public pattern API; integrated placements occur below it and not under an air control. |
 | OS-086 | Public custom-pattern registry | Register `cakeworld:layer_cake` as an experimental `OrePatternType`. | Sampler | 7 | Codec decodes once, compiler runs while baking, and only the compiled placer runs during generation. |
 | OS-087 | Custom pattern settings JSON | Give `layer_cake` explicit layer count, radius, thickness, and flavour-output settings. | Sampler | 7 | Valid settings round-trip; invalid bounds fail validation with a useful path. |
 | OS-088 | Custom-pattern performance decision | Keep, simplify, or shelve `layer_cake` based on clarity and benchmark evidence rather than novelty alone. | Sampler | 7 | Ledger records benchmark, comparison pattern, decision, reason, commit, and test evidence. |
@@ -266,6 +266,18 @@ small allocation-free placement function to the hot path.
 A clever feature that makes ordinary generation unstable, hard to reason
 about, or materially slower may be moved to the Sampler, simplified, or
 shelved. The ledger must preserve the benchmark and decision.
+
+## Known Showcase Re-entry Conditions
+
+`OS-085` is currently blocked at integrated-world verification. OreSpawn's
+under-fluids pattern samples only two blocks vertically from an ordinary
+ore-placement origin, while the ore rule's `min_y` and `max_y` also bound the
+pattern's descent to the fluid floor. A child provider therefore cannot bias
+origins toward sea level while also allowing descent to substantially deeper
+ocean floors. CakeWorld retains the declarative Fizzy Pearl example and a
+public-registry compiler test, but it must not claim generated-world proof
+until OreSpawn offers a surface/fluid-column anchor, an independent search
+range, or an equivalent compiled hot-path-safe setting.
 
 ## Current Scaffold: Verified Prototype Evidence
 

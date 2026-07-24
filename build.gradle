@@ -18,6 +18,8 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 println "Java: ${System.getProperty 'java.version'}, JVM: ${System.getProperty 'java.vm.version'} (${System.getProperty 'java.vendor'}), Arch: ${System.getProperty 'os.arch'}"
 def baseMetalsIntegration = providers.gradleProperty('cakeworldBaseMetalsRuntime')
         .map { it.toBoolean() }.getOrElse(false)
+def freshWorldgenIntegration = providers.gradleProperty(
+        'cakeworldFreshWorldgenRuntime').map { it.toBoolean() }.getOrElse(false)
 minecraft {
     // The mappings can be changed at any time and must be in the following format.
     // Channel:   Version:
@@ -105,8 +107,13 @@ minecraft {
         gameTestServer {
             if (baseMetalsIntegration) {
                 workingDirectory project.file('run-basemetals')
+            } else if (freshWorldgenIntegration) {
+                workingDirectory project.file('run-fresh-worldgen-fixed')
             }
             property 'forge.enabledGameTestNamespaces', mod_id
+            if (freshWorldgenIntegration) {
+                property 'cakeworld.fixedWorldgenEvidence', 'true'
+            }
             if (providers.gradleProperty('orespawnBenchmarkMode').isPresent()) {
                 property 'orespawn.worldgenBenchmarkMode',
                         providers.gradleProperty('orespawnBenchmarkMode').get()
@@ -306,13 +313,26 @@ def prepareGameTestStructures = tasks.register('prepareGameTestStructures', Copy
     from layout.projectDirectory.dir('src/gametest/resources/gameteststructures')
     into layout.projectDirectory.dir(baseMetalsIntegration
             ? 'run-basemetals/gameteststructures'
-            : 'run/gameteststructures')
+            : freshWorldgenIntegration
+                    ? 'run-fresh-worldgen-fixed/gameteststructures'
+                    : 'run/gameteststructures')
+}
+
+def prepareFreshWorldgenServer = tasks.register(
+        'prepareFreshWorldgenServer', Copy) {
+    group = 'verification'
+    description = 'Installs the fixed-seed server properties for focused worldgen proof.'
+    onlyIf { freshWorldgenIntegration }
+    from layout.projectDirectory.file(
+            'src/gametest/resources/fixed-worldgen-server.properties')
+    into layout.projectDirectory.dir('run-fresh-worldgen-fixed')
+    rename { 'server.properties' }
 }
 
 tasks.matching { it.name == 'prepareRunGameTestServer' }.configureEach {
-    dependsOn prepareGameTestStructures
+    dependsOn prepareGameTestStructures, prepareFreshWorldgenServer
 }
 
 tasks.matching { it.name == 'runGameTestServer' }.configureEach {
-    dependsOn prepareGameTestStructures
+    dependsOn prepareGameTestStructures, prepareFreshWorldgenServer
 }
