@@ -229,6 +229,32 @@ public final class DeepPantryGameTests {
 		helper.succeed();
 	}
 
+	@GameTest(template = EMPTY, timeoutTicks = 200)
+	public static void compiledDefaultAndPrecisionPatternsRespectBudgets(
+			GameTestHelper helper) {
+		PatternAudit compact = auditCompiledPattern(
+				new ResourceLocation("orespawn", "default"),
+				6, 3, 2, 4, 8, 1978L);
+		PatternAudit precision = auditCompiledPattern(
+				new ResourceLocation("orespawn", "precision"),
+				5, 4, 3, 2, 8, 1978L);
+		require(helper, compact.changed() && compact.placements() == 6,
+				"Default pattern did not consume exactly its six-block budget: "
+						+ compact);
+		require(helper, compact.maximumDistanceSquared() <= 4,
+				"Default pattern escaped its compact connected shape: "
+						+ compact);
+		require(helper, precision.changed() && precision.placements() == 5,
+				"Precision pattern did not consume exactly its five-block budget: "
+						+ precision);
+		require(helper, precision.maximumDistanceSquared() <= 4,
+				"Precision pattern escaped its decoded radius-two sphere: "
+						+ precision);
+		LOGGER.info("Compiled CakeWorld pattern audit: default={}, precision={}",
+				compact, precision);
+		helper.succeed();
+	}
+
 	@GameTest(template = EMPTY, timeoutTicks = 2400)
 	public static void focusedBiomeWorldgenAuditsRareOutputs(
 			GameTestHelper helper) {
@@ -256,6 +282,43 @@ public final class DeepPantryGameTests {
 		require(helper, mintRegion.getOrDefault(
 						CakeWorldBlocks.MINT_CRYSTAL.get(), 0) > 0,
 				"Focused Marshmallow Peaks region generated no Mint Crystal");
+		Map<Integer, Integer> mintCrystalYs = countTargetYLevels(level,
+				Set.of(CakeWorldBlocks.MINT_CRYSTAL.get()),
+				marshmallowChunkX, marshmallowChunkZ, 4, -64, 96);
+		Map<Integer, Integer> deepMintOutputYs =
+				countTargetYLevelsAdjacentTo(level,
+						CakeWorldBlocks.ROCK_CANDY_DEPOSIT.get(),
+						CakeWorldBlocks.PEPPERMINT_ROCK.get(),
+						marshmallowChunkX, marshmallowChunkZ, 4, -64, -24);
+		Map<Integer, Integer> ordinaryRockCandyDepositYs =
+				countTargetYLevelsNotAdjacentTo(level,
+						CakeWorldBlocks.ROCK_CANDY_DEPOSIT.get(),
+						CakeWorldBlocks.PEPPERMINT_ROCK.get(),
+						marshmallowChunkX, marshmallowChunkZ, 4, -32, 96);
+		require(helper, countAtOrBelow(mintCrystalYs, -24) == 0,
+				"Mint Crystal remained above-ground output below its -24 deep-output threshold");
+		require(helper, !deepMintOutputYs.isEmpty(),
+				"Focused Peppermint host generated no Rock-Candy deep output at or below -24");
+		Map<Integer, Integer> combinedMintOutputYs = mergeYCounts(
+				mintCrystalYs, deepMintOutputYs);
+		int bottomMintBand = countInRange(combinedMintOutputYs, -56, -11);
+		int middleMintBand = countInRange(combinedMintOutputYs, -10, 35);
+		int upperMintBand = countInRange(combinedMintOutputYs, 36, 80);
+		require(helper, bottomMintBand > middleMintBand
+						&& bottomMintBand > upperMintBand,
+				"Mint bottom-triangle output did not favour the lower third: "
+						+ combinedMintOutputYs);
+		int lowerRockCandyBand = countInRange(
+				ordinaryRockCandyDepositYs, -32, 10);
+		int middleRockCandyBand = countInRange(
+				ordinaryRockCandyDepositYs, 11, 53);
+		int upperRockCandyBand = countInRange(
+				ordinaryRockCandyDepositYs, 54, 96);
+		LOGGER.info("Focused ore-height diagnostics: mint_crystal_y={}, deep_mint_output_y={}, mint_bands=[{},{},{}], ordinary_rock_candy_deposit_y={}, rock_candy_bands=[{},{},{}]",
+				mintCrystalYs, deepMintOutputYs,
+				bottomMintBand, middleMintBand, upperMintBand,
+				ordinaryRockCandyDepositYs, lowerRockCandyBand,
+				middleRockCandyBand, upperRockCandyBand);
 
 		int sodaChunkX = Math.floorDiv(sodaOcean.getX(), 16);
 		int sodaChunkZ = Math.floorDiv(sodaOcean.getZ(), 16);
@@ -365,6 +428,67 @@ public final class DeepPantryGameTests {
 		LOGGER.info("Focused realm audit: nether_blocks={}, nether_biomes={}, nether_geomes={}, end_rocks={}, end_biomes={}, end_geomes={}, end_metamorphic={}",
 				describe(netherBlocks), netherBiomes, netherGeomes,
 				describe(endRocks), endBiomes, endGeomes, endMetamorphic);
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 2400)
+	public static void focusedGeomeAndRockDepthDistributionAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean("cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed geome/depth audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel overworld = helper.getLevel();
+		ServerLevel nether = helper.getLevel().getServer().getLevel(Level.NETHER);
+		ServerLevel end = helper.getLevel().getServer().getLevel(Level.END);
+		require(helper, nether != null && end != null,
+				"Fixed-seed geome survey could not resolve Nether and End levels");
+		BlockPos marshmallowPeaks = locateBiome(helper, overworld,
+				id("marshmallow_peaks"));
+		BlockPos sodaOcean = locateBiome(helper, overworld, id("soda_ocean"));
+
+		GeologySurvey survey = new GeologySurvey();
+		sampleGeologyRegion(overworld, 0, 0, 4, -64, 128, survey);
+		sampleGeologyRegion(overworld, 16, 16, 4, -64, 128, survey);
+		sampleGeologyRegion(overworld,
+				Math.floorDiv(marshmallowPeaks.getX(), 16),
+				Math.floorDiv(marshmallowPeaks.getZ(), 16),
+				4, -64, 128, survey);
+		sampleGeologyRegion(overworld,
+				Math.floorDiv(sodaOcean.getX(), 16),
+				Math.floorDiv(sodaOcean.getZ(), 16),
+				4, -64, 128, survey);
+		sampleGeologyRegion(nether, 0, 0, 4, 0, 127, survey);
+		sampleGeologyRegion(end, 0, 0, 4, 0, 255, survey);
+
+		LOGGER.info("Focused geome/depth survey: geome_columns={}, geome_rocks={}, rock_depths={}",
+				survey.geomeColumns, describeNested(survey.geomeRocks),
+				describeDepths(survey.rockYLevels));
+		require(helper, survey.geomeColumns.keySet().containsAll(
+						EXPECTED_GEOME_IDS),
+				"Fixed-seed sampler did not observe every CakeWorld geome: "
+						+ missing(EXPECTED_GEOME_IDS,
+								survey.geomeColumns.keySet()));
+		assertGeomeSignature(helper, survey, id("cocoa_basin"),
+				CakeWorldBlocks.CHOCOLATE_SPONGE.get());
+		assertGeomeSignature(helper, survey, id("wafer_shelf"),
+				CakeWorldBlocks.WAFER_ROCK.get());
+		assertGeomeSignature(helper, survey, id("peppermint_fold"),
+				CakeWorldBlocks.PEPPERMINT_ROCK.get());
+		assertGeomeSignature(helper, survey, id("rock_candy_uplift"),
+				CakeWorldBlocks.ROCK_CANDY.get());
+		assertGeomeSignature(helper, survey, id("fudge_mantle"),
+				CakeWorldBlocks.FUDGE_ROCK.get());
+		assertGeomeSignature(helper, survey, id("meringue_crust"),
+				CakeWorldBlocks.NOUGAT_ROCK.get());
+		require(helper, meanY(survey, CakeWorldBlocks.FUDGE_ROCK.get())
+						> meanY(survey,
+								CakeWorldBlocks.BURNT_SUGAR_ROCK.get()),
+				"Fudge Rock did not retain a shallower identity than Burnt-Sugar Rock");
+		require(helper, meanY(survey, CakeWorldBlocks.WAFER_ROCK.get())
+						> meanY(survey, CakeWorldBlocks.NOUGAT_ROCK.get()),
+				"Wafer did not retain a shallower identity than Nougat");
 		helper.succeed();
 	}
 
@@ -723,6 +847,84 @@ public final class DeepPantryGameTests {
 		return counts;
 	}
 
+	private static Map<Integer, Integer> countTargetYLevelsAdjacentTo(
+			ServerLevel level, Block target, Block adjacent,
+			int centerChunkX, int centerChunkZ, int radius,
+			int requestedMinY, int requestedMaxY) {
+		return countTargetYLevelsByAdjacency(level, target, adjacent,
+				centerChunkX, centerChunkZ, radius, requestedMinY,
+				requestedMaxY, true);
+	}
+
+	private static Map<Integer, Integer> countTargetYLevelsNotAdjacentTo(
+			ServerLevel level, Block target, Block adjacent,
+			int centerChunkX, int centerChunkZ, int radius,
+			int requestedMinY, int requestedMaxY) {
+		return countTargetYLevelsByAdjacency(level, target, adjacent,
+				centerChunkX, centerChunkZ, radius, requestedMinY,
+				requestedMaxY, false);
+	}
+
+	private static Map<Integer, Integer> countTargetYLevelsByAdjacency(
+			ServerLevel level, Block target, Block adjacent,
+			int centerChunkX, int centerChunkZ, int radius,
+			int requestedMinY, int requestedMaxY, boolean requireAdjacent) {
+		Map<Integer, Integer> counts = new LinkedHashMap<>();
+		int minY = Math.max(level.getMinBuildHeight(), requestedMinY);
+		int maxY = Math.min(level.getMaxBuildHeight() - 1, requestedMaxY);
+		for (int chunkX = centerChunkX - radius;
+				chunkX <= centerChunkX + radius; chunkX++) {
+			for (int chunkZ = centerChunkZ - radius;
+					chunkZ <= centerChunkZ + radius; chunkZ++) {
+				level.getChunk(chunkX, chunkZ);
+				for (int x = chunkX << 4; x < (chunkX + 1) << 4; x++) {
+					for (int z = chunkZ << 4; z < (chunkZ + 1) << 4; z++) {
+						for (int y = minY; y <= maxY; y++) {
+							BlockPos position = new BlockPos(x, y, z);
+							if (!level.getBlockState(position).is(target)) {
+								continue;
+							}
+							boolean hasAdjacent = false;
+							for (Direction direction : Direction.values()) {
+								if (level.getBlockState(position.relative(
+										direction)).is(adjacent)) {
+									hasAdjacent = true;
+									break;
+								}
+							}
+							if (hasAdjacent == requireAdjacent) {
+								counts.merge(y, 1, Integer::sum);
+							}
+						}
+					}
+				}
+			}
+		}
+		return counts;
+	}
+
+	private static int countAtOrBelow(Map<Integer, Integer> counts,
+			int maximumY) {
+		return counts.entrySet().stream()
+				.filter(entry -> entry.getKey() <= maximumY)
+				.mapToInt(Map.Entry::getValue).sum();
+	}
+
+	private static int countInRange(Map<Integer, Integer> counts,
+			int minimumY, int maximumY) {
+		return counts.entrySet().stream()
+				.filter(entry -> entry.getKey() >= minimumY
+						&& entry.getKey() <= maximumY)
+				.mapToInt(Map.Entry::getValue).sum();
+	}
+
+	private static Map<Integer, Integer> mergeYCounts(
+			Map<Integer, Integer> first, Map<Integer, Integer> second) {
+		Map<Integer, Integer> merged = new LinkedHashMap<>(first);
+		second.forEach((y, count) -> merged.merge(y, count, Integer::sum));
+		return merged;
+	}
+
 	private static FluidEnvelopeResult auditFluidEnvelope(ServerLevel level,
 			Block fluidBlock, int centerChunkX, int centerChunkZ, int radius,
 			int requestedMinY, int requestedMaxY, int minimumSolidCover,
@@ -831,6 +1033,150 @@ public final class DeepPantryGameTests {
 		});
 		require(helper, placed,
 				"OreSpawn underfluids pattern did not resolve CakeWorld lemonade");
+	}
+
+	private static PatternAudit auditCompiledPattern(ResourceLocation patternId,
+			int quantity, int spread, int verticalSpread, int nodeSize,
+			int length, long seed) {
+		OrePatternType type = OreSpawnPatternRegistry.registry().getValue(
+				patternId);
+		if (type == null) {
+			throw new AssertionError("OreSpawn pattern is not registered: "
+					+ patternId);
+		}
+		JsonObject settings = new JsonObject();
+		settings.addProperty("spread", spread);
+		settings.addProperty("vertical_spread", verticalSpread);
+		settings.addProperty("node_size", nodeSize);
+		settings.addProperty("length", length);
+		CompiledOrePattern pattern = type.decode(settings);
+		Set<BlockPos> placements = new java.util.LinkedHashSet<>();
+		boolean changed = pattern.place(new OrePlacementContext() {
+			private final java.util.Random random =
+					new java.util.Random(seed);
+
+			@Override public java.util.Random random() { return random; }
+			@Override public int originX() { return 0; }
+			@Override public int originY() { return 0; }
+			@Override public int originZ() { return 0; }
+			@Override public int minY() { return -64; }
+			@Override public int maxY() { return 320; }
+			@Override public int quantity() { return quantity; }
+			@Override public int spread() { return spread; }
+			@Override public int verticalSpread() { return verticalSpread; }
+			@Override public int nodeSize() { return nodeSize; }
+			@Override public boolean inside(int x, int y, int z) {
+				return true;
+			}
+			@Override public boolean isFluid(int x, int y, int z,
+					net.minecraft.world.level.material.Fluid fluid) {
+				return false;
+			}
+			@Override public boolean tryPlace(int x, int y, int z) {
+				return placements.add(new BlockPos(x, y, z));
+			}
+		});
+		int maximumDistanceSquared = placements.stream()
+				.mapToInt(position -> position.getX() * position.getX()
+						+ position.getY() * position.getY()
+						+ position.getZ() * position.getZ())
+				.max().orElse(0);
+		return new PatternAudit(changed, placements.size(),
+				maximumDistanceSquared);
+	}
+
+	private static void sampleGeologyRegion(ServerLevel level,
+			int centerChunkX, int centerChunkZ, int radius, int requestedMinY,
+			int requestedMaxY, GeologySurvey survey) {
+		GeologySampler sampler = OreSpawnApi.createSampler(level)
+				.orElseThrow(() -> new AssertionError(
+						"OreSpawn sampler unavailable for "
+								+ level.dimension().location()));
+		int minY = Math.max(level.getMinBuildHeight(), requestedMinY);
+		int maxY = Math.min(level.getMaxBuildHeight() - 1, requestedMaxY);
+		for (int chunkX = centerChunkX - radius;
+				chunkX <= centerChunkX + radius; chunkX++) {
+			for (int chunkZ = centerChunkZ - radius;
+					chunkZ <= centerChunkZ + radius; chunkZ++) {
+				level.getChunk(chunkX, chunkZ);
+				int x = (chunkX << 4) + 8;
+				int z = (chunkZ << 4) + 8;
+				GeologyColumn column = sampler.sampleColumn(x, z, 64);
+				ResourceLocation geome = column.geome();
+				survey.geomeColumns.merge(geome, 1, Integer::sum);
+				Map<Block, Integer> geomeRocks = survey.geomeRocks
+						.computeIfAbsent(geome,
+								unused -> new LinkedHashMap<>());
+				for (int y = minY; y <= maxY; y += 4) {
+					Block rock = column.rockAt(y).getBlock();
+					geomeRocks.merge(rock, 1, Integer::sum);
+					survey.rockYLevels.computeIfAbsent(rock,
+									unused -> new LinkedHashMap<>())
+							.merge(y, 1, Integer::sum);
+				}
+			}
+		}
+	}
+
+	private static void assertGeomeSignature(GameTestHelper helper,
+			GeologySurvey survey, ResourceLocation geome, Block signature) {
+		Map<Block, Integer> counts = survey.geomeRocks.get(geome);
+		require(helper, counts != null
+						&& counts.getOrDefault(signature, 0) > 0,
+				geome + " did not expose its signature "
+						+ Registry.BLOCK.getKey(signature) + " rock");
+	}
+
+	private static double meanY(GeologySurvey survey, Block block) {
+		Map<Integer, Integer> levels = survey.rockYLevels.get(block);
+		if (levels == null || levels.isEmpty()) {
+			return Double.NaN;
+		}
+		long count = 0;
+		long total = 0;
+		for (Map.Entry<Integer, Integer> entry : levels.entrySet()) {
+			count += entry.getValue();
+			total += (long) entry.getKey() * entry.getValue();
+		}
+		return total / (double) count;
+	}
+
+	private static Map<ResourceLocation, Map<ResourceLocation, Integer>>
+			describeNested(Map<ResourceLocation, Map<Block, Integer>> counts) {
+		Map<ResourceLocation, Map<ResourceLocation, Integer>> named =
+				new LinkedHashMap<>();
+		for (Map.Entry<ResourceLocation, Map<Block, Integer>> entry
+				: counts.entrySet()) {
+			Map<ResourceLocation, Integer> rocks = new LinkedHashMap<>();
+			entry.getValue().forEach((block, count) ->
+					rocks.put(Registry.BLOCK.getKey(block), count));
+			named.put(entry.getKey(), rocks);
+		}
+		return named;
+	}
+
+	private static Map<ResourceLocation, RockDepthSummary> describeDepths(
+			Map<Block, Map<Integer, Integer>> levels) {
+		Map<ResourceLocation, RockDepthSummary> summaries =
+				new LinkedHashMap<>();
+		for (Map.Entry<Block, Map<Integer, Integer>> entry
+				: levels.entrySet()) {
+			int count = entry.getValue().values().stream()
+					.mapToInt(Integer::intValue).sum();
+			int minY = entry.getValue().keySet().stream()
+					.mapToInt(Integer::intValue).min().orElse(0);
+			int maxY = entry.getValue().keySet().stream()
+					.mapToInt(Integer::intValue).max().orElse(0);
+			long totalY = 0;
+			for (Map.Entry<Integer, Integer> level
+				: entry.getValue().entrySet()) {
+				totalY += (long) level.getKey() * level.getValue();
+			}
+			summaries.put(Registry.BLOCK.getKey(entry.getKey()),
+					new RockDepthSummary(count, minY, maxY,
+							totalY / (double) count));
+		}
+		return summaries;
 	}
 
 	private static Map<ResourceLocation, Integer> countChunkCenterBiomes(
@@ -1141,5 +1487,22 @@ public final class DeepPantryGameTests {
 
 	private record FluidEnvelopeResult(int fluidBlocks, int boundaryFaces,
 			int violations, BlockPos firstViolation) {
+	}
+
+	private record PatternAudit(boolean changed, int placements,
+			int maximumDistanceSquared) {
+	}
+
+	private record RockDepthSummary(int samples, int minimumY, int maximumY,
+			double meanY) {
+	}
+
+	private static final class GeologySurvey {
+		private final Map<ResourceLocation, Integer> geomeColumns =
+				new LinkedHashMap<>();
+		private final Map<ResourceLocation, Map<Block, Integer>> geomeRocks =
+				new LinkedHashMap<>();
+		private final Map<Block, Map<Integer, Integer>> rockYLevels =
+				new LinkedHashMap<>();
 	}
 }

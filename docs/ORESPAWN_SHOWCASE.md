@@ -269,6 +269,21 @@ shelved. The ledger must preserve the benchmark and decision.
 
 ## Known Showcase Re-entry Conditions
 
+`OS-013` is not safe to demonstrate in the normal adventure with the current
+snapshot merge contract. Top-level `profile_defaults` contribute new IDs to
+existing profiles, while CakeWorld promises that existing worlds are never
+silently converted. The production provider therefore keeps all adventure
+rules inside the auto-selected fresh-world template. Re-enter shared defaults
+only in a copied-world Sampler migration fixture, or after OreSpawn adds a
+creation-only/defaults scope that cannot alter an existing snapshot.
+
+`OS-028` cannot currently give Cocoa Basin and Rock-Candy Uplift different
+formation presets. OreSpawn 4.0.1 exposes one profile-wide `formations`
+object, so horizontal size, thickness, waviness, edge irregularity, and
+continuity apply to every geome in that profile. CakeWorld retains the stable
+global defaults and the per-geome creative goal, but must not claim
+per-geome-preset proof until OreSpawn supports baked geome-level overrides.
+
 `OS-085` is currently blocked at integrated-world verification. OreSpawn's
 under-fluids pattern samples only two blocks vertically from an ordinary
 ore-placement origin, while the ore rule's `min_y` and `max_y` also bound the
