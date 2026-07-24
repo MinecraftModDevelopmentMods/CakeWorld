@@ -17,7 +17,24 @@ The current proof includes:
 
 This is a development scaffold, not a finished gameplay release. The visual
 assets currently reuse vanilla textures so integration behavior can be tested
-before original art and content are produced.
+before original art and content are produced. The intended full game is an
+original, family-friendly confectionery total conversion, documented before
+implementation so ambitious features can be built, verified, or deliberately
+shelved without losing the overall direction.
+
+## Design and Integration Documents
+
+- [Game Design Bible](docs/GAME_DESIGN.md) — player experience, all three
+  realms, biomes, physical blocks, foods, gadgets, Cookbook, creatures,
+  structures, and playable delivery slices.
+- [OreSpawn Showcase Contract](docs/ORESPAWN_SHOWCASE.md) — every OreSpawn
+  capability mapped to an adventure, compatibility, or diagnostic example and
+  its verification scenario.
+- [Compatibility Contract](docs/COMPATIBILITY.md) — themed vanilla resources
+  and all thirteen BaseMetals conversions, with tags, recipes, placement
+  ownership, and world-migration boundaries.
+- [Developer Guide](docs/DEVELOPER_GUIDE.md) — the current scaffold's ownership
+  model, provider structure, and safe extension points.
 
 ## Requirements
 
@@ -45,5 +62,5 @@ The packaged declaration is
 schema 4 and selects `cakeworld:edible_world` for fresh worlds unless a pack
 author has explicitly chosen another default template.
 
-See [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) for the ownership model,
-provider structure, and safe extension points.
+The design documents describe target behavior. They do not imply that the
+current scaffold already implements the full wishlist.
