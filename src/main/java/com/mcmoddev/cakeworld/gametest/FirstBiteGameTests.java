@@ -44,6 +44,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FallingBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -101,6 +103,77 @@ public final class FirstBiteGameTests {
 		icing.getBlock().fallOn(helper.getLevel(), icing, testPos, icingTester, 11.0F);
 		require(helper, Math.abs(icingTester.getHealth() - 6.0F) < 0.001F,
 				"Icing did not halve an eight-point fall");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 40)
+	public static void icingStacksAndMeltsAtTheVanillaLightThreshold(
+			GameTestHelper helper) {
+		BlockPos relativeIcingPos = new BlockPos(1, 1, 1);
+		BlockPos absoluteIcingPos = helper.absolutePos(relativeIcingPos);
+		IcingLayerBlock icing =
+				(IcingLayerBlock) CakeWorldBlocks.ICING_LAYER.get();
+		helper.setBlock(new BlockPos(1, 0, 1), Blocks.STONE);
+		helper.setBlock(relativeIcingPos, icing.defaultBlockState());
+
+		Player player = helper.makeMockPlayer();
+		player.setPos(absoluteIcingPos.getX() + 0.5D,
+				absoluteIcingPos.getY() + 1.0D,
+				absoluteIcingPos.getZ() - 1.0D);
+		player.setItemInHand(InteractionHand.MAIN_HAND,
+				new ItemStack(CakeWorldBlocks.ICING_LAYER.get()));
+		BlockHitResult hit = new BlockHitResult(
+				Vec3.atBottomCenterOf(absoluteIcingPos).add(0.0D, 1.0D, 0.0D),
+				Direction.UP,
+				absoluteIcingPos, false);
+		InteractionResult stacked = icing.asItem().useOn(
+				new UseOnContext(player, InteractionHand.MAIN_HAND, hit));
+		require(helper, stacked.consumesAction()
+						&& helper.getBlockState(relativeIcingPos).getValue(
+								BlockStateProperties.LAYERS) == 2,
+				"Placing icing on icing did not accumulate a second layer");
+
+		helper.setBlock(new BlockPos(2, 1, 1), Blocks.GLOWSTONE);
+		helper.runAfterDelay(2, () -> {
+			int blockLight = helper.getLevel().getBrightness(
+					LightLayer.BLOCK, absoluteIcingPos);
+			require(helper, blockLight > 11,
+					"Icing melting fixture did not reach the vanilla light threshold");
+			BlockState stackedIcing =
+					helper.getBlockState(relativeIcingPos);
+			icing.randomTick(stackedIcing, helper.getLevel(),
+					absoluteIcingPos, helper.getLevel().random);
+			require(helper, helper.getBlockState(relativeIcingPos).isAir(),
+					"Bright icing did not inherit snow-layer melting");
+			helper.succeed();
+		});
+	}
+
+	@GameTest(template = EMPTY)
+	public static void frozenLemonadePreservesMomentumWithoutRemovingControl(
+			GameTestHelper helper) {
+		helper.setBlock(new BlockPos(1, 0, 1),
+				CakeWorldBlocks.FROZEN_LEMONADE.get());
+		helper.setBlock(new BlockPos(3, 0, 1), Blocks.STONE);
+		Pig lemonadeTester =
+				helper.spawnWithNoFreeWill(EntityType.PIG, 1.5F, 1.0F, 1.5F);
+		Pig stoneTester =
+				helper.spawnWithNoFreeWill(EntityType.PIG, 3.5F, 1.0F, 1.5F);
+		Vec3 initialMovement = new Vec3(0.2D, 0.0D, 0.0D);
+		lemonadeTester.setOnGround(true);
+		stoneTester.setOnGround(true);
+		lemonadeTester.setDeltaMovement(initialMovement);
+		stoneTester.setDeltaMovement(initialMovement);
+
+		lemonadeTester.travel(Vec3.ZERO);
+		stoneTester.travel(Vec3.ZERO);
+		double lemonadeMomentum = lemonadeTester.getDeltaMovement().x;
+		double stoneMomentum = stoneTester.getDeltaMovement().x;
+		require(helper, lemonadeMomentum > stoneMomentum * 1.4D,
+				"Frozen lemonade did not preserve recognisably more momentum than stone");
+		require(helper, lemonadeMomentum > 0.0D
+						&& lemonadeMomentum < initialMovement.x,
+				"Frozen lemonade stopped movement or removed natural deceleration");
 		helper.succeed();
 	}
 
