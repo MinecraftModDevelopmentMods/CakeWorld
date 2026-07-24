@@ -21,6 +21,7 @@ import com.mcmoddev.cakeworld.entity.TrufflePig;
 import com.mcmoddev.cakeworld.init.CakeWorldBiomes;
 import com.mcmoddev.cakeworld.init.CakeWorldBlocks;
 import com.mcmoddev.cakeworld.init.CakeWorldEntities;
+import com.mcmoddev.cakeworld.init.CakeWorldFluids;
 import com.mcmoddev.cakeworld.init.CakeWorldItems;
 
 import net.minecraft.core.BlockPos;
@@ -100,6 +101,48 @@ public final class FirstBiteGameTests {
 		icing.getBlock().fallOn(helper.getLevel(), icing, testPos, icingTester, 11.0F);
 		require(helper, Math.abs(icingTester.getHealth() - 6.0F) < 0.001F,
 				"Icing did not halve an eight-point fall");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void stickyFluidsSlowWithoutTrapping(GameTestHelper helper) {
+		BlockPos testPos = helper.absolutePos(new BlockPos(1, 1, 1));
+		var caramelEntity = EntityType.ARMOR_STAND.create(helper.getLevel());
+		var treacleEntity = EntityType.ARMOR_STAND.create(helper.getLevel());
+		require(helper, caramelEntity != null && treacleEntity != null,
+				"Could not create sticky-fluid test entities");
+
+		Vec3 fallingMovement = new Vec3(1.0D, -0.8D, -1.0D);
+		caramelEntity.setDeltaMovement(fallingMovement);
+		CakeWorldFluids.CARAMEL_BLOCK.get().entityInside(
+				CakeWorldFluids.CARAMEL_BLOCK.get().defaultBlockState(),
+				helper.getLevel(), testPos, caramelEntity);
+		Vec3 caramelMovement = caramelEntity.getDeltaMovement();
+		require(helper, close(caramelMovement.x, 0.35D)
+						&& close(caramelMovement.y, -0.4D)
+						&& close(caramelMovement.z, -0.35D),
+				"Caramel did not apply its strong horizontal/downward drag");
+
+		treacleEntity.setDeltaMovement(fallingMovement);
+		CakeWorldFluids.SYRUP_BLOCK.get().entityInside(
+				CakeWorldFluids.SYRUP_BLOCK.get().defaultBlockState(),
+				helper.getLevel(), testPos, treacleEntity);
+		Vec3 treacleMovement = treacleEntity.getDeltaMovement();
+		require(helper, close(treacleMovement.x, 0.55D)
+						&& close(treacleMovement.y, -0.56D)
+						&& close(treacleMovement.z, -0.55D),
+				"Treacle Syrup did not apply its gentler drag");
+
+		Vec3 escapingMovement = new Vec3(0.6D, 0.42D, 0.4D);
+		caramelEntity.setDeltaMovement(escapingMovement);
+		CakeWorldFluids.CARAMEL_BLOCK.get().entityInside(
+				CakeWorldFluids.CARAMEL_BLOCK.get().defaultBlockState(),
+				helper.getLevel(), testPos, caramelEntity);
+		Vec3 escapingCaramel = caramelEntity.getDeltaMovement();
+		require(helper, close(escapingCaramel.y, escapingMovement.y)
+						&& escapingCaramel.x > 0.0D
+						&& escapingCaramel.z > 0.0D,
+				"Caramel removed upward escape or all player control");
 		helper.succeed();
 	}
 
@@ -443,6 +486,10 @@ public final class FirstBiteGameTests {
 						&& player.getAdvancements().getOrStartProgress(advancement)
 								.getCriterion(criterion).isDone(),
 				"Vanilla role criterion was not credited: " + criterion);
+	}
+
+	private static boolean close(double actual, double expected) {
+		return Math.abs(actual - expected) < 0.000001D;
 	}
 
 	private static void require(GameTestHelper helper, boolean condition, String message) {

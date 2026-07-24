@@ -177,7 +177,7 @@ ambient loop, climate, neighbouring-biome logic, and OreSpawn mechanism.
 |---|---|---:|---|
 | BLK-001 | Core | 1 | Chocolate sponge reduces fall damage to roughly one quarter of the normal result without adding a bounce. Final tuning requires playtesting. |
 | BLK-002 | Core | 3 | Marshmallow cancels fall damage and returns a gentle, controllable bounce; careful movement suppresses the bounce. |
-| BLK-003 | Core | 2 | Caramel and treacle surfaces slow, hold, or slide entities without creating unavoidable traps. |
+| BLK-003 | Core | 2 | Caramel retains 35% horizontal movement and halves downward movement; Treacle Syrup retains 55% horizontal and 70% downward movement. Upward movement and some steering are preserved so neither fluid becomes an unavoidable trap. |
 | BLK-004 | Expansion | 3 | Gummy blocks provide stronger elastic movement and translucent coloured building sets. |
 | BLK-005 | Core | 1 | Biscuit crumbs behave like gravity-affected sand and remain valid OreSpawn surface and host material. |
 | BLK-006 | Expansion | 3 | Wafer blocks are light, fragile, fast to build with, and useful for temporary bridges and village machinery. |

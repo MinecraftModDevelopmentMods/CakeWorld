@@ -183,7 +183,7 @@ public final class CakeWorldFluids {
 					() -> new ForgeFlowingFluid.Flowing(CARAMEL_PROPERTIES));
 	public static final RegistryObject<LiquidBlock> CARAMEL_BLOCK = BLOCKS.register("caramel",
 			() -> new CakeLiquidBlock(CakeWorldFluids::caramelFlowing,
-					edibleFluidProperties()));
+					edibleFluidProperties(), 0.35D, 0.5D));
 	public static final RegistryObject<Item> CARAMEL_BUCKET = ITEMS.register("caramel_bucket",
 			() -> new CakeBucketItem(CakeWorldFluids::caramel, bucketProperties()));
 
@@ -195,7 +195,7 @@ public final class CakeWorldFluids {
 					() -> new ForgeFlowingFluid.Flowing(SYRUP_PROPERTIES));
 	public static final RegistryObject<LiquidBlock> SYRUP_BLOCK = BLOCKS.register("syrup",
 			() -> new CakeLiquidBlock(CakeWorldFluids::syrupFlowing,
-					edibleFluidProperties()));
+					edibleFluidProperties(), 0.55D, 0.7D));
 	public static final RegistryObject<Item> SYRUP_BUCKET = ITEMS.register("syrup_bucket",
 			() -> new CakeBucketItem(CakeWorldFluids::syrup, bucketProperties()));
 
