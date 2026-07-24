@@ -2,6 +2,7 @@ package com.mcmoddev.cakeworld;
 
 import com.mcmoddev.cakeworld.init.CakeWorldBiomes;
 import com.mcmoddev.cakeworld.init.CakeWorldBlocks;
+import com.mcmoddev.cakeworld.init.CakeWorldEntities;
 import com.mcmoddev.cakeworld.init.CakeWorldFluids;
 import com.mcmoddev.cakeworld.init.CakeWorldItems;
 import com.mcmoddev.cakeworld.network.CakeWorldNetwork;
@@ -18,6 +19,7 @@ public final class CakeWorld {
 		IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
 		CakeWorldBlocks.register(modBus);
 		CakeWorldFluids.register(modBus);
+		CakeWorldEntities.register(modBus);
 		CakeWorldItems.register(modBus);
 		CakeWorldBiomes.register(modBus);
 		CakeWorldNetwork.register();

@@ -11,19 +11,31 @@ import com.mcmoddev.cakeworld.block.ChocolateSpongeBlock;
 import com.mcmoddev.cakeworld.block.IcingLayerBlock;
 import com.mcmoddev.cakeworld.cookbook.CookbookProgress;
 import com.mcmoddev.cakeworld.cookbook.DiscoveryType;
+import com.mcmoddev.cakeworld.compat.VanillaRoleAdvancements;
+import com.mcmoddev.cakeworld.entity.CandyflossSheep;
+import com.mcmoddev.cakeworld.entity.CocoaCow;
+import com.mcmoddev.cakeworld.entity.MallowChick;
+import com.mcmoddev.cakeworld.entity.StaleCrumbler;
+import com.mcmoddev.cakeworld.entity.TrufflePig;
+import com.mcmoddev.cakeworld.init.CakeWorldBiomes;
 import com.mcmoddev.cakeworld.init.CakeWorldBlocks;
+import com.mcmoddev.cakeworld.init.CakeWorldEntities;
 import com.mcmoddev.cakeworld.init.CakeWorldItems;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Registry;
+import net.minecraft.advancements.Advancement;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
@@ -33,6 +45,8 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FallingBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.MobSpawnSettings;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.gametest.GameTestHolder;
@@ -227,10 +241,141 @@ public final class FirstBiteGameTests {
 		helper.succeed();
 	}
 
+	@GameTest(template = EMPTY)
+	public static void firstCreaturesReplaceRolesAndRespectDifficulty(GameTestHelper helper) {
+		CocoaCow cocoaCow = CakeWorldEntities.COCOA_COW.get().create(helper.getLevel());
+		MallowChick mallowChick =
+				CakeWorldEntities.MALLOW_CHICK.get().create(helper.getLevel());
+		TrufflePig trufflePig =
+				CakeWorldEntities.TRUFFLE_PIG.get().create(helper.getLevel());
+		CandyflossSheep candyflossSheep =
+				CakeWorldEntities.CANDYFLOSS_SHEEP.get().create(helper.getLevel());
+		require(helper, cocoaCow != null && cocoaCow.getBreedOffspring(
+				helper.getLevel(), cocoaCow) instanceof CocoaCow,
+				"Cocoa Cows did not breed their own entity type");
+		require(helper, mallowChick != null && mallowChick.getBreedOffspring(
+				helper.getLevel(), mallowChick) instanceof MallowChick,
+				"Mallow Chicks did not breed their own entity type");
+		require(helper, trufflePig != null && trufflePig.getBreedOffspring(
+				helper.getLevel(), trufflePig) instanceof TrufflePig,
+				"Truffle Pigs did not breed their own entity type");
+		require(helper, candyflossSheep != null && candyflossSheep.getBreedOffspring(
+				helper.getLevel(), candyflossSheep) instanceof CandyflossSheep,
+				"Candyfloss Sheep did not breed their own entity type");
+
+		StaleCrumbler crumbler =
+				CakeWorldEntities.STALE_CRUMBLER.get().create(helper.getLevel());
+		Pig target = EntityType.PIG.create(helper.getLevel());
+		require(helper, crumbler != null && target != null,
+				"Could not create the difficulty-contract test entities");
+		target.setHealth(10.0F);
+		Difficulty originalDifficulty = helper.getLevel().getDifficulty();
+		try {
+			for (Difficulty safeDifficulty :
+					new Difficulty[] {Difficulty.EASY, Difficulty.NORMAL}) {
+				target.removeAllEffects();
+				target.setHealth(10.0F);
+				helper.getLevel().getServer().setDifficulty(safeDifficulty, true);
+				require(helper, crumbler.doHurtTarget(target),
+						safeDifficulty + " Stale Crumbler attack did not register");
+				require(helper, Math.abs(target.getHealth() - 10.0F) < 0.001F
+								&& target.hasEffect(net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN)
+								&& target.hasEffect(net.minecraft.world.effect.MobEffects.SLOW_FALLING),
+						safeDifficulty
+								+ " attack caused damage or lacked safe inconvenience/rescue");
+			}
+
+			target.removeAllEffects();
+			target.setHealth(10.0F);
+			helper.getLevel().getServer().setDifficulty(Difficulty.HARD, true);
+			require(helper, crumbler.doHurtTarget(target) && target.getHealth() < 10.0F,
+					"Hard Stale Crumbler attack did not cause real damage");
+
+			helper.getLevel().getServer().setDifficulty(Difficulty.PEACEFUL, true);
+			StaleCrumbler peacefulCrumbler =
+					CakeWorldEntities.STALE_CRUMBLER.get().create(helper.getLevel());
+			require(helper, peacefulCrumbler != null,
+					"Could not create the Peaceful behavior test creature");
+			peacefulCrumbler.checkDespawn();
+			require(helper, peacefulCrumbler.isRemoved(),
+					"Stale Crumbler did not retain Peaceful despawning");
+		} finally {
+			helper.getLevel().getServer().setDifficulty(originalDifficulty, true);
+		}
+
+		Biome candyPlains = helper.getLevel().registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY)
+				.get(CakeWorldBiomes.CANDY_PLAINS.getId());
+		Biome cookieForest = helper.getLevel().registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY)
+				.get(CakeWorldBiomes.COOKIE_FOREST.getId());
+		require(helper, candyPlains != null && cookieForest != null,
+				"Could not inspect CakeWorld biome spawn roles");
+		requireSpawnReplacement(helper, candyPlains, EntityType.COW,
+				CakeWorldEntities.COCOA_COW.get(), MobCategory.CREATURE);
+		requireSpawnReplacement(helper, candyPlains, EntityType.PIG,
+				CakeWorldEntities.TRUFFLE_PIG.get(), MobCategory.CREATURE);
+		requireSpawnReplacement(helper, candyPlains, EntityType.SHEEP,
+				CakeWorldEntities.CANDYFLOSS_SHEEP.get(), MobCategory.CREATURE);
+		requireSpawnReplacement(helper, cookieForest, EntityType.CHICKEN,
+				CakeWorldEntities.MALLOW_CHICK.get(), MobCategory.CREATURE);
+		requireSpawnReplacement(helper, candyPlains, EntityType.ZOMBIE,
+				CakeWorldEntities.STALE_CRUMBLER.get(), MobCategory.MONSTER);
+
+		ServerPlayer advancementPlayer = new ServerPlayer(
+				helper.getLevel().getServer(), helper.getLevel(),
+				new GameProfile(UUID.fromString("1978feed-feed-4bad-babe-1978feed1978"),
+						"CakeWorldRoleTest"));
+		VanillaRoleAdvancements.creditBredRole(advancementPlayer,
+				CakeWorldEntities.COCOA_COW.get());
+		VanillaRoleAdvancements.creditBredRole(advancementPlayer,
+				CakeWorldEntities.MALLOW_CHICK.get());
+		VanillaRoleAdvancements.creditBredRole(advancementPlayer,
+				CakeWorldEntities.TRUFFLE_PIG.get());
+		VanillaRoleAdvancements.creditBredRole(advancementPlayer,
+				CakeWorldEntities.CANDYFLOSS_SHEEP.get());
+		VanillaRoleAdvancements.creditKilledZombieRole(advancementPlayer);
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:husbandry/bred_all_animals", "minecraft:cow");
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:husbandry/bred_all_animals", "minecraft:chicken");
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:husbandry/bred_all_animals", "minecraft:pig");
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:husbandry/bred_all_animals", "minecraft:sheep");
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:adventure/kill_all_mobs", "minecraft:zombie");
+		helper.succeed();
+	}
+
 	private static FoodProperties requireFood(GameTestHelper helper, ItemStack stack) {
 		FoodProperties food = stack.getItem().getFoodProperties();
 		require(helper, food != null, stack.getItem() + " has no food properties");
 		return food;
+	}
+
+	private static void requireSpawnReplacement(GameTestHelper helper, Biome biome,
+			EntityType<?> vanilla, EntityType<?> replacement, MobCategory category) {
+		boolean foundVanilla = false;
+		boolean foundReplacement = false;
+		for (MobSpawnSettings.SpawnerData spawn :
+				biome.getMobSettings().getMobs(category).unwrap()) {
+			foundVanilla |= spawn.type == vanilla;
+			foundReplacement |= spawn.type == replacement;
+		}
+		require(helper, !foundVanilla && foundReplacement,
+				"Biome did not replace " + Registry.ENTITY_TYPE.getKey(vanilla)
+						+ " with " + Registry.ENTITY_TYPE.getKey(replacement));
+	}
+
+	private static void requireCriterion(GameTestHelper helper, ServerPlayer player,
+			String advancementId, String criterion) {
+		Advancement advancement = player.getServer().getAdvancements()
+				.getAdvancement(new ResourceLocation(advancementId));
+		require(helper, advancement != null
+						&& player.getAdvancements().getOrStartProgress(advancement)
+								.getCriterion(criterion).isDone(),
+				"Vanilla role criterion was not credited: " + criterion);
 	}
 
 	private static void require(GameTestHelper helper, boolean condition, String message) {
