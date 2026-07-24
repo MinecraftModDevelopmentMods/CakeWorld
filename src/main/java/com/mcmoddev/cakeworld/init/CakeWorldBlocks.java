@@ -8,10 +8,13 @@ import com.mcmoddev.cakeworld.block.ChocolateSpongeBlock;
 import com.mcmoddev.cakeworld.block.CookbookKioskBlock;
 import com.mcmoddev.cakeworld.block.IcingLayerBlock;
 
+import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.OreBlock;
+import net.minecraft.world.level.block.RedStoneOreBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.Material;
@@ -73,6 +76,33 @@ public final class CakeWorldBlocks {
 			stone("rich_sprinkle_cluster", 2.0F);
 	public static final RegistryObject<Block> FIZZY_PEARL =
 			stone("fizzy_pearl", 2.5F);
+	public static final RegistryObject<Block> COCOA_COAL =
+			ore("cocoa_coal", UniformInt.of(0, 2));
+	public static final RegistryObject<Block> IRON_WAFER =
+			ore("iron_wafer");
+	public static final RegistryObject<Block> COPPER_CARAMEL =
+			ore("copper_caramel");
+	public static final RegistryObject<Block> HONEYCOMB_GOLD =
+			ore("honeycomb_gold");
+	public static final RegistryObject<Block> RASPBERRY_REDSTONE =
+			block("raspberry_redstone", () -> new RedStoneOreBlock(
+					oreProperties().randomTicks()
+							.lightLevel(state -> state.getValue(
+									RedStoneOreBlock.LIT) ? 9 : 0)));
+	public static final RegistryObject<Block> BLUEBERRY_LAPIS =
+			ore("blueberry_lapis", UniformInt.of(2, 5));
+	public static final RegistryObject<Block> ROCK_CANDY_DIAMOND =
+			ore("rock_candy_diamond", UniformInt.of(3, 7));
+	public static final RegistryObject<Block> MINT_EMERALD =
+			ore("mint_emerald", UniformInt.of(3, 7));
+	public static final RegistryObject<Block> VANILLA_QUARTZ =
+			ore("vanilla_quartz", UniformInt.of(2, 5));
+	public static final RegistryObject<Block> FUDGE_GOLD =
+			ore("fudge_gold", UniformInt.of(0, 1));
+	public static final RegistryObject<Block> ANCIENT_NOUGAT =
+			block("ancient_nougat", BlockBehaviour.Properties.of(Material.METAL)
+					.requiresCorrectToolForDrops().strength(30.0F, 1200.0F)
+					.sound(SoundType.ANCIENT_DEBRIS));
 	public static final RegistryObject<Block> COOKBOOK_KIOSK = block("cookbook_kiosk",
 			() -> new CookbookKioskBlock(BlockBehaviour.Properties.of(Material.WOOD)
 					.strength(2.0F).sound(SoundType.WOOD)));
@@ -101,5 +131,20 @@ public final class CakeWorldBlocks {
 		return block(name, BlockBehaviour.Properties.of(Material.STONE)
 				.requiresCorrectToolForDrops().strength(strength, 6.0F)
 				.sound(SoundType.STONE));
+	}
+
+	private static RegistryObject<Block> ore(String name) {
+		return block(name, oreProperties());
+	}
+
+	private static RegistryObject<Block> ore(String name,
+			UniformInt experience) {
+		return block(name, () -> new OreBlock(oreProperties(), experience));
+	}
+
+	private static BlockBehaviour.Properties oreProperties() {
+		return BlockBehaviour.Properties.of(Material.STONE)
+				.requiresCorrectToolForDrops().strength(3.0F, 3.0F)
+				.sound(SoundType.STONE);
 	}
 }

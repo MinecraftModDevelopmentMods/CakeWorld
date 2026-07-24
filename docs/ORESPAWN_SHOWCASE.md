@@ -56,6 +56,14 @@ compatibility overlay, and “Sampler” means the optional diagnostic template.
 | OS-011 | Legacy schema reading | Keep CakeWorld on schema 4, but include one schema-3 migration fixture. | Sampler | 7 | Fixture loads with documented defaults; re-export or snapshot retains equivalent effective settings. |
 | OS-012 | Deprecated migration adapters | Document that CakeWorld does not use `OilDefinition` or `OreSpawnOreIntegration`; retain a fixture only if OreSpawn needs regression coverage. | Sampler | 7 | Static source audit confirms production CakeWorld uses the current API. |
 
+CakeWorld's themed vanilla blocks currently expose their mining and processing
+contracts without taking over placement. OS-010 needs an OreSpawn rule field
+that separately names the vanilla source block to suppress when a managed rule
+places a different CakeWorld output. The existing global suppression switch is
+not an acceptable substitute because it would remove unknown third-party ore
+features. `docs/COMPATIBILITY.md` records the full boundary and re-entry
+condition.
+
 ### Profiles, templates, snapshots, and overrides
 
 | ID | OreSpawn capability | CakeWorld use | Placement | Slice | Verification expectation |

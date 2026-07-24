@@ -75,6 +75,29 @@ CakeWorld may use its own ore item or raw-resource presentation only when every
 consumer of the vanilla role still works. Otherwise it drops the canonical
 vanilla resource.
 
+### Current vanilla-takeover limitation
+
+The themed blocks, loot, tags, processing recipes, mining tiers, piglin gold
+identity, and Ancient Nougat advancement bridge can exist safely before world
+placement changes. The normal template must nevertheless leave
+`manage_vanilla_ores` disabled until OreSpawn can distinguish:
+
+- the CakeWorld block a managed rule places; and
+- the vanilla source block whose native placed features that rule replaces.
+
+OreSpawn 4.0.1 currently keys its vanilla feature gate from the managed
+rule's output block. A rule that outputs `cakeworld:rock_candy_diamond`
+therefore cannot suppress the gates for `minecraft:diamond_ore`. Enabling both
+would duplicate resources. Enabling `suppress_all_ore_features` would also
+remove unknown third-party ore features, which violates this compatibility
+contract.
+
+The required OreSpawn capability is a declarative, bake-time validated source
+mapping—such as a `suppresses` or `native_source_blocks` list—kept out of
+generation hot loops. Until that capability exists and copied-world tests pass,
+CakeWorld exposes the themed content but deliberately leaves vanilla placement
+unchanged. No existing-world profile is migrated implicitly.
+
 ## BaseMetals Conversion
 
 ### Optional integration model
