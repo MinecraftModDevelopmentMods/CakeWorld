@@ -141,7 +141,25 @@ public final class DeepPantryGameTests {
 				"The active profile is missing CakeWorld fluid-deposit examples: "
 						+ missing(EXPECTED_FLUID_DEPOSIT_IDS,
 								profile.fluidDepositIds()));
+		boolean immutableRockIds = false;
+		try {
+			profile.rockIds().add(id("gametest_mutation"));
+		} catch (UnsupportedOperationException expected) {
+			immutableRockIds = true;
+		}
+		require(helper, immutableRockIds,
+				"The active profile exposed a mutable rock-ID collection");
+		JsonObject detachedProfileJson = profile.toJson();
+		detachedProfileJson.getAsJsonObject("rocks")
+				.getAsJsonObject("cakeworld:rock/chocolate_sponge")
+				.addProperty("block", "minecraft:air");
 		JsonObject profileJson = profile.toJson();
+		require(helper, "cakeworld:chocolate_sponge".equals(
+						profileJson.getAsJsonObject("rocks")
+								.getAsJsonObject(
+										"cakeworld:rock/chocolate_sponge")
+								.get("block").getAsString()),
+				"Mutating diagnostic JSON changed the active baked profile");
 		JsonObject fluidDepositRules =
 				profileJson.getAsJsonObject("fluid_deposits");
 		JsonObject hotFudgeDeposit = fluidDepositRules.getAsJsonObject(
