@@ -88,7 +88,7 @@ condition.
 | OS-022 | Igneous-volcanic rock family | Fudge rock and crystallised burnt-sugar volcanic material. | Main | 2/4 | Profile and sampled columns identify volcanic-family hosts in their intended dimensions. |
 | OS-023 | Sedimentary rock family | Layered wafer, biscuit, chocolate sponge, and soft fudge strata. | Main | 2 | Sampled columns show weighted sedimentary members and compatible ore replacement. |
 | OS-024 | Metamorphic rock family | Dense nougat, folded rock-candy, and fantastical compressed meringue crust. | Main | 2/5 | Folded/deep host bands appear and host-family ore rules match them in Overworld and End. |
-| OS-025 | Per-rock depth, weight, and ore-replaceable controls | Heavy nougat dominates deep bands; light wafer dominates shelves; structural candy glass is not an ore host. | Main | 2 | Statistical sample and host replacement test match the declared weights and replaceability. |
+| OS-025 | Per-rock depth, weight, and ore-replaceable controls | Heavy nougat dominates deep bands; light wafer dominates shelves; sparse structural Candy Glass is never an ore host. | Main | 2 | Statistical sample matches the declared depth/weight controls, and paired sampler/final-block evidence shows managed ores never replace predicted Candy Glass. |
 | OS-026 | Stable-layers geology mode | Make stable edible strata the readable default for the adventure. | Main | 2 | Fixed-seed vertical sections remain stable across save/reload and within the agreed performance budget. |
 | OS-027 | Alternate or legacy geology mode | Expose legacy/alternative formation behavior only as a labelled comparison plot. | Sampler | 7 | Adjacent fixed-seed plots visibly distinguish modes without affecting adventure defaults. |
 | OS-028 | Formation presets | Demonstrate preset horizontal size and waviness with broad Cocoa Basins and compact Rock-Candy Uplifts. | Main | 2 | Profile dump reports the presets and fixed-seed sections show materially different shapes. |
@@ -142,7 +142,7 @@ condition.
 | OS-066 | Inclusive quantity range | Use variable Liquorice Veins with both minimum and maximum declared. | Main | 2 | Observed budgets include both boundaries and never fall outside 1-64. |
 | OS-067 | Frequency as expected attempts per chunk | Make common Cocoa Clouds and rare Fizzy Pearls visibly distinct. | Main | 2 | Multi-chunk attempt counts fall within documented statistical tolerance. |
 | OS-068 | Uniform height distribution | Use evenly distributed Sprinkle Clusters. | Main | 2 | Histogram is approximately flat across the configured range. |
-| OS-069 | Triangle height distribution | Use a mid-depth Rock-Candy resource peak. | Main | 2 | Histogram peaks near the range midpoint and tapers at both ends. |
+| OS-069 | Triangle height distribution | Use a Rock-Candy resource range centred on its actual metamorphic hosts. | Main | 2 | A fixed-seed three-band histogram peaks in the middle third and tapers toward both ends across save/reload. |
 | OS-070 | Bottom-triangle height distribution | Concentrate a precious resource toward the bottom of its range. | Main | 2 | Histogram strongly favours lower Y without escaping the range. |
 | OS-071 | Uniform-bottom-triangle height distribution | Use a mixed distribution for varied Cocoa or Mint deposits. | Main | 2 | Histogram shows both uniform coverage and a lower-Y bias. |
 | OS-072 | Air-exposure discard chance | Keep selected crystals mostly buried while leaving an accessible introductory resource visible. | Main | 2 | Controlled exposed/covered hosts show the configured discard behavior at 0, partial, and 1.0 fixtures. |
@@ -315,6 +315,18 @@ deny-list. Fixed-seed generation and save/reload prove the baked filters
 produce and suppress starts as intended. Host-negative proof remains open
 until a deterministic fixture can preserve known pre-placement controls
 without relying on final-world provenance.
+
+`OS-025` uses sparse Candy Glass as the production non-replaceable control.
+The public sampler predicts the rock before final chunk materialization, then
+the integrated audit compares that prediction with the resulting block and
+all OreSpawn-managed ore outputs. This proves the setting from baked profile
+through final terrain without making ordinary generation perform diagnostic
+work. Candy Glass also remains outside CakeWorld's general ore-host tag.
+
+`OS-069` keeps the triangle distribution itself unchanged and aligns its
+declared vertical range with the Rock-Candy-bearing metamorphic host band.
+Fixed-seed three-band sampling must show a genuine middle peak, and the exact
+histogram must survive save/reload before the example is considered verified.
 
 ## Original Scaffold: Verified Prototype Evidence
 

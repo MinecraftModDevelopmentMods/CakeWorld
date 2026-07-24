@@ -81,6 +81,7 @@ public final class DeepPantryGameTests {
 			id("rock/nougat"),
 			id("rock/peppermint"),
 			id("rock/rock_candy"),
+			id("rock/candy_glass"),
 			id("rock/fudge_rock"),
 			id("rock/burnt_sugar"));
 
@@ -136,6 +137,32 @@ public final class DeepPantryGameTests {
 				"The active profile is missing CakeWorld fluid-deposit examples: "
 						+ missing(EXPECTED_FLUID_DEPOSIT_IDS,
 								profile.fluidDepositIds()));
+		JsonObject profileJson = profile.toJson();
+		JsonObject candyGlassRock = rockRule(profileJson,
+				"cakeworld:rock/candy_glass");
+		require(helper, candyGlassRock.has("ore_replaceable")
+						&& !candyGlassRock.get("ore_replaceable")
+								.getAsBoolean(),
+				"Candy Glass did not retain its non-replaceable rock contract");
+		TagKey<Block> forgeGlassBlocks = TagKey.create(
+				Registry.BLOCK_REGISTRY,
+				new ResourceLocation("forge", "glass"));
+		TagKey<Item> forgeGlassItems = TagKey.create(
+				Registry.ITEM_REGISTRY,
+				new ResourceLocation("forge", "glass"));
+		TagKey<Block> edibleOreHosts = TagKey.create(
+				Registry.BLOCK_REGISTRY,
+				new ResourceLocation(CakeWorld.MODID, "edible_ore_hosts"));
+		BlockState candyGlass = CakeWorldBlocks.CANDY_GLASS.get()
+				.defaultBlockState();
+		require(helper, !candyGlass.canOcclude()
+						&& candyGlass.is(BlockTags.MINEABLE_WITH_PICKAXE)
+						&& candyGlass.is(BlockTags.NEEDS_STONE_TOOL)
+						&& candyGlass.is(forgeGlassBlocks)
+						&& new ItemStack(CakeWorldBlocks.CANDY_GLASS.get())
+								.is(forgeGlassItems)
+						&& !candyGlass.is(edibleOreHosts),
+				"Candy Glass lost its translucent structural, tool, glass-tag, or non-host contract");
 
 		Optional<GeologySampler> samplerResult =
 				OreSpawnApi.createSampler(helper.getLevel());
@@ -149,12 +176,14 @@ public final class DeepPantryGameTests {
 				CakeWorldBlocks.WAFER_ROCK.get(),
 				CakeWorldBlocks.NOUGAT_ROCK.get(),
 				CakeWorldBlocks.PEPPERMINT_ROCK.get(),
-				CakeWorldBlocks.ROCK_CANDY.get());
+				CakeWorldBlocks.ROCK_CANDY.get(),
+				CakeWorldBlocks.CANDY_GLASS.get());
 		Set<Block> newOverworldRocks = Set.of(
 				CakeWorldBlocks.WAFER_ROCK.get(),
 				CakeWorldBlocks.NOUGAT_ROCK.get(),
 				CakeWorldBlocks.PEPPERMINT_ROCK.get(),
-				CakeWorldBlocks.ROCK_CANDY.get());
+				CakeWorldBlocks.ROCK_CANDY.get(),
+				CakeWorldBlocks.CANDY_GLASS.get());
 		Set<Block> oreDeposits = Set.of(
 				CakeWorldBlocks.ROCK_CANDY_DEPOSIT.get(),
 				CakeWorldBlocks.LIQUORICE_VEIN.get(),
@@ -294,7 +323,7 @@ public final class DeepPantryGameTests {
 				countTargetYLevelsNotAdjacentTo(level,
 						CakeWorldBlocks.ROCK_CANDY_DEPOSIT.get(),
 						CakeWorldBlocks.PEPPERMINT_ROCK.get(),
-						marshmallowChunkX, marshmallowChunkZ, 4, -32, 96);
+						marshmallowChunkX, marshmallowChunkZ, 4, -48, 80);
 		require(helper, countAtOrBelow(mintCrystalYs, -24) == 0,
 				"Mint Crystal remained above-ground output below its -24 deep-output threshold");
 		require(helper, !deepMintOutputYs.isEmpty(),
@@ -308,12 +337,32 @@ public final class DeepPantryGameTests {
 						&& bottomMintBand > upperMintBand,
 				"Mint bottom-triangle output did not favour the lower third: "
 						+ combinedMintOutputYs);
+		JsonObject activeProfile = OreSpawnApi.getActiveProfile(
+				level.getServer()).orElseThrow().toJson();
+		JsonObject rockCandyRule = oreDimensionRule(
+				activeProfile.getAsJsonObject("ores"),
+				"cakeworld:ore/rock_candy_deposit");
+		int rockCandyMinY = rockCandyRule.get("min_y").getAsInt();
+		int rockCandyMaxY = rockCandyRule.get("max_y").getAsInt();
+		int triangleWidth = (rockCandyMaxY - rockCandyMinY + 1) / 3;
+		require(helper, triangleWidth > 0
+						&& triangleWidth * 3
+								== rockCandyMaxY - rockCandyMinY + 1,
+				"Rock-Candy triangle range does not divide into three exact audit bands");
 		int lowerRockCandyBand = countInRange(
-				ordinaryRockCandyDepositYs, -32, 10);
+				ordinaryRockCandyDepositYs, rockCandyMinY,
+				rockCandyMinY + triangleWidth - 1);
 		int middleRockCandyBand = countInRange(
-				ordinaryRockCandyDepositYs, 11, 53);
+				ordinaryRockCandyDepositYs,
+				rockCandyMinY + triangleWidth,
+				rockCandyMinY + (triangleWidth * 2) - 1);
 		int upperRockCandyBand = countInRange(
-				ordinaryRockCandyDepositYs, 54, 96);
+				ordinaryRockCandyDepositYs,
+				rockCandyMinY + (triangleWidth * 2), rockCandyMaxY);
+		require(helper, middleRockCandyBand > lowerRockCandyBand
+						&& middleRockCandyBand > upperRockCandyBand,
+				"Rock-Candy triangle output did not peak in its middle third: "
+						+ ordinaryRockCandyDepositYs);
 		LOGGER.info("Focused ore-height diagnostics: mint_crystal_y={}, deep_mint_output_y={}, mint_bands=[{},{},{}], ordinary_rock_candy_deposit_y={}, rock_candy_bands=[{},{},{}]",
 				mintCrystalYs, deepMintOutputYs,
 				bottomMintBand, middleMintBand, upperMintBand,
@@ -462,9 +511,11 @@ public final class DeepPantryGameTests {
 		sampleGeologyRegion(nether, 0, 0, 4, 0, 127, survey);
 		sampleGeologyRegion(end, 0, 0, 4, 0, 255, survey);
 
-		LOGGER.info("Focused geome/depth survey: geome_columns={}, geome_rocks={}, rock_depths={}",
+		LOGGER.info("Focused geome/depth survey: geome_columns={}, geome_rocks={}, rock_depths={}, candy_glass_predicted={}, candy_glass_survived={}, candy_glass_managed_ore_replacements={}",
 				survey.geomeColumns, describeNested(survey.geomeRocks),
-				describeDepths(survey.rockYLevels));
+				describeDepths(survey.rockYLevels),
+				survey.predictedCandyGlass, survey.survivingCandyGlass,
+				survey.candyGlassManagedOreReplacements);
 		require(helper, survey.geomeColumns.keySet().containsAll(
 						EXPECTED_GEOME_IDS),
 				"Fixed-seed sampler did not observe every CakeWorld geome: "
@@ -489,6 +540,11 @@ public final class DeepPantryGameTests {
 		require(helper, meanY(survey, CakeWorldBlocks.WAFER_ROCK.get())
 						> meanY(survey, CakeWorldBlocks.NOUGAT_ROCK.get()),
 				"Wafer did not retain a shallower identity than Nougat");
+		require(helper, survey.predictedCandyGlass > 0
+						&& survey.survivingCandyGlass > 0,
+				"Fixed-seed survey found no integrated Candy Glass control");
+		require(helper, survey.candyGlassManagedOreReplacements == 0,
+				"An OreSpawn-managed ore replaced predicted non-replaceable Candy Glass");
 		helper.succeed();
 	}
 
@@ -976,6 +1032,26 @@ public final class DeepPantryGameTests {
 		return dimensions.getAsJsonObject("minecraft:overworld");
 	}
 
+	private static JsonObject oreDimensionRule(JsonObject ores, String oreId) {
+		if (ores == null || !ores.has(oreId)) {
+			throw new AssertionError("Missing ore " + oreId);
+		}
+		JsonObject ore = ores.getAsJsonObject(oreId);
+		JsonObject dimensions = ore.getAsJsonObject("dimensions");
+		if (dimensions == null || !dimensions.has("minecraft:overworld")) {
+			throw new AssertionError("Missing Overworld rule for " + oreId);
+		}
+		return dimensions.getAsJsonObject("minecraft:overworld");
+	}
+
+	private static JsonObject rockRule(JsonObject profile, String rockId) {
+		JsonObject rocks = profile.getAsJsonObject("rocks");
+		if (rocks == null || !rocks.has(rockId)) {
+			throw new AssertionError("Missing rock " + rockId);
+		}
+		return rocks.getAsJsonObject(rockId);
+	}
+
 	private static boolean jsonArrayContains(JsonObject object, String key,
 			String expected) {
 		if (!object.has(key) || !object.get(key).isJsonArray()) {
@@ -1255,9 +1331,29 @@ public final class DeepPantryGameTests {
 					survey.rockYLevels.computeIfAbsent(rock,
 									unused -> new LinkedHashMap<>())
 							.merge(y, 1, Integer::sum);
+					if (rock == CakeWorldBlocks.CANDY_GLASS.get()) {
+						survey.predictedCandyGlass++;
+						Block actual = level.getBlockState(
+								new BlockPos(x, y, z)).getBlock();
+						if (actual == CakeWorldBlocks.CANDY_GLASS.get()) {
+							survey.survivingCandyGlass++;
+						} else if (isManagedOreOutput(actual)) {
+							survey.candyGlassManagedOreReplacements++;
+						}
+					}
 				}
 			}
 		}
+	}
+
+	private static boolean isManagedOreOutput(Block block) {
+		return block == CakeWorldBlocks.ROCK_CANDY_DEPOSIT.get()
+				|| block == CakeWorldBlocks.LIQUORICE_VEIN.get()
+				|| block == CakeWorldBlocks.COCOA_CLOUD.get()
+				|| block == CakeWorldBlocks.MINT_CRYSTAL.get()
+				|| block == CakeWorldBlocks.SPRINKLE_CLUSTER.get()
+				|| block == CakeWorldBlocks.RICH_SPRINKLE_CLUSTER.get()
+				|| block == CakeWorldBlocks.FIZZY_PEARL.get();
 	}
 
 	private static void assertGeomeSignature(GameTestHelper helper,
@@ -1646,5 +1742,8 @@ public final class DeepPantryGameTests {
 				new LinkedHashMap<>();
 		private final Map<Block, Map<Integer, Integer>> rockYLevels =
 				new LinkedHashMap<>();
+		private int predictedCandyGlass;
+		private int survivingCandyGlass;
+		private int candyGlassManagedOreReplacements;
 	}
 }

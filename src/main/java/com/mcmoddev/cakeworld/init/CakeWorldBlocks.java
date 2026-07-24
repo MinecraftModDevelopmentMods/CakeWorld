@@ -13,6 +13,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.GlassBlock;
 import net.minecraft.world.level.block.OreBlock;
 import net.minecraft.world.level.block.RedStoneOreBlock;
 import net.minecraft.world.level.block.SoundType;
@@ -59,6 +60,10 @@ public final class CakeWorldBlocks {
 	public static final RegistryObject<Block> PEPPERMINT_ROCK =
 			stone("peppermint_rock", 1.8F);
 	public static final RegistryObject<Block> ROCK_CANDY = stone("rock_candy", 2.2F);
+	public static final RegistryObject<Block> CANDY_GLASS = block("candy_glass",
+			() -> new GlassBlock(BlockBehaviour.Properties.of(Material.GLASS)
+					.requiresCorrectToolForDrops().strength(1.2F, 6.0F)
+					.sound(SoundType.GLASS).noOcclusion()));
 	public static final RegistryObject<Block> BURNT_SUGAR_ROCK =
 			stone("burnt_sugar_rock", 2.8F);
 

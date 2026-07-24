@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "provider_modid": "cakeworld",
-  "provider_revision": 7,
+  "provider_revision": 8,
   "templates": {
     "cakeworld:edible_world": {
       "name_key": "template.cakeworld.edible_world",
@@ -108,6 +108,21 @@
               "cakeworld:meringue_crust": 1.8
             },
             "dimensions": ["minecraft:overworld", "minecraft:the_end"]
+          },
+          "cakeworld:rock/candy_glass": {
+            "block": "cakeworld:candy_glass",
+            "enabled": true,
+            "family": "metamorphic",
+            "depth_peak": 16,
+            "depth_spread": 48,
+            "min_y": -32,
+            "max_y": 128,
+            "weight": 0.02,
+            "ore_replaceable": false,
+            "geomes": {
+              "cakeworld:rock_candy_uplift": 8.0
+            },
+            "dimensions": ["minecraft:overworld"]
           },
           "cakeworld:rock/fudge_rock": {
             "block": "cakeworld:fudge_rock",
@@ -230,8 +245,8 @@
             "dimensions": {
               "minecraft:overworld": {
                 "enabled": true,
-                "min_y": -32,
-                "max_y": 96,
+                "min_y": -48,
+                "max_y": 80,
                 "frequency": 1.5,
                 "quantity": 6,
                 "pattern": {

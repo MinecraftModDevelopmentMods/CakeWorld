@@ -1,6 +1,7 @@
 package com.mcmoddev.cakeworld.client;
 
 import com.mcmoddev.cakeworld.CakeWorld;
+import com.mcmoddev.cakeworld.init.CakeWorldBlocks;
 import com.mcmoddev.cakeworld.init.CakeWorldFluids;
 
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
@@ -18,6 +19,8 @@ public final class CakeWorldClient {
 	@SubscribeEvent
 	public static void clientSetup(FMLClientSetupEvent event) {
 		event.enqueueWork(() -> {
+			ItemBlockRenderTypes.setRenderLayer(CakeWorldBlocks.CANDY_GLASS.get(),
+					RenderType.translucent());
 			ItemBlockRenderTypes.setRenderLayer(CakeWorldFluids.LEMONADE.get(),
 					RenderType.translucent());
 			ItemBlockRenderTypes.setRenderLayer(CakeWorldFluids.FLOWING_LEMONADE.get(),
