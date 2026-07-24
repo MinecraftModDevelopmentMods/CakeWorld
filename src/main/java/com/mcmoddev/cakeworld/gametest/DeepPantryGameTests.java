@@ -294,6 +294,74 @@ public final class DeepPantryGameTests {
 		helper.succeed();
 	}
 
+	@GameTest(template = EMPTY, timeoutTicks = 2400)
+	public static void focusedRealmWorldgenAuditsDeepPantryOutputs(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean("cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed Nether/End survey; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel nether = helper.getLevel().getServer().getLevel(Level.NETHER);
+		ServerLevel end = helper.getLevel().getServer().getLevel(Level.END);
+		require(helper, nether != null && end != null,
+				"Fixed-seed realm survey could not resolve Nether and End levels");
+
+		Map<Block, Integer> netherBlocks = scanDimension(nether,
+				Set.of(
+						CakeWorldBlocks.FUDGE_ROCK.get(),
+						CakeWorldBlocks.BURNT_SUGAR_ROCK.get(),
+						CakeWorldFluids.HOT_FUDGE_BLOCK.get()),
+				0, 0, 4, 0, 127);
+		Map<ResourceLocation, Integer> netherBiomes =
+				countChunkCenterBiomes(nether, 0, 0, 4, 64);
+		Map<ResourceLocation, Integer> netherGeomes =
+				countChunkCenterGeomes(helper, nether, 0, 0, 4, 64);
+		require(helper, netherBlocks.getOrDefault(
+						CakeWorldBlocks.FUDGE_ROCK.get(), 0) > 0,
+				"Fixed-seed Nether contained no Fudge Rock");
+		require(helper, netherBlocks.getOrDefault(
+						CakeWorldBlocks.BURNT_SUGAR_ROCK.get(), 0) > 0,
+				"Fixed-seed Nether contained no Burnt-Sugar Rock");
+		require(helper, netherBlocks.getOrDefault(
+						CakeWorldFluids.HOT_FUDGE_BLOCK.get(), 0) > 0,
+				"Fixed-seed Nether contained no Hot Fudge world material");
+		require(helper, netherBiomes.getOrDefault(
+						id("fudge_wastes"), 0) > 0,
+				"Fixed-seed Nether contained no Fudge Wastes chunk centers");
+		require(helper, netherGeomes.getOrDefault(
+						id("fudge_mantle"), 0) > 0,
+				"Fixed-seed Nether contained no Fudge Mantle columns");
+
+		Map<Block, Integer> endRocks = scanDimension(end,
+				Set.of(
+						CakeWorldBlocks.BISCUIT_STONE.get(),
+						CakeWorldBlocks.WAFER_ROCK.get(),
+						CakeWorldBlocks.NOUGAT_ROCK.get(),
+						CakeWorldBlocks.ROCK_CANDY.get()),
+				0, 0, 4, 0, 255);
+		Map<ResourceLocation, Integer> endBiomes =
+				countChunkCenterBiomes(end, 0, 0, 4, 64);
+		Map<ResourceLocation, Integer> endGeomes =
+				countChunkCenterGeomes(helper, end, 0, 0, 4, 64);
+		int endMetamorphic = endRocks.getOrDefault(
+						CakeWorldBlocks.NOUGAT_ROCK.get(), 0)
+				+ endRocks.getOrDefault(CakeWorldBlocks.ROCK_CANDY.get(), 0);
+		require(helper, endMetamorphic > 0,
+				"Fixed-seed End contained no Nougat or Rock Candy metamorphic hosts");
+		require(helper, endBiomes.getOrDefault(
+						id("meringue_islands"), 0) > 0,
+				"Fixed-seed End contained no Meringue Islands chunk centers");
+		require(helper, endGeomes.getOrDefault(
+						id("meringue_crust"), 0) > 0,
+				"Fixed-seed End contained no Meringue Crust columns");
+
+		LOGGER.info("Focused realm audit: nether_blocks={}, nether_biomes={}, nether_geomes={}, end_rocks={}, end_biomes={}, end_geomes={}, end_metamorphic={}",
+				describe(netherBlocks), netherBiomes, netherGeomes,
+				describe(endRocks), endBiomes, endGeomes, endMetamorphic);
+		helper.succeed();
+	}
+
 	@GameTest(template = EMPTY, timeoutTicks = 1200)
 	public static void baseMetalsCounterpartsPreserveTagsRecipesAndGeneration(
 			GameTestHelper helper) {
