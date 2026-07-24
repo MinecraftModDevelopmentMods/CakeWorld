@@ -585,9 +585,13 @@ public final class DeepPantryGameTests {
 		int auditChunkX = 16;
 		int auditChunkZ = 16;
 		int auditRadius = 4;
+		BlockPos cookieForest = locateBiome(helper, level,
+				id("cookie_forest"));
+		int cookieChunkX = Math.floorDiv(cookieForest.getX(), 16);
+		int cookieChunkZ = Math.floorDiv(cookieForest.getZ(), 16);
 		Map<String, FluidEnvelopeResult> results = new LinkedHashMap<>();
 		results.put("jam", auditFluidEnvelope(level,
-				CakeWorldFluids.JAM_BLOCK.get(), auditChunkX, auditChunkZ,
+				CakeWorldFluids.JAM_BLOCK.get(), cookieChunkX, cookieChunkZ,
 				auditRadius, -40, 48, 3, 1));
 		results.put("custard", auditFluidEnvelope(level,
 				CakeWorldFluids.CUSTARD_BLOCK.get(), auditChunkX, auditChunkZ,
@@ -599,6 +603,7 @@ public final class DeepPantryGameTests {
 				CakeWorldFluids.SYRUP_BLOCK.get(), auditChunkX, auditChunkZ,
 				auditRadius, -32, 56, 3, 1));
 
+		LOGGER.info("Focused covered-fluid envelope audit: {}", results);
 		for (Map.Entry<String, FluidEnvelopeResult> entry
 				: results.entrySet()) {
 			FluidEnvelopeResult result = entry.getValue();
@@ -613,7 +618,81 @@ public final class DeepPantryGameTests {
 							+ " deposit violated its solid envelope at "
 							+ result.firstViolation());
 		}
-		LOGGER.info("Focused covered-fluid envelope audit: {}", results);
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 2400)
+	public static void focusedFluidHostAndBiomeFilterAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean("cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed fluid host/filter audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel();
+		JsonObject profile = OreSpawnApi.getActiveProfile(
+				level.getServer()).orElseThrow().toJson();
+		JsonObject deposits = profile.getAsJsonObject("fluid_deposits");
+		JsonObject jam = fluidDimensionRule(deposits,
+				"cakeworld:fluid_deposit/jam");
+		JsonObject custard = fluidDimensionRule(deposits,
+				"cakeworld:fluid_deposit/custard");
+		JsonObject syrup = fluidDimensionRule(deposits,
+				"cakeworld:fluid_deposit/syrup");
+		require(helper, jsonArrayContains(jam, "host_blocks",
+						"cakeworld:wafer_rock")
+						&& jsonArrayContains(jam, "host_families",
+								"metamorphic"),
+				"Jam did not retain its explicit-block plus family host contract");
+		require(helper, jsonArrayContains(custard, "host_tags",
+						"cakeworld:edible_ore_hosts"),
+				"Custard did not retain its baked host-tag contract");
+		require(helper, jsonArrayContains(jam, "biome_ids",
+						"cakeworld:cookie_forest"),
+				"Jam did not retain its Cookie Forest include filter");
+		require(helper, jsonArrayContains(syrup, "excluded_biome_ids",
+						"cakeworld:soda_ocean"),
+				"Syrup did not retain its Soda Ocean exclude filter");
+
+		BlockPos cookieForest = locateBiome(helper, level,
+				id("cookie_forest"));
+		BlockPos sodaOcean = locateBiome(helper, level, id("soda_ocean"));
+		int cookieChunkX = Math.floorDiv(cookieForest.getX(), 16);
+		int cookieChunkZ = Math.floorDiv(cookieForest.getZ(), 16);
+		int sodaChunkX = Math.floorDiv(sodaOcean.getX(), 16);
+		int sodaChunkZ = Math.floorDiv(sodaOcean.getZ(), 16);
+		Map<ResourceLocation, Integer> jamStartBiomes =
+				countTargetChunkSurfaceBiomes(level,
+				CakeWorldFluids.JAM_BLOCK.get(), cookieChunkX, cookieChunkZ,
+				4, -40, 48);
+		Map<ResourceLocation, Integer> syrupStartBiomes =
+				countTargetChunkSurfaceBiomes(level,
+				CakeWorldFluids.SYRUP_BLOCK.get(), sodaChunkX, sodaChunkZ,
+				4, -32, 56);
+		Map<ResourceLocation, Integer> cookieBiomesAt32 =
+				countChunkCenterBiomes(level, cookieChunkX, cookieChunkZ,
+						4, 32);
+		Map<ResourceLocation, Integer> cookieBiomesAt0 =
+				countChunkCenterBiomes(level, cookieChunkX, cookieChunkZ,
+						4, 0);
+		Map<ResourceLocation, Integer> cookieBiomesAtMinus32 =
+				countChunkCenterBiomes(level, cookieChunkX, cookieChunkZ,
+						4, -32);
+		LOGGER.info("Focused fluid host/filter audit: cookie_forest={}, cookie_biomes_y32={}, cookie_biomes_y0={}, cookie_biomes_y-32={}, jam_start_biomes={}, soda_ocean={}, syrup_start_biomes={}",
+				cookieForest, cookieBiomesAt32, cookieBiomesAt0,
+				cookieBiomesAtMinus32, jamStartBiomes, sodaOcean,
+				syrupStartBiomes);
+		require(helper,
+				jamStartBiomes.getOrDefault(id("cookie_forest"), 0) > 0
+						&& jamStartBiomes.keySet().stream()
+								.allMatch(id("cookie_forest")::equals),
+				"Cookie Forest filter produced no integrated Jam output");
+		require(helper, syrupStartBiomes.values().stream()
+						.mapToInt(Integer::intValue).sum() > 0,
+				"Mixed Soda Ocean survey produced no measurable Syrup output");
+		require(helper,
+				syrupStartBiomes.getOrDefault(id("soda_ocean"), 0) == 0,
+				"Soda Ocean exclusion allowed integrated Syrup output");
 		helper.succeed();
 	}
 
@@ -845,6 +924,69 @@ public final class DeepPantryGameTests {
 			}
 		}
 		return counts;
+	}
+
+	private static Map<ResourceLocation, Integer> countTargetChunkSurfaceBiomes(
+			ServerLevel level, Block target, int centerChunkX,
+			int centerChunkZ, int radius, int requestedMinY,
+			int requestedMaxY) {
+		Map<ResourceLocation, Integer> counts = new LinkedHashMap<>();
+		int minY = Math.max(level.getMinBuildHeight(), requestedMinY);
+		int maxY = Math.min(level.getMaxBuildHeight() - 1, requestedMaxY);
+		for (int chunkX = centerChunkX - radius;
+				chunkX <= centerChunkX + radius; chunkX++) {
+			for (int chunkZ = centerChunkZ - radius;
+					chunkZ <= centerChunkZ + radius; chunkZ++) {
+				net.minecraft.world.level.chunk.LevelChunk chunk =
+						level.getChunk(chunkX, chunkZ);
+				int surfaceY = chunk.getHeight(
+						Heightmap.Types.WORLD_SURFACE_WG, 8, 8);
+				ResourceLocation startBiome = level.getBiome(
+						new BlockPos((chunkX << 4) + 8, surfaceY,
+								(chunkZ << 4) + 8))
+						.unwrapKey().map(key -> key.location()).orElse(null);
+				for (int x = chunkX << 4; x < (chunkX + 1) << 4; x++) {
+					for (int z = chunkZ << 4; z < (chunkZ + 1) << 4; z++) {
+						for (int y = minY; y <= maxY; y++) {
+							BlockPos position = new BlockPos(x, y, z);
+							if (!level.getBlockState(position).is(target)) {
+								continue;
+							}
+							if (startBiome != null) {
+								counts.merge(startBiome, 1, Integer::sum);
+							}
+						}
+					}
+				}
+			}
+		}
+		return counts;
+	}
+
+	private static JsonObject fluidDimensionRule(JsonObject deposits,
+			String depositId) {
+		if (deposits == null || !deposits.has(depositId)) {
+			throw new AssertionError("Missing fluid deposit " + depositId);
+		}
+		JsonObject deposit = deposits.getAsJsonObject(depositId);
+		JsonObject dimensions = deposit.getAsJsonObject("dimensions");
+		if (dimensions == null || !dimensions.has("minecraft:overworld")) {
+			throw new AssertionError("Missing Overworld rule for " + depositId);
+		}
+		return dimensions.getAsJsonObject("minecraft:overworld");
+	}
+
+	private static boolean jsonArrayContains(JsonObject object, String key,
+			String expected) {
+		if (!object.has(key) || !object.get(key).isJsonArray()) {
+			return false;
+		}
+		for (JsonElement value : object.getAsJsonArray(key)) {
+			if (expected.equals(value.getAsString())) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private static Map<Integer, Integer> countTargetYLevelsAdjacentTo(

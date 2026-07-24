@@ -173,8 +173,8 @@ condition.
 | OS-092 | Multi-lobe geometry | Make natural-looking connected caramel and jam reservoirs. | Main | 2 | Deposits never exceed configured maximum lobes and remain within safety bounds. |
 | OS-093 | Solid cover | Keep covered jam reservoirs concealed until found. | Main | 2 | Too-shallow fixtures reject; deposits meeting minimum cover generate. |
 | OS-094 | Solid shell | Prevent exposed or leaking fluid bodies where a shell is required. | Main | 2 | Shell inspection finds the declared minimum except at an intentional access feature. |
-| OS-095 | Fluid host blocks and tags | Restrict each reservoir to sensible edible geology. | Main | 2/4 | Eligible host is replaced and adjacent ineligible material is untouched. |
-| OS-096 | Fluid biome filters | Put custard under coasts, caramel beneath bogs, and syrup under waffle country. | Main | 2/3 | Each fluid appears only in its intended biome set. |
+| OS-095 | Fluid host blocks and tags | Restrict Jam through an explicit Wafer Rock host plus a family, and Custard through the edible-host tag. | Main | 2/4 | The active snapshot retains both host forms, the rules bake, and generated reservoirs replace eligible geology; a deterministic negative-host fixture must prove that adjacent controls remain untouched. |
+| OS-096 | Fluid biome filters | Start Jam only from Cookie Forest chunks and exclude Syrup starts from Soda Ocean chunks. | Main | 2/3 | Fixed-seed surveys find allowed output and no excluded starts; final lobes may cross underground biome-cell boundaries after an accepted surface-biome start. |
 | OS-097 | Fluid geome weights | Bias covered strawberry jam toward Cocoa Basin and deep hot fudge toward Fudge Mantle. | Main | 2/4 | Survey counts demonstrate the declared geome preferences. |
 
 ### Intrusive diagnostics
@@ -303,6 +303,18 @@ generated output, cover, and shell; it must not infer an exact lobe count from
 the merged component. Re-enter strict lobe-count verification when OreSpawn
 offers a deterministic placement fixture or optional diagnostic placement
 trace that is absent from the generation hot path.
+
+`OS-095` and `OS-096` deliberately distinguish rule acceptance from final
+block location. Fluid host blocks, tags, and geology families are additive
+eligible-host sets, not intersections. Biome filters are evaluated once from
+the generating chunk's surface biome before the reservoir is shaped; they do
+not clip every underground block to a three-dimensional biome cell. CakeWorld
+therefore uses an explicit Wafer Rock plus metamorphic-family Jam rule, a
+tag-hosted Custard rule, a Cookie Forest Jam allow-list, and a Soda Ocean Syrup
+deny-list. Fixed-seed generation and save/reload prove the baked filters
+produce and suppress starts as intended. Host-negative proof remains open
+until a deterministic fixture can preserve known pre-placement controls
+without relying on final-world provenance.
 
 ## Original Scaffold: Verified Prototype Evidence
 

@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "provider_modid": "cakeworld",
-  "provider_revision": 5,
+  "provider_revision": 7,
   "templates": {
     "cakeworld:edible_world": {
       "name_key": "template.cakeworld.edible_world",
@@ -440,7 +440,9 @@
                 "max_lobes": 3,
                 "min_solid_cover": 3,
                 "min_solid_shell": 1,
-                "host_families": ["sedimentary", "metamorphic"],
+                "host_blocks": ["cakeworld:wafer_rock"],
+                "host_families": ["metamorphic"],
+                "biome_ids": ["cakeworld:cookie_forest"],
                 "geomes": {
                   "cakeworld:cocoa_basin": 3.0,
                   "cakeworld:wafer_shelf": 1.0,
@@ -466,7 +468,7 @@
                 "max_lobes": 3,
                 "min_solid_cover": 2,
                 "min_solid_shell": 1,
-                "host_families": ["sedimentary", "igneous_intrusive"],
+                "host_tags": ["cakeworld:edible_ore_hosts"],
                 "geomes": {
                   "cakeworld:cocoa_basin": 1.2,
                   "cakeworld:wafer_shelf": 3.0,
@@ -519,6 +521,7 @@
                 "min_solid_cover": 3,
                 "min_solid_shell": 1,
                 "host_families": ["sedimentary", "igneous_intrusive"],
+                "excluded_biome_ids": ["cakeworld:soda_ocean"],
                 "geomes": {
                   "cakeworld:cocoa_basin": 1.5,
                   "cakeworld:wafer_shelf": 2.5,
