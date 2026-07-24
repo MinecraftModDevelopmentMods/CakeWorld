@@ -1,1 +1,8 @@
-{"variants":{"":{"model":"cakeworld:block/chocolate_sponge"}}}
+{
+  "variants": {
+    "bites=0": { "model": "cakeworld:block/chocolate_sponge" },
+    "bites=1": { "model": "cakeworld:block/chocolate_sponge_bites_1" },
+    "bites=2": { "model": "cakeworld:block/chocolate_sponge_bites_2" },
+    "bites=3": { "model": "cakeworld:block/chocolate_sponge_bites_3" }
+  }
+}

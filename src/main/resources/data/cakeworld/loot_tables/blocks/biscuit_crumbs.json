@@ -6,17 +6,10 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "cakeworld:chocolate_sponge"
+          "name": "cakeworld:biscuit_crumbs"
         }
       ],
       "conditions": [
-        {
-          "condition": "minecraft:block_state_property",
-          "block": "cakeworld:chocolate_sponge",
-          "properties": {
-            "bites": "0"
-          }
-        },
         {
           "condition": "minecraft:survives_explosion"
         }

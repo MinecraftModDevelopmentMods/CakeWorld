@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "provider_modid": "cakeworld",
-  "provider_revision": 1,
+  "provider_revision": 2,
   "rocks": {
     "cakeworld:rock/chocolate_sponge": {
       "block": "cakeworld:chocolate_sponge",
@@ -16,19 +16,6 @@
       "geomes": {},
       "dimensions": ["minecraft:overworld"]
     },
-    "cakeworld:rock/icing": {
-      "block": "cakeworld:icing",
-      "enabled": true,
-      "family": "metamorphic",
-      "depth_peak": 48,
-      "depth_spread": 64,
-      "min_y": -64,
-      "max_y": 319,
-      "weight": 0.8,
-      "ore_replaceable": true,
-      "geomes": {},
-      "dimensions": ["minecraft:overworld", "minecraft:the_end"]
-    },
     "cakeworld:rock/biscuit_stone": {
       "block": "cakeworld:biscuit_stone",
       "enabled": true,
@@ -41,19 +28,6 @@
       "ore_replaceable": true,
       "geomes": {},
       "dimensions": ["minecraft:overworld", "minecraft:the_end"]
-    },
-    "cakeworld:rock/biscuit_sand": {
-      "block": "cakeworld:biscuit_sand",
-      "enabled": true,
-      "family": "sedimentary",
-      "depth_peak": 76,
-      "depth_spread": 34,
-      "min_y": -64,
-      "max_y": 319,
-      "weight": 0.75,
-      "ore_replaceable": true,
-      "geomes": {},
-      "dimensions": ["minecraft:overworld"]
     },
     "cakeworld:rock/fudge_rock": {
       "block": "cakeworld:fudge_rock",
@@ -134,9 +108,9 @@
                 "min_downfall": 0.0,
                 "max_downfall": 1.0,
                 "surface": {
-                  "top_block": "cakeworld:biscuit_sand",
-                  "filler_block": "cakeworld:biscuit_sand",
-                  "underwater_block": "cakeworld:biscuit_sand",
+                  "top_block": "cakeworld:biscuit_crumbs",
+                  "filler_block": "cakeworld:biscuit_crumbs",
+                  "underwater_block": "cakeworld:biscuit_crumbs",
                   "filler_depth": 4
                 }
               }
@@ -163,9 +137,9 @@
                 "min_downfall": 0.0,
                 "max_downfall": 0.65,
                 "surface": {
-                  "top_block": "cakeworld:icing",
+                  "top_block": "cakeworld:icing_layer",
                   "filler_block": "cakeworld:chocolate_sponge",
-                  "underwater_block": "cakeworld:biscuit_sand",
+                  "underwater_block": "cakeworld:biscuit_crumbs",
                   "filler_depth": 4
                 }
               },
@@ -181,7 +155,7 @@
                 "surface": {
                   "top_block": "cakeworld:chocolate_sponge",
                   "filler_block": "cakeworld:chocolate_sponge",
-                  "underwater_block": "cakeworld:biscuit_sand",
+                  "underwater_block": "cakeworld:biscuit_crumbs",
                   "filler_depth": 5
                 }
               },
@@ -201,9 +175,9 @@
                 "min_downfall": 0.0,
                 "max_downfall": 1.0,
                 "surface": {
-                  "top_block": "cakeworld:icing",
+                  "top_block": "cakeworld:icing_layer",
                   "filler_block": "cakeworld:biscuit_stone",
-                  "underwater_block": "cakeworld:biscuit_sand",
+                  "underwater_block": "cakeworld:biscuit_crumbs",
                   "filler_depth": 5
                 }
               }
@@ -259,7 +233,7 @@
                 "min_downfall": 0.0,
                 "max_downfall": 1.0,
                 "surface": {
-                  "top_block": "cakeworld:icing",
+                  "top_block": "cakeworld:icing_layer",
                   "filler_block": "cakeworld:biscuit_stone",
                   "underwater_block": "cakeworld:biscuit_stone",
                   "filler_depth": 5
@@ -275,7 +249,7 @@
             "default_fluid": "cakeworld:lemonade",
             "deep_aquifer_fluid": "cakeworld:hot_fudge",
             "deep_aquifer_max_y": -40,
-            "snow_block": "cakeworld:icing",
+            "snow_block": "cakeworld:icing_layer",
             "ice_block": "cakeworld:frozen_lemonade"
           },
           "cakeworld:nether_materials": {
@@ -288,7 +262,7 @@
           "cakeworld:end_materials": {
             "dimension": "minecraft:the_end",
             "enabled": true,
-            "snow_block": "cakeworld:icing",
+            "snow_block": "cakeworld:icing_layer",
             "ice_block": "cakeworld:frozen_lemonade"
           }
         }

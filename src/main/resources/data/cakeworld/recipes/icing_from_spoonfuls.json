@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "cakeworld:icing_spoonful"
+    },
+    {
+      "item": "cakeworld:icing_spoonful"
+    }
+  ],
+  "result": {
+    "item": "cakeworld:icing_layer"
+  }
+}

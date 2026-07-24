@@ -1,6 +1,11 @@
 package com.mcmoddev.cakeworld.init;
 
+import java.util.function.Supplier;
+
 import com.mcmoddev.cakeworld.CakeWorld;
+import com.mcmoddev.cakeworld.block.BiscuitCrumbsBlock;
+import com.mcmoddev.cakeworld.block.ChocolateSpongeBlock;
+import com.mcmoddev.cakeworld.block.IcingLayerBlock;
 
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
@@ -21,16 +26,26 @@ public final class CakeWorldBlocks {
 			DeferredRegister.create(ForgeRegistries.ITEMS, CakeWorld.MODID);
 
 	public static final RegistryObject<Block> CHOCOLATE_SPONGE = block("chocolate_sponge",
-			BlockBehaviour.Properties.of(Material.DIRT).strength(0.6F).sound(SoundType.ROOTED_DIRT));
+			() -> new ChocolateSpongeBlock(BlockBehaviour.Properties.of(Material.DIRT)
+					.strength(0.6F).sound(SoundType.ROOTED_DIRT)));
+	// Revision-1 OreSpawn snapshots can contain these registry IDs as full rock
+	// strata. Keep their physical contracts stable and use new IDs for layers
+	// and falling terrain so existing worlds cannot become hollow or collapse.
 	public static final RegistryObject<Block> ICING = block("icing",
 			BlockBehaviour.Properties.of(Material.SNOW).strength(0.25F).sound(SoundType.SNOW));
+	public static final RegistryObject<Block> ICING_LAYER = block("icing_layer",
+			() -> new IcingLayerBlock(BlockBehaviour.Properties.of(Material.SNOW)
+					.randomTicks().strength(0.25F).sound(SoundType.SNOW).noOcclusion()));
 	public static final RegistryObject<Block> BISCUIT_STONE = block("biscuit_stone",
 			BlockBehaviour.Properties.of(Material.STONE).requiresCorrectToolForDrops()
 					.strength(1.5F, 6.0F).sound(SoundType.STONE));
 	public static final RegistryObject<Block> BISCUIT_SAND = block("biscuit_sand",
 			BlockBehaviour.Properties.of(Material.SAND).strength(0.5F).sound(SoundType.SAND));
+	public static final RegistryObject<Block> BISCUIT_CRUMBS = block("biscuit_crumbs",
+			() -> new BiscuitCrumbsBlock(BlockBehaviour.Properties.of(Material.SAND)
+					.strength(0.5F).sound(SoundType.SAND)));
 	public static final RegistryObject<Block> FROZEN_LEMONADE = block("frozen_lemonade",
-			BlockBehaviour.Properties.of(Material.ICE_SOLID).friction(0.98F)
+			BlockBehaviour.Properties.of(Material.ICE_SOLID).friction(0.96F)
 					.strength(0.5F).sound(SoundType.GLASS).noOcclusion());
 	public static final RegistryObject<Block> FUDGE_ROCK = block("fudge_rock",
 			BlockBehaviour.Properties.of(Material.STONE).requiresCorrectToolForDrops()
@@ -45,7 +60,12 @@ public final class CakeWorldBlocks {
 	}
 
 	private static RegistryObject<Block> block(String name, BlockBehaviour.Properties properties) {
-		RegistryObject<Block> block = BLOCKS.register(name, () -> new Block(properties));
+		return block(name, () -> new Block(properties));
+	}
+
+	private static RegistryObject<Block> block(String name,
+			Supplier<Block> supplier) {
+		RegistryObject<Block> block = BLOCKS.register(name, supplier);
 		ITEMS.register(name, () -> new BlockItem(block.get(),
 				new Item.Properties().tab(CreativeModeTab.TAB_BUILDING_BLOCKS)));
 		return block;

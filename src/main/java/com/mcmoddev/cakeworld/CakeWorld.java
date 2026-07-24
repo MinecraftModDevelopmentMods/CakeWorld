@@ -3,6 +3,7 @@ package com.mcmoddev.cakeworld;
 import com.mcmoddev.cakeworld.init.CakeWorldBiomes;
 import com.mcmoddev.cakeworld.init.CakeWorldBlocks;
 import com.mcmoddev.cakeworld.init.CakeWorldFluids;
+import com.mcmoddev.cakeworld.init.CakeWorldItems;
 
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
@@ -16,6 +17,7 @@ public final class CakeWorld {
 		IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
 		CakeWorldBlocks.register(modBus);
 		CakeWorldFluids.register(modBus);
+		CakeWorldItems.register(modBus);
 		CakeWorldBiomes.register(modBus);
 	}
 }
