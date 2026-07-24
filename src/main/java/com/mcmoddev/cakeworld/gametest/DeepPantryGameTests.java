@@ -1,5 +1,6 @@
 package com.mcmoddev.cakeworld.gametest;
 
+import java.lang.reflect.Field;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,8 +47,12 @@ import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RedStoneOreBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.levelgen.Aquifer;
+import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.LootTable;
@@ -362,6 +367,87 @@ public final class DeepPantryGameTests {
 		helper.succeed();
 	}
 
+	@GameTest(template = EMPTY, timeoutTicks = 2400)
+	public static void focusedTerrainAndAquiferBoundaryAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean("cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed terrain/aquifer audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel overworld = helper.getLevel();
+		ServerLevel nether = helper.getLevel().getServer().getLevel(Level.NETHER);
+		ServerLevel end = helper.getLevel().getServer().getLevel(Level.END);
+		require(helper, nether != null && end != null,
+				"Fixed-seed terrain audit could not resolve Nether and End levels");
+		int auditChunkX = 16;
+		int auditChunkZ = 16;
+
+		Map<Block, Integer> overworldResiduals = scanDimension(overworld,
+				Set.of(Blocks.STONE, Blocks.DEEPSLATE),
+				auditChunkX, auditChunkZ, 4, -64, 96);
+		Map<Block, Integer> netherResiduals = scanDimension(nether,
+				Set.of(Blocks.NETHERRACK, Blocks.BASALT, Blocks.BLACKSTONE),
+				auditChunkX, auditChunkZ, 4, 0, 127);
+		Map<Block, Integer> endResiduals = scanDimension(end,
+				Set.of(Blocks.END_STONE),
+				auditChunkX, auditChunkZ, 4, 0, 255);
+		Map<Integer, Integer> overworldResidualYs = countTargetYLevels(
+				overworld, Set.of(Blocks.STONE, Blocks.DEEPSLATE),
+				auditChunkX, auditChunkZ, 4, -64, 96);
+
+		int lemonadeBelow = countBlockInRange(overworld,
+				CakeWorldFluids.LEMONADE_BLOCK.get(), auditChunkX,
+				auditChunkZ, 4, -64, -41);
+		int lemonadeAtThreshold = countBlockInRange(overworld,
+				CakeWorldFluids.LEMONADE_BLOCK.get(), auditChunkX,
+				auditChunkZ, 4, -40, -40);
+		int lemonadeAbove = countBlockInRange(overworld,
+				CakeWorldFluids.LEMONADE_BLOCK.get(), auditChunkX,
+				auditChunkZ, 4, -39, 96);
+		int fudgeBelow = countBlockInRange(overworld,
+				CakeWorldFluids.HOT_FUDGE_BLOCK.get(), auditChunkX,
+				auditChunkZ, 4, -64, -41);
+		int fudgeAtThreshold = countBlockInRange(overworld,
+				CakeWorldFluids.HOT_FUDGE_BLOCK.get(), auditChunkX,
+				auditChunkZ, 4, -40, -40);
+		int fudgeAbove = countBlockInRange(overworld,
+				CakeWorldFluids.HOT_FUDGE_BLOCK.get(), auditChunkX,
+				auditChunkZ, 4, -39, 96);
+		require(helper, overworld.getChunkSource().getGenerator()
+						instanceof NoiseBasedChunkGenerator,
+				"Overworld does not expose a noise-based aquifer picker");
+		NoiseBasedChunkGenerator generator = (NoiseBasedChunkGenerator)
+				overworld.getChunkSource().getGenerator();
+		Aquifer.FluidPicker fluidPicker = aquiferPicker(generator);
+		BlockState pickerBelow = fluidPicker.computeFluid(
+				auditChunkX << 4, -41, auditChunkZ << 4).at(-41);
+		BlockState pickerAtThreshold = fluidPicker.computeFluid(
+				auditChunkX << 4, -40, auditChunkZ << 4).at(-40);
+		LOGGER.info("Focused terrain/aquifer audit: overworld_residuals={}, nether_residuals={}, end_residuals={}, lemonade_below={}, lemonade_at_minus_40={}, lemonade_above={}, fudge_below={}, fudge_at_minus_40={}, fudge_above={}",
+				describe(overworldResiduals), describe(netherResiduals),
+				describe(endResiduals), lemonadeBelow, lemonadeAtThreshold,
+				lemonadeAbove, fudgeBelow, fudgeAtThreshold, fudgeAbove);
+		LOGGER.info("Focused terrain residual Y levels: overworld={}",
+				overworldResidualYs);
+		require(helper, pickerBelow.is(
+						CakeWorldFluids.HOT_FUDGE_BLOCK.get()),
+				"Installed aquifer picker did not select Hot Fudge below -40");
+		require(helper, pickerAtThreshold.is(
+						CakeWorldFluids.LEMONADE_BLOCK.get()),
+				"Installed aquifer picker did not select Lemonade at -40");
+		require(helper, overworldResiduals.isEmpty(),
+				"Overworld terrain replacement left base hosts: "
+						+ describe(overworldResiduals));
+		require(helper, netherResiduals.isEmpty(),
+				"Nether terrain replacement left base hosts: "
+						+ describe(netherResiduals));
+		require(helper, endResiduals.isEmpty(),
+				"End terrain replacement left base hosts: "
+						+ describe(endResiduals));
+		helper.succeed();
+	}
+
 	@GameTest(template = EMPTY, timeoutTicks = 1200)
 	public static void baseMetalsCounterpartsPreserveTagsRecipesAndGeneration(
 			GameTestHelper helper) {
@@ -531,6 +617,58 @@ public final class DeepPantryGameTests {
 									new BlockPos(x, y, z)).getBlock();
 							if (targets.contains(block)) {
 								counts.merge(block, 1, Integer::sum);
+							}
+						}
+					}
+				}
+			}
+		}
+		return counts;
+	}
+
+	private static int countBlockInRange(ServerLevel level, Block target,
+			int centerChunkX, int centerChunkZ, int radius,
+			int requestedMinY, int requestedMaxY) {
+		return scanDimension(level, Set.of(target), centerChunkX, centerChunkZ,
+				radius, requestedMinY, requestedMaxY).getOrDefault(target, 0);
+	}
+
+	private static Aquifer.FluidPicker aquiferPicker(
+			NoiseBasedChunkGenerator generator) {
+		for (String fieldName : List.of("globalFluidPicker", "f_188607_")) {
+			try {
+				Field field = NoiseBasedChunkGenerator.class
+						.getDeclaredField(fieldName);
+				field.setAccessible(true);
+				return (Aquifer.FluidPicker) field.get(generator);
+			} catch (NoSuchFieldException ignored) {
+				// Try the runtime-obfuscated name next.
+			} catch (ReflectiveOperationException error) {
+				throw new AssertionError(
+						"Could not inspect the installed aquifer picker", error);
+			}
+		}
+		throw new AssertionError(
+				"Could not find the noise generator aquifer-picker field");
+	}
+
+	private static Map<Integer, Integer> countTargetYLevels(ServerLevel level,
+			Set<Block> targets, int centerChunkX, int centerChunkZ, int radius,
+			int requestedMinY, int requestedMaxY) {
+		Map<Integer, Integer> counts = new LinkedHashMap<>();
+		int minY = Math.max(level.getMinBuildHeight(), requestedMinY);
+		int maxY = Math.min(level.getMaxBuildHeight() - 1, requestedMaxY);
+		for (int chunkX = centerChunkX - radius;
+				chunkX <= centerChunkX + radius; chunkX++) {
+			for (int chunkZ = centerChunkZ - radius;
+					chunkZ <= centerChunkZ + radius; chunkZ++) {
+				level.getChunk(chunkX, chunkZ);
+				for (int x = chunkX << 4; x < (chunkX + 1) << 4; x++) {
+					for (int z = chunkZ << 4; z < (chunkZ + 1) << 4; z++) {
+						for (int y = minY; y <= maxY; y++) {
+							if (targets.contains(level.getBlockState(
+									new BlockPos(x, y, z)).getBlock())) {
+								counts.merge(y, 1, Integer::sum);
 							}
 						}
 					}
