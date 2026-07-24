@@ -27,7 +27,7 @@ logs
 # Files from Forge MDK
 forge*changelog.txt
 
-# Local coding-agent handover context
-/AGENTS.md
-/agent-notes/
-/.codex/
+# Local coding-agent handover context (at any repository depth)
+AGENTS.md
+agent-notes/
+.codex/
