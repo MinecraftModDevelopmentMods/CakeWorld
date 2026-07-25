@@ -47,6 +47,8 @@ import com.mcmoddev.cakeworld.entity.GingerbreadPony;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.MallowFloater;
 import com.mcmoddev.cakeworld.entity.MallowPuffProjectile;
+import com.mcmoddev.cakeworld.entity.MirageConfectioner;
+import com.mcmoddev.cakeworld.entity.MirageSweetProjectile;
 import com.mcmoddev.cakeworld.entity.NougatGoat;
 import com.mcmoddev.cakeworld.entity.PeppermintFox;
 import com.mcmoddev.cakeworld.entity.PopRockPopper;
@@ -130,12 +132,14 @@ import net.minecraft.world.entity.monster.Ghast;
 import net.minecraft.world.entity.monster.Giant;
 import net.minecraft.world.entity.monster.Guardian;
 import net.minecraft.world.entity.monster.Husk;
+import net.minecraft.world.entity.monster.Illusioner;
 import net.minecraft.world.entity.monster.Ravager;
 import net.minecraft.world.entity.monster.Vex;
 import net.minecraft.world.entity.monster.Zoglin;
 import net.minecraft.world.entity.monster.hoglin.Hoglin;
 import net.minecraft.world.entity.monster.piglin.Piglin;
 import net.minecraft.world.entity.projectile.AbstractHurtingProjectile;
+import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.EvokerFangs;
 import net.minecraft.world.entity.projectile.LargeFireball;
 import net.minecraft.world.entity.projectile.SmallFireball;
@@ -190,6 +194,7 @@ import com.mcmoddev.cakeworld.world.CakeWorldEndermiteReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldEvokerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldGiantReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldGuardianReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldIllusionerReplacement;
 
 @GameTestHolder(CakeWorld.MODID)
 @PrefixGameTestTemplate(false)
@@ -5413,6 +5418,363 @@ public final class FirstBiteGameTests {
 		requireCriterion(helper, advancementPlayer,
 				"minecraft:adventure/kill_all_mobs",
 				"minecraft:husk");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void mirageConfectionersKeepCommandSpellsAndSafeSweets(
+			GameTestHelper helper) {
+		MirageConfectioner confectioner =
+				CakeWorldEntities.MIRAGE_CONFECTIONER.get()
+						.create(helper.getLevel());
+		Pig target = EntityType.PIG.create(helper.getLevel());
+		Evoker illagerColleague =
+				EntityType.EVOKER.create(helper.getLevel());
+		require(helper,
+				confectioner != null && target != null
+						&& illagerColleague != null,
+				"Could not create Mirage Confectioner fixtures");
+		BlockPos anchor = helper.absolutePos(
+				new BlockPos(2, 3, 2));
+		confectioner.setPos(anchor.getX(), anchor.getY(),
+				anchor.getZ());
+		target.setPos(anchor.getX() + 7.0D,
+				anchor.getY(), anchor.getZ());
+		confectioner.finalizeSpawn(helper.getLevel(),
+				helper.getLevel().getCurrentDifficultyAt(
+						anchor),
+				MobSpawnType.COMMAND, null, null);
+		AABB culling = confectioner
+				.getBoundingBoxForCulling();
+		require(helper,
+				confectioner instanceof Illusioner
+						&& confectioner.getMobType()
+								== MobType.ILLAGER
+						&& close(confectioner
+								.getMaxHealth(), 32.0D)
+						&& close(confectioner
+								.getAttributeValue(
+										Attributes
+												.MOVEMENT_SPEED),
+								0.5D)
+						&& close(confectioner
+								.getAttribute(
+										Attributes.FOLLOW_RANGE)
+								.getBaseValue(),
+								18.0D)
+						&& close(confectioner
+								.getDimensions(Pose.STANDING)
+								.width, 0.6D)
+						&& close(confectioner
+								.getDimensions(Pose.STANDING)
+								.height, 1.95D),
+				"Mirage Confectioner lost Illusioner type, attributes, or dimensions: "
+						+ "instanceof=" + (confectioner instanceof Illusioner)
+						+ ", mobType=" + confectioner.getMobType()
+						+ ", health=" + confectioner.getMaxHealth()
+						+ ", speed=" + confectioner.getAttributeValue(
+								Attributes.MOVEMENT_SPEED)
+						+ ", follow=" + confectioner.getAttributeValue(
+								Attributes.FOLLOW_RANGE)
+						+ ", followBase=" + confectioner.getAttribute(
+								Attributes.FOLLOW_RANGE).getBaseValue()
+						+ ", width=" + confectioner
+								.getDimensions(Pose.STANDING).width
+						+ ", height=" + confectioner
+								.getDimensions(Pose.STANDING).height);
+		require(helper,
+				close(culling.getXsize(), 6.6D)
+						&& close(culling.getZsize(), 6.6D),
+				"Mirage Confectioner lost Illusioner's expanded four-copy culling box: "
+						+ culling);
+		require(helper,
+				confectioner.getItemBySlot(
+						EquipmentSlot.MAINHAND)
+						.is(Items.BOW),
+				"Mirage Confectioner command initialization did not equip the Illusioner bow");
+		require(helper, confectioner.canJoinRaid(),
+				"Mirage Confectioner command initialization lost the Raider join flag");
+		require(helper,
+				confectioner.isAlliedTo(illagerColleague),
+				"Mirage Confectioner lost unteamed Illager alliance");
+
+		Difficulty originalDifficulty =
+				helper.getLevel().getDifficulty();
+		try {
+			for (Difficulty safeDifficulty :
+					new Difficulty[] {Difficulty.EASY,
+							Difficulty.NORMAL}) {
+				helper.getLevel().getServer().setDifficulty(
+						safeDifficulty, true);
+				target.removeAllEffects();
+				target.setHealth(10.0F);
+				target.invulnerableTime = 0;
+				target.setSecondsOnFire(5);
+				target.fallDistance = 12.0F;
+				int arrowsBefore = helper.getLevel()
+						.getEntitiesOfClass(
+								AbstractArrow.class,
+								new AABB(anchor)
+										.inflate(32.0D))
+						.size();
+				confectioner.performRangedAttack(
+						target, 1.0F);
+				MirageSweetProjectile sweet =
+						helper.getLevel()
+								.getEntitiesOfClass(
+										MirageSweetProjectile.class,
+										new AABB(anchor)
+												.inflate(32.0D),
+										projectile -> projectile
+												.getOwner()
+												== confectioner)
+								.stream().findFirst()
+								.orElse(null);
+				require(helper,
+						sweet != null
+								&& helper.getLevel()
+										.getEntitiesOfClass(
+												AbstractArrow.class,
+												new AABB(
+														anchor)
+														.inflate(
+																32.0D))
+										.size()
+										== arrowsBefore,
+						safeDifficulty
+								+ " Mirage Confectioner did not substitute its real arrow with a safe visible sweet");
+				sweet.applyHarmlessMirage(target);
+				require(helper,
+						close(target.getHealth(), 10.0D)
+								&& !target.isOnFire()
+								&& target.fallDistance == 0.0F
+								&& target.hasEffect(
+										MobEffects.BLINDNESS)
+								&& target.hasEffect(
+										MobEffects.CONFUSION)
+								&& target.hasEffect(
+										MobEffects.GLOWING)
+								&& target.hasEffect(
+										MobEffects
+												.SLOW_FALLING)
+								&& target.hasEffect(
+										MobEffects
+												.FIRE_RESISTANCE)
+								&& target.getEffect(
+										MobEffects
+												.DAMAGE_RESISTANCE)
+										.getAmplifier() == 4,
+						safeDifficulty
+								+ " Mirage Sweet caused damage or lacked obscuring/rescue effects");
+				sweet.discard();
+			}
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			target.removeAllEffects();
+			target.setHealth(10.0F);
+			target.invulnerableTime = 0;
+			confectioner.performRangedAttack(target, 1.0F);
+			AbstractArrow arrow = helper.getLevel()
+					.getEntitiesOfClass(AbstractArrow.class,
+							new AABB(anchor).inflate(32.0D),
+							projectile -> projectile
+									.getOwner()
+									== confectioner)
+					.stream().findFirst().orElse(null);
+			require(helper, arrow != null,
+					"Hard Mirage Confectioner did not retain the genuine Illusioner arrow path");
+			target.hurt(DamageSource.arrow(
+					arrow, confectioner), 4.0F);
+			require(helper, target.getHealth() < 10.0F,
+					"Hard Mirage Confectioner arrow did not retain real damage");
+			arrow.discard();
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.PEACEFUL, true);
+			MirageConfectioner peaceful =
+					CakeWorldEntities
+							.MIRAGE_CONFECTIONER.get()
+							.create(helper.getLevel());
+			require(helper, peaceful != null,
+					"Could not create Peaceful Mirage Confectioner fixture");
+			peaceful.checkDespawn();
+			require(helper, peaceful.isRemoved(),
+					"Mirage Confectioner did not retain Peaceful monster despawning");
+		} finally {
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		target.setInvulnerable(true);
+		confectioner.setTarget(target);
+		helper.getLevel().addFreshEntity(confectioner);
+		helper.getLevel().addFreshEntity(target);
+		try {
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.NORMAL, true);
+			for (int i = 0; i < 50; i++) {
+				confectioner.tick();
+			}
+			require(helper,
+					confectioner.hasEffect(
+							MobEffects.INVISIBILITY),
+					"Mirage Confectioner did not retain the inherited mirror/invisibility spell");
+			for (int i = 0; i < 30; i++) {
+				confectioner.tick();
+			}
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			target.removeEffect(MobEffects.BLINDNESS);
+			for (int i = 0; i < 50; i++) {
+				confectioner.tick();
+			}
+			require(helper,
+					target.hasEffect(MobEffects.BLINDNESS),
+					"Mirage Confectioner did not retain Illusioner's Hard-only blindness spell");
+		} finally {
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+			target.setInvulnerable(false);
+		}
+
+		var nearestCakeWorldBiome =
+				helper.getLevel().findNearestBiome(
+						holder -> holder.unwrapKey()
+								.map(key -> CakeWorld.MODID
+										.equals(key.location()
+												.getNamespace()))
+								.orElse(false),
+						anchor, 512, 4);
+		require(helper, nearestCakeWorldBiome != null,
+				"Could not locate CakeWorld terrain for Illusioner command conversion");
+		BlockPos conversionPos =
+				nearestCakeWorldBiome.getFirst();
+		Illusioner literal =
+				EntityType.ILLUSIONER.create(
+						helper.getLevel());
+		Ravager ravager =
+				EntityType.RAVAGER.create(helper.getLevel());
+		require(helper, literal != null && ravager != null,
+				"Could not create Illusioner raid-conversion fixtures");
+		literal.moveTo(conversionPos.getX(),
+				conversionPos.getY(),
+				conversionPos.getZ(), 29.0F, 0.0F);
+		literal.setHealth(23.0F);
+		literal.setCustomName(new TextComponent(
+				"Four of a Kind"));
+		literal.setPersistenceRequired();
+		literal.setNoAi(true);
+		literal.setItemSlot(EquipmentSlot.MAINHAND,
+				new ItemStack(Items.BOW));
+		CompoundTag spellState = literal.saveWithoutId(
+				new CompoundTag());
+		spellState.putInt("SpellTicks", 25);
+		spellState.putBoolean("CanJoinRaid", true);
+		literal.load(spellState);
+		ravager.setPos(conversionPos.getX(),
+				conversionPos.getY(),
+				conversionPos.getZ());
+		helper.getLevel().addFreshEntity(ravager);
+		Raid raid = new Raid(197828, helper.getLevel(),
+				conversionPos);
+		raid.joinRaid(2, literal, null, true);
+		raid.setLeader(2, literal);
+		helper.getLevel().addFreshEntity(literal);
+		literal.startRiding(ravager, true);
+		MirageConfectioner converted =
+				CakeWorldIllusionerReplacement
+						.replaceIfInCakeWorldBiome(
+								helper.getLevel(),
+								literal);
+		require(helper,
+				converted != null
+						&& literal.isRemoved()
+						&& converted.getType()
+								== CakeWorldEntities
+										.MIRAGE_CONFECTIONER
+										.get()
+						&& close(converted.getHealth(), 23.0D)
+						&& converted.hasCustomName()
+						&& "Four of a Kind".equals(
+								converted.getCustomName()
+										.getString())
+						&& converted.isPersistenceRequired()
+						&& converted.isNoAi()
+						&& converted.isCastingSpell()
+						&& close(converted.getYRot(), 29.0D)
+						&& converted.getItemBySlot(
+								EquipmentSlot.MAINHAND)
+								.is(Items.BOW)
+						&& converted.getCurrentRaid() == raid
+						&& converted.getWave() == 2
+						&& raid.getLeader(2) == converted
+						&& raid.getTotalRaidersAlive() == 1
+						&& converted.getVehicle() == ravager,
+				"Literal Illusioner conversion lost type, NBT, spell, command bow, raid, leader, or Ravager state");
+
+		TagKey<EntityType<?>> raiders = TagKey.create(
+				Registry.ENTITY_TYPE_REGISTRY,
+				new ResourceLocation("minecraft",
+						"raiders"));
+		require(helper,
+				CakeWorldEntities.MIRAGE_CONFECTIONER
+						.get().is(raiders),
+				"Mirage Confectioner did not preserve the vanilla raider tag role");
+		Registry<Biome> biomes = helper.getLevel()
+				.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY);
+		for (ResourceLocation biomeId :
+				new ResourceLocation[] {
+						CakeWorldBiomes.CANDY_PLAINS.getId(),
+						CakeWorldBiomes.COOKIE_FOREST.getId(),
+						CakeWorldBiomes.MARSHMALLOW_PEAKS
+								.getId(),
+						CakeWorldBiomes.SODA_OCEAN.getId(),
+						CakeWorldBiomes.FUDGE_WASTES.getId(),
+						CakeWorldBiomes.MERINGUE_ISLANDS
+								.getId()}) {
+			Biome biome = biomes.get(biomeId);
+			require(helper, biome != null,
+					"Could not inspect command-only Mirage Confectioner boundary for "
+							+ biomeId);
+			boolean leaked = biome.getMobSettings()
+					.getMobs(MobCategory.MONSTER)
+					.unwrap().stream()
+					.anyMatch(spawn ->
+							spawn.type
+									== EntityType.ILLUSIONER
+									|| spawn.type
+											== CakeWorldEntities
+													.MIRAGE_CONFECTIONER
+													.get());
+			require(helper, !leaked,
+					"Command-only Illusioner role leaked into biome spawning at "
+							+ biomeId);
+		}
+		ResourceLocation eggId = new ResourceLocation(
+				CakeWorld.MODID,
+				"mirage_confectioner_spawn_egg");
+		Advancement killAll = helper.getLevel().getServer()
+				.getAdvancements().getAdvancement(
+						new ResourceLocation("minecraft",
+								"adventure/kill_all_mobs"));
+		require(helper,
+				SpawnPlacements.getPlacementType(
+						CakeWorldEntities
+								.MIRAGE_CONFECTIONER.get())
+						== SpawnPlacements.Type
+								.NO_RESTRICTIONS
+						&& Registry.ITEM.getOptional(eggId)
+								.isEmpty()
+						&& killAll != null
+						&& !killAll.getCriteria().containsKey(
+								"minecraft:illusioner")
+						&& converted.getLootTable().equals(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/mirage_confectioner")),
+				"Mirage Confectioner lost empty loot or fabricated a spawn placement, egg, or nonexistent advancement criterion");
 		helper.succeed();
 	}
 

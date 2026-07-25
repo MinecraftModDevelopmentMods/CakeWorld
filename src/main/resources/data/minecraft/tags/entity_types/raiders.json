@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
-    "cakeworld:sour_sorcerer"
+    "cakeworld:sour_sorcerer",
+    "cakeworld:mirage_confectioner"
   ]
 }

@@ -20,6 +20,8 @@ import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.MallowFloater;
 import com.mcmoddev.cakeworld.entity.MallowPuffProjectile;
+import com.mcmoddev.cakeworld.entity.MirageConfectioner;
+import com.mcmoddev.cakeworld.entity.MirageSweetProjectile;
 import com.mcmoddev.cakeworld.entity.NougatGoat;
 import com.mcmoddev.cakeworld.entity.PeppermintFox;
 import com.mcmoddev.cakeworld.entity.PopRockPopper;
@@ -64,6 +66,7 @@ import net.minecraft.world.entity.monster.Evoker;
 import net.minecraft.world.entity.monster.Ghast;
 import net.minecraft.world.entity.monster.Giant;
 import net.minecraft.world.entity.monster.Guardian;
+import net.minecraft.world.entity.monster.Illusioner;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.monster.hoglin.Hoglin;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -175,6 +178,23 @@ public final class CakeWorldEntities {
 							MobCategory.MONSTER)
 							.sized(0.6F, 1.95F)
 							.clientTrackingRange(8));
+	public static final RegistryObject<EntityType<MirageConfectioner>>
+			MIRAGE_CONFECTIONER = entity(
+					"mirage_confectioner",
+					EntityType.Builder.of(
+							MirageConfectioner::new,
+							MobCategory.MONSTER)
+							.sized(0.6F, 1.95F)
+							.clientTrackingRange(8));
+	public static final RegistryObject<EntityType<MirageSweetProjectile>>
+			MIRAGE_SWEET = entity("mirage_sweet",
+					EntityType.Builder
+							.<MirageSweetProjectile>of(
+									MirageSweetProjectile::new,
+									MobCategory.MISC)
+							.sized(0.25F, 0.25F)
+							.clientTrackingRange(4)
+							.updateInterval(10));
 	public static final RegistryObject<EntityType<TaffyTallwalker>>
 			TAFFY_TALLWALKER = entity("taffy_tallwalker",
 					EntityType.Builder.of(TaffyTallwalker::new,
@@ -304,6 +324,8 @@ public final class CakeWorldEntities {
 						.build());
 		event.put(DRIED_CRUMBLER.get(),
 				Zombie.createAttributes().build());
+		event.put(MIRAGE_CONFECTIONER.get(),
+				Illusioner.createAttributes().build());
 		event.put(TAFFY_TALLWALKER.get(),
 				EnderMan.createAttributes().build());
 		event.put(SUGAR_MITE.get(),

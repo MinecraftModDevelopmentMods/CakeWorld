@@ -261,7 +261,7 @@ document explicitly says otherwise.
 | MOB-025 | `minecraft:hoglin` | Fudge Boar | Huntable Nether food animal retaining Hoglin breeding, repellent and knockback roles; protected throws below Hard and real charges on Hard. |
 | MOB-026 | `minecraft:horse` | Gingerbread Pony | Primary tameable, saddleable and armour-compatible rideable mount, retaining Horse appearance and attribute inheritance. |
 | MOB-027 | `minecraft:husk` | Dried Crumbler | Daylight-safe Sherbet Dunes Crumbler retaining Husk dimensions, attributes, sounds, loot, water conversion and progression roles; dusty harmless contact below Hard, real damage and Hunger on Hard. |
-| MOB-028 | `minecraft:illusioner` | Mirage Confectioner | Command-only compatibility caster; not added to normal spawning unless given a future structure. |
+| MOB-028 | `minecraft:illusioner` | Mirage Confectioner | Command-only compatibility caster retaining mirage copies, invisibility, Hard-only blindness, bow AI, raider state and empty loot; harmless obscuring sweet shots below Hard and real arrows on Hard. |
 | MOB-029 | `minecraft:iron_golem` | Jawbreaker Guardian | Settlement defender. |
 | MOB-030 | `minecraft:llama` | Meringue Llama | Caravan and pack-animal role. |
 | MOB-031 | `minecraft:magma_cube` | Hot-Fudge Blob | Elastic Nether hazard and cream ingredient source. |
@@ -333,6 +333,13 @@ encounter in the currently shipped biomes. Its exact Husk replacement hook is
 dormant on `cakeworld:sherbet_dunes`; BIO-OW-007 must activate and reverify the
 80-weight, four-creature desert spawn. Water conversion already resolves to
 Stale Crumbler instead of leaking a vanilla Zombie.
+
+MOB-028 remains deliberately command-only. Fresh literal Illusioners summoned
+inside CakeWorld terrain convert to Mirage Confectioners, while loaded
+entities and commands outside CakeWorld biomes remain untouched. It has no
+natural spawn list, no spawn egg, and no fabricated Monsters Hunted criterion,
+matching all three vanilla Illusioner boundaries. A future structure must
+explicitly approve and specify any ordinary encounter.
 
 Projectiles, vehicles, decorative entities, experience, items, the player, and
 other non-mob entity types retain vanilla identity unless a later feature
