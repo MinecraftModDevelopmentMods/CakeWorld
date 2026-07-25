@@ -57,6 +57,13 @@ public final class CakeWorldCreatureSpawns {
 					CakeWorldEntities.DOUGH_DONKEY, 1, 1, 3);
 			replace(event, MobCategory.CREATURE, EntityType.HORSE,
 					CakeWorldEntities.GINGERBREAD_PONY, 5, 2, 6);
+			replace(event, MobCategory.CREATURE, EntityType.RABBIT,
+					CakeWorldEntities.GUMMY_BUNNY, 2, 2, 6);
+		}
+		if ("chocolate_sponge_meadows".equals(
+				biome.getPath())) {
+			replace(event, MobCategory.CREATURE, EntityType.RABBIT,
+					CakeWorldEntities.GUMMY_BUNNY, 2, 2, 6);
 		}
 		if ("cupcake_gardens".equals(biome.getPath())) {
 			replace(event, MobCategory.CREATURE,
@@ -65,6 +72,10 @@ public final class CakeWorldCreatureSpawns {
 					8, 4, 8);
 		}
 		if ("gummy_jungle".equals(biome.getPath())) {
+			replace(event, MobCategory.CREATURE,
+					EntityType.RABBIT,
+					CakeWorldEntities.GUMMY_BUNNY,
+					4, 2, 3);
 			replace(event, MobCategory.CREATURE,
 					EntityType.PARROT,
 					CakeWorldEntities.LOLLIPOP_LORIKEET,

@@ -21,6 +21,7 @@ import com.mcmoddev.cakeworld.entity.GingerbreadPony;
 import com.mcmoddev.cakeworld.entity.GrandGumballGuardian;
 import com.mcmoddev.cakeworld.entity.GiantStaleCrumbler;
 import com.mcmoddev.cakeworld.entity.GlowJelly;
+import com.mcmoddev.cakeworld.entity.GummyBunny;
 import com.mcmoddev.cakeworld.entity.GumballGuardian;
 import com.mcmoddev.cakeworld.entity.HotFudgeBlob;
 import com.mcmoddev.cakeworld.entity.JawbreakerGuardian;
@@ -72,6 +73,7 @@ import net.minecraft.world.entity.animal.Panda;
 import net.minecraft.world.entity.animal.Parrot;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.animal.PolarBear;
+import net.minecraft.world.entity.animal.Rabbit;
 import net.minecraft.world.entity.animal.Sheep;
 import net.minecraft.world.entity.animal.AbstractFish;
 import net.minecraft.world.entity.animal.goat.Goat;
@@ -262,6 +264,12 @@ public final class CakeWorldEntities {
 							.immuneTo(Blocks.POWDER_SNOW)
 							.sized(1.4F, 1.4F)
 							.clientTrackingRange(10));
+	public static final RegistryObject<EntityType<GummyBunny>>
+			GUMMY_BUNNY = entity("gummy_bunny",
+					EntityType.Builder.of(GummyBunny::new,
+							MobCategory.CREATURE)
+							.sized(0.4F, 0.5F)
+							.clientTrackingRange(8));
 	public static final RegistryObject<EntityType<GingerbreadPony>>
 			GINGERBREAD_PONY = entity("gingerbread_pony",
 					EntityType.Builder.of(GingerbreadPony::new,
@@ -457,6 +465,8 @@ public final class CakeWorldEntities {
 				Pillager.createAttributes().build());
 		event.put(VANILLA_ICE_BEAR.get(),
 				PolarBear.createAttributes().build());
+		event.put(GUMMY_BUNNY.get(),
+				Rabbit.createAttributes().build());
 		event.put(GINGERBREAD_PONY.get(),
 				AbstractHorse.createBaseHorseAttributes()
 						.build());
@@ -582,6 +592,10 @@ public final class CakeWorldEntities {
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					Animal::checkAnimalSpawnRules);
+			SpawnPlacements.register(GUMMY_BUNNY.get(),
+					SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					GummyBunny::checkGummyBunnySpawnRules);
 			SpawnPlacements.register(GINGERBREAD_PONY.get(),
 					SpawnPlacements.Type.NO_RESTRICTIONS,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,

@@ -39,6 +39,7 @@ import net.minecraft.client.renderer.entity.PhantomRenderer;
 import net.minecraft.client.renderer.entity.PillagerRenderer;
 import net.minecraft.client.renderer.entity.PolarBearRenderer;
 import net.minecraft.client.renderer.entity.PufferfishRenderer;
+import net.minecraft.client.renderer.entity.RabbitRenderer;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.client.renderer.entity.CowRenderer;
 import net.minecraft.client.renderer.entity.PigRenderer;
@@ -117,6 +118,9 @@ public final class CakeWorldClientEvents {
 		event.registerEntityRenderer(
 				CakeWorldEntities.VANILLA_ICE_BEAR.get(),
 				PolarBearRenderer::new);
+		event.registerEntityRenderer(
+				CakeWorldEntities.GUMMY_BUNNY.get(),
+				RabbitRenderer::new);
 		event.registerEntityRenderer(
 				CakeWorldEntities.GINGERBREAD_PONY.get(),
 				HorseRenderer::new);

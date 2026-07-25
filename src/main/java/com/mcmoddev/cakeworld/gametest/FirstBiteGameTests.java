@@ -47,6 +47,8 @@ import com.mcmoddev.cakeworld.entity.DriedCrumbler;
 import com.mcmoddev.cakeworld.entity.GrandGumballGuardian;
 import com.mcmoddev.cakeworld.entity.GiantStaleCrumbler;
 import com.mcmoddev.cakeworld.entity.GlowJelly;
+import com.mcmoddev.cakeworld.entity.GummyBunny;
+import com.mcmoddev.cakeworld.entity.GummyBunnyPredatorCompatibility;
 import com.mcmoddev.cakeworld.entity.GumballGuardian;
 import com.mcmoddev.cakeworld.entity.FudgeBoar;
 import com.mcmoddev.cakeworld.entity.FudgeBrute;
@@ -110,6 +112,7 @@ import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
@@ -166,6 +169,7 @@ import net.minecraft.world.entity.animal.Pufferfish;
 import net.minecraft.world.entity.animal.FlyingAnimal;
 import net.minecraft.world.entity.animal.Rabbit;
 import net.minecraft.world.entity.animal.Turtle;
+import net.minecraft.world.entity.animal.Wolf;
 import net.minecraft.world.entity.animal.goat.Goat;
 import net.minecraft.world.entity.animal.WaterAnimal;
 import net.minecraft.world.entity.animal.axolotl.Axolotl;
@@ -234,6 +238,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.NaturalSpawner;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.CarrotBlock;
 import net.minecraft.world.level.block.FallingBlock;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.RotatedPillarBlock;
@@ -12028,6 +12033,521 @@ public final class FirstBiteGameTests {
 		helper.succeed();
 	}
 
+	@GameTest(template = EMPTY, timeoutTicks = 300)
+	public static void gummyBunniesKeepVariantsGardensAndSafeBites(
+			GameTestHelper helper) {
+		GummyBunnyProbe bunny =
+				new GummyBunnyProbe(helper.getLevel());
+		GummyBunnyProbe restored =
+				new GummyBunnyProbe(helper.getLevel());
+		bunny.seedRandom(1978L);
+		int experience = bunny.getExperienceValue();
+		require(helper,
+				bunny instanceof Rabbit
+						&& bunny.getType()
+								== CakeWorldEntities
+										.GUMMY_BUNNY.get()
+						&& bunny.getType().getCategory()
+								== MobCategory.CREATURE
+						&& close(bunny.getMaxHealth(), 3.0D)
+						&& close(bunny.getAttributeValue(
+								Attributes.MOVEMENT_SPEED),
+								0.3D)
+						&& close(bunny.getAttributeValue(
+								Attributes.ARMOR), 0.0D)
+						&& close(bunny.getDimensions(
+								Pose.STANDING).width,
+								0.4D)
+						&& close(bunny.getDimensions(
+								Pose.STANDING).height,
+								0.5D)
+						&& bunny.getType()
+								.clientTrackingRange() == 8
+						&& bunny.getMaxSpawnClusterSize() == 4
+						&& experience >= 1
+						&& experience <= 3
+						&& bunny.getLootTableId().equals(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/gummy_bunny")),
+				"Gummy Bunny lost the exact Rabbit body, attributes, tracking, cluster, XP or loot roles");
+
+		require(helper,
+				bunny.countGoalsNamed("FloatGoal") == 1
+						&& bunny.countGoalsNamed(
+								"ClimbOnTopOfPowderSnowGoal")
+								== 1
+						&& bunny.countGoalsNamed(
+								"RabbitPanicGoal") == 1
+						&& bunny.countGoalsNamed(
+								"BreedGoal") == 1
+						&& bunny.countGoalsNamed(
+								"TemptGoal") == 2
+						&& bunny.countGoalsNamed(
+								"RabbitAvoidEntityGoal") == 3
+						&& bunny.countGoalsNamed(
+								"RaidGardenGoal") == 1
+						&& bunny.countGoalsNamed(
+								"WaterAvoidingRandomStrollGoal")
+								== 1
+						&& bunny.countGoalsNamed(
+								"LookAtPlayerGoal") == 1
+						&& bunny.countGoalsNamed(
+								"EvilRabbitAttackGoal") == 0
+						&& bunny.countTargetGoals() == 0,
+				"Gummy Bunny lost Rabbit hopping, panic, breeding, temptation, avoidance, garden or ordinary non-hostile goals");
+		require(helper,
+				bunny.isFood(new ItemStack(Items.CARROT))
+						&& bunny.isFood(new ItemStack(
+								Items.GOLDEN_CARROT))
+						&& bunny.isFood(new ItemStack(
+								Items.DANDELION))
+						&& bunny.isFood(new ItemStack(
+								CakeWorldItems
+										.SPRINKLE_SEEDS
+										.get()))
+						&& bunny.ambientSound()
+								== SoundEvents.RABBIT_AMBIENT
+						&& bunny.hurtSound()
+								== SoundEvents.RABBIT_HURT
+						&& bunny.deathSound()
+								== SoundEvents.RABBIT_DEATH
+						&& bunny.jumpSound()
+								== SoundEvents.RABBIT_JUMP
+						&& bunny.getSoundSource()
+								== SoundSource.NEUTRAL
+						&& close(bunny.jumpPower(), 0.2D),
+				"Gummy Bunny lost vanilla foods, tagged Sprinkle Seeds, sounds, neutral role or resting jump power");
+		bunny.startJumping();
+		require(helper,
+				bunny.lastSound() == SoundEvents.RABBIT_JUMP
+						&& close(bunny.getJumpCompletion(
+								0.0F), 0.0D),
+				"Gummy Bunny lost its ten-tick jump start and audible hop");
+
+		for (int variant = Rabbit.TYPE_BROWN;
+				variant <= Rabbit.TYPE_SALT; variant++) {
+			bunny.setRabbitType(variant);
+			CompoundTag variantData = new CompoundTag();
+			bunny.addAdditionalSaveData(variantData);
+			restored.readAdditionalSaveData(variantData);
+			require(helper,
+					variantData.getInt("RabbitType")
+									== variant
+							&& restored.getRabbitType()
+									== variant,
+					"Gummy Bunny lost colour variant "
+							+ variant
+							+ " across RabbitType save/reload");
+		}
+
+		BlockPos anchor = helper.absolutePos(
+				new BlockPos(3, 3, 3));
+		GummyBunny grouped =
+				CakeWorldEntities.GUMMY_BUNNY.get()
+						.create(helper.getLevel());
+		require(helper, grouped != null,
+				"Could not create Gummy Bunny group fixture");
+		grouped.setPos(anchor.getX(), anchor.getY(),
+				anchor.getZ());
+		grouped.finalizeSpawn(helper.getLevel(),
+				helper.getLevel().getCurrentDifficultyAt(anchor),
+				MobSpawnType.NATURAL,
+				new Rabbit.RabbitGroupData(Rabbit.TYPE_GOLD),
+				null);
+		require(helper,
+				grouped.getRabbitType() == Rabbit.TYPE_GOLD,
+				"Gummy Bunny lost vanilla same-group climate variant propagation");
+
+		GummyBunnyProbe partner =
+				new GummyBunnyProbe(helper.getLevel());
+		bunny.setRabbitType(Rabbit.TYPE_WHITE_SPLOTCHED);
+		partner.setRabbitType(Rabbit.TYPE_WHITE_SPLOTCHED);
+		bunny.seedRandom(1978L);
+		GummyBunny child = bunny.getBreedOffspring(
+				helper.getLevel(), partner);
+		require(helper,
+				child != null
+						&& child.getType()
+								== CakeWorldEntities
+										.GUMMY_BUNNY.get()
+						&& child.getRabbitType()
+								== Rabbit.TYPE_WHITE_SPLOTCHED,
+				"Gummy Bunny breeding leaked a literal Rabbit or lost same-flavour inheritance");
+
+		BlockPos farmland = anchor.offset(4, 0, 0);
+		BlockPos carrots = farmland.above();
+		helper.getLevel().setBlock(farmland,
+				Blocks.FARMLAND.defaultBlockState(), 3);
+		helper.getLevel().setBlock(carrots,
+				Blocks.CARROTS.defaultBlockState()
+						.setValue(CarrotBlock.AGE, 7), 3);
+		GummyBunnyProbe raider =
+				new GummyBunnyProbe(helper.getLevel());
+		raider.seedRandom(1978L);
+		raider.setPos(carrots.getX() + 0.5D,
+				carrots.getY(), carrots.getZ() + 0.5D);
+		helper.getLevel().addFreshEntity(raider);
+		require(helper,
+				helper.getLevel().getGameRules()
+						.getBoolean(GameRules.RULE_MOBGRIEFING)
+						&& raider.runGardenRaidAt(carrots)
+						&& helper.getLevel()
+								.getBlockState(carrots)
+								.is(Blocks.CARROTS)
+						&& helper.getLevel()
+								.getBlockState(carrots)
+								.getValue(CarrotBlock.AGE)
+								== 6,
+				"Gummy Bunny did not use the genuine mob-griefing-controlled mature-carrot raid");
+		CompoundTag raiderData = new CompoundTag();
+		raider.addAdditionalSaveData(raiderData);
+		GummyBunnyProbe reloadedRaider =
+				new GummyBunnyProbe(helper.getLevel());
+		reloadedRaider.readAdditionalSaveData(raiderData);
+		CompoundTag reloadedRaiderData = new CompoundTag();
+		reloadedRaider.addAdditionalSaveData(
+				reloadedRaiderData);
+		require(helper,
+				raiderData.getInt("MoreCarrotTicks") > 0
+						&& reloadedRaiderData.getInt(
+								"MoreCarrotTicks")
+								== raiderData.getInt(
+										"MoreCarrotTicks"),
+				"Gummy Bunny lost the inherited garden-rest timer across save/reload");
+
+		GummyBunnyProbe ferocious =
+				new GummyBunnyProbe(helper.getLevel());
+		ferocious.setRabbitType(Rabbit.TYPE_EVIL);
+		require(helper,
+				close(ferocious.getAttributeValue(
+								Attributes.ARMOR), 8.0D)
+						&& ferocious.getSoundSource()
+								== SoundSource.HOSTILE
+						&& ferocious.countGoalsNamed(
+								"EvilRabbitAttackGoal") == 1
+						&& ferocious.countTargetGoalsNamed(
+								"HurtByTargetGoal") == 1
+						&& ferocious.countTargetGoalsNamed(
+								"NearestAttackableTargetGoal")
+								== 2
+						&& ferocious.getCustomName()
+								instanceof TranslatableComponent
+										name
+						&& "entity.cakeworld.ferocious_gummy_bunny"
+								.equals(name.getKey()),
+				"Ferocious Gummy Bunny lost exact armour, hostile goals/sound or its original CakeWorld name");
+		Pig biteTarget = EntityType.PIG.create(
+				helper.getLevel());
+		require(helper, biteTarget != null,
+				"Could not create Gummy Bunny bite target");
+		float biteHealth = biteTarget.getHealth();
+		for (Difficulty safeDifficulty :
+				new Difficulty[] {
+						Difficulty.PEACEFUL,
+						Difficulty.EASY,
+						Difficulty.NORMAL}) {
+			biteTarget.setHealth(biteHealth);
+			biteTarget.invulnerableTime = 0;
+			biteTarget.removeAllEffects();
+			biteTarget.setSecondsOnFire(5);
+			biteTarget.fallDistance = 12.0F;
+			biteTarget.setDeltaMovement(Vec3.ZERO);
+			require(helper,
+					ferocious.doHurtTargetForDifficulty(
+								biteTarget,
+								safeDifficulty)
+							&& close(
+									biteTarget.getHealth(),
+									biteHealth)
+							&& !biteTarget.isOnFire()
+							&& biteTarget.fallDistance
+									== 0.0F
+							&& biteTarget.hasEffect(
+									CakeWorldEffects
+											.FIZZY_FEET.get())
+							&& biteTarget.hasEffect(
+									MobEffects
+											.SLOW_FALLING)
+							&& biteTarget.hasEffect(
+									MobEffects
+											.FIRE_RESISTANCE)
+							&& biteTarget.getEffect(
+									MobEffects
+											.DAMAGE_RESISTANCE)
+									.getAmplifier() == 4
+							&& biteTarget
+									.getDeltaMovement().y
+									> 0.0D,
+					safeDifficulty
+							+ " Ferocious Gummy Bunny bite caused health or indirect peril, or lost elastic rescue");
+		}
+		biteTarget.setHealth(biteHealth);
+		biteTarget.invulnerableTime = 0;
+		biteTarget.removeAllEffects();
+		biteTarget.setDeltaMovement(Vec3.ZERO);
+		boolean hardBite =
+				ferocious.doHurtTargetForDifficulty(
+						biteTarget, Difficulty.HARD);
+		require(helper,
+				hardBite
+						&& close(biteTarget.getHealth(),
+								biteHealth - 8.0D)
+						&& biteTarget.getActiveEffects()
+								.isEmpty()
+						&& biteTarget.getDeltaMovement()
+								.horizontalDistanceSqr()
+								> 0.0D,
+				"Hard Ferocious Gummy Bunny lost the exact unmodified eight-point Rabbit attack: result="
+						+ hardBite
+						+ ", health="
+						+ biteTarget.getHealth()
+						+ "/"
+						+ biteHealth
+						+ ", effects="
+						+ biteTarget.getActiveEffects()
+						+ ", motion="
+						+ biteTarget.getDeltaMovement()
+						+ ", invulnerableTime="
+						+ biteTarget.invulnerableTime);
+
+		GummyBunny wolfPrey =
+				CakeWorldEntities.GUMMY_BUNNY.get()
+						.create(helper.getLevel());
+		Wolf wolf = EntityType.WOLF.create(
+				helper.getLevel());
+		require(helper, wolfPrey != null && wolf != null,
+				"Could not create Gummy Bunny predator fixtures");
+		wolf.setPos(anchor.getX(), anchor.getY(),
+				anchor.getZ() + 5.0D);
+		wolfPrey.setPos(anchor.getX() + 2.0D,
+				anchor.getY(), anchor.getZ() + 5.0D);
+		helper.getLevel().addFreshEntity(wolf);
+		helper.getLevel().addFreshEntity(wolfPrey);
+		require(helper,
+				wolfPrey instanceof Rabbit
+						&& GummyBunnyPredatorCompatibility
+								.assignNearestPrey(wolf)
+						&& wolf.getTarget() == wolfPrey,
+				"Gummy Bunny lost inherited Fox prey compatibility or the narrow untamed-vanilla-Wolf literal-type repair");
+
+		BlockPos spawnPos = new BlockPos(
+				anchor.getX() + 8,
+				helper.getLevel().getMaxBuildHeight() - 2,
+				anchor.getZ());
+		helper.getLevel().setBlock(spawnPos.below(),
+				CakeWorldBlocks.CHOCOLATE_SPONGE.get()
+						.defaultBlockState(), 3);
+		helper.getLevel().setBlock(spawnPos,
+				Blocks.AIR.defaultBlockState(), 3);
+		TagKey<EntityType<?>> powderSnowWalkable =
+				TagKey.create(Registry.ENTITY_TYPE_REGISTRY,
+						new ResourceLocation("minecraft",
+								"powder_snow_walkable_mobs"));
+		boolean directSpawnRule =
+				GummyBunny.checkGummyBunnySpawnRules(
+						CakeWorldEntities.GUMMY_BUNNY.get(),
+						helper.getLevel(),
+						MobSpawnType.NATURAL,
+						spawnPos,
+						new Random(1978L));
+		boolean registeredSpawnRule =
+				SpawnPlacements.checkSpawnRules(
+						CakeWorldEntities.GUMMY_BUNNY.get(),
+						helper.getLevel(),
+						MobSpawnType.NATURAL,
+						spawnPos,
+						new Random(1979L));
+		SpawnPlacements.Type placementType =
+				SpawnPlacements.getPlacementType(
+						CakeWorldEntities.GUMMY_BUNNY.get());
+		Heightmap.Types heightmapType =
+				SpawnPlacements.getHeightmapType(
+						CakeWorldEntities.GUMMY_BUNNY.get());
+		boolean powderSnowRole =
+				CakeWorldEntities.GUMMY_BUNNY.get()
+						.is(powderSnowWalkable);
+		boolean eggPresent =
+				CakeWorldItems.GUMMY_BUNNY_SPAWN_EGG
+						.isPresent();
+		require(helper,
+				directSpawnRule
+						&& registeredSpawnRule
+						&& placementType
+								== SpawnPlacements.Type.ON_GROUND
+						&& heightmapType
+								== Heightmap.Types
+										.MOTION_BLOCKING_NO_LEAVES
+						&& powderSnowRole
+						&& eggPresent,
+				"Gummy Bunny lost edible bright-surface spawning, exact placement, powder-snow or egg roles: direct="
+						+ directSpawnRule
+						+ ", registered="
+						+ registeredSpawnRule
+						+ ", below="
+						+ helper.getLevel()
+								.getBlockState(
+										spawnPos.below())
+						+ ", rawBrightness="
+						+ helper.getLevel().getRawBrightness(
+								spawnPos, 0)
+						+ ", placement="
+						+ placementType
+						+ ", heightmap="
+						+ heightmapType
+						+ ", powderTag="
+						+ powderSnowRole
+						+ ", egg="
+						+ eggPresent);
+
+		Registry<Biome> biomes = helper.getLevel()
+				.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY);
+		Biome candyPlains = biomes.get(
+				CakeWorldBiomes.CANDY_PLAINS.getId());
+		require(helper, candyPlains != null,
+				"Could not inspect Candy Plains Gummy Bunny spawning");
+		MobSpawnSettings.SpawnerData candySpawn =
+				candyPlains.getMobSettings()
+						.getMobs(MobCategory.CREATURE)
+						.unwrap().stream()
+						.filter(spawn -> spawn.type
+								== CakeWorldEntities
+										.GUMMY_BUNNY.get())
+						.findFirst().orElse(null);
+		require(helper,
+				candySpawn != null
+						&& candySpawn.getWeight().asInt() == 2
+						&& candySpawn.minCount == 2
+						&& candySpawn.maxCount == 6
+						&& candyPlains.getMobSettings()
+								.getMobs(
+										MobCategory.CREATURE)
+								.unwrap().stream()
+								.noneMatch(spawn ->
+										spawn.type
+												== EntityType
+														.RABBIT),
+				"Candy Plains lost the exact Meadow 2/2-6 Gummy Bunny population or leaked literal Rabbits");
+
+		MobSpawnSettingsBuilder futureMeadowSpawns =
+				new MobSpawnSettingsBuilder(
+						MobSpawnSettings.EMPTY);
+		BiomeLoadingEvent futureMeadow =
+				new BiomeLoadingEvent(
+						new ResourceLocation(CakeWorld.MODID,
+								"chocolate_sponge_meadows"),
+						null, null, null,
+						new BiomeGenerationSettingsBuilder(
+								BiomeGenerationSettings.EMPTY),
+						futureMeadowSpawns);
+		CakeWorldCreatureSpawns.onBiomeLoading(futureMeadow);
+		MobSpawnSettings.SpawnerData futureMeadowSpawn =
+				futureMeadowSpawns
+						.getSpawner(MobCategory.CREATURE)
+						.stream()
+						.filter(spawn -> spawn.type
+								== CakeWorldEntities
+										.GUMMY_BUNNY.get())
+						.findFirst().orElse(null);
+		MobSpawnSettingsBuilder futureJungleSpawns =
+				new MobSpawnSettingsBuilder(
+						MobSpawnSettings.EMPTY);
+		BiomeLoadingEvent futureJungle =
+				new BiomeLoadingEvent(
+						new ResourceLocation(CakeWorld.MODID,
+								"gummy_jungle"),
+						null, null, null,
+						new BiomeGenerationSettingsBuilder(
+								BiomeGenerationSettings.EMPTY),
+						futureJungleSpawns);
+		CakeWorldCreatureSpawns.onBiomeLoading(futureJungle);
+		MobSpawnSettings.SpawnerData futureJungleSpawn =
+				futureJungleSpawns
+						.getSpawner(MobCategory.CREATURE)
+						.stream()
+						.filter(spawn -> spawn.type
+								== CakeWorldEntities
+										.GUMMY_BUNNY.get())
+						.findFirst().orElse(null);
+		require(helper,
+				futureMeadowSpawn != null
+						&& futureMeadowSpawn.getWeight()
+								.asInt() == 2
+						&& futureMeadowSpawn.minCount == 2
+						&& futureMeadowSpawn.maxCount == 6
+						&& futureJungleSpawn != null
+						&& futureJungleSpawn.getWeight()
+								.asInt() == 4
+						&& futureJungleSpawn.minCount == 2
+						&& futureJungleSpawn.maxCount == 3
+						&& futureMeadowSpawns
+								.getSpawner(
+										MobCategory.CREATURE)
+								.stream().noneMatch(
+										spawn -> spawn.type
+												== EntityType
+														.RABBIT)
+						&& futureJungleSpawns
+								.getSpawner(
+										MobCategory.CREATURE)
+								.stream().noneMatch(
+										spawn -> spawn.type
+												== EntityType
+														.RABBIT),
+				"Future Chocolate Sponge Meadows or Gummy Jungle lost its staged Gummy Bunny profile");
+
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS.getId())) {
+			Biome biome = biomes.get(biomeId);
+			require(helper,
+					biome != null
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory.CREATURE)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType.RABBIT
+											|| spawn.type
+													== CakeWorldEntities
+															.GUMMY_BUNNY
+															.get()),
+					"Non-meadow current biome leaked Rabbit/Gummy Bunny spawning: "
+							+ biomeId);
+		}
+
+		ServerPlayer advancementPlayer = new ServerPlayer(
+				helper.getLevel().getServer(),
+				helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2044"),
+						"CakeWorldGummyBunnyRoleTest"));
+		VanillaRoleAdvancements.creditBredRole(
+				advancementPlayer,
+				CakeWorldEntities.GUMMY_BUNNY.get());
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:husbandry/bred_all_animals",
+				"minecraft:rabbit");
+
+		raider.discard();
+		wolf.discard();
+		wolfPrey.discard();
+		helper.getLevel().setBlock(farmland,
+				Blocks.AIR.defaultBlockState(), 3);
+		helper.getLevel().setBlock(carrots,
+				Blocks.AIR.defaultBlockState(), 3);
+		helper.getLevel().setBlock(spawnPos.below(),
+				Blocks.AIR.defaultBlockState(), 3);
+		helper.getLevel().setBlock(spawnPos,
+				Blocks.AIR.defaultBlockState(), 3);
+		helper.succeed();
+	}
+
 	@GameTest(template = EMPTY, timeoutTicks = 200)
 	public static void fudgeFolkKeepPiglinSocietyBarterAndSafePeril(
 			GameTestHelper helper) {
@@ -12946,6 +13466,106 @@ public final class FirstBiteGameTests {
 					== SoundEvents.PUFFER_FISH_BLOW_OUT) {
 				blowOutSoundCount++;
 			}
+		}
+	}
+
+	private static final class GummyBunnyProbe
+			extends GummyBunny {
+		private net.minecraft.sounds.SoundEvent lastSound;
+
+		private GummyBunnyProbe(Level level) {
+			super(CakeWorldEntities.GUMMY_BUNNY.get(),
+					level);
+		}
+
+		private int getExperienceValue() {
+			return getExperienceReward(null);
+		}
+
+		private ResourceLocation getLootTableId() {
+			return getLootTable();
+		}
+
+		private net.minecraft.sounds.SoundEvent ambientSound() {
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent hurtSound() {
+			return getHurtSound(DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent deathSound() {
+			return getDeathSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent jumpSound() {
+			return getJumpSound();
+		}
+
+		private float jumpPower() {
+			return getJumpPower();
+		}
+
+		private net.minecraft.sounds.SoundEvent lastSound() {
+			return lastSound;
+		}
+
+		private void seedRandom(long seed) {
+			random.setSeed(seed);
+		}
+
+		private int countGoalsNamed(String name) {
+			return (int)goalSelector.getAvailableGoals()
+					.stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
+		}
+
+		private int countTargetGoalsNamed(String name) {
+			return (int)targetSelector.getAvailableGoals()
+					.stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
+		}
+
+		private int countTargetGoals() {
+			return targetSelector.getAvailableGoals().size();
+		}
+
+		private boolean runGardenRaidAt(BlockPos cropPos) {
+			for (WrappedGoal wrapped :
+					goalSelector.getAvailableGoals()) {
+				if (!"RaidGardenGoal".equals(
+						wrapped.getGoal().getClass()
+								.getSimpleName())) {
+					continue;
+				}
+				for (int attempt = 0; attempt < 450;
+						attempt++) {
+					if (wrapped.canUse()) {
+						wrapped.start();
+						setPos(cropPos.getX() + 0.5D,
+								cropPos.getY(),
+								cropPos.getZ() + 0.5D);
+						wrapped.tick();
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
+		@Override
+		public void playSound(
+				net.minecraft.sounds.SoundEvent sound,
+				float volume, float pitch) {
+			lastSound = sound;
 		}
 	}
 

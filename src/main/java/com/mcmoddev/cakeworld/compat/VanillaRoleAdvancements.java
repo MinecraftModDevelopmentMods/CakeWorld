@@ -137,6 +137,9 @@ public final class VanillaRoleAdvancements {
 		} else if (childType
 				== CakeWorldEntities.MERINGUE_LLAMA.get()) {
 			criterion = "minecraft:llama";
+		} else if (childType
+				== CakeWorldEntities.GUMMY_BUNNY.get()) {
+			criterion = "minecraft:rabbit";
 		}
 		if (criterion != null) {
 			award(player, BRED_ALL, criterion);
