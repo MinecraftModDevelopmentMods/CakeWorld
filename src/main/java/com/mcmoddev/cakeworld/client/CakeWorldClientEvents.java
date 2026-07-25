@@ -52,6 +52,7 @@ import net.minecraft.client.renderer.entity.SkeletonRenderer;
 import net.minecraft.client.renderer.entity.SlimeRenderer;
 import net.minecraft.client.renderer.entity.SnowGolemRenderer;
 import net.minecraft.client.renderer.entity.SpiderRenderer;
+import net.minecraft.client.renderer.entity.SquidRenderer;
 import net.minecraft.client.renderer.entity.ZombieRenderer;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.client.renderer.entity.ThrownTridentRenderer;
@@ -182,6 +183,11 @@ public final class CakeWorldClientEvents {
 		event.registerEntityRenderer(
 				CakeWorldEntities.LIQUORICE_WEAVER.get(),
 				SpiderRenderer::new);
+		event.registerEntityRenderer(
+				CakeWorldEntities.LIQUORICE_SQUID.get(),
+				context -> new SquidRenderer(context,
+						new SquidModel<>(context.bakeLayer(
+								ModelLayers.SQUID))));
 		event.registerEntityRenderer(CakeWorldEntities.SUGAR_MITE.get(),
 				EndermiteRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.SOUR_SORCERER.get(),

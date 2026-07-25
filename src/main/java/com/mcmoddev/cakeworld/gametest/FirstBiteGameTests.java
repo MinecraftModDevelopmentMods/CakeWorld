@@ -49,6 +49,7 @@ import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.JellyBlob;
 import com.mcmoddev.cakeworld.entity.JellyBlobDamageSafety;
 import com.mcmoddev.cakeworld.entity.LollipopLorikeet;
+import com.mcmoddev.cakeworld.entity.LiquoriceSquid;
 import com.mcmoddev.cakeworld.entity.LiquoriceWeaver;
 import com.mcmoddev.cakeworld.entity.MacaronClam;
 import com.mcmoddev.cakeworld.entity.MacaronClamProjectileSafety;
@@ -121,8 +122,11 @@ import com.mcmoddev.cakeworld.world.CakeWorldSkeletonReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldSkeletonHorseReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldSnowGolemReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldSpiderReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldSquidReplacement;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.Holder;
@@ -201,6 +205,7 @@ import net.minecraft.world.entity.animal.Rabbit;
 import net.minecraft.world.entity.animal.Salmon;
 import net.minecraft.world.entity.animal.Sheep;
 import net.minecraft.world.entity.animal.SnowGolem;
+import net.minecraft.world.entity.animal.Squid;
 import net.minecraft.world.entity.animal.Turtle;
 import net.minecraft.world.entity.animal.Wolf;
 import net.minecraft.world.entity.animal.goat.Goat;
@@ -17974,6 +17979,457 @@ public final class FirstBiteGameTests {
 	}
 
 	@GameTest(template = EMPTY, timeoutTicks = 200)
+	public static void liquoriceSquidKeepSurfaceSchoolsSwimmingInkAndPassiveRole(
+			GameTestHelper helper) {
+		LiquoriceSquidProbe squid =
+				new LiquoriceSquidProbe(
+						helper.getLevel());
+		require(helper,
+				squid instanceof Squid
+						&& squid instanceof WaterAnimal
+						&& squid.getType()
+								== CakeWorldEntities
+										.LIQUORICE_SQUID
+										.get()
+						&& squid.getType().getCategory()
+								== MobCategory.WATER_CREATURE
+						&& close(squid.getMaxHealth(),
+								10.0D)
+						&& close(squid.getDimensions(
+								Pose.STANDING).width,
+								0.8D)
+						&& close(squid.getDimensions(
+								Pose.STANDING).height,
+								0.8D)
+						&& close(squid.standingEyeHeight(),
+								0.4D)
+						&& squid.getType()
+								.clientTrackingRange() == 8
+						&& squid.getType()
+								.clientTrackingRange()
+								== EntityType.SQUID
+										.clientTrackingRange()
+						&& squid.getMaxSpawnClusterSize()
+								== 4
+						&& squid.getMobType()
+								== MobType.WATER
+						&& squid.canBreatheUnderwater()
+						&& !squid.isPushedByFluid()
+						&& squid.getAmbientSoundInterval()
+								== 120
+						&& !squid.despawnsInPeaceful()
+						&& squid.movementEmission()
+								== Entity
+										.MovementEmission
+										.EVENTS,
+				"Liquorice Squid lost exact Squid body, water, eye, tracking, cluster, Peaceful or movement-emission role");
+		require(helper,
+				squid.goalPriority(
+						"SquidRandomMovementGoal")
+								== 0
+						&& squid.goalPriority(
+								"SquidFleeGoal") == 1
+						&& squid.goalCount() == 2
+						&& squid.targetGoalCount() == 0,
+				"Liquorice Squid lost exact passive random-swim/flee goals or invented a target");
+		require(helper,
+				squid.ambientSound()
+								== SoundEvents
+										.SQUID_AMBIENT
+						&& squid.hurtSound()
+								== SoundEvents
+										.SQUID_HURT
+						&& squid.deathSound()
+								== SoundEvents
+										.SQUID_DEATH
+						&& squid.squirtSound()
+								== SoundEvents
+										.SQUID_SQUIRT
+						&& close(squid.soundVolume(),
+								0.4D),
+				"Liquorice Squid lost exact ambient, hurt, death, squirt or volume contract");
+
+		Player leashTester = helper.makeMockPlayer();
+		require(helper, squid.canBeLeashed(leashTester),
+				"Liquorice Squid lost Squid leashability");
+		for (int i = 0; i < 32; i++) {
+			int experience = squid.experienceReward();
+			require(helper,
+					experience >= 1
+							&& experience <= 3,
+					"Liquorice Squid XP escaped the exact one-to-three range: "
+							+ experience);
+		}
+
+		BlockPos localPos = helper.absolutePos(
+				new BlockPos(1, 3, 1));
+		squid.setPos(localPos.getX(),
+				localPos.getY(), localPos.getZ());
+		squid.noPhysics = true;
+		squid.setMovementVector(
+				0.2F, -0.05F, 0.1F);
+		squid.tentacleMovement = 2.0F;
+		squid.handleEntityEvent((byte)19);
+		Vec3 movementStart = squid.position();
+		squid.setDeltaMovement(
+				0.25D, 0.1D, -0.2D);
+		squid.travel(Vec3.ZERO);
+		Vec3 travelled = squid.position()
+				.subtract(movementStart);
+		require(helper,
+				squid.hasMovementVector()
+						&& close(
+								squid.tentacleMovement,
+								0.0D)
+						&& close(travelled.x, 0.25D)
+						&& close(travelled.y, 0.1D)
+						&& close(travelled.z, -0.2D),
+				"Liquorice Squid lost movement-vector, tentacle reset or direct aquatic travel");
+		squid.noPhysics = false;
+
+		LiquoriceSquidProbe dry =
+				new LiquoriceSquidProbe(
+						helper.getLevel());
+		dry.setPos(localPos.getX(),
+				localPos.getY() + 10.0D,
+				localPos.getZ());
+		dry.setHealth(10.0F);
+		dry.invulnerableTime = 0;
+		dry.testHandleAir(-19);
+		require(helper,
+				dry.getAirSupply() == 0
+						&& close(dry.getHealth(), 8.0D),
+				"Liquorice Squid lost exact dry-air countdown damage");
+
+		squid.setPos(localPos.getX(),
+				localPos.getY(), localPos.getZ());
+		squid.setHealth(10.0F);
+		squid.invulnerableTime = 0;
+		squid.clearInkEvidence();
+		helper.getLevel().addFreshEntity(squid);
+		Player attacker = helper.makeMockPlayer();
+		attacker.setPos(localPos.getX() + 1.0D,
+				localPos.getY(), localPos.getZ());
+		require(helper,
+				squid.hurt(
+						DamageSource.playerAttack(
+								attacker),
+						1.0F)
+						&& close(squid.getHealth(),
+								9.0D)
+						&& squid.inkParticleRequests()
+								== 30
+						&& squid.lastSound()
+								== SoundEvents
+										.SQUID_SQUIRT
+						&& close(squid.lastVolume(),
+								0.4D),
+				"Liquorice Squid lost its exact thirty-particle ink defence or squirt cue");
+		squid.discard();
+		attacker.discard();
+		leashTester.discard();
+
+		int seaLevel = helper.getLevel()
+				.getSeaLevel();
+		BlockPos surfacePos = new BlockPos(
+				localPos.getX(), seaLevel - 5,
+				localPos.getZ());
+		List<BlockPos> spawnCells = List.of(
+				surfacePos.below(), surfacePos,
+				surfacePos.above());
+		Map<BlockPos, BlockState> originalStates =
+				spawnCells.stream().collect(
+						java.util.stream.Collectors
+								.toMap(pos -> pos,
+										pos -> helper
+												.getLevel()
+												.getBlockState(
+														pos)));
+		for (BlockPos pos : spawnCells) {
+			helper.getLevel().setBlock(pos,
+					Blocks.WATER
+							.defaultBlockState(),
+					3);
+		}
+		boolean vanillaWater =
+				WaterAnimal
+						.checkSurfaceWaterAnimalSpawnRules(
+								EntityType.SQUID,
+								helper.getLevel(),
+								MobSpawnType.NATURAL,
+								surfacePos,
+								new Random(1978L));
+		boolean customWater =
+				LiquoriceSquid
+						.checkLiquoriceSquidSpawnRules(
+								CakeWorldEntities
+										.LIQUORICE_SQUID
+										.get(),
+								helper.getLevel(),
+								MobSpawnType.NATURAL,
+								surfacePos,
+								new Random(1978L));
+		for (BlockPos pos : spawnCells) {
+			helper.getLevel().setBlock(pos,
+					CakeWorldFluids.LEMONADE_BLOCK
+							.get().defaultBlockState(),
+					3);
+		}
+		boolean vanillaLemonade =
+				WaterAnimal
+						.checkSurfaceWaterAnimalSpawnRules(
+								EntityType.SQUID,
+								helper.getLevel(),
+								MobSpawnType.NATURAL,
+								surfacePos,
+								new Random(1978L));
+		boolean customLemonade =
+				LiquoriceSquid
+						.checkLiquoriceSquidSpawnRules(
+								CakeWorldEntities
+										.LIQUORICE_SQUID
+										.get(),
+								helper.getLevel(),
+								MobSpawnType.NATURAL,
+								surfacePos,
+								new Random(1978L));
+		originalStates.forEach((pos, state) ->
+				helper.getLevel().setBlock(
+						pos, state, 3));
+		require(helper,
+				vanillaWater && customWater
+						&& !vanillaLemonade
+						&& customLemonade
+						&& !LiquoriceSquid
+								.checkLiquoriceSquidSpawnRules(
+										CakeWorldEntities
+												.LIQUORICE_SQUID
+												.get(),
+										helper.getLevel(),
+										MobSpawnType
+												.NATURAL,
+										new BlockPos(
+												surfacePos
+														.getX(),
+												seaLevel
+														- 14,
+												surfacePos
+														.getZ()),
+										new Random(
+												1978L)),
+				"Liquorice Squid did not preserve the exact surface band while adapting literal Water to water-tagged Lemonade");
+
+		Squid literal = EntityType.SQUID.create(
+				helper.getLevel());
+		Boat vehicle = EntityType.BOAT.create(
+				helper.getLevel());
+		Pig passenger = EntityType.PIG.create(
+				helper.getLevel());
+		require(helper,
+				literal != null && vehicle != null
+						&& passenger != null,
+				"Could not create Liquorice Squid state-conversion fixtures");
+		literal.setPos(localPos.getX(),
+				localPos.getY(), localPos.getZ());
+		literal.setHealth(7.0F);
+		literal.setAirSupply(155);
+		literal.setCustomName(new TextComponent(
+				"Inky Twist"));
+		literal.setPersistenceRequired();
+		literal.setNoAi(true);
+		literal.setInvulnerable(true);
+		literal.invulnerableTime = 27;
+		vehicle.setPos(localPos.getX(),
+				localPos.getY(), localPos.getZ());
+		passenger.setPos(localPos.getX(),
+				localPos.getY(), localPos.getZ());
+		helper.getLevel().addFreshEntity(vehicle);
+		helper.getLevel().addFreshEntity(passenger);
+		helper.getLevel().addFreshEntity(literal);
+		literal.startRiding(vehicle, true);
+		passenger.startRiding(literal, true);
+		LiquoriceSquid converted =
+				CakeWorldSquidReplacement
+						.replaceIfInCakeWorldBiome(
+								helper.getLevel(),
+								literal);
+		require(helper,
+				converted != null
+						&& literal.isRemoved()
+						&& close(converted.getHealth(),
+								7.0D)
+						&& converted.getAirSupply()
+								== 155
+						&& "Inky Twist".equals(
+								converted.getName()
+										.getString())
+						&& converted
+								.isPersistenceRequired()
+						&& converted.isNoAi()
+						&& converted.isInvulnerable()
+						&& converted.invulnerableTime
+								== 27
+						&& converted.getVehicle()
+								== vehicle
+						&& passenger.getVehicle()
+								== converted,
+				"Fresh literal Squid conversion lost health, air, name, state, vehicle or passenger");
+		passenger.discard();
+		converted.discard();
+		vehicle.discard();
+
+		Squid leashedLiteral =
+				EntityType.SQUID.create(
+						helper.getLevel());
+		Boat leashHolder = EntityType.BOAT.create(
+				helper.getLevel());
+		require(helper,
+				leashedLiteral != null
+						&& leashHolder != null,
+				"Could not create Liquorice Squid leash-conversion fixtures");
+		leashedLiteral.setPos(localPos.getX(),
+				localPos.getY(), localPos.getZ());
+		leashHolder.setPos(localPos.getX() + 1.0D,
+				localPos.getY(), localPos.getZ());
+		helper.getLevel().addFreshEntity(leashHolder);
+		helper.getLevel().addFreshEntity(
+				leashedLiteral);
+		leashedLiteral.setLeashedTo(
+				leashHolder, true);
+		LiquoriceSquid leashedConverted =
+				CakeWorldSquidReplacement
+						.replaceIfInCakeWorldBiome(
+								helper.getLevel(),
+								leashedLiteral);
+		require(helper,
+				leashedConverted != null
+						&& leashedLiteral.isRemoved()
+						&& leashedConverted
+								.getLeashHolder()
+								== leashHolder,
+				"Fresh literal Squid conversion lost its leash holder");
+		leashedConverted.discard();
+		leashHolder.discard();
+
+		Registry<Biome> biomes = helper.getLevel()
+				.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY);
+		Biome sodaOcean = biomes.get(
+				CakeWorldBiomes.SODA_OCEAN.getId());
+		require(helper, sodaOcean != null,
+				"Could not inspect Liquorice Squid Soda Ocean ecology");
+		List<MobSpawnSettings.SpawnerData>
+				squidProfiles = sodaOcean
+						.getMobSettings()
+						.getMobs(
+								MobCategory
+										.WATER_CREATURE)
+						.unwrap().stream()
+						.filter(spawn ->
+								spawn.type
+										== EntityType
+												.SQUID
+								|| spawn.type
+										== CakeWorldEntities
+												.LIQUORICE_SQUID
+												.get())
+						.toList();
+		require(helper,
+				squidProfiles.size() == 1
+						&& squidProfiles.get(0).type
+								== CakeWorldEntities
+										.LIQUORICE_SQUID
+										.get()
+						&& squidProfiles.get(0)
+								.getWeight()
+								.asInt() == 1
+						&& squidProfiles.get(0)
+								.minCount == 1
+						&& squidProfiles.get(0)
+								.maxCount == 4,
+				"Liquorice Squid did not exactly replace Soda Ocean's inherited 1/1-4 Squid school: "
+						+ squidProfiles);
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS
+						.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS
+						.getId())) {
+			Biome biome = biomes.get(biomeId);
+			require(helper,
+					biome != null
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory
+													.WATER_CREATURE)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType
+															.SQUID
+											|| spawn.type
+													== CakeWorldEntities
+															.LIQUORICE_SQUID
+															.get()),
+					"Liquorice Squid invented an ecology profile in "
+							+ biomeId);
+		}
+
+		TagKey<EntityType<?>> axolotlPrey =
+				TagKey.create(
+						Registry
+								.ENTITY_TYPE_REGISTRY,
+						new ResourceLocation(
+								"minecraft",
+								"axolotl_hunt_targets"));
+		Advancement killAll = helper.getLevel()
+				.getServer().getAdvancements()
+				.getAdvancement(new ResourceLocation(
+						"minecraft",
+						"adventure/kill_all_mobs"));
+		require(helper,
+				SpawnPlacements.getPlacementType(
+								CakeWorldEntities
+										.LIQUORICE_SQUID
+										.get())
+								== SpawnPlacements
+										.Type.IN_WATER
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+												.LIQUORICE_SQUID
+												.get())
+								== SpawnPlacements
+										.getHeightmapType(
+												EntityType
+														.SQUID)
+						&& dry.getLootTableId()
+								.equals(new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/liquorice_squid"))
+						&& CakeWorldEntities
+								.LIQUORICE_SQUID.get()
+								.is(axolotlPrey)
+						&& CakeWorldItems
+								.LIQUORICE_SQUID_SPAWN_EGG
+								.isPresent()
+						&& killAll != null
+						&& !killAll.getCriteria()
+								.containsKey(
+										"minecraft:squid")
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+												.LIQUORICE_SQUID
+												.get())
+								== null,
+				"Liquorice Squid lost placement, loot, Axolotl prey or egg role, or invented advancement/mimic progress");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 200)
 	public static void fudgeFolkKeepPiglinSocietyBarterAndSafePeril(
 			GameTestHelper helper) {
 		FudgeFolkProbe folk =
@@ -20042,6 +20498,127 @@ public final class FirstBiteGameTests {
 			lastSound = sound;
 			lastVolume = volume;
 			lastPitch = pitch;
+		}
+	}
+
+	private static final class LiquoriceSquidProbe
+			extends LiquoriceSquid {
+		private int inkParticleRequests;
+		private net.minecraft.sounds.SoundEvent
+				lastSound;
+		private float lastVolume;
+
+		private LiquoriceSquidProbe(Level level) {
+			super(CakeWorldEntities
+					.LIQUORICE_SQUID.get(),
+					level);
+		}
+
+		private int goalPriority(String name) {
+			return goalSelector.getAvailableGoals()
+					.stream()
+					.filter(wrapped -> name.equals(
+							wrapped.getGoal()
+									.getClass()
+									.getSimpleName()))
+					.mapToInt(
+							WrappedGoal::getPriority)
+					.findFirst().orElse(-1);
+		}
+
+		private int goalCount() {
+			return goalSelector.getAvailableGoals()
+					.size();
+		}
+
+		private int targetGoalCount() {
+			return targetSelector
+					.getAvailableGoals().size();
+		}
+
+		private int experienceReward() {
+			return getExperienceReward(null);
+		}
+
+		private boolean despawnsInPeaceful() {
+			return shouldDespawnInPeaceful();
+		}
+
+		private float standingEyeHeight() {
+			return getStandingEyeHeight(
+					Pose.STANDING,
+					getDimensions(Pose.STANDING));
+		}
+
+		private Entity.MovementEmission
+				movementEmission() {
+			return getMovementEmission();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				ambientSound() {
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				hurtSound() {
+			return getHurtSound(
+					DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				deathSound() {
+			return getDeathSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				squirtSound() {
+			return getSquirtSound();
+		}
+
+		private float soundVolume() {
+			return getSoundVolume();
+		}
+
+		private void testHandleAir(int air) {
+			handleAirSupply(air);
+		}
+
+		private ResourceLocation getLootTableId() {
+			return getLootTable();
+		}
+
+		private void clearInkEvidence() {
+			inkParticleRequests = 0;
+			lastSound = null;
+			lastVolume = 0.0F;
+		}
+
+		private int inkParticleRequests() {
+			return inkParticleRequests;
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				lastSound() {
+			return lastSound;
+		}
+
+		private float lastVolume() {
+			return lastVolume;
+		}
+
+		@Override
+		protected ParticleOptions getInkParticle() {
+			inkParticleRequests++;
+			return ParticleTypes.SQUID_INK;
+		}
+
+		@Override
+		public void playSound(
+				net.minecraft.sounds.SoundEvent sound,
+				float volume, float pitch) {
+			lastSound = sound;
+			lastVolume = volume;
 		}
 	}
 

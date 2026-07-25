@@ -32,6 +32,7 @@ import com.mcmoddev.cakeworld.entity.IceCreamGolem;
 import com.mcmoddev.cakeworld.entity.JawbreakerGuardian;
 import com.mcmoddev.cakeworld.entity.JellyBlob;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
+import com.mcmoddev.cakeworld.entity.LiquoriceSquid;
 import com.mcmoddev.cakeworld.entity.LiquoriceWeaver;
 import com.mcmoddev.cakeworld.entity.LollipopLorikeet;
 import com.mcmoddev.cakeworld.entity.MacaronClam;
@@ -86,6 +87,7 @@ import net.minecraft.world.entity.animal.Rabbit;
 import net.minecraft.world.entity.animal.Salmon;
 import net.minecraft.world.entity.animal.Sheep;
 import net.minecraft.world.entity.animal.SnowGolem;
+import net.minecraft.world.entity.animal.Squid;
 import net.minecraft.world.entity.animal.AbstractFish;
 import net.minecraft.world.entity.animal.goat.Goat;
 import net.minecraft.world.entity.animal.horse.AbstractChestedHorse;
@@ -411,6 +413,14 @@ public final class CakeWorldEntities {
 							MobCategory.MONSTER)
 							.sized(1.4F, 0.9F)
 							.clientTrackingRange(8));
+	public static final RegistryObject<EntityType<LiquoriceSquid>>
+			LIQUORICE_SQUID = entity(
+					"liquorice_squid",
+					EntityType.Builder.of(
+							LiquoriceSquid::new,
+							MobCategory.WATER_CREATURE)
+							.sized(0.8F, 0.8F)
+							.clientTrackingRange(8));
 	public static final RegistryObject<EntityType<SugarMite>> SUGAR_MITE =
 			entity("sugar_mite",
 					EntityType.Builder.of(SugarMite::new,
@@ -585,6 +595,8 @@ public final class CakeWorldEntities {
 				SnowGolem.createAttributes().build());
 		event.put(LIQUORICE_WEAVER.get(),
 				Spider.createAttributes().build());
+		event.put(LIQUORICE_SQUID.get(),
+				Squid.createAttributes().build());
 		event.put(SUGAR_MITE.get(),
 				Endermite.createAttributes().build());
 		event.put(SOUR_SORCERER.get(),
@@ -772,6 +784,12 @@ public final class CakeWorldEntities {
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					Monster::checkMonsterSpawnRules);
+			SpawnPlacements.register(
+					LIQUORICE_SQUID.get(),
+					SpawnPlacements.Type.IN_WATER,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					LiquoriceSquid
+							::checkLiquoriceSquidSpawnRules);
 			SpawnPlacements.register(SUGAR_MITE.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
