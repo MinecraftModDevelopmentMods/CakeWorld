@@ -189,6 +189,10 @@ public final class CakeWorldItems {
 			spawnEgg("gingerbread_pony_spawn_egg",
 					CakeWorldEntities.GINGERBREAD_PONY,
 					0xB06B3D, 0xFFF0D2);
+	public static final RegistryObject<Item> DRIED_CRUMBLER_SPAWN_EGG =
+			spawnEgg("dried_crumbler_spawn_egg",
+					CakeWorldEntities.DRIED_CRUMBLER,
+					0xD9B57A, 0x6E5C3B);
 	public static final RegistryObject<Item> TAFFY_TALLWALKER_SPAWN_EGG =
 			spawnEgg("taffy_tallwalker_spawn_egg",
 					CakeWorldEntities.TAFFY_TALLWALKER,

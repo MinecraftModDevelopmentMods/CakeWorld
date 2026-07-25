@@ -133,6 +133,10 @@ public final class VanillaRoleAdvancements {
 		award(player, KILL_ALL, "minecraft:hoglin");
 	}
 
+	public static void creditKilledHuskRole(ServerPlayer player) {
+		award(player, KILL_ALL, "minecraft:husk");
+	}
+
 	public static void creditKilledEndermanRole(ServerPlayer player) {
 		award(player, KILL_ALL, "minecraft:enderman");
 	}
@@ -182,6 +186,9 @@ public final class VanillaRoleAdvancements {
 		}
 		if (type == CakeWorldEntities.FUDGE_BOAR.get()) {
 			return "minecraft:hoglin";
+		}
+		if (type == CakeWorldEntities.DRIED_CRUMBLER.get()) {
+			return "minecraft:husk";
 		}
 		if (type == CakeWorldEntities.TAFFY_TALLWALKER.get()) {
 			return "minecraft:enderman";

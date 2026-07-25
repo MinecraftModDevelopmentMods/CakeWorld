@@ -37,6 +37,7 @@ import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.CustardCat;
 import com.mcmoddev.cakeworld.entity.DeepLiquoriceWeaver;
 import com.mcmoddev.cakeworld.entity.DoughDonkey;
+import com.mcmoddev.cakeworld.entity.DriedCrumbler;
 import com.mcmoddev.cakeworld.entity.GrandGumballGuardian;
 import com.mcmoddev.cakeworld.entity.GiantStaleCrumbler;
 import com.mcmoddev.cakeworld.entity.GlowJelly;
@@ -128,6 +129,7 @@ import net.minecraft.world.entity.monster.Evoker;
 import net.minecraft.world.entity.monster.Ghast;
 import net.minecraft.world.entity.monster.Giant;
 import net.minecraft.world.entity.monster.Guardian;
+import net.minecraft.world.entity.monster.Husk;
 import net.minecraft.world.entity.monster.Ravager;
 import net.minecraft.world.entity.monster.Vex;
 import net.minecraft.world.entity.monster.Zoglin;
@@ -3000,15 +3002,28 @@ public final class FirstBiteGameTests {
 				EntityType.GUARDIAN.create(helper.getLevel());
 		require(helper, monumentGuardian != null,
 				"Could not create monument Guardian conversion fixture");
+		var nearestCakeWorldBiome =
+				helper.getLevel().findNearestBiome(
+						holder -> holder.unwrapKey()
+								.map(key -> CakeWorld.MODID
+										.equals(key.location()
+												.getNamespace()))
+								.orElse(false),
+						anchor, 512, 4);
+		require(helper, nearestCakeWorldBiome != null,
+				"Could not locate a generated CakeWorld biome for monument Guardian conversion");
+		BlockPos monumentAnchor =
+				nearestCakeWorldBiome.getFirst();
 		ResourceLocation fixtureBiome = helper.getLevel()
-				.getBiome(anchor).unwrapKey()
+				.getBiome(monumentAnchor).unwrapKey()
 				.map(key -> key.location()).orElse(null);
 		require(helper, fixtureBiome != null
 						&& CakeWorld.MODID.equals(
 								fixtureBiome.getNamespace()),
 				"Monument Guardian conversion fixture was not in a CakeWorld biome");
-		monumentGuardian.moveTo(anchor.getX(), anchor.getY(),
-				anchor.getZ(), 31.0F, 0.0F);
+		monumentGuardian.moveTo(monumentAnchor.getX(),
+				monumentAnchor.getY(),
+				monumentAnchor.getZ(), 31.0F, 0.0F);
 		monumentGuardian.setHealth(17.0F);
 		monumentGuardian.setCustomName(
 				new TextComponent("Bubble Sentinel"));
@@ -5128,6 +5143,276 @@ public final class FirstBiteGameTests {
 		requireCriterion(helper, advancementPlayer,
 				"minecraft:husbandry/bred_all_animals",
 				"minecraft:horse");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void driedCrumblersKeepDaylightDustAndThemedWaterConversion(
+			GameTestHelper helper) {
+		DriedCrumbler crumbler =
+				CakeWorldEntities.DRIED_CRUMBLER.get()
+						.create(helper.getLevel());
+		Pig target = EntityType.PIG.create(helper.getLevel());
+		require(helper, crumbler != null && target != null,
+				"Could not create Dried Crumbler test fixtures");
+		require(helper,
+				crumbler instanceof Husk
+						&& close(crumbler.getMaxHealth(), 20.0D)
+						&& close(crumbler.getAttributeValue(
+								Attributes.FOLLOW_RANGE), 35.0D)
+						&& close(crumbler.getAttributeValue(
+								Attributes.MOVEMENT_SPEED), 0.23D)
+						&& close(crumbler.getAttributeValue(
+								Attributes.ATTACK_DAMAGE), 3.0D)
+						&& close(crumbler.getAttributeValue(
+								Attributes.ARMOR), 2.0D)
+						&& crumbler.getAttribute(
+								Attributes
+										.SPAWN_REINFORCEMENTS_CHANCE)
+								!= null
+						&& crumbler.getMobType()
+								== MobType.UNDEAD
+						&& close(crumbler
+								.getDimensions(Pose.STANDING)
+								.width, 0.6D)
+						&& close(crumbler
+								.getDimensions(Pose.STANDING)
+								.height, 1.95D),
+				"Dried Crumbler lost its exact Husk size, type, or Zombie attributes");
+
+		Difficulty originalDifficulty =
+				helper.getLevel().getDifficulty();
+		try {
+			for (Difficulty safeDifficulty :
+					new Difficulty[] {Difficulty.EASY,
+							Difficulty.NORMAL}) {
+				helper.getLevel().getServer().setDifficulty(
+						safeDifficulty, true);
+				target.removeAllEffects();
+				target.setHealth(10.0F);
+				target.invulnerableTime = 0;
+				target.setSecondsOnFire(5);
+				target.fallDistance = 12.0F;
+				target.setDeltaMovement(Vec3.ZERO);
+				require(helper,
+						crumbler.doHurtTarget(target),
+						safeDifficulty
+								+ " Dried Crumbler contact did not register");
+				require(helper,
+						close(target.getHealth(), 10.0D)
+								&& !target.isOnFire()
+								&& target.fallDistance == 0.0F
+								&& target.hasEffect(
+										MobEffects
+												.MOVEMENT_SLOWDOWN)
+								&& target.hasEffect(
+										MobEffects.CONFUSION)
+								&& target.hasEffect(
+										MobEffects
+												.SLOW_FALLING)
+								&& target.hasEffect(
+										MobEffects
+												.FIRE_RESISTANCE)
+								&& target.getEffect(
+										MobEffects
+												.DAMAGE_RESISTANCE)
+										.getAmplifier() == 4
+								&& !target.hasEffect(
+										MobEffects.HUNGER)
+								&& target.getDeltaMovement().y
+										> 0.0D,
+						safeDifficulty
+								+ " Dried Crumbler caused damage, starvation risk, or lacked its dust/rescue effects");
+			}
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			target.removeAllEffects();
+			target.setHealth(10.0F);
+			target.invulnerableTime = 0;
+			require(helper,
+					crumbler.doHurtTarget(target)
+							&& target.getHealth() < 10.0F
+							&& target.hasEffect(
+									MobEffects.HUNGER),
+					"Hard Dried Crumbler did not retain real Husk damage and Hunger");
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.PEACEFUL, true);
+			DriedCrumbler peaceful =
+					CakeWorldEntities.DRIED_CRUMBLER.get()
+							.create(helper.getLevel());
+			require(helper, peaceful != null,
+					"Could not create Peaceful Dried Crumbler fixture");
+			peaceful.checkDespawn();
+			require(helper, peaceful.isRemoved(),
+					"Dried Crumbler did not retain Peaceful monster despawning");
+		} finally {
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		require(helper, !crumbler.isSunSensitive(),
+				"Dried Crumbler lost Husk's explicit daylight-safe contract");
+
+		BlockPos darkSpawn = helper.absolutePos(
+				new BlockPos(12, 4, 12));
+		for (int x = -2; x <= 2; x++) {
+			for (int z = -2; z <= 2; z++) {
+				helper.getLevel().setBlock(
+						darkSpawn.offset(x, -1, z),
+						Blocks.STONE.defaultBlockState(), 3);
+				helper.getLevel().setBlock(
+						darkSpawn.offset(x, 2, z),
+						Blocks.STONE.defaultBlockState(), 3);
+			}
+		}
+		for (int y = 0; y <= 1; y++) {
+			for (int edge = -2; edge <= 2; edge++) {
+				helper.getLevel().setBlock(
+						darkSpawn.offset(-2, y, edge),
+						Blocks.STONE.defaultBlockState(), 3);
+				helper.getLevel().setBlock(
+						darkSpawn.offset(2, y, edge),
+						Blocks.STONE.defaultBlockState(), 3);
+				helper.getLevel().setBlock(
+						darkSpawn.offset(edge, y, -2),
+						Blocks.STONE.defaultBlockState(), 3);
+				helper.getLevel().setBlock(
+						darkSpawn.offset(edge, y, 2),
+						Blocks.STONE.defaultBlockState(), 3);
+			}
+		}
+		helper.getLevel().setBlock(darkSpawn,
+				Blocks.AIR.defaultBlockState(), 3);
+		helper.getLevel().setBlock(darkSpawn.above(),
+				Blocks.AIR.defaultBlockState(), 3);
+		require(helper,
+				SpawnPlacements.getPlacementType(
+						CakeWorldEntities.DRIED_CRUMBLER.get())
+						== SpawnPlacements.Type.ON_GROUND
+						&& DriedCrumbler
+								.checkDriedCrumblerSpawnRules(
+										CakeWorldEntities
+												.DRIED_CRUMBLER
+												.get(),
+										helper.getLevel(),
+										MobSpawnType.SPAWNER,
+										darkSpawn,
+										new Random(1978L))
+						&& !DriedCrumbler
+								.checkDriedCrumblerSpawnRules(
+										CakeWorldEntities
+												.DRIED_CRUMBLER
+												.get(),
+										helper.getLevel(),
+										MobSpawnType.NATURAL,
+										darkSpawn,
+										new Random(1978L)),
+				"Dried Crumbler lost its ground placement or exact Husk sky-visible natural-spawn boundary");
+
+		DriedCrumbler converting =
+				CakeWorldEntities.DRIED_CRUMBLER.get()
+						.create(helper.getLevel());
+		require(helper, converting != null,
+				"Could not create Dried Crumbler conversion fixture");
+		converting.setCustomName(new TextComponent(
+				"Dry as a Biscuit"));
+		converting.setPersistenceRequired();
+		converting.setBaby(true);
+		CompoundTag conversion = new CompoundTag();
+		conversion.putBoolean("IsBaby", true);
+		conversion.putBoolean("CanBreakDoors", true);
+		conversion.putBoolean("PersistenceRequired", true);
+		conversion.putInt("InWaterTime", 600);
+		conversion.putInt("DrownedConversionTime", 0);
+		converting.readAdditionalSaveData(conversion);
+		CompoundTag conversionRoundTrip = new CompoundTag();
+		converting.addAdditionalSaveData(
+				conversionRoundTrip);
+		require(helper,
+				converting.isUnderWaterConverting()
+						&& conversionRoundTrip.getInt(
+								"InWaterTime") == -1
+						&& conversionRoundTrip.getInt(
+								"DrownedConversionTime") == 0,
+				"Dried Crumbler did not preserve its active water-conversion countdown");
+		BlockPos conversionPos = helper.absolutePos(
+				new BlockPos(10, 4, 4));
+		converting.setPos(conversionPos.getX(),
+				conversionPos.getY(), conversionPos.getZ());
+		helper.getLevel().addFreshEntity(converting);
+		converting.tick();
+		StaleCrumbler converted = helper.getLevel()
+				.getEntitiesOfClass(StaleCrumbler.class,
+						new AABB(conversionPos).inflate(2.0D))
+				.stream().findFirst().orElse(null);
+		require(helper,
+				converting.isRemoved()
+						&& converted != null
+						&& converted.getType()
+								== CakeWorldEntities
+										.STALE_CRUMBLER.get()
+						&& converted.isBaby()
+						&& converted.isPersistenceRequired()
+						&& converted.hasCustomName()
+						&& "Dry as a Biscuit".equals(
+								converted.getCustomName()
+										.getString())
+						&& converted.canBreakDoors(),
+				"Dried Crumbler leaked a vanilla Zombie or lost its baby, name, persistence, or door state during water conversion");
+
+		Registry<Biome> biomes = helper.getLevel()
+				.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY);
+		ResourceLocation sherbetDunes = new ResourceLocation(
+				CakeWorld.MODID, "sherbet_dunes");
+		require(helper, biomes.get(sherbetDunes) == null,
+				"Sherbet Dunes unexpectedly exists; MOB-027's staged spawn gate must be revisited");
+		for (ResourceLocation biomeId : new ResourceLocation[] {
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS.getId()}) {
+			Biome biome = biomes.get(biomeId);
+			require(helper, biome != null,
+					"Could not inspect staged Dried Crumbler biome gate for "
+							+ biomeId);
+			boolean leaked = biome.getMobSettings()
+					.getMobs(MobCategory.MONSTER)
+					.unwrap().stream()
+					.anyMatch(spawn ->
+							spawn.type == EntityType.HUSK
+									|| spawn.type
+											== CakeWorldEntities
+													.DRIED_CRUMBLER
+													.get());
+			require(helper, !leaked,
+					"Dried Crumbler or vanilla Husk leaked into existing biome "
+							+ biomeId);
+		}
+
+		require(helper,
+				CakeWorldItems.DRIED_CRUMBLER_SPAWN_EGG
+						.isPresent()
+						&& crumbler.getLootTable().equals(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/dried_crumbler")),
+				"Dried Crumbler lost its spawn egg or dedicated Husk-equivalent loot table");
+		ServerPlayer advancementPlayer = new ServerPlayer(
+				helper.getLevel().getServer(),
+				helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2027"),
+						"CakeWorldDriedCrumblerRoleTest"));
+		VanillaRoleAdvancements.creditKilledHuskRole(
+				advancementPlayer);
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:adventure/kill_all_mobs",
+				"minecraft:husk");
 		helper.succeed();
 	}
 

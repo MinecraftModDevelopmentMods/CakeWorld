@@ -9,6 +9,7 @@ import com.mcmoddev.cakeworld.entity.CocoaCow;
 import com.mcmoddev.cakeworld.entity.CustardCat;
 import com.mcmoddev.cakeworld.entity.DeepLiquoriceWeaver;
 import com.mcmoddev.cakeworld.entity.DoughDonkey;
+import com.mcmoddev.cakeworld.entity.DriedCrumbler;
 import com.mcmoddev.cakeworld.entity.FudgeBoar;
 import com.mcmoddev.cakeworld.entity.GingerbreadPony;
 import com.mcmoddev.cakeworld.entity.GrandGumballGuardian;
@@ -168,6 +169,12 @@ public final class CakeWorldEntities {
 							MobCategory.CREATURE)
 							.sized(1.3964844F, 1.6F)
 							.clientTrackingRange(10));
+	public static final RegistryObject<EntityType<DriedCrumbler>>
+			DRIED_CRUMBLER = entity("dried_crumbler",
+					EntityType.Builder.of(DriedCrumbler::new,
+							MobCategory.MONSTER)
+							.sized(0.6F, 1.95F)
+							.clientTrackingRange(8));
 	public static final RegistryObject<EntityType<TaffyTallwalker>>
 			TAFFY_TALLWALKER = entity("taffy_tallwalker",
 					EntityType.Builder.of(TaffyTallwalker::new,
@@ -295,6 +302,8 @@ public final class CakeWorldEntities {
 		event.put(GINGERBREAD_PONY.get(),
 				AbstractHorse.createBaseHorseAttributes()
 						.build());
+		event.put(DRIED_CRUMBLER.get(),
+				Zombie.createAttributes().build());
 		event.put(TAFFY_TALLWALKER.get(),
 				EnderMan.createAttributes().build());
 		event.put(SUGAR_MITE.get(),
@@ -372,6 +381,11 @@ public final class CakeWorldEntities {
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					GingerbreadPony
 							::checkGingerbreadPonySpawnRules);
+			SpawnPlacements.register(DRIED_CRUMBLER.get(),
+					SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					DriedCrumbler
+							::checkDriedCrumblerSpawnRules);
 			SpawnPlacements.register(TAFFY_TALLWALKER.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,

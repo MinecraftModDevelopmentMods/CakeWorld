@@ -58,6 +58,10 @@ public final class CakeWorldCreatureSpawns {
 			replace(event, MobCategory.CREATURE, EntityType.HORSE,
 					CakeWorldEntities.GINGERBREAD_PONY, 5, 2, 6);
 		}
+		if ("sherbet_dunes".equals(biome.getPath())) {
+			replace(event, MobCategory.MONSTER, EntityType.HUSK,
+					CakeWorldEntities.DRIED_CRUMBLER, 80, 4, 4);
+		}
 		if ("cookie_forest".equals(biome.getPath())) {
 			replace(event, MobCategory.CREATURE, EntityType.BEE,
 					CakeWorldEntities.SUGAR_BEE, 6, 1, 2);
