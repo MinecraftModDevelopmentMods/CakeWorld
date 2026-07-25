@@ -39,6 +39,9 @@ public final class VanillaRoleAdvancements {
 	private static final ResourceLocation RIDE_WITH_GOAT =
 			new ResourceLocation("minecraft",
 					"husbandry/ride_a_boat_with_a_goat");
+	private static final ResourceLocation TACTICAL_FISHING =
+			new ResourceLocation("minecraft",
+					"husbandry/tactical_fishing");
 	private VanillaRoleAdvancements() {
 	}
 
@@ -274,6 +277,11 @@ public final class VanillaRoleAdvancements {
 	public static void creditRodeBoatWithGoatRole(ServerPlayer player) {
 		award(player, RIDE_WITH_GOAT,
 				"ride_a_boat_with_a_goat");
+	}
+
+	public static void creditPufferfishBucketRole(
+			ServerPlayer player) {
+		award(player, TACTICAL_FISHING, "pufferfish_bucket");
 	}
 
 	private static String killedCriterion(EntityType<?> type) {

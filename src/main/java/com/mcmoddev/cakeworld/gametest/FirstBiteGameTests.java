@@ -1,5 +1,6 @@
 package com.mcmoddev.cakeworld.gametest;
 
+import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -50,6 +51,8 @@ import com.mcmoddev.cakeworld.entity.GumballGuardian;
 import com.mcmoddev.cakeworld.entity.FudgeBoar;
 import com.mcmoddev.cakeworld.entity.FudgeBrute;
 import com.mcmoddev.cakeworld.entity.FudgeFolk;
+import com.mcmoddev.cakeworld.entity.FizzballFish;
+import com.mcmoddev.cakeworld.entity.FizzballFishDamageSafety;
 import com.mcmoddev.cakeworld.entity.GingerbreadPony;
 import com.mcmoddev.cakeworld.entity.HotFudgeBlob;
 import com.mcmoddev.cakeworld.entity.HotFudgeBlobDamageSafety;
@@ -104,9 +107,12 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
+import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
@@ -156,6 +162,7 @@ import net.minecraft.world.entity.animal.Ocelot;
 import net.minecraft.world.entity.animal.Panda;
 import net.minecraft.world.entity.animal.Parrot;
 import net.minecraft.world.entity.animal.PolarBear;
+import net.minecraft.world.entity.animal.Pufferfish;
 import net.minecraft.world.entity.animal.FlyingAnimal;
 import net.minecraft.world.entity.animal.Rabbit;
 import net.minecraft.world.entity.animal.Turtle;
@@ -258,6 +265,7 @@ import net.minecraftforge.event.entity.EntityMountEvent;
 import net.minecraftforge.common.util.FakePlayerFactory;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
+import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -11579,6 +11587,447 @@ public final class FirstBiteGameTests {
 		});
 	}
 
+	@GameTest(template = EMPTY, timeoutTicks = 300)
+	public static void fizzballFishKeepInflationBucketsAndSafeStings(
+			GameTestHelper helper) {
+		FizzballFishProbe fish =
+				new FizzballFishProbe(helper.getLevel());
+		FizzballFishProbe restored =
+				new FizzballFishProbe(helper.getLevel());
+		require(helper,
+				fish instanceof Pufferfish
+						&& fish.getType()
+								== CakeWorldEntities
+										.FIZZBALL_FISH.get()
+						&& fish.getType().getCategory()
+								== MobCategory.WATER_AMBIENT
+						&& close(fish.getMaxHealth(), 3.0D)
+						&& close(fish.getDimensions(
+								Pose.STANDING).width,
+								0.35D)
+						&& close(fish.getDimensions(
+								Pose.STANDING).height,
+								0.35D)
+						&& fish.getType()
+								.clientTrackingRange() == 4
+						&& fish.getMaxSpawnClusterSize() == 8
+						&& fish.getAmbientSoundInterval() == 120
+						&& fish.canBreatheUnderwater()
+						&& fish.getMobType()
+								== MobType.WATER
+						&& !fish.isPushedByFluid()
+						&& fish.getLootTableId().equals(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/fizzball_fish")),
+				"Fizzball Fish lost exact Pufferfish type, small body, health, tracking, group, water or loot roles");
+
+		fish.seedRandom(1978L);
+		int experience = fish.getExperienceValue();
+		require(helper,
+				experience >= 1 && experience <= 3
+						&& fish.countGoalsNamed(
+								"PanicGoal") == 1
+						&& fish.countGoalsNamed(
+								"AvoidEntityGoal") == 1
+						&& fish.countGoalsNamed(
+								"FishSwimGoal") == 1
+						&& fish.countGoalsNamed(
+								"PufferfishPuffGoal") == 1,
+				"Fizzball Fish lost exact Pufferfish XP, panic, player avoidance, swimming or inflation goals");
+
+		fish.setPuffState(1);
+		require(helper,
+				close(fish.getDimensions(
+						Pose.STANDING).width, 0.49D),
+				"Mid-inflated Fizzball Fish lost its exact 0.7 scale");
+		fish.setPuffState(2);
+		require(helper,
+				close(fish.getDimensions(
+						Pose.STANDING).width, 0.7D),
+				"Fully inflated Fizzball Fish lost its exact full scale");
+		CompoundTag puffData = new CompoundTag();
+		fish.addAdditionalSaveData(puffData);
+		restored.readAdditionalSaveData(puffData);
+		require(helper,
+				restored.getPuffState() == 2,
+				"Fizzball Fish lost PuffState across save/reload");
+		CompoundTag oversizedPuff = new CompoundTag();
+		oversizedPuff.putInt("PuffState", 9);
+		restored.readAdditionalSaveData(oversizedPuff);
+		require(helper,
+				restored.getPuffState() == 2,
+				"Fizzball Fish lost vanilla's maximum saved puff-state clamp");
+
+		BlockPos anchor = helper.absolutePos(
+				new BlockPos(3, 3, 3));
+		Pig scaryMob = EntityType.PIG.create(
+				helper.getLevel());
+		require(helper, scaryMob != null,
+				"Could not create Fizzball inflation threat");
+		fish.setPuffState(0);
+		fish.setNoGravity(true);
+		fish.setPos(anchor.getX(), anchor.getY(),
+				anchor.getZ());
+		scaryMob.setPos(anchor.getX() + 1.0D,
+				anchor.getY(), anchor.getZ());
+		helper.getLevel().addFreshEntity(scaryMob);
+		require(helper,
+				fish.startGoalNamed(
+						"PufferfishPuffGoal"),
+				"Fizzball Fish could not start the genuine proximity inflation goal");
+		for (int tick = 0; tick < 42; tick++) {
+			fish.tick();
+		}
+		require(helper,
+				fish.getPuffState() == 2
+						&& fish.blowUpSoundCount() == 2,
+				"Fizzball Fish did not progress from small to fully inflated after the exact forty-tick warning: state="
+						+ fish.getPuffState()
+						+ ", blow_up_sounds="
+						+ fish.blowUpSoundCount());
+		scaryMob.discard();
+		fish.stopGoalNamed("PufferfishPuffGoal");
+		for (int tick = 0; tick < 102; tick++) {
+			fish.tick();
+		}
+		require(helper,
+				fish.getPuffState() == 0
+						&& fish.blowOutSoundCount() == 2,
+				"Fizzball Fish did not deflate through vanilla's sixty/one-hundred-tick sequence");
+		require(helper,
+				fish.ambientSound()
+								== SoundEvents.PUFFER_FISH_AMBIENT
+						&& fish.hurtSound()
+								== SoundEvents.PUFFER_FISH_HURT
+						&& fish.deathSound()
+								== SoundEvents.PUFFER_FISH_DEATH
+						&& fish.flopSound()
+								== SoundEvents.PUFFER_FISH_FLOP
+						&& fish.getPickupSound()
+								== SoundEvents.BUCKET_FILL_FISH,
+				"Fizzball Fish lost exact Pufferfish ambient, hurt, death, flop or pickup sounds");
+
+		FizzballFishProbe safetyFish =
+				new FizzballFishProbe(helper.getLevel());
+		Pig target = EntityType.PIG.create(
+				helper.getLevel());
+		require(helper, target != null,
+				"Could not create Fizzball safety target");
+		safetyFish.setPuffState(2);
+		safetyFish.setPos(anchor.getX(), anchor.getY(),
+				anchor.getZ() + 4.0D);
+		target.setPos(anchor.getX() + 1.0D,
+				anchor.getY(), anchor.getZ() + 4.0D);
+		for (Difficulty safeDifficulty :
+				new Difficulty[] {
+						Difficulty.PEACEFUL,
+						Difficulty.EASY,
+						Difficulty.NORMAL}) {
+			target.removeAllEffects();
+			target.setHealth(target.getMaxHealth());
+			target.setSecondsOnFire(5);
+			target.fallDistance = 12.0F;
+			target.setDeltaMovement(Vec3.ZERO);
+			LivingAttackEvent protectedSting =
+					new LivingAttackEvent(target,
+							DamageSource.mobAttack(
+									safetyFish),
+							3.0F);
+			FizzballFishDamageSafety
+					.applyForDifficulty(
+							protectedSting,
+							safeDifficulty);
+			require(helper,
+					protectedSting.isCanceled()
+							&& close(target.getHealth(),
+									target.getMaxHealth())
+							&& !target.isOnFire()
+							&& target.fallDistance
+									== 0.0F
+							&& target.hasEffect(
+									MobEffects
+											.MOVEMENT_SPEED)
+							&& target.hasEffect(
+									MobEffects
+											.SLOW_FALLING)
+							&& target.hasEffect(
+									MobEffects
+											.FIRE_RESISTANCE)
+							&& target.getEffect(
+									MobEffects
+											.DAMAGE_RESISTANCE)
+									.getAmplifier() == 4
+							&& !target.hasEffect(
+									MobEffects.POISON)
+							&& target.getDeltaMovement().x
+									> 0.0D
+							&& target.getDeltaMovement().y
+									> 0.0D,
+					safeDifficulty
+							+ " Fizzball sting caused health, poison or indirect peril, or lacked its fizzy rescue");
+		}
+
+		target.removeAllEffects();
+		target.setDeltaMovement(Vec3.ZERO);
+		LivingAttackEvent hardSting =
+				new LivingAttackEvent(target,
+						DamageSource.mobAttack(safetyFish),
+						3.0F);
+		FizzballFishDamageSafety.applyForDifficulty(
+				hardSting, Difficulty.HARD);
+		require(helper,
+				!hardSting.isCanceled()
+						&& close(hardSting.getAmount(), 3.0D)
+						&& target.getActiveEffects().isEmpty()
+						&& target.getDeltaMovement()
+								.equals(Vec3.ZERO),
+				"Hard Fizzball Fish did not retain an unmodified full-puff three-point sting for vanilla poison handling");
+
+		ServerPlayer contactPlayer = new ServerPlayer(
+				helper.getLevel().getServer(),
+				helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2043"),
+						"CakeWorldFizzballContactTest"));
+		clearServerPlayerSpawnInvulnerability(
+				contactPlayer);
+		contactPlayer.connection =
+				new ServerGamePacketListenerImpl(
+						helper.getLevel().getServer(),
+						new Connection(
+								PacketFlow.CLIENTBOUND),
+						contactPlayer);
+		contactPlayer.getAbilities().invulnerable = false;
+		contactPlayer.setInvulnerable(false);
+		contactPlayer.invulnerableTime = 0;
+		contactPlayer.removeAllEffects();
+		contactPlayer.setHealth(contactPlayer.getMaxHealth());
+		contactPlayer.setPos(anchor.getX() + 1.0D,
+				anchor.getY(), anchor.getZ() + 4.0D);
+		contactPlayer.setSecondsOnFire(5);
+		contactPlayer.fallDistance = 12.0F;
+		contactPlayer.setDeltaMovement(Vec3.ZERO);
+		safetyFish.playerTouch(contactPlayer);
+		require(helper,
+				close(contactPlayer.getHealth(),
+						contactPlayer.getMaxHealth())
+						&& !contactPlayer
+								.hasEffect(MobEffects.POISON)
+						&& contactPlayer.hasEffect(
+								MobEffects.MOVEMENT_SPEED)
+						&& contactPlayer.getDeltaMovement().y
+								> 0.0D
+						&& safetyFish.lastSound()
+								== SoundEvents
+										.PUFFER_FISH_STING,
+				"Real Normal player contact bypassed the early attack cancellation, added poison, or lost sting feedback: health="
+						+ contactPlayer.getHealth()
+						+ "/"
+						+ contactPlayer.getMaxHealth()
+						+ ", poison="
+						+ contactPlayer.hasEffect(
+								MobEffects.POISON)
+						+ ", speed="
+						+ contactPlayer.hasEffect(
+								MobEffects.MOVEMENT_SPEED)
+						+ ", motion="
+						+ contactPlayer.getDeltaMovement()
+						+ ", sound="
+						+ safetyFish.lastSound());
+
+		Axolotl axolotl = EntityType.AXOLOTL.create(
+				helper.getLevel());
+		require(helper, axolotl != null,
+				"Could not create Fizzball Axolotl-contact target");
+		axolotl.setPos(safetyFish.getX(),
+				safetyFish.getY(), safetyFish.getZ());
+		axolotl.setHealth(axolotl.getMaxHealth());
+		helper.getLevel().addFreshEntity(safetyFish);
+		helper.getLevel().addFreshEntity(axolotl);
+		safetyFish.aiStep();
+		require(helper,
+				close(axolotl.getHealth(),
+						axolotl.getMaxHealth())
+						&& !axolotl.hasEffect(
+								MobEffects.POISON)
+						&& axolotl.hasEffect(
+								MobEffects.MOVEMENT_SPEED),
+				"Real Normal mob contact bypassed the early attack cancellation or Axolotl-specific Pufferfish threat role");
+
+		BlockPos lemonadePos = new BlockPos(anchor.getX() + 8,
+				helper.getLevel().getSeaLevel() - 5,
+				anchor.getZ());
+		for (int y = -1; y <= 1; y++) {
+			helper.getLevel().setBlock(
+					lemonadePos.offset(0, y, 0),
+					CakeWorldFluids.LEMONADE_BLOCK.get()
+							.defaultBlockState(), 3);
+		}
+		boolean vanillaRule =
+				WaterAnimal.checkSurfaceWaterAnimalSpawnRules(
+						CakeWorldEntities.FIZZBALL_FISH.get(),
+						helper.getLevel(),
+						MobSpawnType.NATURAL,
+						lemonadePos,
+						new Random(1978L));
+		boolean fizzballRule =
+				FizzballFish.checkFizzballFishSpawnRules(
+						CakeWorldEntities.FIZZBALL_FISH.get(),
+						helper.getLevel(),
+						MobSpawnType.NATURAL,
+						lemonadePos,
+						new Random(1978L));
+		require(helper,
+				!vanillaRule
+						&& fizzballRule
+						&& SpawnPlacements
+								.checkSpawnRules(
+										CakeWorldEntities
+												.FIZZBALL_FISH
+												.get(),
+										helper.getLevel(),
+										MobSpawnType.NATURAL,
+										lemonadePos,
+										new Random(1979L))
+						&& SpawnPlacements
+								.getPlacementType(
+										CakeWorldEntities
+												.FIZZBALL_FISH
+												.get())
+								== SpawnPlacements.Type
+										.IN_WATER
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+												.FIZZBALL_FISH
+												.get())
+								== Heightmap.Types
+										.MOTION_BLOCKING_NO_LEAVES,
+				"Fizzball Fish lost Lemonade-compatible surface spawning or exact placement metadata");
+
+		FizzballFish captureFish =
+				CakeWorldEntities.FIZZBALL_FISH.get()
+						.create(helper.getLevel());
+		require(helper, captureFish != null,
+				"Could not create Fizzball bucket fixture");
+		captureFish.setCustomName(
+				new TextComponent("Pop"));
+		captureFish.setPos(lemonadePos.getX() + 0.5D,
+				lemonadePos.getY(),
+				lemonadePos.getZ() + 0.5D);
+		helper.getLevel().addFreshEntity(captureFish);
+		ServerPlayer bucketPlayer = new ServerPlayer(
+				helper.getLevel().getServer(),
+				helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed3043"),
+						"CakeWorldFizzballBucketTest"));
+		bucketPlayer.setItemInHand(InteractionHand.MAIN_HAND,
+				new ItemStack(Items.WATER_BUCKET));
+		InteractionResult captureResult =
+				bucketPlayer.interactOn(captureFish,
+						InteractionHand.MAIN_HAND);
+		ItemStack bucket = bucketPlayer.getItemInHand(
+				InteractionHand.MAIN_HAND);
+		require(helper,
+				captureResult.consumesAction()
+						&& bucket.is(
+								CakeWorldItems
+										.FIZZBALL_FISH_BUCKET
+										.get())
+						&& bucket.hasCustomHoverName()
+						&& captureFish.isRemoved(),
+				"Fizzball Fish did not capture into its dedicated named Lemonade bucket");
+		AABB releaseArea = new AABB(lemonadePos).inflate(2.0D);
+		helper.getLevel().getEntitiesOfClass(
+				FizzballFish.class, releaseArea)
+				.forEach(FizzballFish::discard);
+		((MobBucketItem)bucket.getItem()).checkExtraContent(
+				null, helper.getLevel(), bucket, lemonadePos);
+		List<FizzballFish> released =
+				helper.getLevel().getEntitiesOfClass(
+						FizzballFish.class, releaseArea);
+		require(helper,
+				released.size() == 1
+						&& released.get(0).fromBucket()
+						&& released.get(0).hasCustomName()
+						&& "Pop".equals(released.get(0)
+								.getCustomName().getString()),
+				"Fizzball bucket released the wrong entity or lost from-bucket/name data");
+		requireCriterion(helper, bucketPlayer,
+				"minecraft:husbandry/tactical_fishing",
+				"pufferfish_bucket");
+
+		Biome sodaOcean = helper.getLevel().registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY)
+				.get(CakeWorldBiomes.SODA_OCEAN.getId());
+		require(helper, sodaOcean != null,
+				"Could not inspect Soda Ocean Fizzball spawning");
+		MobSpawnSettings.SpawnerData sodaSpawn =
+				sodaOcean.getMobSettings()
+						.getMobs(MobCategory.WATER_AMBIENT)
+						.unwrap().stream()
+						.filter(spawn -> spawn.type
+								== CakeWorldEntities
+										.FIZZBALL_FISH.get())
+						.findFirst().orElse(null);
+		require(helper,
+				sodaSpawn != null
+						&& sodaSpawn.getWeight().asInt() == 5
+						&& sodaSpawn.minCount == 1
+						&& sodaSpawn.maxCount == 3
+						&& sodaOcean.getMobSettings()
+								.getMobs(
+										MobCategory
+												.WATER_AMBIENT)
+								.unwrap().stream()
+								.noneMatch(spawn ->
+										spawn.type
+												== EntityType
+														.PUFFERFISH),
+				"Soda Ocean lost the exact 5/1-3 Fizzball replacement or leaked vanilla Pufferfish");
+
+		TagKey<EntityType<?>> axolotlPrey =
+				TagKey.create(Registry.ENTITY_TYPE_REGISTRY,
+						new ResourceLocation("minecraft",
+								"axolotl_hunt_targets"));
+		Advancement killAll = helper.getLevel().getServer()
+				.getAdvancements().getAdvancement(
+						new ResourceLocation("minecraft",
+								"adventure/kill_all_mobs"));
+		Advancement bredAll = helper.getLevel().getServer()
+				.getAdvancements().getAdvancement(
+						new ResourceLocation("minecraft",
+								"husbandry/bred_all_animals"));
+		require(helper,
+				CakeWorldEntities.FIZZBALL_FISH.get()
+								.is(axolotlPrey)
+						&& CakeWorldItems
+								.FIZZBALL_FISH_SPAWN_EGG
+								.isPresent()
+						&& killAll != null
+						&& bredAll != null
+						&& !killAll.getCriteria()
+								.containsKey(
+										"minecraft:pufferfish")
+						&& !bredAll.getCriteria()
+								.containsKey(
+										"minecraft:pufferfish")
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+												.FIZZBALL_FISH
+												.get())
+								== null,
+				"Fizzball Fish lost its Axolotl-prey/egg roles or fabricated a kill, breeding or Parrot-mimic contract");
+
+		safetyFish.discard();
+		axolotl.discard();
+		released.forEach(FizzballFish::discard);
+		helper.succeed();
+	}
+
 	@GameTest(template = EMPTY, timeoutTicks = 200)
 	public static void fudgeFolkKeepPiglinSocietyBarterAndSafePeril(
 			GameTestHelper helper) {
@@ -12402,6 +12851,104 @@ public final class FirstBiteGameTests {
 		}
 	}
 
+	private static final class FizzballFishProbe
+			extends FizzballFish {
+		private net.minecraft.sounds.SoundEvent lastSound;
+		private int blowUpSoundCount;
+		private int blowOutSoundCount;
+
+		private FizzballFishProbe(Level level) {
+			super(CakeWorldEntities.FIZZBALL_FISH.get(),
+					level);
+		}
+
+		private int getExperienceValue() {
+			return getExperienceReward(null);
+		}
+
+		private ResourceLocation getLootTableId() {
+			return getLootTable();
+		}
+
+		private net.minecraft.sounds.SoundEvent ambientSound() {
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent hurtSound() {
+			return getHurtSound(DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent deathSound() {
+			return getDeathSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent flopSound() {
+			return getFlopSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent lastSound() {
+			return lastSound;
+		}
+
+		private int blowUpSoundCount() {
+			return blowUpSoundCount;
+		}
+
+		private int blowOutSoundCount() {
+			return blowOutSoundCount;
+		}
+
+		private void seedRandom(long seed) {
+			random.setSeed(seed);
+		}
+
+		private int countGoalsNamed(String name) {
+			return (int)goalSelector.getAvailableGoals()
+					.stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
+		}
+
+		private boolean startGoalNamed(String name) {
+			for (WrappedGoal wrapped :
+					goalSelector.getAvailableGoals()) {
+				if (name.equals(wrapped.getGoal()
+						.getClass().getSimpleName())
+						&& wrapped.canUse()) {
+					wrapped.start();
+					return true;
+				}
+			}
+			return false;
+		}
+
+		private void stopGoalNamed(String name) {
+			for (WrappedGoal wrapped :
+					goalSelector.getAvailableGoals()) {
+				if (name.equals(wrapped.getGoal()
+						.getClass().getSimpleName())) {
+					wrapped.stop();
+				}
+			}
+		}
+
+		@Override
+		public void playSound(
+				net.minecraft.sounds.SoundEvent sound,
+				float volume, float pitch) {
+			lastSound = sound;
+			if (sound == SoundEvents.PUFFER_FISH_BLOW_UP) {
+				blowUpSoundCount++;
+			} else if (sound
+					== SoundEvents.PUFFER_FISH_BLOW_OUT) {
+				blowOutSoundCount++;
+			}
+		}
+	}
+
 	private static final class ChocolatePandaProbe
 			extends ChocolatePanda {
 		private ChocolatePandaProbe(Level level) {
@@ -12556,6 +13103,20 @@ public final class FirstBiteGameTests {
 				entry.getFirst().getEffect() == effect
 						&& entry.getFirst().getDuration() == duration
 						&& close(entry.getSecond(), 1.0D));
+	}
+
+	private static void clearServerPlayerSpawnInvulnerability(
+			ServerPlayer player) {
+		try {
+			Field field = ServerPlayer.class.getDeclaredField(
+					"spawnInvulnerableTime");
+			field.setAccessible(true);
+			field.setInt(player, 0);
+		} catch (ReflectiveOperationException exception) {
+			throw new IllegalStateException(
+					"Could not clear the test player's vanilla spawn invulnerability",
+					exception);
+		}
 	}
 
 	private static void require(GameTestHelper helper, boolean condition, String message) {

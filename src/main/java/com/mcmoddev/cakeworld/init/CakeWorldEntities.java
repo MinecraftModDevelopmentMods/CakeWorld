@@ -16,6 +16,7 @@ import com.mcmoddev.cakeworld.entity.DriedCrumbler;
 import com.mcmoddev.cakeworld.entity.FudgeBoar;
 import com.mcmoddev.cakeworld.entity.FudgeBrute;
 import com.mcmoddev.cakeworld.entity.FudgeFolk;
+import com.mcmoddev.cakeworld.entity.FizzballFish;
 import com.mcmoddev.cakeworld.entity.GingerbreadPony;
 import com.mcmoddev.cakeworld.entity.GrandGumballGuardian;
 import com.mcmoddev.cakeworld.entity.GiantStaleCrumbler;
@@ -72,6 +73,7 @@ import net.minecraft.world.entity.animal.Parrot;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.animal.PolarBear;
 import net.minecraft.world.entity.animal.Sheep;
+import net.minecraft.world.entity.animal.AbstractFish;
 import net.minecraft.world.entity.animal.goat.Goat;
 import net.minecraft.world.entity.animal.horse.AbstractChestedHorse;
 import net.minecraft.world.entity.animal.horse.AbstractHorse;
@@ -176,6 +178,12 @@ public final class CakeWorldEntities {
 					EntityType.Builder.of(SodaCod::new,
 							MobCategory.WATER_AMBIENT)
 							.sized(0.5F, 0.3F)
+							.clientTrackingRange(4));
+	public static final RegistryObject<EntityType<FizzballFish>>
+			FIZZBALL_FISH = entity("fizzball_fish",
+					EntityType.Builder.of(FizzballFish::new,
+							MobCategory.WATER_AMBIENT)
+							.sized(0.7F, 0.7F)
 							.clientTrackingRange(4));
 	public static final RegistryObject<EntityType<SodaDolphin>> SODA_DOLPHIN =
 			entity("soda_dolphin",
@@ -424,6 +432,8 @@ public final class CakeWorldEntities {
 		event.put(DEEP_LIQUORICE_WEAVER.get(),
 				CaveSpider.createCaveSpider().build());
 		event.put(SODA_COD.get(), Cod.createMobAttributes().build());
+		event.put(FIZZBALL_FISH.get(),
+				AbstractFish.createAttributes().build());
 		event.put(SODA_DOLPHIN.get(), Dolphin.createAttributes().build());
 		event.put(DOUGH_DONKEY.get(),
 				AbstractChestedHorse.createBaseChestedHorseAttributes()
@@ -531,6 +541,10 @@ public final class CakeWorldEntities {
 					SpawnPlacements.Type.IN_WATER,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					SodaCod::checkSodaCodSpawnRules);
+			SpawnPlacements.register(FIZZBALL_FISH.get(),
+					SpawnPlacements.Type.IN_WATER,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					FizzballFish::checkFizzballFishSpawnRules);
 			SpawnPlacements.register(SODA_DOLPHIN.get(),
 					SpawnPlacements.Type.IN_WATER,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,

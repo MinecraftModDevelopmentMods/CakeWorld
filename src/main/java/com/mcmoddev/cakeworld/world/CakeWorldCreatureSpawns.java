@@ -124,6 +124,9 @@ public final class CakeWorldCreatureSpawns {
 					CakeWorldEntities.JELLYLOTL, 6, 1, 3);
 			replace(event, MobCategory.WATER_AMBIENT, EntityType.COD,
 					CakeWorldEntities.SODA_COD, 15, 3, 6);
+			replace(event, MobCategory.WATER_AMBIENT,
+					EntityType.PUFFERFISH,
+					CakeWorldEntities.FIZZBALL_FISH, 5, 1, 3);
 			replace(event, MobCategory.WATER_CREATURE,
 					EntityType.DOLPHIN,
 					CakeWorldEntities.SODA_DOLPHIN, 1, 1, 2);
