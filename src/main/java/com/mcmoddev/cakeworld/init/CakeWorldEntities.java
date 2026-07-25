@@ -32,6 +32,7 @@ import com.mcmoddev.cakeworld.entity.IceCreamGolem;
 import com.mcmoddev.cakeworld.entity.JawbreakerGuardian;
 import com.mcmoddev.cakeworld.entity.JellyBlob;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
+import com.mcmoddev.cakeworld.entity.LiquoriceWeaver;
 import com.mcmoddev.cakeworld.entity.LollipopLorikeet;
 import com.mcmoddev.cakeworld.entity.MacaronClam;
 import com.mcmoddev.cakeworld.entity.MallowChick;
@@ -110,6 +111,7 @@ import net.minecraft.world.entity.monster.Ravager;
 import net.minecraft.world.entity.monster.Shulker;
 import net.minecraft.world.entity.monster.Silverfish;
 import net.minecraft.world.entity.monster.Skeleton;
+import net.minecraft.world.entity.monster.Spider;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.monster.hoglin.Hoglin;
 import net.minecraft.world.entity.monster.piglin.Piglin;
@@ -401,6 +403,14 @@ public final class CakeWorldEntities {
 									Blocks.POWDER_SNOW)
 							.sized(0.7F, 1.9F)
 							.clientTrackingRange(8));
+	public static final RegistryObject<EntityType<LiquoriceWeaver>>
+			LIQUORICE_WEAVER = entity(
+					"liquorice_weaver",
+					EntityType.Builder.of(
+							LiquoriceWeaver::new,
+							MobCategory.MONSTER)
+							.sized(1.4F, 0.9F)
+							.clientTrackingRange(8));
 	public static final RegistryObject<EntityType<SugarMite>> SUGAR_MITE =
 			entity("sugar_mite",
 					EntityType.Builder.of(SugarMite::new,
@@ -573,6 +583,8 @@ public final class CakeWorldEntities {
 				Monster.createMonsterAttributes().build());
 		event.put(ICE_CREAM_GOLEM.get(),
 				SnowGolem.createAttributes().build());
+		event.put(LIQUORICE_WEAVER.get(),
+				Spider.createAttributes().build());
 		event.put(SUGAR_MITE.get(),
 				Endermite.createAttributes().build());
 		event.put(SOUR_SORCERER.get(),
@@ -755,6 +767,11 @@ public final class CakeWorldEntities {
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					Mob::checkMobSpawnRules);
+			SpawnPlacements.register(
+					LIQUORICE_WEAVER.get(),
+					SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					Monster::checkMonsterSpawnRules);
 			SpawnPlacements.register(SUGAR_MITE.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,

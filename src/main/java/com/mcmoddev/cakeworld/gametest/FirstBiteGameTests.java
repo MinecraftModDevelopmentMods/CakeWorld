@@ -1,6 +1,7 @@
 package com.mcmoddev.cakeworld.gametest;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +49,7 @@ import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.JellyBlob;
 import com.mcmoddev.cakeworld.entity.JellyBlobDamageSafety;
 import com.mcmoddev.cakeworld.entity.LollipopLorikeet;
+import com.mcmoddev.cakeworld.entity.LiquoriceWeaver;
 import com.mcmoddev.cakeworld.entity.MacaronClam;
 import com.mcmoddev.cakeworld.entity.MacaronClamProjectileSafety;
 import com.mcmoddev.cakeworld.entity.CustardCat;
@@ -118,6 +120,7 @@ import com.mcmoddev.cakeworld.world.CakeWorldSilverfishReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldSkeletonReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldSkeletonHorseReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldSnowGolemReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldSpiderReplacement;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -146,6 +149,7 @@ import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.Difficulty;
+import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleContainer;
@@ -164,10 +168,12 @@ import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.MobType;
 import net.minecraft.world.entity.NeutralMob;
 import net.minecraft.world.entity.Pose;
+import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.LlamaFollowCaravanGoal;
 import net.minecraft.world.entity.ai.goal.WrappedGoal;
 import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
+import net.minecraft.world.entity.ai.navigation.WallClimberNavigation;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.NearestVisibleLivingEntities;
 import net.minecraft.world.entity.ai.sensing.GolemSensor;
@@ -274,6 +280,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.NaturalSpawner;
 import net.minecraft.world.level.ChunkPos;
@@ -17020,18 +17027,26 @@ public final class FirstBiteGameTests {
 						projectile -> projectile
 								.getOwner() == golem)
 				.stream().findFirst().orElse(null);
+		Vec3 firedVelocity = fired == null
+				? Vec3.ZERO
+				: fired.getDeltaMovement();
+		double firedSpeed = firedVelocity.length();
 		require(helper,
 				fired != null
 						&& fired.getType()
 								== EntityType.SNOWBALL
-						&& fired.getDeltaMovement()
-								.length() > 1.3D
-						&& fired.getDeltaMovement()
-								.length() < 1.9D
+						&& firedVelocity.x > 0.5D
+						&& firedSpeed > 0.5D
+						&& firedSpeed < 2.7D
 						&& golem.lastSound()
 								== SoundEvents
 										.SNOW_GOLEM_SHOOT,
-				"Ice-Cream Golem lost its exact vanilla Snowball, trajectory or firing sound");
+				"Ice-Cream Golem lost its vanilla Snowball, target-directed trajectory or firing sound"
+						+ " (present=" + (fired != null)
+						+ ", velocity=" + firedVelocity
+						+ ", speed=" + firedSpeed
+						+ ", sound=" + golem.lastSound()
+						+ ")");
 		fired.discard();
 
 		cinnamon.setHealth(20.0F);
@@ -17372,6 +17387,590 @@ public final class FirstBiteGameTests {
 			built.forEach(Entity::discard);
 			helper.succeed();
 		});
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 200)
+	public static void liquoriceWeaversKeepClimbingJockeysNightTemperamentAndSafeWebs(
+			GameTestHelper helper) {
+		LiquoriceWeaverProbe weaver =
+				new LiquoriceWeaverProbe(
+						helper.getLevel());
+		require(helper,
+				weaver instanceof Spider
+						&& weaver.getType()
+								== CakeWorldEntities
+										.LIQUORICE_WEAVER
+										.get()
+						&& weaver.getType().getCategory()
+								== MobCategory.MONSTER
+						&& close(weaver.getMaxHealth(),
+								16.0D)
+						&& close(weaver.getAttributeValue(
+								Attributes.MOVEMENT_SPEED),
+								0.3D)
+						&& close(weaver.getAttributeValue(
+								Attributes.ATTACK_DAMAGE),
+								2.0D)
+						&& close(weaver.getAttributeValue(
+								Attributes.FOLLOW_RANGE),
+								16.0D)
+						&& close(weaver.getDimensions(
+								Pose.STANDING).width,
+								1.4D)
+						&& close(weaver.getDimensions(
+								Pose.STANDING).height,
+								0.9D)
+						&& close(weaver.standingEyeHeight(),
+								0.65D)
+						&& close(weaver
+								.getPassengersRidingOffset(),
+								0.45D)
+						&& weaver.getType()
+								.clientTrackingRange() == 8
+						&& weaver.getMaxSpawnClusterSize()
+								== 4
+						&& weaver.experienceReward() == 5
+						&& weaver.despawnsInPeaceful()
+						&& weaver.getMobType()
+								== MobType.ARTHROPOD
+						&& weaver.getNavigation()
+								instanceof WallClimberNavigation,
+				"Liquorice Weaver lost exact Spider body, attributes, XP, passenger, Peaceful, arthropod or wall-navigation role");
+		require(helper,
+				weaver.goalPriority("FloatGoal") == 1
+						&& weaver.goalPriority(
+								"LeapAtTargetGoal")
+								== 3
+						&& weaver.goalPriority(
+								"SpiderAttackGoal")
+								== 4
+						&& weaver.goalPriority(
+								"WaterAvoidingRandomStrollGoal")
+								== 5
+						&& weaver.goalPriority(
+								"LookAtPlayerGoal")
+								== 6
+						&& weaver.goalPriority(
+								"RandomLookAroundGoal")
+								== 6
+						&& weaver.targetGoalPriority(
+								"HurtByTargetGoal")
+								== 1
+						&& weaver.countTargetGoalsNamed(
+								"SpiderTargetGoal")
+								== 2,
+				"Liquorice Weaver lost exact Spider movement, melee or Player/Iron-Golem target goals");
+		require(helper,
+				weaver.ambientSound()
+								== SoundEvents
+										.SPIDER_AMBIENT
+						&& weaver.hurtSound()
+								== SoundEvents
+										.SPIDER_HURT
+						&& weaver.deathSound()
+								== SoundEvents
+										.SPIDER_DEATH,
+				"Liquorice Weaver lost exact Spider sounds");
+		weaver.clearLastSound();
+		weaver.playStep();
+		require(helper,
+				weaver.lastSound()
+								== SoundEvents
+										.SPIDER_STEP
+						&& close(weaver.lastVolume(),
+								0.15D)
+						&& close(weaver.lastPitch(),
+								1.0D),
+				"Liquorice Weaver lost exact Spider step cue");
+
+		weaver.setClimbing(true);
+		weaver.makeStuckInBlock(
+				Blocks.COBWEB.defaultBlockState(),
+				new Vec3(0.25D, 0.05D, 0.25D));
+		Vec3 cobwebMultiplier =
+				weaver.stuckMultiplier();
+		weaver.makeStuckInBlock(
+				Blocks.HONEY_BLOCK
+						.defaultBlockState(),
+				new Vec3(0.25D, 0.05D, 0.25D));
+		require(helper,
+				weaver.onClimbable()
+						&& weaver.isClimbing()
+						&& cobwebMultiplier
+								.equals(Vec3.ZERO)
+						&& weaver.stuckMultiplier()
+								.equals(new Vec3(
+										0.25D,
+										0.05D,
+										0.25D))
+						&& !weaver.canBeAffected(
+								new MobEffectInstance(
+										MobEffects
+												.POISON,
+										100))
+						&& weaver.canBeAffected(
+								new MobEffectInstance(
+										MobEffects
+												.MOVEMENT_SPEED,
+										100)),
+				"Liquorice Weaver lost climbing, cobweb immunity, ordinary stuck handling or poison immunity");
+
+		Pig brightTarget =
+				EntityType.PIG.create(helper.getLevel());
+		require(helper, brightTarget != null,
+				"Could not create Liquorice Weaver daylight target");
+		brightTarget.setPos(weaver.getX() + 1.0D,
+				weaver.getY(), weaver.getZ());
+		weaver.setTestBrightness(1.0F);
+		weaver.setTestRandom(new FixedRandom(0));
+		weaver.setTarget(brightTarget);
+		require(helper,
+				!weaver.attackGoalContinues()
+						&& weaver.getTarget() == null
+						&& !weaver
+								.anySpiderTargetCanUse(),
+				"Liquorice Weaver did not retain bright-light neutrality for attack and target goals");
+		weaver.clearTestEnvironment();
+
+		DifficultyInstance saturatedHard =
+				new DifficultyInstance(
+						Difficulty.HARD,
+						1440000L, 3600000L,
+						1.0F);
+		LiquoriceWeaver hardEffectWeaver =
+				CakeWorldEntities.LIQUORICE_WEAVER
+						.get().create(helper.getLevel());
+		LiquoriceWeaver normalEffectWeaver =
+				CakeWorldEntities.LIQUORICE_WEAVER
+						.get().create(helper.getLevel());
+		require(helper,
+				hardEffectWeaver != null
+						&& normalEffectWeaver != null,
+				"Could not create Liquorice Weaver spawn-effect fixtures");
+		SpawnGroupData hardGroup =
+				hardEffectWeaver.finalizeSpawn(
+						controlledSpiderAccessor(
+								helper.getLevel(),
+								Difficulty.HARD,
+								new SpiderSpawnRandom(
+										1, 0.0F,
+										4)),
+						saturatedHard,
+						MobSpawnType.NATURAL,
+						null, null);
+		SpawnGroupData normalGroup =
+				normalEffectWeaver.finalizeSpawn(
+						controlledSpiderAccessor(
+								helper.getLevel(),
+								Difficulty.NORMAL,
+								new SpiderSpawnRandom(
+										1, 0.0F,
+										4)),
+						new DifficultyInstance(
+								Difficulty.NORMAL,
+								1440000L,
+								3600000L,
+								1.0F),
+						MobSpawnType.NATURAL,
+						null, null);
+		MobEffectInstance hardInvisibility =
+				hardEffectWeaver.getEffect(
+						MobEffects.INVISIBILITY);
+		require(helper,
+				hardGroup instanceof
+								Spider
+										.SpiderEffectsGroupData
+						&& ((Spider
+								.SpiderEffectsGroupData)
+								hardGroup).effect
+								== MobEffects
+										.INVISIBILITY
+						&& hardInvisibility != null
+						&& hardInvisibility
+								.getDuration()
+								== Integer.MAX_VALUE
+						&& normalGroup instanceof
+								Spider
+										.SpiderEffectsGroupData
+						&& ((Spider
+								.SpiderEffectsGroupData)
+								normalGroup).effect
+								== null
+						&& normalEffectWeaver
+								.getActiveEffects()
+								.isEmpty(),
+				"Liquorice Weaver lost Hard local-difficulty random effects or incorrectly applied them on Normal");
+
+		BlockPos localPos = helper.absolutePos(
+				new BlockPos(1, 3, 1));
+		weaver.setPos(localPos.getX(),
+				localPos.getY(), localPos.getZ());
+		brightTarget.setPos(localPos.getX() + 1.0D,
+				localPos.getY(), localPos.getZ());
+		helper.getLevel().addFreshEntity(weaver);
+		helper.getLevel().addFreshEntity(
+				brightTarget);
+		Difficulty originalDifficulty =
+				helper.getLevel().getDifficulty();
+		try {
+			for (Difficulty safeDifficulty :
+					List.of(Difficulty.EASY,
+							Difficulty.NORMAL)) {
+				helper.getLevel().getServer()
+						.setDifficulty(
+								safeDifficulty,
+								true);
+				brightTarget.removeAllEffects();
+				brightTarget.setHealth(20.0F);
+				brightTarget.invulnerableTime = 0;
+				brightTarget.fallDistance = 40.0F;
+				brightTarget.setSecondsOnFire(5);
+				weaver.clearLastSound();
+				float safeStartingHealth =
+						brightTarget.getHealth();
+				boolean safeHit =
+						weaver.doHurtTarget(
+								brightTarget);
+				String safeState =
+						"hit=" + safeHit
+						+ ", health="
+						+ brightTarget.getHealth()
+						+ "/"
+						+ safeStartingHealth
+						+ ", fire="
+						+ brightTarget.isOnFire()
+						+ ", fall="
+						+ brightTarget.fallDistance
+						+ ", slow="
+						+ brightTarget.getEffect(
+								MobEffects
+										.MOVEMENT_SLOWDOWN)
+						+ ", fatigue="
+						+ brightTarget.getEffect(
+								MobEffects
+										.DIG_SLOWDOWN)
+						+ ", glow="
+						+ brightTarget.getEffect(
+								MobEffects.GLOWING)
+						+ ", slowFall="
+						+ brightTarget.getEffect(
+								MobEffects
+										.SLOW_FALLING)
+						+ ", fireResist="
+						+ brightTarget.getEffect(
+								MobEffects
+										.FIRE_RESISTANCE)
+						+ ", resist="
+						+ brightTarget.getEffect(
+								MobEffects
+										.DAMAGE_RESISTANCE)
+						+ ", sound="
+						+ weaver.lastSound();
+				require(helper,
+						safeHit
+								&& close(
+										brightTarget
+												.getHealth(),
+										safeStartingHealth)
+								&& !brightTarget
+										.isOnFire()
+								&& close(
+										brightTarget
+												.fallDistance,
+										0.0D)
+								&& brightTarget
+										.hasEffect(
+												MobEffects
+														.MOVEMENT_SLOWDOWN)
+								&& brightTarget
+										.getEffect(
+												MobEffects
+														.MOVEMENT_SLOWDOWN)
+										.getAmplifier()
+										== 1
+								&& brightTarget
+										.hasEffect(
+												MobEffects
+														.DIG_SLOWDOWN)
+								&& brightTarget
+										.hasEffect(
+												MobEffects
+														.GLOWING)
+								&& brightTarget
+										.hasEffect(
+												MobEffects
+														.SLOW_FALLING)
+								&& brightTarget
+										.hasEffect(
+												MobEffects
+														.FIRE_RESISTANCE)
+								&& brightTarget
+										.hasEffect(
+												MobEffects
+														.DAMAGE_RESISTANCE)
+								&& weaver
+										.lastSound()
+										== SoundEvents
+												.SLIME_SQUISH,
+						safeDifficulty
+								+ " Liquorice Weaver bite was not a harmless visible web splat with complete rescue: "
+								+ safeState);
+			}
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			brightTarget.removeAllEffects();
+			brightTarget.setHealth(20.0F);
+			brightTarget.invulnerableTime = 0;
+			float hardStartingHealth =
+					brightTarget.getHealth();
+			require(helper,
+					weaver.doHurtTarget(
+									brightTarget)
+							&& close(
+									brightTarget
+											.getHealth(),
+									hardStartingHealth
+											- 2.0D)
+							&& brightTarget
+									.getActiveEffects()
+									.isEmpty(),
+					"Hard Liquorice Weaver did not retain the exact unmodified two-point Spider bite");
+		} finally {
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+		brightTarget.discard();
+		weaver.discard();
+
+		Spider literal =
+				EntityType.SPIDER.create(
+						helper.getLevel());
+		Boat vehicle = EntityType.BOAT.create(
+				helper.getLevel());
+		Pig passenger =
+				EntityType.PIG.create(helper.getLevel());
+		require(helper,
+				literal != null && vehicle != null
+						&& passenger != null,
+				"Could not create Liquorice Weaver literal-conversion fixtures");
+		literal.setPos(localPos.getX(),
+				localPos.getY(), localPos.getZ());
+		literal.setHealth(12.0F);
+		literal.setCustomName(new TextComponent(
+				"Twisty Lace"));
+		literal.setPersistenceRequired();
+		literal.setNoAi(true);
+		literal.setInvulnerable(true);
+		literal.invulnerableTime = 31;
+		literal.addEffect(new MobEffectInstance(
+				MobEffects.MOVEMENT_SPEED,
+				800, 1));
+		vehicle.setPos(localPos.getX(),
+				localPos.getY(), localPos.getZ());
+		passenger.setPos(localPos.getX(),
+				localPos.getY(), localPos.getZ());
+		helper.getLevel().addFreshEntity(vehicle);
+		helper.getLevel().addFreshEntity(passenger);
+		helper.getLevel().addFreshEntity(literal);
+		literal.startRiding(vehicle, true);
+		passenger.startRiding(literal, true);
+		LiquoriceWeaver converted =
+				CakeWorldSpiderReplacement
+						.replaceIfInCakeWorldBiome(
+								helper.getLevel(),
+								literal);
+		require(helper,
+				converted != null
+						&& literal.isRemoved()
+						&& close(converted.getHealth(),
+								12.0D)
+						&& "Twisty Lace".equals(
+								converted.getName()
+										.getString())
+						&& converted
+								.isPersistenceRequired()
+						&& converted.isNoAi()
+						&& converted.isInvulnerable()
+						&& converted.invulnerableTime
+								== 31
+						&& converted.getEffect(
+								MobEffects
+										.MOVEMENT_SPEED)
+								.getAmplifier() == 1
+						&& converted.getVehicle()
+								== vehicle
+						&& passenger.getVehicle()
+								== converted,
+				"Fresh literal Spider conversion lost health, name, state, effects, vehicle or passenger");
+		passenger.discard();
+		converted.discard();
+		vehicle.discard();
+
+		LiquoriceWeaver jockey =
+				CakeWorldEntities.LIQUORICE_WEAVER
+						.get().create(helper.getLevel());
+		require(helper, jockey != null,
+				"Could not create Liquorice Weaver jockey fixture");
+		jockey.setPos(localPos.getX(),
+				localPos.getY(), localPos.getZ());
+		jockey.finalizeSpawn(
+				controlledSpiderAccessor(
+						helper.getLevel(),
+						Difficulty.NORMAL,
+						new SpiderSpawnRandom(
+								0, 0.99F, 0)),
+				new DifficultyInstance(
+						Difficulty.NORMAL,
+						0L, 0L, 0.0F),
+				MobSpawnType.NATURAL,
+				null, null);
+		Skeleton literalJockey =
+				jockey.getFirstPassenger()
+						instanceof Skeleton skeleton
+								? skeleton : null;
+		require(helper,
+				literalJockey != null
+						&& literalJockey.getType()
+								== EntityType.SKELETON
+						&& literalJockey.getVehicle()
+								== jockey,
+				"Liquorice Weaver lost the exact inherited one-percent literal Skeleton-jockey construction");
+		helper.getLevel().addFreshEntity(jockey);
+		helper.getLevel().addFreshEntity(
+				literalJockey);
+		CandyCaneArcher candyJockey =
+				CakeWorldSkeletonReplacement
+						.replaceIfInCakeWorldBiome(
+								helper.getLevel(),
+								literalJockey);
+		require(helper,
+				candyJockey != null
+						&& literalJockey.isRemoved()
+						&& candyJockey.getVehicle()
+								== jockey
+						&& jockey.getPassengers()
+								.contains(candyJockey),
+				"Liquorice Weaver jockey did not hand the literal Skeleton rider to Candy-Cane Archer without losing the mount");
+		candyJockey.discard();
+		jockey.discard();
+
+		Registry<Biome> biomes = helper.getLevel()
+				.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY);
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId())) {
+			Biome biome = biomes.get(biomeId);
+			List<MobSpawnSettings.SpawnerData>
+					spiderProfiles = biome
+							.getMobSettings()
+							.getMobs(
+									MobCategory
+											.MONSTER)
+							.unwrap().stream()
+							.filter(spawn ->
+									spawn.type
+											== EntityType
+													.SPIDER
+									|| spawn.type
+											== CakeWorldEntities
+													.LIQUORICE_WEAVER
+													.get())
+							.toList();
+			require(helper,
+					spiderProfiles.size() == 1
+							&& spiderProfiles.get(0).type
+									== CakeWorldEntities
+											.LIQUORICE_WEAVER
+											.get()
+							&& spiderProfiles.get(0)
+									.getWeight()
+									.asInt() == 100
+							&& spiderProfiles.get(0)
+									.minCount == 4
+							&& spiderProfiles.get(0)
+									.maxCount == 4,
+					"Liquorice Weaver did not exactly replace the inherited 100/4-4 Spider profile in "
+							+ biomeId + ": "
+							+ spiderProfiles);
+		}
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS
+						.getId())) {
+			Biome biome = biomes.get(biomeId);
+			require(helper,
+					biome != null
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory
+													.MONSTER)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType
+															.SPIDER
+											|| spawn.type
+													== CakeWorldEntities
+															.LIQUORICE_WEAVER
+															.get()),
+					"Liquorice Weaver invented a Spider profile in "
+							+ biomeId);
+		}
+		require(helper,
+				SpawnPlacements.getPlacementType(
+								CakeWorldEntities
+										.LIQUORICE_WEAVER
+										.get())
+								== SpawnPlacements
+										.getPlacementType(
+												EntityType
+														.SPIDER)
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+												.LIQUORICE_WEAVER
+												.get())
+								== SpawnPlacements
+										.getHeightmapType(
+												EntityType
+														.SPIDER)
+						&& weaver
+								.getLootTableId()
+								.equals(new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/liquorice_weaver"))
+						&& CakeWorldItems
+								.LIQUORICE_WEAVER_SPAWN_EGG
+								.isPresent()
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+												.LIQUORICE_WEAVER
+												.get())
+								== SoundEvents
+										.PARROT_IMITATE_SPIDER,
+				"Liquorice Weaver lost exact placement, loot, egg or Lorikeet mimic");
+
+		ServerPlayer advancementPlayer =
+				new ServerPlayer(
+						helper.getLevel().getServer(),
+						helper.getLevel(),
+						new GameProfile(
+								UUID.fromString(
+										"1978feed-feed-4bad-babe-1978feed2054"),
+								"CakeWorldLiquoriceWeaverRoleTest"));
+		VanillaRoleAdvancements.onDeath(
+				new LivingDeathEvent(
+						hardEffectWeaver,
+						DamageSource.playerAttack(
+								advancementPlayer)));
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:adventure/kill_all_mobs",
+				"minecraft:spider");
+		helper.succeed();
 	}
 
 	@GameTest(template = EMPTY, timeoutTicks = 200)
@@ -19265,6 +19864,187 @@ public final class FirstBiteGameTests {
 		}
 	}
 
+	private static final class LiquoriceWeaverProbe
+			extends LiquoriceWeaver {
+		private Float testBrightness;
+		private Random testRandom;
+		private net.minecraft.sounds.SoundEvent
+				lastSound;
+		private float lastVolume;
+		private float lastPitch;
+
+		private LiquoriceWeaverProbe(Level level) {
+			super(CakeWorldEntities
+					.LIQUORICE_WEAVER.get(),
+					level);
+		}
+
+		private int goalPriority(String name) {
+			return goalSelector.getAvailableGoals()
+					.stream()
+					.filter(wrapped -> name.equals(
+							wrapped.getGoal()
+									.getClass()
+									.getSimpleName()))
+					.mapToInt(
+							WrappedGoal::getPriority)
+					.findFirst().orElse(-1);
+		}
+
+		private int targetGoalPriority(
+				String name) {
+			return targetSelector
+					.getAvailableGoals().stream()
+					.filter(wrapped -> name.equals(
+							wrapped.getGoal()
+									.getClass()
+									.getSimpleName()))
+					.mapToInt(
+							WrappedGoal::getPriority)
+					.findFirst().orElse(-1);
+		}
+
+		private int countTargetGoalsNamed(
+				String name) {
+			return (int)targetSelector
+					.getAvailableGoals().stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
+		}
+
+		private int experienceReward() {
+			return getExperienceReward(null);
+		}
+
+		private ResourceLocation getLootTableId() {
+			return getLootTable();
+		}
+
+		private boolean despawnsInPeaceful() {
+			return shouldDespawnInPeaceful();
+		}
+
+		private float standingEyeHeight() {
+			return getStandingEyeHeight(
+					Pose.STANDING,
+					getDimensions(Pose.STANDING));
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				ambientSound() {
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				hurtSound() {
+			return getHurtSound(
+					DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				deathSound() {
+			return getDeathSound();
+		}
+
+		private void playStep() {
+			playStepSound(blockPosition(),
+					CakeWorldBlocks.BISCUIT_STONE
+							.get()
+							.defaultBlockState());
+		}
+
+		private Vec3 stuckMultiplier() {
+			return stuckSpeedMultiplier;
+		}
+
+		private void setTestBrightness(
+				float brightness) {
+			testBrightness = brightness;
+		}
+
+		private void setTestRandom(Random random) {
+			testRandom = random;
+		}
+
+		private void clearTestEnvironment() {
+			testBrightness = null;
+			testRandom = null;
+		}
+
+		private boolean attackGoalContinues() {
+			return goalSelector
+					.getAvailableGoals().stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal ->
+							"SpiderAttackGoal"
+									.equals(goal
+											.getClass()
+											.getSimpleName()))
+					.findFirst()
+					.map(goal ->
+							goal.canContinueToUse())
+					.orElse(false);
+		}
+
+		private boolean anySpiderTargetCanUse() {
+			return targetSelector
+					.getAvailableGoals().stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal ->
+							"SpiderTargetGoal"
+									.equals(goal
+											.getClass()
+											.getSimpleName()))
+					.anyMatch(goal ->
+							goal.canUse());
+		}
+
+		private void clearLastSound() {
+			lastSound = null;
+			lastVolume = 0.0F;
+			lastPitch = 0.0F;
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				lastSound() {
+			return lastSound;
+		}
+
+		private float lastVolume() {
+			return lastVolume;
+		}
+
+		private float lastPitch() {
+			return lastPitch;
+		}
+
+		@Override
+		public float getBrightness() {
+			return testBrightness == null
+					? super.getBrightness()
+					: testBrightness;
+		}
+
+		@Override
+		public Random getRandom() {
+			return testRandom == null
+					? super.getRandom()
+					: testRandom;
+		}
+
+		@Override
+		public void playSound(
+				net.minecraft.sounds.SoundEvent sound,
+				float volume, float pitch) {
+			lastSound = sound;
+			lastVolume = volume;
+			lastPitch = pitch;
+		}
+	}
+
 	private static final class SnowballProbe
 			extends Snowball {
 		private SnowballProbe(
@@ -19306,6 +20086,38 @@ public final class FirstBiteGameTests {
 					values.length - 1)];
 			index++;
 			return Math.min(value, bound - 1);
+		}
+	}
+
+	private static final class SpiderSpawnRandom
+			extends Random {
+		private static final long serialVersionUID = 1L;
+		private final int jockeyRoll;
+		private final float effectRoll;
+		private final int effectIndex;
+
+		private SpiderSpawnRandom(
+				int jockeyRoll, float effectRoll,
+				int effectIndex) {
+			this.jockeyRoll = jockeyRoll;
+			this.effectRoll = effectRoll;
+			this.effectIndex = effectIndex;
+		}
+
+		@Override
+		public int nextInt(int bound) {
+			if (bound == 100) {
+				return jockeyRoll;
+			}
+			if (bound == 5) {
+				return effectIndex;
+			}
+			return 0;
+		}
+
+		@Override
+		public float nextFloat() {
+			return effectRoll;
 		}
 	}
 
@@ -19479,6 +20291,31 @@ public final class FirstBiteGameTests {
 					"Could not inspect the Skeleton Trap lightning cue",
 					exception);
 		}
+	}
+
+	private static ServerLevelAccessor
+			controlledSpiderAccessor(
+					ServerLevel level,
+					Difficulty difficulty,
+					Random random) {
+		return (ServerLevelAccessor)
+				Proxy.newProxyInstance(
+						ServerLevelAccessor.class
+								.getClassLoader(),
+						new Class<?>[] {
+								ServerLevelAccessor.class },
+						(proxy, method, arguments) -> {
+							if ("getDifficulty".equals(
+									method.getName())) {
+								return difficulty;
+							}
+							if ("getRandom".equals(
+									method.getName())) {
+								return random;
+							}
+							return method.invoke(level,
+									arguments);
+						});
 	}
 
 	private static boolean close(double actual, double expected) {

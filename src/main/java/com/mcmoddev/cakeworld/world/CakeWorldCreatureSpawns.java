@@ -44,6 +44,9 @@ public final class CakeWorldCreatureSpawns {
 		replaceExisting(event, MobCategory.MONSTER,
 				EntityType.SLIME,
 				CakeWorldEntities.JELLY_BLOB);
+		replaceExisting(event, MobCategory.MONSTER,
+				EntityType.SPIDER,
+				CakeWorldEntities.LIQUORICE_WEAVER);
 
 		if (OVERWORLD_BIOMES.contains(biome.getPath())) {
 			replace(event, MobCategory.MONSTER, EntityType.ZOMBIE,

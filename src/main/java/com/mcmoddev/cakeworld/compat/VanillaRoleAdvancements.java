@@ -366,6 +366,10 @@ public final class VanillaRoleAdvancements {
 		if (type == CakeWorldEntities.JELLY_BLOB.get()) {
 			return "minecraft:slime";
 		}
+		if (type
+				== CakeWorldEntities.LIQUORICE_WEAVER.get()) {
+			return "minecraft:spider";
+		}
 		if (type == CakeWorldEntities.SUGAR_MITE.get()) {
 			return "minecraft:endermite";
 		}

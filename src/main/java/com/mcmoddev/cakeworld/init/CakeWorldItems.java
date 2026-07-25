@@ -307,6 +307,11 @@ public final class CakeWorldItems {
 			spawnEgg("ice_cream_golem_spawn_egg",
 					CakeWorldEntities.ICE_CREAM_GOLEM,
 					0xFFF4E6, 0xF3A7C8);
+	public static final RegistryObject<Item>
+			LIQUORICE_WEAVER_SPAWN_EGG =
+			spawnEgg("liquorice_weaver_spawn_egg",
+					CakeWorldEntities.LIQUORICE_WEAVER,
+					0x1B1026, 0xB94A8C);
 	public static final RegistryObject<Item> SUGAR_MITE_SPAWN_EGG =
 			spawnEgg("sugar_mite_spawn_egg",
 					CakeWorldEntities.SUGAR_MITE,
