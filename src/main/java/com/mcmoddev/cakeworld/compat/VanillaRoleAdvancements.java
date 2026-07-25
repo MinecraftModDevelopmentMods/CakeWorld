@@ -91,6 +91,9 @@ public final class VanillaRoleAdvancements {
 			criterion = "minecraft:goat";
 		} else if (childType == CakeWorldEntities.FUDGE_BOAR.get()) {
 			criterion = "minecraft:hoglin";
+		} else if (childType
+				== CakeWorldEntities.GINGERBREAD_PONY.get()) {
+			criterion = "minecraft:horse";
 		}
 		if (criterion != null) {
 			award(player, BRED_ALL, criterion);

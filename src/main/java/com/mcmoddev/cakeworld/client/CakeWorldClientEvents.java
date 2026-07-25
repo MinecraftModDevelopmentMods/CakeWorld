@@ -25,6 +25,7 @@ import net.minecraft.client.renderer.entity.GlowSquidRenderer;
 import net.minecraft.client.renderer.entity.GoatRenderer;
 import net.minecraft.client.renderer.entity.GuardianRenderer;
 import net.minecraft.client.renderer.entity.HoglinRenderer;
+import net.minecraft.client.renderer.entity.HorseRenderer;
 import net.minecraft.client.renderer.entity.CowRenderer;
 import net.minecraft.client.renderer.entity.PigRenderer;
 import net.minecraft.client.renderer.entity.SheepRenderer;
@@ -75,6 +76,9 @@ public final class CakeWorldClientEvents {
 				GuardianRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.FUDGE_BOAR.get(),
 				HoglinRenderer::new);
+		event.registerEntityRenderer(
+				CakeWorldEntities.GINGERBREAD_PONY.get(),
+				HorseRenderer::new);
 		event.registerEntityRenderer(
 				CakeWorldEntities.TAFFY_TALLWALKER.get(),
 				EndermanRenderer::new);

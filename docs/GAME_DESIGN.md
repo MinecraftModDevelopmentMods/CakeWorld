@@ -259,7 +259,7 @@ document explicitly says otherwise.
 | MOB-023 | `minecraft:goat` | Nougat Goat | Mountain animal preserving ramming and horn roles. |
 | MOB-024 | `minecraft:guardian` | Gumball Guardian | Soda Palace defender with clearly signalled beam behaviour. |
 | MOB-025 | `minecraft:hoglin` | Fudge Boar | Huntable Nether food animal retaining Hoglin breeding, repellent and knockback roles; protected throws below Hard and real charges on Hard. |
-| MOB-026 | `minecraft:horse` | Gingerbread Pony | Primary rideable mount. |
+| MOB-026 | `minecraft:horse` | Gingerbread Pony | Primary tameable, saddleable and armour-compatible rideable mount, retaining Horse appearance and attribute inheritance. |
 | MOB-027 | `minecraft:husk` | Dried Crumbler | Sherbet-desert variant of the Crumbler. |
 | MOB-028 | `minecraft:illusioner` | Mirage Confectioner | Command-only compatibility caster; not added to normal spawning unless given a future structure. |
 | MOB-029 | `minecraft:iron_golem` | Jawbreaker Guardian | Settlement defender. |
@@ -321,6 +321,11 @@ sensor is preserved and verified without copying vanilla Piglin AI. Until
 MOB-069 is implemented, an unprotected Fudge Boar that completes its
 Overworld conversion becomes a vanilla Zoglin. Both seams must remain visible
 in the evidence ledger and be revisited with Fudge Folk and Stale Fudge Boar.
+
+Delivery dependency for MOB-026: Gingerbread Pony and Dough Donkey
+crossbreeding keeps the vanilla Mule result until MOB-032 supplies Marzipan
+Mule. This preserves working Horse-family progression during staged delivery;
+MOB-032 must replace the temporary result from both parent directions.
 
 Projectiles, vehicles, decorative entities, experience, items, the player, and
 other non-mob entity types retain vanilla identity unless a later feature

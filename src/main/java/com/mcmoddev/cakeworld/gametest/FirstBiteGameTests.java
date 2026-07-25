@@ -42,6 +42,7 @@ import com.mcmoddev.cakeworld.entity.GiantStaleCrumbler;
 import com.mcmoddev.cakeworld.entity.GlowJelly;
 import com.mcmoddev.cakeworld.entity.GumballGuardian;
 import com.mcmoddev.cakeworld.entity.FudgeBoar;
+import com.mcmoddev.cakeworld.entity.GingerbreadPony;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.MallowFloater;
 import com.mcmoddev.cakeworld.entity.MallowPuffProjectile;
@@ -108,6 +109,7 @@ import net.minecraft.world.entity.ai.sensing.PiglinSpecificSensor;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.SpawnPlacements;
+import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.animal.Cat;
 import net.minecraft.world.entity.animal.Cod;
@@ -116,6 +118,8 @@ import net.minecraft.world.entity.animal.goat.Goat;
 import net.minecraft.world.entity.animal.WaterAnimal;
 import net.minecraft.world.entity.animal.axolotl.Axolotl;
 import net.minecraft.world.entity.animal.horse.Horse;
+import net.minecraft.world.entity.animal.horse.Markings;
+import net.minecraft.world.entity.animal.horse.Variant;
 import net.minecraft.world.entity.monster.Drowned;
 import net.minecraft.world.entity.monster.ElderGuardian;
 import net.minecraft.world.entity.monster.EnderMan;
@@ -2380,15 +2384,16 @@ public final class FirstBiteGameTests {
 								== CakeWorldEntities.DOUGH_DONKEY.get(),
 				"Dough Donkeys did not breed into their own entity type");
 
-		Horse transitionalHorse = EntityType.HORSE.create(
-				helper.getLevel());
+		GingerbreadPony transitionalHorse =
+				CakeWorldEntities.GINGERBREAD_PONY.get()
+						.create(helper.getLevel());
 		require(helper, transitionalHorse != null,
 				"Could not create the staged horse-family fixture");
 		AgeableMob transitionalMule = first.getBreedOffspring(
 				helper.getLevel(), transitionalHorse);
 		require(helper, transitionalMule != null
 						&& transitionalMule.getType() == EntityType.MULE,
-				"Dough Donkey broke vanilla horse-to-mule breeding before the CakeWorld Pony/Mule replacements exist");
+				"Dough Donkey and Gingerbread Pony broke vanilla horse-to-mule breeding before Marzipan Mule exists");
 
 		DoughDonkey packAnimal = CakeWorldEntities.DOUGH_DONKEY.get()
 				.create(helper.getLevel());
@@ -4834,6 +4839,295 @@ public final class FirstBiteGameTests {
 		requireCriterion(helper, advancementPlayer,
 				"minecraft:adventure/kill_all_mobs",
 				"minecraft:hoglin");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void gingerbreadPoniesKeepGeneticsArmorJumpAndTaming(
+			GameTestHelper helper) {
+		GingerbreadPony first =
+				CakeWorldEntities.GINGERBREAD_PONY.get()
+						.create(helper.getLevel());
+		GingerbreadPony second =
+				CakeWorldEntities.GINGERBREAD_PONY.get()
+						.create(helper.getLevel());
+		require(helper, first != null && second != null,
+				"Could not create Gingerbread Pony breeding fixtures");
+
+		CompoundTag firstAppearance = new CompoundTag();
+		firstAppearance.putInt("Variant",
+				Variant.BLACK.getId()
+						| Markings.WHITE_DOTS.getId() << 8);
+		first.readAdditionalSaveData(firstAppearance);
+		CompoundTag secondAppearance = new CompoundTag();
+		secondAppearance.putInt("Variant",
+				Variant.CREAMY.getId()
+						| Markings.NONE.getId() << 8);
+		second.readAdditionalSaveData(secondAppearance);
+		for (GingerbreadPony parent :
+				new GingerbreadPony[] {first, second}) {
+			parent.getAttribute(Attributes.MAX_HEALTH)
+					.setBaseValue(24.0D);
+			parent.getAttribute(Attributes.JUMP_STRENGTH)
+					.setBaseValue(0.8D);
+			parent.getAttribute(Attributes.MOVEMENT_SPEED)
+					.setBaseValue(0.25D);
+			parent.setHealth(parent.getMaxHealth());
+			parent.setTamed(true);
+			parent.setInLove(null);
+		}
+		require(helper, first.canMate(second),
+				"Two adult, healthy, tame Gingerbread Ponies could not mate");
+		AgeableMob offspring = first.getBreedOffspring(
+				helper.getLevel(), second);
+		require(helper,
+				offspring instanceof GingerbreadPony child
+						&& child.getType()
+								== CakeWorldEntities
+										.GINGERBREAD_PONY.get()
+						&& child.getAttributeBaseValue(
+								Attributes.MAX_HEALTH) >= 21.0D
+						&& child.getAttributeBaseValue(
+								Attributes.MAX_HEALTH) <= 26.0D
+						&& child.getAttributeBaseValue(
+								Attributes.JUMP_STRENGTH)
+								>= 0.666D
+						&& child.getAttributeBaseValue(
+								Attributes.JUMP_STRENGTH)
+								<= 0.867D
+						&& child.getAttributeBaseValue(
+								Attributes.MOVEMENT_SPEED)
+								>= 0.204D
+						&& child.getAttributeBaseValue(
+								Attributes.MOVEMENT_SPEED)
+								<= 0.280D
+						&& child.getVariant() != null
+						&& child.getMarkings() != null,
+				"Gingerbread Pony offspring lost its custom type or vanilla Horse appearance/attribute inheritance");
+
+		DoughDonkey donkey =
+				CakeWorldEntities.DOUGH_DONKEY.get()
+						.create(helper.getLevel());
+		require(helper, donkey != null,
+				"Could not create staged Marzipan Mule parent");
+		donkey.setTamed(true);
+		donkey.setHealth(donkey.getMaxHealth());
+		donkey.setInLove(null);
+		require(helper,
+				first.canMate(donkey)
+						&& donkey.canMate(first),
+				"Gingerbread Pony and Dough Donkey lost Horse-family mate compatibility");
+		AgeableMob ponySideMule = first.getBreedOffspring(
+				helper.getLevel(), donkey);
+		AgeableMob donkeySideMule = donkey.getBreedOffspring(
+				helper.getLevel(), first);
+		require(helper,
+				ponySideMule != null
+						&& ponySideMule.getType()
+								== EntityType.MULE
+						&& donkeySideMule != null
+						&& donkeySideMule.getType()
+								== EntityType.MULE,
+				"Staged Pony/Donkey crossbreeding failed to preserve vanilla Mule progression from both parent directions");
+
+		GingerbreadPony mount =
+				CakeWorldEntities.GINGERBREAD_PONY.get()
+						.create(helper.getLevel());
+		require(helper, mount != null,
+				"Could not create Gingerbread Pony mount fixture");
+		require(helper,
+				mount instanceof Horse
+						&& close(mount.getMaxHealth(), 53.0D)
+						&& close(mount.getAttributeValue(
+								Attributes.MOVEMENT_SPEED),
+								0.225D)
+						&& close(mount.getDimensions(Pose.STANDING)
+								.width, 1.3964844D)
+						&& close(mount.getDimensions(Pose.STANDING)
+								.height, 1.6D)
+						&& mount.canWearArmor()
+						&& mount.getMaxTemper() == 100,
+				"Gingerbread Pony lost the registered Horse attributes, size, armour, or taming contract");
+		require(helper,
+				mount.isFood(new ItemStack(Items.WHEAT))
+						&& mount.isFood(new ItemStack(
+								Items.SUGAR))
+						&& mount.isFood(new ItemStack(
+								Items.HAY_BLOCK))
+						&& mount.isFood(new ItemStack(
+								Items.APPLE))
+						&& mount.isFood(new ItemStack(
+								Items.GOLDEN_CARROT))
+						&& mount.isFood(new ItemStack(
+								Items.GOLDEN_APPLE))
+						&& mount.isFood(new ItemStack(
+								Items.ENCHANTED_GOLDEN_APPLE)),
+				"Gingerbread Pony lost the full vanilla Horse food and breeding set");
+
+		CompoundTag mountAppearance = new CompoundTag();
+		mountAppearance.putInt("Variant",
+				Variant.BROWN.getId()
+						| Markings.WHITE_FIELD.getId() << 8);
+		mount.readAdditionalSaveData(mountAppearance);
+		BlockPos anchor = helper.absolutePos(
+				new BlockPos(2, 3, 2));
+		mount.setPos(anchor.getX(), anchor.getY(),
+				anchor.getZ());
+		helper.getLevel().addFreshEntity(mount);
+		ServerPlayer advancementPlayer = new ServerPlayer(
+				helper.getLevel().getServer(), helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2026"),
+						"CakeWorldGingerbreadPonyRoleTest"));
+		require(helper, mount.tameWithName(advancementPlayer)
+						&& mount.isTamed()
+						&& advancementPlayer.getUUID().equals(
+								mount.getOwnerUUID()),
+				"Gingerbread Pony did not retain actual Horse taming and ownership");
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:husbandry/tame_an_animal",
+				"tamed_animal");
+		require(helper,
+				mount.getSlot(400).set(
+						new ItemStack(Items.SADDLE))
+						&& mount.isSaddled()
+						&& mount.getSlot(401).set(
+								new ItemStack(
+										Items
+												.DIAMOND_HORSE_ARMOR))
+						&& mount.getArmor().is(
+								Items.DIAMOND_HORSE_ARMOR)
+						&& close(mount.getAttributeValue(
+								Attributes.ARMOR), 11.0D),
+				"Gingerbread Pony could not equip its vanilla saddle and Diamond Horse Armour");
+
+		Player rider = helper.makeMockPlayer();
+		rider.setPos(anchor.getX(), anchor.getY(),
+				anchor.getZ());
+		rider.setItemInHand(InteractionHand.MAIN_HAND,
+				ItemStack.EMPTY);
+		InteractionResult rideResult = mount.mobInteract(
+				rider, InteractionHand.MAIN_HAND);
+		require(helper,
+				rideResult.consumesAction()
+						&& rider.getVehicle() == mount
+						&& mount.hasPassenger(rider)
+						&& mount.canBeControlledByRider()
+						&& mount.canJump(),
+				"A tame, saddled Gingerbread Pony did not accept or expose control to its rider");
+		mount.handleStartJump(90);
+		require(helper, mount.isStanding(),
+				"Gingerbread Pony lost its visible charged-jump cue");
+		rider.stopRiding();
+
+		CompoundTag saved = new CompoundTag();
+		mount.addAdditionalSaveData(saved);
+		GingerbreadPony restored =
+				CakeWorldEntities.GINGERBREAD_PONY.get()
+						.create(helper.getLevel());
+		require(helper, restored != null,
+				"Could not create Gingerbread Pony reload fixture");
+		restored.readAdditionalSaveData(saved);
+		require(helper,
+				restored.isTamed()
+						&& advancementPlayer.getUUID().equals(
+								restored.getOwnerUUID())
+						&& restored.isSaddled()
+						&& restored.getArmor().is(
+								Items.DIAMOND_HORSE_ARMOR)
+						&& restored.getVariant()
+								== Variant.BROWN
+						&& restored.getMarkings()
+								== Markings.WHITE_FIELD,
+				"Gingerbread Pony lost owner, tame, saddle, armour, variant, or markings across NBT");
+
+		BlockPos icing = anchor.offset(5, 0, 5);
+		helper.getLevel().setBlock(icing.below(),
+				CakeWorldBlocks.CHOCOLATE_SPONGE.get()
+						.defaultBlockState(), 3);
+		helper.getLevel().setBlock(icing,
+				CakeWorldBlocks.ICING_LAYER.get()
+						.defaultBlockState(), 3);
+		helper.getLevel().setBlock(icing.above(),
+				Blocks.AIR.defaultBlockState(), 3);
+		helper.getLevel().setBlock(icing.above(2),
+				Blocks.AIR.defaultBlockState(), 3);
+		helper.getLevel().setBlock(
+				icing.offset(2, 1, 0),
+				Blocks.GLOWSTONE.defaultBlockState(), 3);
+		BlockPos spawnPos = icing.above();
+		boolean vanillaRule = Animal.checkAnimalSpawnRules(
+				CakeWorldEntities.GINGERBREAD_PONY.get(),
+				helper.getLevel(), MobSpawnType.NATURAL,
+				spawnPos, new Random(1978L));
+		boolean vanillaBody =
+				SpawnPlacements.Type.ON_GROUND.canSpawnAt(
+						helper.getLevel(), spawnPos,
+						CakeWorldEntities
+								.GINGERBREAD_PONY.get());
+		boolean ponyRule =
+				GingerbreadPony
+						.checkGingerbreadPonySpawnRules(
+								CakeWorldEntities
+										.GINGERBREAD_PONY.get(),
+								helper.getLevel(),
+								MobSpawnType.NATURAL,
+								spawnPos,
+								new Random(1978L));
+		require(helper,
+				CakeWorldBlocks.CHOCOLATE_SPONGE.get()
+						.defaultBlockState()
+						.is(BlockTags.ANIMALS_SPAWNABLE_ON)
+						&& CakeWorldBlocks.ICING_LAYER.get()
+								.defaultBlockState()
+								.is(BlockTags
+										.ANIMALS_SPAWNABLE_ON)
+						&& vanillaRule
+						&& !vanillaBody
+						&& ponyRule
+						&& SpawnPlacements.getPlacementType(
+								CakeWorldEntities
+										.GINGERBREAD_PONY.get())
+								== SpawnPlacements.Type
+										.NO_RESTRICTIONS
+						&& NaturalSpawner
+								.isValidEmptySpawnBlock(
+										helper.getLevel(),
+										spawnPos,
+										helper.getLevel()
+												.getBlockState(
+														spawnPos),
+										helper.getLevel()
+												.getFluidState(
+														spawnPos),
+										CakeWorldEntities
+												.GINGERBREAD_PONY
+												.get()),
+				"Gingerbread Pony did not adapt thin edible icing into a safe, bright Horse spawn surface");
+
+		Biome candyPlains = helper.getLevel().registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY)
+				.get(CakeWorldBiomes.CANDY_PLAINS.getId());
+		require(helper, candyPlains != null,
+				"Could not inspect Candy Plains Gingerbread Pony spawning");
+		requireSpawnReplacement(helper, candyPlains,
+				EntityType.HORSE,
+				CakeWorldEntities.GINGERBREAD_PONY.get(),
+				MobCategory.CREATURE);
+		require(helper,
+				CakeWorldItems.GINGERBREAD_PONY_SPAWN_EGG
+						.isPresent()
+						&& mount.getLootTable().equals(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/gingerbread_pony")),
+				"Gingerbread Pony lost its spawn egg or dedicated Horse-equivalent loot table");
+		VanillaRoleAdvancements.creditBredRole(
+				advancementPlayer,
+				CakeWorldEntities.GINGERBREAD_PONY.get());
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:husbandry/bred_all_animals",
+				"minecraft:horse");
 		helper.succeed();
 	}
 

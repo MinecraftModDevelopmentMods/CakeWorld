@@ -10,6 +10,7 @@ import com.mcmoddev.cakeworld.entity.CustardCat;
 import com.mcmoddev.cakeworld.entity.DeepLiquoriceWeaver;
 import com.mcmoddev.cakeworld.entity.DoughDonkey;
 import com.mcmoddev.cakeworld.entity.FudgeBoar;
+import com.mcmoddev.cakeworld.entity.GingerbreadPony;
 import com.mcmoddev.cakeworld.entity.GrandGumballGuardian;
 import com.mcmoddev.cakeworld.entity.GiantStaleCrumbler;
 import com.mcmoddev.cakeworld.entity.GlowJelly;
@@ -50,6 +51,7 @@ import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.animal.Sheep;
 import net.minecraft.world.entity.animal.goat.Goat;
 import net.minecraft.world.entity.animal.horse.AbstractChestedHorse;
+import net.minecraft.world.entity.animal.horse.AbstractHorse;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.monster.Blaze;
 import net.minecraft.world.entity.monster.CaveSpider;
@@ -160,6 +162,12 @@ public final class CakeWorldEntities {
 							MobCategory.MONSTER)
 							.sized(1.3964844F, 1.4F)
 							.clientTrackingRange(8));
+	public static final RegistryObject<EntityType<GingerbreadPony>>
+			GINGERBREAD_PONY = entity("gingerbread_pony",
+					EntityType.Builder.of(GingerbreadPony::new,
+							MobCategory.CREATURE)
+							.sized(1.3964844F, 1.6F)
+							.clientTrackingRange(10));
 	public static final RegistryObject<EntityType<TaffyTallwalker>>
 			TAFFY_TALLWALKER = entity("taffy_tallwalker",
 					EntityType.Builder.of(TaffyTallwalker::new,
@@ -284,6 +292,9 @@ public final class CakeWorldEntities {
 				Guardian.createAttributes().build());
 		event.put(FUDGE_BOAR.get(),
 				Hoglin.createAttributes().build());
+		event.put(GINGERBREAD_PONY.get(),
+				AbstractHorse.createBaseHorseAttributes()
+						.build());
 		event.put(TAFFY_TALLWALKER.get(),
 				EnderMan.createAttributes().build());
 		event.put(SUGAR_MITE.get(),
@@ -356,6 +367,11 @@ public final class CakeWorldEntities {
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					FudgeBoar::checkFudgeBoarSpawnRules);
+			SpawnPlacements.register(GINGERBREAD_PONY.get(),
+					SpawnPlacements.Type.NO_RESTRICTIONS,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					GingerbreadPony
+							::checkGingerbreadPonySpawnRules);
 			SpawnPlacements.register(TAFFY_TALLWALKER.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
