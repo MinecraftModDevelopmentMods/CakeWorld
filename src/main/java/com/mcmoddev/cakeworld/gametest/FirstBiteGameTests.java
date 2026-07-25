@@ -38,6 +38,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionHand;
@@ -255,6 +256,27 @@ public final class FirstBiteGameTests {
 						new ResourceLocation(CakeWorld.MODID,
 								"candy_cane_pillar")).isPresent(),
 				"Candy-Cane Pillar is not obtainable through its recipe");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void gingerbreadMasonryRequiresPreparedMortarAndTools(
+			GameTestHelper helper) {
+		BlockState bricks =
+				CakeWorldBlocks.GINGERBREAD_BRICKS.get().defaultBlockState();
+		require(helper, bricks.requiresCorrectToolForDrops()
+						&& bricks.is(BlockTags.MINEABLE_WITH_PICKAXE),
+				"Gingerbread Bricks lost their hard structural mining contract");
+		require(helper, !new ItemStack(CakeWorldItems.FROSTING_MORTAR.get())
+						.isEdible(),
+				"Structural Frosting Mortar became a raw snack");
+		require(helper, helper.getLevel().getRecipeManager().byKey(
+						new ResourceLocation(CakeWorld.MODID,
+								"frosting_mortar")).isPresent()
+						&& helper.getLevel().getRecipeManager().byKey(
+								new ResourceLocation(CakeWorld.MODID,
+										"gingerbread_bricks")).isPresent(),
+				"Gingerbread masonry is missing its prepared mortar recipe chain");
 		helper.succeed();
 	}
 

@@ -41,6 +41,10 @@ public final class CakeWorldItems {
 							.tab(CreativeModeTab.TAB_MISC)));
 	public static final RegistryObject<Item> WARM_SPONGE_CAKE =
 			food("warm_sponge_cake", 6, 0.7F);
+	public static final RegistryObject<Item> FROSTING_MORTAR =
+			ITEMS.register("frosting_mortar",
+					() -> new Item(new Item.Properties()
+							.tab(CreativeModeTab.TAB_MISC)));
 	public static final RegistryObject<Item> EXPLORERS_COOKBOOK =
 			ITEMS.register("explorers_cookbook",
 					() -> new ExplorersCookbookItem(new Item.Properties()

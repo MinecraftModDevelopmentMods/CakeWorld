@@ -66,6 +66,12 @@ public final class CakeWorldBlocks {
 							BlockBehaviour.Properties.of(Material.WOOD)
 									.strength(1.5F)
 									.sound(SoundType.BAMBOO)));
+	public static final RegistryObject<Block> GINGERBREAD_BRICKS =
+			block("gingerbread_bricks",
+					BlockBehaviour.Properties.of(Material.STONE)
+							.requiresCorrectToolForDrops()
+							.strength(1.5F, 6.0F)
+							.sound(SoundType.STONE));
 	public static final RegistryObject<Block> FUDGE_ROCK = block("fudge_rock",
 			BlockBehaviour.Properties.of(Material.STONE).requiresCorrectToolForDrops()
 					.strength(2.0F, 6.0F).sound(SoundType.NETHERRACK));
