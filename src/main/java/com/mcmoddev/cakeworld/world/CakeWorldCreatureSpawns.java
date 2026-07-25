@@ -72,6 +72,9 @@ public final class CakeWorldCreatureSpawns {
 			replace(event, MobCategory.WATER_CREATURE,
 					EntityType.DOLPHIN,
 					CakeWorldEntities.SODA_DOLPHIN, 1, 1, 2);
+			replace(event, MobCategory.UNDERGROUND_WATER_CREATURE,
+					EntityType.GLOW_SQUID,
+					CakeWorldEntities.GLOW_JELLY, 10, 4, 6);
 		}
 		if ("fudge_wastes".equals(biome.getPath())) {
 			replace(event, MobCategory.MONSTER, EntityType.BLAZE,

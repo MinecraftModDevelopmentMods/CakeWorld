@@ -21,12 +21,15 @@ import net.minecraft.client.renderer.entity.EvokerRenderer;
 import net.minecraft.client.renderer.entity.FoxRenderer;
 import net.minecraft.client.renderer.entity.GhastRenderer;
 import net.minecraft.client.renderer.entity.GiantMobRenderer;
+import net.minecraft.client.renderer.entity.GlowSquidRenderer;
 import net.minecraft.client.renderer.entity.CowRenderer;
 import net.minecraft.client.renderer.entity.PigRenderer;
 import net.minecraft.client.renderer.entity.SheepRenderer;
 import net.minecraft.client.renderer.entity.ZombieRenderer;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.client.renderer.entity.ThrownTridentRenderer;
+import net.minecraft.client.model.SquidModel;
+import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -81,6 +84,10 @@ public final class CakeWorldClientEvents {
 		event.registerEntityRenderer(
 				CakeWorldEntities.GIANT_STALE_CRUMBLER.get(),
 				context -> new GiantMobRenderer(context, 6.0F));
+		event.registerEntityRenderer(CakeWorldEntities.GLOW_JELLY.get(),
+				context -> new GlowSquidRenderer(context,
+						new SquidModel<>(context.bakeLayer(
+								ModelLayers.GLOW_SQUID))));
 		event.registerEntityRenderer(CakeWorldEntities.POP_ROCK_POPPER.get(),
 				CreeperRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.CINNAMON_SPARK.get(),

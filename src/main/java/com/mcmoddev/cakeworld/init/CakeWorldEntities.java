@@ -11,6 +11,7 @@ import com.mcmoddev.cakeworld.entity.DeepLiquoriceWeaver;
 import com.mcmoddev.cakeworld.entity.DoughDonkey;
 import com.mcmoddev.cakeworld.entity.GrandGumballGuardian;
 import com.mcmoddev.cakeworld.entity.GiantStaleCrumbler;
+import com.mcmoddev.cakeworld.entity.GlowJelly;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.MallowFloater;
@@ -29,6 +30,7 @@ import com.mcmoddev.cakeworld.entity.TaffyTallwalker;
 import com.mcmoddev.cakeworld.entity.TrufflePig;
 
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.GlowSquid;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.entity.animal.Animal;
@@ -187,6 +189,12 @@ public final class CakeWorldEntities {
 							MobCategory.MONSTER)
 							.sized(3.6F, 12.0F)
 							.clientTrackingRange(10));
+	public static final RegistryObject<EntityType<GlowJelly>> GLOW_JELLY =
+			entity("glow_jelly",
+					EntityType.Builder.of(GlowJelly::new,
+							MobCategory.UNDERGROUND_WATER_CREATURE)
+							.sized(0.8F, 0.8F)
+							.clientTrackingRange(10));
 	public static final RegistryObject<EntityType<PopRockPopper>>
 			POP_ROCK_POPPER = entity("pop_rock_popper",
 					EntityType.Builder.of(PopRockPopper::new,
@@ -260,6 +268,8 @@ public final class CakeWorldEntities {
 				Ghast.createAttributes().build());
 		event.put(GIANT_STALE_CRUMBLER.get(),
 				Giant.createAttributes().build());
+		event.put(GLOW_JELLY.get(),
+				GlowSquid.createAttributes().build());
 		event.put(POP_ROCK_POPPER.get(), Creeper.createAttributes().build());
 		event.put(CINNAMON_SPARK.get(),
 				Blaze.createAttributes().build());
@@ -324,6 +334,10 @@ public final class CakeWorldEntities {
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					MallowFloater::checkMallowFloaterSpawnRules);
+			SpawnPlacements.register(GLOW_JELLY.get(),
+					SpawnPlacements.Type.IN_WATER,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					GlowJelly::checkGlowJellySpawnRules);
 			SpawnPlacements.register(POP_ROCK_POPPER.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,

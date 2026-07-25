@@ -39,6 +39,7 @@ import com.mcmoddev.cakeworld.entity.DeepLiquoriceWeaver;
 import com.mcmoddev.cakeworld.entity.DoughDonkey;
 import com.mcmoddev.cakeworld.entity.GrandGumballGuardian;
 import com.mcmoddev.cakeworld.entity.GiantStaleCrumbler;
+import com.mcmoddev.cakeworld.entity.GlowJelly;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.MallowFloater;
 import com.mcmoddev.cakeworld.entity.MallowPuffProjectile;
@@ -90,6 +91,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.GlowSquid;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.MobSpawnType;
@@ -97,6 +99,7 @@ import net.minecraft.world.entity.MobType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.animal.Cat;
 import net.minecraft.world.entity.animal.Cod;
@@ -3944,6 +3947,102 @@ public final class FirstBiteGameTests {
 		}
 		require(helper, installed,
 				"The First Bite picnic was not installed in Candy Plains worldgen");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void glowJelliesKeepTheLuminousCaveWaterRoleInLemonade(
+			GameTestHelper helper) {
+		GlowJelly jelly = CakeWorldEntities.GLOW_JELLY.get()
+				.create(helper.getLevel());
+		GlowJelly restored = CakeWorldEntities.GLOW_JELLY.get()
+				.create(helper.getLevel());
+		require(helper, jelly != null && restored != null,
+				"Could not create Glow-Jelly fixtures");
+		require(helper,
+				jelly instanceof GlowSquid
+						&& close(jelly.getAttributeValue(
+								Attributes.MAX_HEALTH), 10.0D)
+						&& jelly.getDarkTicksRemaining() == 0,
+				"Glow-Jelly lost the Glow Squid base, health, or lit state");
+
+		BlockPos horizontalAnchor =
+				helper.absolutePos(new BlockPos(3, 3, 3));
+		BlockPos lemonadePos = new BlockPos(horizontalAnchor.getX(),
+				helper.getLevel().getSeaLevel() - 34,
+				horizontalAnchor.getZ());
+		for (Direction direction : Direction.values()) {
+			helper.getLevel().setBlock(lemonadePos.relative(direction),
+					Blocks.STONE.defaultBlockState(), 3);
+		}
+		helper.getLevel().setBlock(lemonadePos,
+				CakeWorldFluids.LEMONADE_BLOCK.get()
+						.defaultBlockState(), 3);
+		require(helper,
+				helper.getLevel().getRawBrightness(lemonadePos, 0) == 0,
+				"Glow-Jelly darkness fixture was not actually dark");
+		boolean vanillaRule = GlowSquid.checkGlowSquideSpawnRules(
+				EntityType.GLOW_SQUID, helper.getLevel(),
+				MobSpawnType.NATURAL, lemonadePos,
+				new Random(1978L));
+		boolean jellyRule = GlowJelly.checkGlowJellySpawnRules(
+				CakeWorldEntities.GLOW_JELLY.get(), helper.getLevel(),
+				MobSpawnType.NATURAL, lemonadePos,
+				new Random(1978L));
+		require(helper, !vanillaRule && jellyRule,
+				"Glow-Jelly did not retain the deep-dark spawn rule while adapting literal water to water-tagged Lemonade");
+		require(helper,
+				SpawnPlacements.getPlacementType(
+						CakeWorldEntities.GLOW_JELLY.get())
+						== SpawnPlacements.Type.IN_WATER,
+				"Glow-Jelly lost its in-water spawn placement");
+
+		jelly.setPos(horizontalAnchor.getX(), horizontalAnchor.getY(),
+				horizontalAnchor.getZ());
+		helper.getLevel().addFreshEntity(jelly);
+		jelly.setHealth(10.0F);
+		Player attacker = helper.makeMockPlayer();
+		require(helper,
+				jelly.hurt(DamageSource.playerAttack(attacker), 1.0F)
+						&& jelly.getDarkTicksRemaining() == 100
+						&& close(jelly.getHealth(), 9.0D),
+				"Glow-Jelly did not squirt luminous ink and darken for 100 ticks after a living attacker injured it");
+		CompoundTag saved = new CompoundTag();
+		jelly.addAdditionalSaveData(saved);
+		restored.readAdditionalSaveData(saved);
+		require(helper,
+				saved.getInt("DarkTicksRemaining") == 100
+						&& restored.getDarkTicksRemaining() == 100,
+				"Glow-Jelly did not retain its dark-tick state across save/reload");
+		require(helper,
+				jelly.getLootTable().equals(new ResourceLocation(
+						CakeWorld.MODID, "entities/glow_jelly")),
+				"Glow-Jelly did not resolve its dedicated glow-ink loot table");
+
+		Biome sodaOcean = helper.getLevel().registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY)
+				.get(CakeWorldBiomes.SODA_OCEAN.getId());
+		require(helper, sodaOcean != null,
+				"Could not inspect Soda Ocean Glow-Jelly spawning");
+		requireSpawnReplacement(helper, sodaOcean, EntityType.GLOW_SQUID,
+				CakeWorldEntities.GLOW_JELLY.get(),
+				MobCategory.UNDERGROUND_WATER_CREATURE);
+		TagKey<EntityType<?>> axolotlPrey = TagKey.create(
+				Registry.ENTITY_TYPE_REGISTRY,
+				new ResourceLocation("minecraft",
+						"axolotl_hunt_targets"));
+		require(helper, CakeWorldEntities.GLOW_JELLY.get()
+						.is(axolotlPrey),
+				"Glow-Jelly did not preserve the Glow Squid axolotl-prey role");
+		require(helper, CakeWorldItems.GLOW_JELLY_SPAWN_EGG.isPresent(),
+				"Glow-Jelly has no creative/testing spawn egg");
+		Advancement killAll = helper.getLevel().getServer()
+				.getAdvancements().getAdvancement(new ResourceLocation(
+						"minecraft", "adventure/kill_all_mobs"));
+		require(helper, killAll != null
+						&& !killAll.getCriteria().containsKey(
+								"minecraft:glow_squid"),
+				"Vanilla unexpectedly added a Glow Squid kill criterion; reassess compatibility before inventing a bridge");
 		helper.succeed();
 	}
 
