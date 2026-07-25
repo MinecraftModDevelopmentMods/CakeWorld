@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "cakeworld:boiled_sweet"
+    },
+    {
+      "item": "minecraft:sugar"
+    },
+    {
+      "item": "cakeworld:lemonade_bottle"
+    }
+  ],
+  "result": {
+    "item": "cakeworld:sherbet_fizz",
+    "count": 2
+  }
+}

@@ -8,6 +8,7 @@ import com.mcmoddev.cakeworld.item.LemonadeBottleItem;
 
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.BowlFoodItem;
 import net.minecraft.world.item.CreativeModeTab;
@@ -44,6 +45,16 @@ public final class CakeWorldItems {
 			food("warm_sponge_cake", 6, 0.7F);
 	public static final RegistryObject<Item> BOILED_SWEET =
 			food("boiled_sweet", 2, 0.2F);
+	public static final RegistryObject<Item> SHERBET_FIZZ =
+			ITEMS.register("sherbet_fizz",
+					() -> new Item(new Item.Properties()
+							.tab(CreativeModeTab.TAB_FOOD)
+							.food(new FoodProperties.Builder()
+									.nutrition(3).saturationMod(0.3F)
+									.effect(() -> new MobEffectInstance(
+											CakeWorldEffects.SUGAR_RUSH.get(),
+											200), 1.0F)
+									.build())));
 	public static final RegistryObject<Item> SPRINKLE_SEEDS =
 			ITEMS.register("sprinkle_seeds",
 					() -> new ItemNameBlockItem(

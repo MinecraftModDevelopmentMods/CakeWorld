@@ -2,6 +2,7 @@ package com.mcmoddev.cakeworld;
 
 import com.mcmoddev.cakeworld.init.CakeWorldBiomes;
 import com.mcmoddev.cakeworld.init.CakeWorldBlocks;
+import com.mcmoddev.cakeworld.init.CakeWorldEffects;
 import com.mcmoddev.cakeworld.init.CakeWorldEntities;
 import com.mcmoddev.cakeworld.init.CakeWorldFluids;
 import com.mcmoddev.cakeworld.init.CakeWorldItems;
@@ -20,6 +21,7 @@ public final class CakeWorld {
 		CakeWorldBlocks.register(modBus);
 		CakeWorldFluids.register(modBus);
 		CakeWorldEntities.register(modBus);
+		CakeWorldEffects.register(modBus);
 		CakeWorldItems.register(modBus);
 		CakeWorldBiomes.register(modBus);
 		modBus.addListener(CakeWorldBiomes::commonSetup);

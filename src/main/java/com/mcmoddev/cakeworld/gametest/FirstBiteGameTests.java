@@ -26,6 +26,7 @@ import com.mcmoddev.cakeworld.entity.StaleCrumbler;
 import com.mcmoddev.cakeworld.entity.TrufflePig;
 import com.mcmoddev.cakeworld.init.CakeWorldBiomes;
 import com.mcmoddev.cakeworld.init.CakeWorldBlocks;
+import com.mcmoddev.cakeworld.init.CakeWorldEffects;
 import com.mcmoddev.cakeworld.init.CakeWorldEntities;
 import com.mcmoddev.cakeworld.init.CakeWorldFluids;
 import com.mcmoddev.cakeworld.init.CakeWorldItems;
@@ -46,7 +47,10 @@ import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.effect.MobEffectCategory;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.animal.Pig;
@@ -394,6 +398,67 @@ public final class FirstBiteGameTests {
 		require(helper, new ItemStack(CakeWorldItems.SPRINKLE_SEEDS.get())
 						.getItem() instanceof ItemNameBlockItem,
 				"Sprinkle Seeds are not plantable as the Candy Sprout crop");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void sugarRushIsBeneficialTemporaryAndHasNoCrash(
+			GameTestHelper helper) {
+		var sugarRush = CakeWorldEffects.SUGAR_RUSH.get();
+		require(helper, sugarRush.getCategory()
+						== MobEffectCategory.BENEFICIAL,
+				"Sugar Rush is not categorised as a beneficial effect");
+		Pig tester = helper.spawnWithNoFreeWill(
+				EntityType.PIG, 1.5F, 1.0F, 1.5F);
+		double ordinarySpeed =
+				tester.getAttributeValue(Attributes.MOVEMENT_SPEED);
+		tester.addEffect(new MobEffectInstance(sugarRush, 200));
+		double rushedSpeed =
+				tester.getAttributeValue(Attributes.MOVEMENT_SPEED);
+		tester.removeEffect(sugarRush);
+		double restoredSpeed =
+				tester.getAttributeValue(Attributes.MOVEMENT_SPEED);
+		require(helper, rushedSpeed > ordinarySpeed * 1.14D
+						&& close(restoredSpeed, ordinarySpeed),
+				"Sugar Rush did not boost speed cleanly without a crash state");
+
+		FoodProperties fizz =
+				CakeWorldItems.SHERBET_FIZZ.get().getFoodProperties();
+		require(helper, fizz != null && fizz.getEffects().stream()
+						.anyMatch(effect -> {
+							MobEffectInstance instance =
+									effect.getFirst();
+							return instance.getEffect() == sugarRush
+									&& instance.getDuration() == 200
+									&& close(effect.getSecond(), 1.0D);
+						}),
+				"Sherbet Fizz does not always grant the intended Sugar Rush");
+
+		ShapelessRecipe recipe = (ShapelessRecipe) helper.getLevel()
+				.getRecipeManager().byKey(
+						new ResourceLocation(CakeWorld.MODID, "sherbet_fizz"))
+				.orElseThrow();
+		AbstractContainerMenu recipeMenu =
+				new AbstractContainerMenu(null, 0) {
+					@Override
+					public boolean stillValid(Player player) {
+						return true;
+					}
+				};
+		CraftingContainer ingredients =
+				new CraftingContainer(recipeMenu, 2, 2);
+		ingredients.setItem(0,
+				new ItemStack(CakeWorldItems.BOILED_SWEET.get()));
+		ingredients.setItem(1, new ItemStack(Items.SUGAR));
+		ingredients.setItem(2,
+				new ItemStack(CakeWorldItems.LEMONADE_BOTTLE.get()));
+		ItemStack result = recipe.assemble(ingredients);
+		require(helper, recipe.matches(ingredients, helper.getLevel())
+						&& result.is(CakeWorldItems.SHERBET_FIZZ.get())
+						&& result.getCount() == 2
+						&& recipe.getRemainingItems(ingredients).get(2)
+								.is(Items.GLASS_BOTTLE),
+				"Sherbet Fizz recipe did not yield two and return its bottle");
 		helper.succeed();
 	}
 
