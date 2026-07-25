@@ -11,6 +11,7 @@ import com.mcmoddev.cakeworld.block.BiscuitCrumbsBlock;
 import com.mcmoddev.cakeworld.block.CakeOvenBlock;
 import com.mcmoddev.cakeworld.block.ChocolateSpongeBlock;
 import com.mcmoddev.cakeworld.block.CookbookKioskBlock;
+import com.mcmoddev.cakeworld.block.GummyBlock;
 import com.mcmoddev.cakeworld.block.IcingLayerBlock;
 import com.mcmoddev.cakeworld.block.MarshmallowBlock;
 import com.mcmoddev.cakeworld.cookbook.CookbookEvents;
@@ -53,6 +54,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.item.crafting.ShapelessRecipe;
 import net.minecraft.world.item.crafting.SmeltingRecipe;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -230,6 +232,70 @@ public final class FirstBiteGameTests {
 						new ResourceLocation(CakeWorld.MODID, "marshmallow"))
 						.isPresent(),
 				"Marshmallow is not obtainable through its starter recipe");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void gummyBlockProvidesAHighButBoundedElasticBounce(
+			GameTestHelper helper) {
+		GummyBlock gummy = (GummyBlock) CakeWorldBlocks.GUMMY_BLOCK.get();
+		BlockState state = gummy.defaultBlockState();
+		BlockPos testPos = helper.absolutePos(new BlockPos(1, 1, 1));
+		Pig tester = helper.spawnWithNoFreeWill(
+				EntityType.PIG, 1.5F, 1.0F, 1.5F);
+		tester.setHealth(10.0F);
+		gummy.fallOn(helper.getLevel(), state, testPos, tester, 30.0F);
+		require(helper, Math.abs(tester.getHealth() - 10.0F) < 0.001F,
+				"Gummy allowed health damage from a long fall");
+
+		Vec3 ordinaryFall = new Vec3(0.3D, -1.0D, -0.2D);
+		tester.setDeltaMovement(ordinaryFall);
+		gummy.updateEntityAfterFallOn(helper.getLevel(), tester);
+		Vec3 ordinaryRebound = tester.getDeltaMovement();
+		require(helper, close(ordinaryRebound.x, ordinaryFall.x)
+						&& close(ordinaryRebound.z, ordinaryFall.z)
+						&& close(ordinaryRebound.y,
+								GummyBlock.BOUNCE_MULTIPLIER)
+						&& ordinaryRebound.y
+								> MarshmallowBlock.BOUNCE_MULTIPLIER,
+				"Gummy did not provide a stronger controlled rebound than marshmallow");
+
+		tester.setDeltaMovement(0.1D, -4.0D, 0.2D);
+		gummy.updateEntityAfterFallOn(helper.getLevel(), tester);
+		require(helper, close(tester.getDeltaMovement().y,
+						GummyBlock.MAXIMUM_BOUNCE),
+				"Gummy did not cap an extreme rebound");
+
+		Player crouching = helper.makeMockPlayer();
+		crouching.setShiftKeyDown(true);
+		crouching.setDeltaMovement(0.2D, -1.0D, 0.1D);
+		gummy.updateEntityAfterFallOn(helper.getLevel(), crouching);
+		require(helper, close(crouching.getDeltaMovement().y, 0.0D),
+				"Crouching did not suppress the gummy bounce");
+		ShapedRecipe recipe = (ShapedRecipe) helper.getLevel()
+				.getRecipeManager().byKey(
+						new ResourceLocation(CakeWorld.MODID, "gummy_block"))
+				.orElseThrow();
+		AbstractContainerMenu recipeMenu =
+				new AbstractContainerMenu(null, 0) {
+					@Override
+					public boolean stillValid(Player player) {
+						return true;
+					}
+				};
+		CraftingContainer ingredients =
+				new CraftingContainer(recipeMenu, 3, 3);
+		for (int slot = 0; slot < 9; slot++) {
+			ingredients.setItem(slot, new ItemStack(
+					slot == 4 ? CakeWorldItems.LEMONADE_BOTTLE.get()
+							: Items.SUGAR));
+		}
+		ItemStack gummyResult = recipe.assemble(ingredients);
+		ItemStack returnedBottle = recipe.getRemainingItems(ingredients).get(4);
+		require(helper, recipe.matches(ingredients, helper.getLevel())
+						&& gummyResult.is(CakeWorldBlocks.GUMMY_BLOCK.get().asItem())
+						&& returnedBottle.is(Items.GLASS_BOTTLE),
+				"Gummy recipe did not assemble the block and return its bottle");
 		helper.succeed();
 	}
 

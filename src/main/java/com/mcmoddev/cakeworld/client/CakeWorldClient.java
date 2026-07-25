@@ -19,6 +19,8 @@ public final class CakeWorldClient {
 	@SubscribeEvent
 	public static void clientSetup(FMLClientSetupEvent event) {
 		event.enqueueWork(() -> {
+			ItemBlockRenderTypes.setRenderLayer(CakeWorldBlocks.GUMMY_BLOCK.get(),
+					RenderType.translucent());
 			ItemBlockRenderTypes.setRenderLayer(CakeWorldBlocks.CANDY_GLASS.get(),
 					RenderType.translucent());
 			ItemBlockRenderTypes.setRenderLayer(CakeWorldFluids.LEMONADE.get(),

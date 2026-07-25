@@ -7,6 +7,7 @@ import com.mcmoddev.cakeworld.block.BiscuitCrumbsBlock;
 import com.mcmoddev.cakeworld.block.CakeOvenBlock;
 import com.mcmoddev.cakeworld.block.ChocolateSpongeBlock;
 import com.mcmoddev.cakeworld.block.CookbookKioskBlock;
+import com.mcmoddev.cakeworld.block.GummyBlock;
 import com.mcmoddev.cakeworld.block.IcingLayerBlock;
 import com.mcmoddev.cakeworld.block.MarshmallowBlock;
 import com.mcmoddev.cakeworld.block.MixingBowlBlock;
@@ -60,6 +61,10 @@ public final class CakeWorldBlocks {
 	public static final RegistryObject<Block> MARSHMALLOW = block("marshmallow",
 			() -> new MarshmallowBlock(BlockBehaviour.Properties.of(Material.WOOL)
 					.strength(0.4F).sound(SoundType.WOOL)));
+	public static final RegistryObject<Block> GUMMY_BLOCK = block("gummy_block",
+			() -> new GummyBlock(BlockBehaviour.Properties.of(Material.CLAY)
+					.strength(0.5F).sound(SoundType.SLIME_BLOCK)
+					.noOcclusion()));
 	public static final RegistryObject<Block> CANDY_CANE_PILLAR =
 			block("candy_cane_pillar",
 					() -> new RotatedPillarBlock(
