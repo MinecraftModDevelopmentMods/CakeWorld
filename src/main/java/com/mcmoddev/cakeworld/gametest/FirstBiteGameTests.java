@@ -46,6 +46,7 @@ import com.mcmoddev.cakeworld.entity.SoggyBiscuit;
 import com.mcmoddev.cakeworld.entity.SoggyTridentProjectile;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
 import com.mcmoddev.cakeworld.entity.SugarBee;
+import com.mcmoddev.cakeworld.entity.SugarMite;
 import com.mcmoddev.cakeworld.entity.TaffyTallwalker;
 import com.mcmoddev.cakeworld.entity.TrufflePig;
 import com.mcmoddev.cakeworld.effect.FizzyFeetEffect;
@@ -98,6 +99,7 @@ import net.minecraft.world.entity.animal.horse.Horse;
 import net.minecraft.world.entity.monster.Drowned;
 import net.minecraft.world.entity.monster.ElderGuardian;
 import net.minecraft.world.entity.monster.EnderMan;
+import net.minecraft.world.entity.monster.Endermite;
 import net.minecraft.world.entity.projectile.SmallFireball;
 import net.minecraft.world.entity.projectile.ThrownTrident;
 import net.minecraft.world.entity.player.Player;
@@ -142,6 +144,7 @@ import net.minecraftforge.event.world.BlockEvent;
 import com.mcmoddev.cakeworld.world.StarterPicnicFeature;
 import com.mcmoddev.cakeworld.world.CakeWorldDrownedReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldElderGuardianReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldEndermiteReplacement;
 
 @GameTestHolder(CakeWorld.MODID)
 @PrefixGameTestTemplate(false)
@@ -2923,6 +2926,154 @@ public final class FirstBiteGameTests {
 		requireCriterion(helper, advancementPlayer,
 				"minecraft:adventure/kill_all_mobs",
 				"minecraft:enderman");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void sugarMitesKeepPearlLifetimeAndGentleBites(
+			GameTestHelper helper) {
+		SugarMite mite = CakeWorldEntities.SUGAR_MITE.get()
+				.create(helper.getLevel());
+		Pig target = EntityType.PIG.create(helper.getLevel());
+		require(helper, mite != null && target != null,
+				"Could not create Sugar Mite fixtures");
+		BlockPos anchor = helper.absolutePos(new BlockPos(2, 3, 2));
+		mite.setNoAi(true);
+		mite.setPos(anchor.getX(), anchor.getY(), anchor.getZ());
+		target.setPos(anchor.getX() + 1.0D,
+				anchor.getY(), anchor.getZ());
+		helper.getLevel().addFreshEntity(mite);
+		helper.getLevel().addFreshEntity(target);
+		require(helper,
+				mite instanceof Endermite
+						&& mite.getMobType() == MobType.ARTHROPOD
+						&& Math.abs(mite.getMaxHealth() - 8.0F)
+								< 0.001F
+						&& Math.abs(mite.getAttributeValue(
+								Attributes.ATTACK_DAMAGE) - 2.0D)
+								< 0.001D
+						&& Math.abs(mite.getAttributeValue(
+								Attributes.MOVEMENT_SPEED) - 0.25D)
+								< 0.001D,
+				"Sugar Mite lost the Endermite arthropod, health, attack or movement role");
+
+		Difficulty originalDifficulty = helper.getLevel().getDifficulty();
+		try {
+			for (Difficulty safeDifficulty :
+					new Difficulty[] {Difficulty.EASY, Difficulty.NORMAL}) {
+				helper.getLevel().getServer().setDifficulty(
+						safeDifficulty, true);
+				target.removeAllEffects();
+				target.setHealth(10.0F);
+				target.setSecondsOnFire(5);
+				target.fallDistance = 6.0F;
+				target.setDeltaMovement(Vec3.ZERO);
+				require(helper,
+						mite.doHurtTarget(target)
+								&& Math.abs(target.getHealth()
+										- 10.0F) < 0.001F
+								&& !target.isOnFire()
+								&& target.fallDistance == 0.0F
+								&& target.hasEffect(
+										MobEffects.MOVEMENT_SLOWDOWN)
+								&& target.hasEffect(
+										MobEffects.SLOW_FALLING)
+								&& target.hasEffect(
+										MobEffects.FIRE_RESISTANCE)
+								&& target.hasEffect(
+										MobEffects.DAMAGE_RESISTANCE)
+								&& target.getEffect(
+										MobEffects.DAMAGE_RESISTANCE)
+										.getAmplifier() == 4,
+						safeDifficulty
+								+ " Sugar Mite bite caused damage or lacked rescue effects");
+			}
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			target.removeAllEffects();
+			target.setHealth(10.0F);
+			require(helper,
+					mite.doHurtTarget(target)
+							&& target.getHealth() < 10.0F,
+					"Hard Sugar Mite did not retain real Endermite damage");
+		} finally {
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		Endermite pearlMite = EntityType.ENDERMITE.create(
+				helper.getLevel());
+		require(helper, pearlMite != null,
+				"Could not create Ender Pearl conversion fixture");
+		ResourceLocation fixtureBiome = helper.getLevel()
+				.getBiome(anchor).unwrapKey()
+				.map(key -> key.location()).orElse(null);
+		require(helper, fixtureBiome != null
+						&& CakeWorld.MODID.equals(
+								fixtureBiome.getNamespace()),
+				"Ender Pearl conversion fixture was not in a CakeWorld biome");
+		CompoundTag pearlState = pearlMite.saveWithoutId(
+				new CompoundTag());
+		pearlState.putInt("Lifetime", 123);
+		pearlMite.load(pearlState);
+		pearlMite.moveTo(anchor.getX(), anchor.getY(),
+				anchor.getZ(), 17.0F, 0.0F);
+		pearlMite.setCustomName(new TextComponent("Spark"));
+		SugarMite converted =
+				CakeWorldEndermiteReplacement
+						.convertIfInCakeWorldBiome(
+								helper.getLevel(), pearlMite);
+		require(helper, converted != null
+						&& converted.getType()
+								== CakeWorldEntities.SUGAR_MITE.get()
+						&& converted.hasCustomName()
+						&& converted.getCustomName().getString()
+								.equals("Spark")
+						&& Math.abs(converted.getYRot() - 17.0F)
+								< 0.001F,
+				"Ender Pearl conversion lost Sugar Mite type, name or rotation");
+		CompoundTag convertedState = converted.saveWithoutId(
+				new CompoundTag());
+		require(helper, convertedState.getInt("Lifetime") == 123,
+				"Ender Pearl conversion reset the Endermite lifetime");
+
+		SugarMite expiring = CakeWorldEntities.SUGAR_MITE.get()
+				.create(helper.getLevel());
+		require(helper, expiring != null,
+				"Could not create Sugar Mite lifetime fixture");
+		CompoundTag expiringState = expiring.saveWithoutId(
+				new CompoundTag());
+		expiringState.putInt("Lifetime", 2399);
+		expiring.load(expiringState);
+		expiring.setNoAi(true);
+		expiring.setPos(anchor.getX() + 3.0D,
+				anchor.getY(), anchor.getZ());
+		helper.getLevel().addFreshEntity(expiring);
+		expiring.aiStep();
+		require(helper, expiring.isRemoved(),
+				"Sugar Mite did not retain the 2,400-tick Endermite lifetime");
+
+		TagKey<EntityType<?>> powderSnowWalkers = TagKey.create(
+				Registry.ENTITY_TYPE_REGISTRY,
+				new ResourceLocation("minecraft",
+						"powder_snow_walkable_mobs"));
+		require(helper, CakeWorldEntities.SUGAR_MITE.get()
+						.is(powderSnowWalkers),
+				"Sugar Mite did not preserve Endermite's powder-snow walking tag role");
+		require(helper, CakeWorldItems.SUGAR_MITE_SPAWN_EGG.isPresent(),
+				"Sugar Mite has no creative/testing spawn egg");
+
+		ServerPlayer advancementPlayer = new ServerPlayer(
+				helper.getLevel().getServer(), helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2017"),
+						"CakeWorldSugarMiteRoleTest"));
+		VanillaRoleAdvancements.creditKilledEndermiteRole(
+				advancementPlayer);
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:adventure/kill_all_mobs",
+				"minecraft:endermite");
 		helper.succeed();
 	}
 
