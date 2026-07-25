@@ -32,6 +32,7 @@ import com.mcmoddev.cakeworld.compat.VanillaRoleAdvancements;
 import com.mcmoddev.cakeworld.entity.CandyflossSheep;
 import com.mcmoddev.cakeworld.entity.BonbonBat;
 import com.mcmoddev.cakeworld.entity.CocoaCow;
+import com.mcmoddev.cakeworld.entity.CupcakeCow;
 import com.mcmoddev.cakeworld.entity.CinnamonPuffProjectile;
 import com.mcmoddev.cakeworld.entity.CinnamonSpark;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
@@ -93,6 +94,7 @@ import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.ItemTags;
@@ -108,6 +110,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.GlowSquid;
+import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.MobSpawnType;
@@ -129,6 +132,7 @@ import net.minecraft.world.entity.animal.Cat;
 import net.minecraft.world.entity.animal.Cod;
 import net.minecraft.world.entity.animal.Fox;
 import net.minecraft.world.entity.animal.IronGolem;
+import net.minecraft.world.entity.animal.MushroomCow;
 import net.minecraft.world.entity.animal.goat.Goat;
 import net.minecraft.world.entity.animal.WaterAnimal;
 import net.minecraft.world.entity.animal.axolotl.Axolotl;
@@ -171,6 +175,7 @@ import net.minecraft.world.item.ItemNameBlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.MobBucketItem;
+import net.minecraft.world.item.SuspiciousStewItem;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.item.crafting.ShapelessRecipe;
@@ -189,6 +194,7 @@ import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.BiomeGenerationSettings;
 import net.minecraft.world.level.biome.MobSpawnSettings;
 import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -202,6 +208,8 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
+import net.minecraftforge.common.world.BiomeGenerationSettingsBuilder;
+import net.minecraftforge.common.world.MobSpawnSettingsBuilder;
 import net.minecraftforge.event.ForgeEventFactory;
 import net.minecraftforge.event.entity.EntityMountEvent;
 import net.minecraftforge.common.util.FakePlayerFactory;
@@ -210,6 +218,7 @@ import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.world.BlockEvent;
+import net.minecraftforge.event.world.BiomeLoadingEvent;
 import com.mcmoddev.cakeworld.world.StarterPicnicFeature;
 import com.mcmoddev.cakeworld.world.CakeWorldDrownedReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldElderGuardianReplacement;
@@ -220,6 +229,7 @@ import com.mcmoddev.cakeworld.world.CakeWorldGuardianReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldIllusionerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldIronGolemReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldMagmaCubeReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldCreatureSpawns;
 
 @GameTestHolder(CakeWorld.MODID)
 @PrefixGameTestTemplate(false)
@@ -7192,6 +7202,408 @@ public final class FirstBiteGameTests {
 				"minecraft:adventure/kill_all_mobs",
 				"minecraft:magma_cube");
 		converted.discard();
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void cupcakeCowsKeepVariantsStewsShearingAndGardenRole(
+			GameTestHelper helper) {
+		CupcakeCow red =
+				CakeWorldEntities.CUPCAKE_COW.get()
+						.create(helper.getLevel());
+		require(helper, red != null,
+				"Could not create Cupcake Cow fixture");
+		require(helper,
+				red instanceof MushroomCow
+						&& red.getType()
+								== CakeWorldEntities
+										.CUPCAKE_COW.get()
+						&& red.getType().getCategory()
+								== MobCategory.CREATURE
+						&& red.getMushroomType()
+								== MushroomCow.MushroomType.RED
+						&& close(red.getMaxHealth(), 10.0D)
+						&& close(red.getAttributeValue(
+								Attributes.MOVEMENT_SPEED),
+								0.2D)
+						&& close(red.getDimensions(
+								Pose.STANDING).width,
+								0.9D)
+						&& close(red.getDimensions(
+								Pose.STANDING).height,
+								1.4D)
+						&& red.getMaxSpawnClusterSize() == 4
+						&& red.getLootTable().equals(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/cupcake_cow")),
+				"Cupcake Cow lost its genuine Mooshroom type, red default, cow attributes/body/cluster or custom loot");
+
+		CompoundTag brownState = new CompoundTag();
+		brownState.putString("Type", "brown");
+		CupcakeCow brown =
+				CakeWorldEntities.CUPCAKE_COW.get()
+						.create(helper.getLevel());
+		CupcakeCow reloaded =
+				CakeWorldEntities.CUPCAKE_COW.get()
+						.create(helper.getLevel());
+		require(helper, brown != null && reloaded != null,
+				"Could not create brown/reload Cupcake Cow fixtures");
+		brown.readAdditionalSaveData(brownState);
+		CompoundTag savedVariant = new CompoundTag();
+		brown.addAdditionalSaveData(savedVariant);
+		reloaded.readAdditionalSaveData(savedVariant);
+		require(helper,
+				brown.getMushroomType()
+								== MushroomCow.MushroomType.BROWN
+						&& "brown".equals(
+								savedVariant.getString("Type"))
+						&& reloaded.getMushroomType()
+								== MushroomCow.MushroomType.BROWN,
+				"Cupcake Cow lost red/brown variant save and reload");
+
+		Player bowlPlayer = helper.makeMockPlayer();
+		bowlPlayer.setItemInHand(
+				InteractionHand.MAIN_HAND,
+				new ItemStack(Items.BOWL));
+		InteractionResult ordinaryStew =
+				red.mobInteract(bowlPlayer,
+						InteractionHand.MAIN_HAND);
+		require(helper,
+				ordinaryStew.consumesAction()
+						&& bowlPlayer.getItemInHand(
+								InteractionHand.MAIN_HAND)
+								.is(Items.MUSHROOM_STEW),
+				"Adult red Cupcake Cow did not exchange a bowl for mushroom stew");
+
+		Player flowerPlayer = helper.makeMockPlayer();
+		flowerPlayer.setItemInHand(
+				InteractionHand.MAIN_HAND,
+				new ItemStack(Items.DANDELION, 2));
+		InteractionResult flowerFed =
+				brown.mobInteract(flowerPlayer,
+						InteractionHand.MAIN_HAND);
+		require(helper,
+				flowerFed.consumesAction()
+						&& flowerPlayer.getItemInHand(
+								InteractionHand.MAIN_HAND)
+								.getCount() == 1,
+				"Brown Cupcake Cow did not consume one valid flower");
+		flowerPlayer.setItemInHand(
+				InteractionHand.MAIN_HAND,
+				new ItemStack(Items.POPPY));
+		InteractionResult refusedSecondFlower =
+				brown.mobInteract(flowerPlayer,
+						InteractionHand.MAIN_HAND);
+		require(helper,
+				refusedSecondFlower.consumesAction()
+						&& flowerPlayer.getItemInHand(
+								InteractionHand.MAIN_HAND)
+								.getCount() == 1,
+				"Brown Cupcake Cow replaced a pending flower effect instead of refusing the second flower");
+		flowerPlayer.setItemInHand(
+				InteractionHand.MAIN_HAND,
+				new ItemStack(Items.BOWL));
+		InteractionResult suspiciousStew =
+				brown.mobInteract(flowerPlayer,
+						InteractionHand.MAIN_HAND);
+		ItemStack suspicious = flowerPlayer.getItemInHand(
+				InteractionHand.MAIN_HAND);
+		ListTag stewEffects = suspicious.hasTag()
+				? suspicious.getTag().getList(
+						SuspiciousStewItem.EFFECTS_TAG, 10)
+				: new ListTag();
+		require(helper,
+				suspiciousStew.consumesAction()
+						&& suspicious.is(
+								Items.SUSPICIOUS_STEW)
+						&& stewEffects.size() == 1
+						&& stewEffects.getCompound(0)
+								.getInt(
+										SuspiciousStewItem
+												.EFFECT_ID_TAG)
+								> 0
+						&& stewEffects.getCompound(0)
+								.getInt(
+										SuspiciousStewItem
+												.EFFECT_DURATION_TAG)
+								> 0,
+				"Cupcake Cow lost brown-flower suspicious-stew state or effect NBT");
+
+		LightningBolt firstBolt =
+				EntityType.LIGHTNING_BOLT.create(
+						helper.getLevel());
+		LightningBolt secondBolt =
+				EntityType.LIGHTNING_BOLT.create(
+						helper.getLevel());
+		require(helper, firstBolt != null && secondBolt != null,
+				"Could not create lightning fixtures");
+		red.thunderHit(helper.getLevel(), firstBolt);
+		MushroomCow.MushroomType afterFirstBolt =
+				red.getMushroomType();
+		red.thunderHit(helper.getLevel(), firstBolt);
+		MushroomCow.MushroomType afterRepeatedBolt =
+				red.getMushroomType();
+		red.thunderHit(helper.getLevel(), secondBolt);
+		require(helper,
+				afterFirstBolt
+								== MushroomCow.MushroomType.BROWN
+						&& afterRepeatedBolt == afterFirstBolt
+						&& red.getMushroomType()
+								== MushroomCow.MushroomType.RED,
+				"Cupcake Cow lost lightning switching or the repeated-bolt UUID guard");
+
+		boolean bredRed = false;
+		boolean bredBrown = false;
+		for (int index = 0; index < 128; index++) {
+			CupcakeCow child = red.getBreedOffspring(
+					helper.getLevel(), reloaded);
+			require(helper,
+					child != null
+							&& child.getType()
+									== CakeWorldEntities
+											.CUPCAKE_COW
+											.get(),
+					"Cupcake Cow breeding leaked a literal Mooshroom");
+			bredRed |= child.getMushroomType()
+					== MushroomCow.MushroomType.RED;
+			bredBrown |= child.getMushroomType()
+					== MushroomCow.MushroomType.BROWN;
+		}
+		require(helper, bredRed && bredBrown,
+				"Cupcake Cow did not preserve vanilla mixed-parent variant inheritance");
+
+		BlockPos vanillaShearPos = helper.absolutePos(
+				new BlockPos(2, 2, 2));
+		CupcakeCow vanillaShear =
+				CakeWorldEntities.CUPCAKE_COW.get()
+						.create(helper.getLevel());
+		require(helper, vanillaShear != null,
+				"Could not create vanilla shear fixture");
+		vanillaShear.setPos(vanillaShearPos.getX(),
+				vanillaShearPos.getY(),
+				vanillaShearPos.getZ());
+		vanillaShear.setHealth(7.0F);
+		vanillaShear.setCustomName(
+				new TextComponent("Cherry Cupcake"));
+		vanillaShear.setCustomNameVisible(true);
+		vanillaShear.setPersistenceRequired();
+		vanillaShear.setInvulnerable(true);
+		vanillaShear.setNoAi(true);
+		helper.getLevel().addFreshEntity(vanillaShear);
+		require(helper,
+				vanillaShear.readyForShearing()
+						&& vanillaShear.isShearable(
+								new ItemStack(Items.SHEARS),
+								helper.getLevel(),
+								vanillaShearPos),
+				"Adult Cupcake Cow did not expose vanilla and Forge shearing readiness");
+		vanillaShear.shear(SoundSource.PLAYERS);
+		List<CocoaCow> vanillaShearCows =
+				helper.getLevel().getEntitiesOfClass(
+						CocoaCow.class,
+						new AABB(vanillaShearPos)
+								.inflate(2.0D));
+		int redMushrooms = helper.getLevel()
+				.getEntitiesOfClass(ItemEntity.class,
+						new AABB(vanillaShearPos)
+								.inflate(2.0D))
+				.stream()
+				.filter(drop -> drop.getItem()
+						.is(Items.RED_MUSHROOM))
+				.mapToInt(drop -> drop.getItem().getCount())
+				.sum();
+		require(helper,
+				vanillaShear.isRemoved()
+						&& vanillaShearCows.size() == 1
+						&& vanillaShearCows.get(0).getType()
+								== CakeWorldEntities.COCOA_COW
+										.get()
+						&& close(vanillaShearCows.get(0)
+								.getHealth(), 7.0D)
+						&& vanillaShearCows.get(0)
+								.isPersistenceRequired()
+						&& vanillaShearCows.get(0)
+								.isInvulnerable()
+						&& vanillaShearCows.get(0)
+								.hasCustomName()
+						&& vanillaShearCows.get(0)
+								.isCustomNameVisible()
+						&& "Cherry Cupcake".equals(
+								vanillaShearCows.get(0)
+										.getName()
+										.getString())
+						&& redMushrooms == 5,
+				"Vanilla Cupcake Cow shearing did not produce one state-preserving Cocoa Cow and five red mushrooms");
+
+		BlockPos forgeShearPos = helper.absolutePos(
+				new BlockPos(8, 2, 2));
+		CupcakeCow forgeShear =
+				CakeWorldEntities.CUPCAKE_COW.get()
+						.create(helper.getLevel());
+		require(helper, forgeShear != null,
+				"Could not create Forge shear fixture");
+		forgeShear.readAdditionalSaveData(brownState);
+		forgeShear.setPos(forgeShearPos.getX(),
+				forgeShearPos.getY(), forgeShearPos.getZ());
+		helper.getLevel().addFreshEntity(forgeShear);
+		List<ItemStack> forgeDrops = forgeShear.onSheared(
+				helper.makeMockPlayer(),
+				new ItemStack(Items.SHEARS),
+				helper.getLevel(), forgeShearPos, 3);
+		List<CocoaCow> forgeShearCows =
+				helper.getLevel().getEntitiesOfClass(
+						CocoaCow.class,
+						new AABB(forgeShearPos)
+								.inflate(2.0D));
+		require(helper,
+				forgeShear.isRemoved()
+						&& forgeShearCows.size() == 1
+						&& forgeDrops.size() == 5
+						&& forgeDrops.stream().allMatch(
+								stack -> stack.is(
+										Items.BROWN_MUSHROOM)
+										&& stack.getCount() == 1),
+				"Forge Cupcake Cow shearing did not return five brown mushrooms or convert to Cocoa Cow");
+
+		BlockPos spawnPos = helper.absolutePos(
+				new BlockPos(5, 2, 5));
+		helper.getLevel().setBlock(spawnPos.below(),
+				CakeWorldBlocks.CHOCOLATE_SPONGE.get()
+						.defaultBlockState(), 3);
+		helper.getLevel().setBlock(spawnPos,
+				Blocks.AIR.defaultBlockState(), 3);
+		helper.getLevel().setBlock(spawnPos.above(),
+				Blocks.AIR.defaultBlockState(), 3);
+		require(helper,
+				helper.getLevel()
+						.getBlockState(spawnPos.below())
+						.is(BlockTags
+								.MOOSHROOMS_SPAWNABLE_ON)
+						&& helper.getLevel()
+								.getRawBrightness(spawnPos, 0)
+								> 8
+						&& CupcakeCow
+								.checkCupcakeCowSpawnRules(
+										CakeWorldEntities
+												.CUPCAKE_COW
+												.get(),
+										helper.getLevel(),
+										MobSpawnType.NATURAL,
+										spawnPos,
+										new Random(33L))
+						&& SpawnPlacements.checkSpawnRules(
+								CakeWorldEntities
+										.CUPCAKE_COW.get(),
+								helper.getLevel(),
+								MobSpawnType.NATURAL,
+								spawnPos,
+								new Random(34L))
+						&& SpawnPlacements
+								.getPlacementType(
+										CakeWorldEntities
+												.CUPCAKE_COW
+												.get())
+								== SpawnPlacements.Type.ON_GROUND
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+												.CUPCAKE_COW
+												.get())
+								== Heightmap.Types
+										.MOTION_BLOCKING_NO_LEAVES
+						&& close(red.getWalkTargetValue(
+								spawnPos,
+								helper.getLevel()), 10.0D),
+				"Cupcake Cow lost bright ground placement, edible spawn surface or surface preference");
+
+		MobSpawnSettingsBuilder futureSpawns =
+				new MobSpawnSettingsBuilder(
+						MobSpawnSettings.EMPTY);
+		BiomeLoadingEvent futureGarden =
+				new BiomeLoadingEvent(
+						new ResourceLocation(
+								CakeWorld.MODID,
+								"cupcake_gardens"),
+						null, null, null,
+						new BiomeGenerationSettingsBuilder(
+								BiomeGenerationSettings
+										.EMPTY),
+						futureSpawns);
+		CakeWorldCreatureSpawns.onBiomeLoading(
+				futureGarden);
+		MobSpawnSettings.SpawnerData futureSpawn =
+				futureSpawns
+						.getSpawner(MobCategory.CREATURE)
+						.stream()
+						.filter(spawn -> spawn.type
+								== CakeWorldEntities
+										.CUPCAKE_COW.get())
+						.findFirst().orElse(null);
+		require(helper,
+				futureSpawn != null
+						&& futureSpawn.getWeight().asInt() == 8
+						&& futureSpawn.minCount == 4
+						&& futureSpawn.maxCount == 8
+						&& futureSpawns
+								.getSpawner(
+										MobCategory.CREATURE)
+								.stream().noneMatch(
+										spawn -> spawn.type
+												== EntityType.MOOSHROOM),
+				"Future Cupcake Gardens hook lost the exact Mushroom Fields 8/4-8 replacement profile");
+
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS
+						.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS
+						.getId())) {
+			Biome biome = helper.getLevel()
+					.registryAccess()
+					.registryOrThrow(
+							Registry.BIOME_REGISTRY)
+					.get(biomeId);
+			require(helper,
+					biome != null
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory
+													.CREATURE)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType
+															.MOOSHROOM
+											|| spawn.type
+													== CakeWorldEntities
+															.CUPCAKE_COW
+															.get()),
+					"Current biome leaked Mooshroom/Cupcake Cow spawning before Cupcake Gardens exists: "
+							+ biomeId);
+		}
+
+		require(helper,
+				CakeWorldItems.CUPCAKE_COW_SPAWN_EGG
+						.isPresent(),
+				"Cupcake Cow lost its creative/testing egg");
+		ServerPlayer advancementPlayer = new ServerPlayer(
+				helper.getLevel().getServer(),
+				helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2033"),
+						"CakeWorldCupcakeCowRoleTest"));
+		VanillaRoleAdvancements.creditBredRole(
+				advancementPlayer,
+				CakeWorldEntities.CUPCAKE_COW.get());
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:husbandry/bred_all_animals",
+				"minecraft:mooshroom");
+		vanillaShearCows.forEach(Entity::discard);
+		forgeShearCows.forEach(Entity::discard);
 		helper.succeed();
 	}
 

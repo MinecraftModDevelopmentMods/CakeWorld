@@ -31,6 +31,7 @@ import net.minecraft.client.renderer.entity.IllusionerRenderer;
 import net.minecraft.client.renderer.entity.IronGolemRenderer;
 import net.minecraft.client.renderer.entity.LlamaRenderer;
 import net.minecraft.client.renderer.entity.MagmaCubeRenderer;
+import net.minecraft.client.renderer.entity.MushroomCowRenderer;
 import net.minecraft.client.renderer.entity.CowRenderer;
 import net.minecraft.client.renderer.entity.PigRenderer;
 import net.minecraft.client.renderer.entity.SheepRenderer;
@@ -135,6 +136,8 @@ public final class CakeWorldClientEvents {
 		event.registerEntityRenderer(CakeWorldEntities.CINNAMON_PUFF.get(),
 				ThrownItemRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.COCOA_COW.get(), CowRenderer::new);
+		event.registerEntityRenderer(CakeWorldEntities.CUPCAKE_COW.get(),
+				MushroomCowRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.MALLOW_CHICK.get(),
 				ChickenRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.TRUFFLE_PIG.get(), PigRenderer::new);

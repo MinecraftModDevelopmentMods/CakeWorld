@@ -266,7 +266,7 @@ document explicitly says otherwise.
 | MOB-030 | `minecraft:llama` | Meringue Llama | Carpet-decorated caravan and strength-scaled pack-animal role; sticky protected spit below Hard and real one-point spit on Hard. |
 | MOB-031 | `minecraft:magma_cube` | Hot-Fudge Blob | Size-scaled, fireproof elastic Nether hazard retaining Magma Cube jumps, splitting, freeze vulnerability and magma-cream progression; sticky protected contact below Hard and real size-scaled collision damage on Hard. Ordinary Fudge Wastes spawns are replaced in the biome list, while fresh literal Nether-Fortress spawns are converted only inside CakeWorld biomes. |
 | MOB-032 | `minecraft:mule` | Marzipan Mule | Sterile rideable pack-animal hybrid created by Gingerbread Pony and Dough Donkey from either parent direction; retains inherited physical attributes, chest storage, saddle, rider control, charged jump, food, fall behavior and leather progression without open-biome spawning. |
-| MOB-033 | `minecraft:mooshroom` | Cupcake Cow | Rare garden cow with bowl interaction role. |
+| MOB-033 | `minecraft:mooshroom` | Cupcake Cow | Red/brown garden cow retaining bowl stew, flower-fed suspicious stew, lightning switching, variant inheritance, shearing and exact food/loot progression. Shearing turns it into Cocoa Cow rather than leaking a vanilla Cow. Its exact Mushroom Fields spawn profile is reserved for Cupcake Gardens. |
 | MOB-034 | `minecraft:ocelot` | Sherbet Ocelot | Shy jungle/desert-edge animal preserving trust behaviour. |
 | MOB-035 | `minecraft:panda` | Chocolate Panda | Bamboo-role animal adapted to edible cane vegetation. |
 | MOB-036 | `minecraft:parrot` | Lollipop Lorikeet | Tameable mimic and shoulder companion. |
@@ -327,6 +327,17 @@ Pony and Dough Donkey now produce Marzipan Mule from either parent direction
 using vanilla's hybrid physical-attribute calculation. The Mule role remains
 sterile, chest-capable, rideable and absent from open-biome spawn lists; its
 spawn egg is retained for creative/testing parity.
+
+Delivery dependency for MOB-033: Cupcake Cow is registered, interactive and
+fully testable before Cupcake Gardens exists, but it deliberately has no
+natural encounter in the currently shipped biomes. Its exact Mooshroom
+replacement hook is dormant on `cakeworld:cupcake_gardens`; BIO-OW-012 must
+activate and reverify the Mushroom Fields weight 8, group 4-8 profile.
+Chocolate Sponge joins the standard Mooshroom-spawnable surface tag so the
+future biome can remain wholly edible. Vanilla's private shearing helper is
+the one role seam CakeWorld reproduces: both vanilla and Forge shearing paths
+preserve the five type-coloured mushroom drops and create Cocoa Cow instead of
+silently returning to a vanilla Cow.
 
 Delivery dependency for MOB-027: Dried Crumbler is registered, summonable and
 fully testable before Sherbet Dunes exists, but it deliberately has no natural

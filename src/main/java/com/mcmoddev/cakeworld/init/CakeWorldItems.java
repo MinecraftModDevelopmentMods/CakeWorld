@@ -244,6 +244,10 @@ public final class CakeWorldItems {
 	public static final RegistryObject<Item> COCOA_COW_SPAWN_EGG =
 			spawnEgg("cocoa_cow_spawn_egg", CakeWorldEntities.COCOA_COW,
 					0x5A2E1D, 0xE7C28E);
+	public static final RegistryObject<Item> CUPCAKE_COW_SPAWN_EGG =
+			spawnEgg("cupcake_cow_spawn_egg",
+					CakeWorldEntities.CUPCAKE_COW,
+					0xD84C76, 0xFFF1D6);
 	public static final RegistryObject<Item> MALLOW_CHICK_SPAWN_EGG =
 			spawnEgg("mallow_chick_spawn_egg", CakeWorldEntities.MALLOW_CHICK,
 					0xFFF4E0, 0xF2A7C6);

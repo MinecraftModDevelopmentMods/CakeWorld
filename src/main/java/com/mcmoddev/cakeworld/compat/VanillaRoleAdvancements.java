@@ -77,6 +77,9 @@ public final class VanillaRoleAdvancements {
 			criterion = "minecraft:axolotl";
 		} else if (childType == CakeWorldEntities.COCOA_COW.get()) {
 			criterion = "minecraft:cow";
+		} else if (childType
+				== CakeWorldEntities.CUPCAKE_COW.get()) {
+			criterion = "minecraft:mooshroom";
 		} else if (childType == CakeWorldEntities.MALLOW_CHICK.get()) {
 			criterion = "minecraft:chicken";
 		} else if (childType == CakeWorldEntities.TRUFFLE_PIG.get()) {

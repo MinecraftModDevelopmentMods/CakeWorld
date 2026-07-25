@@ -6,6 +6,7 @@ import com.mcmoddev.cakeworld.entity.CandyflossSheep;
 import com.mcmoddev.cakeworld.entity.CinnamonPuffProjectile;
 import com.mcmoddev.cakeworld.entity.CinnamonSpark;
 import com.mcmoddev.cakeworld.entity.CocoaCow;
+import com.mcmoddev.cakeworld.entity.CupcakeCow;
 import com.mcmoddev.cakeworld.entity.CustardCat;
 import com.mcmoddev.cakeworld.entity.DeepLiquoriceWeaver;
 import com.mcmoddev.cakeworld.entity.DoughDonkey;
@@ -56,6 +57,7 @@ import net.minecraft.world.entity.animal.Dolphin;
 import net.minecraft.world.entity.animal.Fox;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.animal.Cow;
+import net.minecraft.world.entity.animal.MushroomCow;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.animal.Sheep;
 import net.minecraft.world.entity.animal.goat.Goat;
@@ -92,6 +94,12 @@ public final class CakeWorldEntities {
 	public static final RegistryObject<EntityType<CocoaCow>> COCOA_COW =
 			entity("cocoa_cow", EntityType.Builder.of(CocoaCow::new, MobCategory.CREATURE)
 					.sized(0.9F, 1.4F).clientTrackingRange(10));
+	public static final RegistryObject<EntityType<CupcakeCow>> CUPCAKE_COW =
+			entity("cupcake_cow",
+					EntityType.Builder.of(CupcakeCow::new,
+							MobCategory.CREATURE)
+							.sized(0.9F, 1.4F)
+							.clientTrackingRange(10));
 	public static final RegistryObject<EntityType<Jellylotl>> JELLYLOTL =
 			entity("jellylotl",
 					EntityType.Builder.of(Jellylotl::new,
@@ -390,6 +398,8 @@ public final class CakeWorldEntities {
 		event.put(CINNAMON_SPARK.get(),
 				Blaze.createAttributes().build());
 		event.put(COCOA_COW.get(), Cow.createAttributes().build());
+		event.put(CUPCAKE_COW.get(),
+				MushroomCow.createAttributes().build());
 		event.put(MALLOW_CHICK.get(), Chicken.createAttributes().build());
 		event.put(TRUFFLE_PIG.get(), Pig.createAttributes().build());
 		event.put(CANDYFLOSS_SHEEP.get(), Sheep.createAttributes().build());
@@ -504,6 +514,10 @@ public final class CakeWorldEntities {
 			SpawnPlacements.register(COCOA_COW.get(), SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					Animal::checkAnimalSpawnRules);
+			SpawnPlacements.register(CUPCAKE_COW.get(),
+					SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					CupcakeCow::checkCupcakeCowSpawnRules);
 			SpawnPlacements.register(MALLOW_CHICK.get(), SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					Animal::checkAnimalSpawnRules);
