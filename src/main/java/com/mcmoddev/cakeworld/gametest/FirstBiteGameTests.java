@@ -171,6 +171,7 @@ import net.minecraft.world.entity.monster.Pillager;
 import net.minecraft.world.entity.monster.Phantom;
 import net.minecraft.world.entity.monster.Ravager;
 import net.minecraft.world.entity.monster.Vex;
+import net.minecraft.world.entity.monster.ZombifiedPiglin;
 import net.minecraft.world.entity.monster.Zoglin;
 import net.minecraft.world.entity.monster.hoglin.Hoglin;
 import net.minecraft.world.entity.monster.piglin.Piglin;
@@ -233,6 +234,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.event.world.BiomeLoadingEvent;
 import com.mcmoddev.cakeworld.world.StarterPicnicFeature;
@@ -247,6 +249,7 @@ import com.mcmoddev.cakeworld.world.CakeWorldIronGolemReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldMagmaCubeReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldPhantomReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldCreatureSpawns;
+import com.mcmoddev.cakeworld.world.TrufflePigCarrotOnAStickBridge;
 
 @GameTestHolder(CakeWorld.MODID)
 @PrefixGameTestTemplate(false)
@@ -2823,15 +2826,21 @@ public final class FirstBiteGameTests {
 				EntityType.ELDER_GUARDIAN.create(helper.getLevel());
 		require(helper, monumentGuardian != null,
 				"Could not create ocean-monument conversion fixture");
+		BlockPos conversionAnchor =
+				findCakeWorldBiomePosition(helper,
+						anchor, 64);
+		require(helper, conversionAnchor != null,
+				"Could not locate a runtime CakeWorld biome for the ocean-monument conversion fixture");
 		ResourceLocation fixtureBiome = helper.getLevel()
-				.getBiome(anchor).unwrapKey()
+				.getBiome(conversionAnchor).unwrapKey()
 				.map(key -> key.location()).orElse(null);
 		require(helper, fixtureBiome != null
 						&& CakeWorld.MODID.equals(
 								fixtureBiome.getNamespace()),
 				"Ocean-monument conversion fixture was not in a CakeWorld biome");
-		monumentGuardian.moveTo(anchor.getX(), anchor.getY(),
-				anchor.getZ(), 29.0F, 0.0F);
+		monumentGuardian.moveTo(conversionAnchor.getX(),
+				conversionAnchor.getY(),
+				conversionAnchor.getZ(), 29.0F, 0.0F);
 		monumentGuardian.setHealth(37.0F);
 		monumentGuardian.setCustomName(
 				new TextComponent("Grand Gumdrop"));
@@ -7802,6 +7811,18 @@ public final class FirstBiteGameTests {
 
 		BlockPos preyPos = helper.absolutePos(
 				new BlockPos(7, 2, 7));
+		for (int offset = 0; offset <= 11; offset++) {
+			BlockPos dryPreyPos = preyPos.offset(offset, 0, 0);
+			helper.getLevel().setBlock(
+					dryPreyPos.below(),
+					CakeWorldBlocks.CHOCOLATE_SPONGE.get()
+							.defaultBlockState(), 3);
+			helper.getLevel().setBlock(dryPreyPos,
+					Blocks.AIR.defaultBlockState(), 3);
+			helper.getLevel().setBlock(
+					dryPreyPos.above(),
+					Blocks.AIR.defaultBlockState(), 3);
+		}
 		Chicken chicken = EntityType.CHICKEN.create(
 				helper.getLevel());
 		require(helper, chicken != null,
@@ -9535,6 +9556,389 @@ public final class FirstBiteGameTests {
 		helper.succeed();
 	}
 
+	@GameTest(template = EMPTY)
+	public static void trufflePigsKeepRidingLightningAndIngredientForaging(
+			GameTestHelper helper) {
+		TrufflePigProbe pig =
+				new TrufflePigProbe(helper.getLevel());
+		require(helper,
+				pig instanceof Pig
+						&& pig.getType()
+								== CakeWorldEntities
+										.TRUFFLE_PIG.get()
+						&& pig.getType().getCategory()
+								== MobCategory.CREATURE
+						&& close(pig.getMaxHealth(), 10.0D)
+						&& close(pig.getAttributeValue(
+								Attributes.MOVEMENT_SPEED),
+								0.25D)
+						&& close(pig.getDimensions(
+								Pose.STANDING).width,
+								0.9D)
+						&& close(pig.getDimensions(
+								Pose.STANDING).height,
+								0.9D)
+						&& pig.getMaxSpawnClusterSize() == 4
+						&& pig.getAmbientSoundInterval()
+								== 120
+						&& pig.countGoalsNamed(
+								"FloatGoal") == 1
+						&& pig.countGoalsNamed(
+								"PanicGoal") == 1
+						&& pig.countGoalsNamed(
+								"BreedGoal") == 1
+						&& pig.countGoalsNamed(
+								"TemptGoal") == 2
+						&& pig.countGoalsNamed(
+								"FollowParentGoal") == 1
+						&& pig.getLootTable().equals(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/truffle_pig")),
+				"Truffle Pig lost exact Pig type, attributes, body, goals or loot table");
+		for (Item food : List.of(
+				Items.CARROT, Items.POTATO,
+				Items.BEETROOT)) {
+			require(helper,
+					pig.isFood(new ItemStack(food)),
+					"Truffle Pig rejected vanilla Pig food "
+							+ food);
+		}
+		require(helper,
+				!pig.isFood(new ItemStack(
+						CakeWorldItems.SIMPLE_BISCUIT.get()))
+						&& pig.getBreedOffspring(
+								helper.getLevel(), pig)
+								instanceof TrufflePig,
+				"Truffle Pig changed its exact breeding diet or leaked a literal Pig offspring");
+
+		BlockPos foragePos = helper.absolutePos(
+				new BlockPos(2, 3, 2));
+		helper.getLevel().setBlock(
+				foragePos.below(),
+				CakeWorldBlocks.CHOCOLATE_SPONGE.get()
+						.defaultBlockState(), 3);
+		pig.setPos(foragePos.getX() + 0.5D,
+				foragePos.getY(),
+				foragePos.getZ() + 0.5D);
+		helper.getLevel().addFreshEntity(pig);
+		Player forager = helper.makeMockPlayer();
+		forager.getAbilities().instabuild = false;
+		forager.setItemInHand(InteractionHand.MAIN_HAND,
+				new ItemStack(
+						CakeWorldItems.SIMPLE_BISCUIT.get(),
+						2));
+		BlockState forageSurface = helper.getLevel()
+				.getBlockState(foragePos.below());
+		InteractionResult forageResult = pig.mobInteract(
+				forager, InteractionHand.MAIN_HAND);
+		List<ItemEntity> firstDrops = helper.getLevel()
+				.getEntitiesOfClass(ItemEntity.class,
+						pig.getBoundingBox().inflate(2.0D),
+						drop -> drop.getItem().is(
+								CakeWorldItems.COCOA_TRUFFLE
+										.get()));
+		require(helper,
+				forageResult.consumesAction()
+						&& forager.getMainHandItem()
+								.getCount() == 1
+						&& firstDrops.size() == 1
+						&& firstDrops.get(0).getItem()
+								.getCount() == 1
+						&& pig.getForageCooldownTicks()
+								== TrufflePig
+										.FORAGE_COOLDOWN_TICKS
+						&& helper.getLevel().getBlockState(
+								foragePos.below())
+								== forageSurface,
+				"Truffle Pig forage did not exchange one biscuit for one truffle without changing terrain");
+		InteractionResult cooldownResult = pig.mobInteract(
+				forager, InteractionHand.MAIN_HAND);
+		require(helper,
+				cooldownResult.consumesAction()
+						&& forager.getMainHandItem()
+								.getCount() == 1
+						&& helper.getLevel()
+								.getEntitiesOfClass(
+										ItemEntity.class,
+										pig.getBoundingBox()
+												.inflate(2.0D),
+										drop -> drop.getItem()
+												.is(CakeWorldItems
+														.COCOA_TRUFFLE
+														.get()))
+								.size() == 1,
+				"Truffle Pig cooldown consumed another biscuit or duplicated a truffle");
+		CompoundTag forageState = pig.saveWithoutId(
+				new CompoundTag());
+		TrufflePig restored =
+				CakeWorldEntities.TRUFFLE_PIG.get()
+						.create(helper.getLevel());
+		require(helper, restored != null,
+				"Could not create Truffle Pig cooldown reload fixture");
+		restored.load(forageState);
+		require(helper,
+				restored.getForageCooldownTicks() > 1100,
+				"Truffle Pig lost its foraging cooldown across save/load");
+		TrufflePig baby =
+				CakeWorldEntities.TRUFFLE_PIG.get()
+						.create(helper.getLevel());
+		require(helper, baby != null,
+				"Could not create baby Truffle Pig forage fixture");
+		baby.setAge(-24000);
+		baby.setPos(pig.getX(), pig.getY(), pig.getZ());
+		ItemStack babyTreat = new ItemStack(
+				CakeWorldItems.SIMPLE_BISCUIT.get());
+		forager.setItemInHand(
+				InteractionHand.MAIN_HAND, babyTreat);
+		require(helper,
+				baby.tryForage(forager,
+						InteractionHand.MAIN_HAND)
+								== InteractionResult.PASS
+						&& babyTreat.getCount() == 1,
+				"Baby Truffle Pig foraged or consumed a treat");
+
+		TrufflePig ridden =
+				CakeWorldEntities.TRUFFLE_PIG.get()
+						.create(helper.getLevel());
+		require(helper, ridden != null
+						&& ridden.isSaddleable(),
+				"Could not create adult saddleable Truffle Pig");
+		ridden.setPos(foragePos.getX() + 3.0D,
+				foragePos.getY(), foragePos.getZ());
+		ridden.equipSaddle(null);
+		helper.getLevel().addFreshEntity(ridden);
+		Player rider = helper.makeMockPlayer();
+		rider.getAbilities().instabuild = false;
+		rider.setItemInHand(InteractionHand.MAIN_HAND,
+				new ItemStack(Items.CARROT_ON_A_STICK));
+		require(helper,
+				rider.startRiding(ridden, true)
+						&& ridden.isSaddled()
+						&& ridden.getControllingPassenger()
+								== rider
+						&& ridden.canBeControlledByRider()
+						&& close(ridden.getSteeringSpeed(),
+								0.05625D),
+				"Truffle Pig lost saddle, rider, Carrot-on-a-Stick control or exact steering speed");
+		PlayerInteractEvent.RightClickItem boostEvent =
+				new PlayerInteractEvent.RightClickItem(
+						rider,
+						InteractionHand.MAIN_HAND);
+		TrufflePigCarrotOnAStickBridge
+				.onRightClickItem(boostEvent);
+		require(helper,
+				boostEvent.isCanceled()
+						&& boostEvent.getCancellationResult()
+								== InteractionResult.SUCCESS
+						&& rider.getMainHandItem()
+								.getDamageValue() == 7
+						&& !ridden.boost(),
+				"Truffle Pig did not bridge the literal Pig boost gate or exact seven durability cost");
+		CompoundTag saddleState =
+				ridden.saveWithoutId(new CompoundTag());
+		TrufflePig saddleReload =
+				CakeWorldEntities.TRUFFLE_PIG.get()
+						.create(helper.getLevel());
+		require(helper, saddleReload != null,
+				"Could not create Truffle Pig saddle reload fixture");
+		saddleReload.load(saddleState);
+		require(helper, saddleReload.isSaddled(),
+				"Truffle Pig lost saddle NBT");
+		rider.stopRiding();
+
+		TrufflePig breakingRide =
+				CakeWorldEntities.TRUFFLE_PIG.get()
+						.create(helper.getLevel());
+		require(helper, breakingRide != null,
+				"Could not create breaking boost fixture");
+		breakingRide.setPos(ridden.getX() + 2.0D,
+				ridden.getY(), ridden.getZ());
+		breakingRide.equipSaddle(null);
+		helper.getLevel().addFreshEntity(breakingRide);
+		ItemStack nearlyBroken =
+				new ItemStack(Items.CARROT_ON_A_STICK);
+		nearlyBroken.setDamageValue(
+				nearlyBroken.getMaxDamage() - 6);
+		CompoundTag stickTag = nearlyBroken
+				.getOrCreateTag();
+		stickTag.putBoolean("CakeWorldTest", true);
+		rider.setItemInHand(InteractionHand.MAIN_HAND,
+				nearlyBroken);
+		require(helper,
+				rider.startRiding(breakingRide, true),
+				"Rider could not mount second Truffle Pig");
+		PlayerInteractEvent.RightClickItem breakEvent =
+				new PlayerInteractEvent.RightClickItem(
+						rider,
+						InteractionHand.MAIN_HAND);
+		TrufflePigCarrotOnAStickBridge
+				.onRightClickItem(breakEvent);
+		require(helper,
+				breakEvent.isCanceled()
+						&& rider.getMainHandItem()
+								.is(Items.FISHING_ROD)
+						&& rider.getMainHandItem().hasTag()
+						&& rider.getMainHandItem().getTag()
+								.getBoolean(
+										"CakeWorldTest"),
+				"Breaking Truffle Pig boost did not preserve vanilla Fishing Rod replacement and NBT");
+		rider.stopRiding();
+
+		Difficulty originalDifficulty =
+				helper.getLevel().getDifficulty();
+		ZombifiedPiglin lightningResult = null;
+		try {
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.NORMAL, true);
+			TrufflePig struck =
+					CakeWorldEntities.TRUFFLE_PIG.get()
+							.create(helper.getLevel());
+			LightningBolt bolt =
+					EntityType.LIGHTNING_BOLT.create(
+							helper.getLevel());
+			require(helper, struck != null && bolt != null,
+					"Could not create Truffle Pig lightning fixtures");
+			struck.setPos(foragePos.getX() + 6.0D,
+					foragePos.getY(), foragePos.getZ());
+			struck.setAge(-24000);
+			struck.setNoAi(true);
+			struck.setCustomName(new TextComponent(
+					"Thunder Truffle"));
+			helper.getLevel().addFreshEntity(struck);
+			struck.thunderHit(helper.getLevel(), bolt);
+			lightningResult = helper.getLevel()
+					.getEntitiesOfClass(
+							ZombifiedPiglin.class,
+							new AABB(struck.getX() - 2.0D,
+									struck.getY() - 2.0D,
+									struck.getZ() - 2.0D,
+									struck.getX() + 2.0D,
+									struck.getY() + 2.0D,
+									struck.getZ() + 2.0D))
+					.stream().findFirst().orElse(null);
+			require(helper,
+					struck.isRemoved()
+							&& lightningResult != null
+							&& lightningResult.isBaby()
+							&& lightningResult.isNoAi()
+							&& lightningResult
+									.isPersistenceRequired()
+							&& lightningResult
+									.getMainHandItem()
+									.is(Items.GOLDEN_SWORD)
+							&& "Thunder Truffle".equals(
+									lightningResult.getName()
+											.getString()),
+					"Truffle Pig lost the staged vanilla lightning-conversion state for MOB-073");
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.PEACEFUL, true);
+			TrufflePig peacefulStruck =
+					CakeWorldEntities.TRUFFLE_PIG.get()
+							.create(helper.getLevel());
+			LightningBolt peacefulBolt =
+					EntityType.LIGHTNING_BOLT.create(
+							helper.getLevel());
+			require(helper,
+					peacefulStruck != null
+							&& peacefulBolt != null,
+					"Could not create Peaceful lightning fixtures");
+			peacefulStruck.setPos(foragePos.getX() + 9.0D,
+					foragePos.getY(), foragePos.getZ());
+			peacefulStruck.thunderHit(helper.getLevel(),
+					peacefulBolt);
+			require(helper,
+					!peacefulStruck.isRemoved(),
+					"Peaceful Truffle Pig incorrectly transformed into the future Stale Fudge Folk role");
+		} finally {
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+			if (lightningResult != null) {
+				lightningResult.discard();
+			}
+		}
+
+		Biome candyPlains = helper.getLevel()
+				.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY)
+				.get(CakeWorldBiomes.CANDY_PLAINS.getId());
+		require(helper, candyPlains != null,
+				"Could not inspect Candy Plains Truffle Pig spawning");
+		MobSpawnSettings.SpawnerData pigSpawn =
+				candyPlains.getMobSettings()
+						.getMobs(MobCategory.CREATURE)
+						.unwrap().stream()
+						.filter(spawn -> spawn.type
+								== CakeWorldEntities
+										.TRUFFLE_PIG.get())
+						.findFirst().orElse(null);
+		require(helper,
+				pigSpawn != null
+						&& pigSpawn.getWeight().asInt() == 10
+						&& pigSpawn.minCount == 4
+						&& pigSpawn.maxCount == 4
+						&& candyPlains.getMobSettings()
+								.getMobs(
+										MobCategory.CREATURE)
+								.unwrap().stream()
+								.noneMatch(spawn ->
+										spawn.type
+												== EntityType.PIG)
+						&& CakeWorldItems
+								.TRUFFLE_PIG_SPAWN_EGG
+								.isPresent()
+						&& SpawnPlacements
+								.getPlacementType(
+										CakeWorldEntities
+												.TRUFFLE_PIG
+												.get())
+								== SpawnPlacements.Type
+										.ON_GROUND
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+												.TRUFFLE_PIG
+												.get())
+								== Heightmap.Types
+										.MOTION_BLOCKING_NO_LEAVES,
+				"Truffle Pig lost exact Plains 10/4-4 replacement, egg or Pig placement metadata");
+
+		BlockPos spawnPos = foragePos.offset(12, 0, 0);
+		helper.getLevel().setBlock(spawnPos.below(),
+				CakeWorldBlocks.CHOCOLATE_SPONGE.get()
+						.defaultBlockState(), 3);
+		helper.getLevel().setBlock(spawnPos,
+				Blocks.LIGHT.defaultBlockState(), 3);
+		helper.getLevel().setBlock(spawnPos.above(),
+				Blocks.AIR.defaultBlockState(), 3);
+		helper.runAfterDelay(5, () -> {
+			require(helper,
+					helper.getLevel().getBlockState(
+							spawnPos.below())
+							.is(BlockTags
+									.ANIMALS_SPAWNABLE_ON)
+							&& Animal
+									.checkAnimalSpawnRules(
+											CakeWorldEntities
+													.TRUFFLE_PIG
+													.get(),
+											helper.getLevel(),
+											MobSpawnType.NATURAL,
+											spawnPos,
+											new Random(1978L))
+							&& SpawnPlacements.Type.ON_GROUND
+									.canSpawnAt(
+											helper.getLevel(),
+											spawnPos,
+											CakeWorldEntities
+													.TRUFFLE_PIG
+													.get()),
+					"Truffle Pig lost exact bright tagged-surface spawn predicate");
+			helper.succeed();
+		});
+	}
+
 	private static final class LollipopLorikeetProbe
 			extends LollipopLorikeet {
 		private LollipopLorikeetProbe(Level level) {
@@ -9580,6 +9984,24 @@ public final class FirstBiteGameTests {
 
 		private int countTargetGoalsNamed(String name) {
 			return (int)targetSelector.getAvailableGoals()
+					.stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
+		}
+	}
+
+	private static final class TrufflePigProbe
+			extends TrufflePig {
+		private TrufflePigProbe(Level level) {
+			super(CakeWorldEntities.TRUFFLE_PIG.get(),
+					level);
+		}
+
+		private int countGoalsNamed(String name) {
+			return (int)goalSelector.getAvailableGoals()
 					.stream()
 					.map(WrappedGoal::getGoal)
 					.filter(goal -> name.equals(

@@ -1,0 +1,12 @@
+{
+  "replace": false,
+  "values": [
+    "cakeworld:chocolate_sponge",
+    "cakeworld:biscuit_crumbs",
+    "cakeworld:biscuit_sand",
+    "cakeworld:wafer_block",
+    "cakeworld:marshmallow",
+    "cakeworld:gummy_block",
+    "cakeworld:icing"
+  ]
+}

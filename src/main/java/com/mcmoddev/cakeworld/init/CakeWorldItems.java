@@ -35,6 +35,8 @@ public final class CakeWorldItems {
 			food("icing_spoonful", 1, 0.2F);
 	public static final RegistryObject<Item> SIMPLE_BISCUIT =
 			food("simple_biscuit", 4, 0.4F);
+	public static final RegistryObject<Item> COCOA_TRUFFLE =
+			food("cocoa_truffle", 4, 0.5F);
 	public static final RegistryObject<Item> LEMONADE_BOTTLE = ITEMS.register("lemonade_bottle",
 			() -> new LemonadeBottleItem(foodProperties(3, 0.3F)
 					.craftRemainder(Items.GLASS_BOTTLE)));
