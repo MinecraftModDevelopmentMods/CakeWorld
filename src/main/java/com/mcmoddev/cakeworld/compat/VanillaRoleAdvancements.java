@@ -44,6 +44,8 @@ public final class VanillaRoleAdvancements {
 		String criterion = null;
 		if (childType == CakeWorldEntities.SUGAR_BEE.get()) {
 			criterion = "minecraft:bee";
+		} else if (childType == CakeWorldEntities.CUSTARD_CAT.get()) {
+			criterion = "minecraft:cat";
 		} else if (childType == CakeWorldEntities.JELLYLOTL.get()) {
 			criterion = "minecraft:axolotl";
 		} else if (childType == CakeWorldEntities.COCOA_COW.get()) {

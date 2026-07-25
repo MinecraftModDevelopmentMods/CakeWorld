@@ -6,6 +6,7 @@ import com.mcmoddev.cakeworld.entity.CandyflossSheep;
 import com.mcmoddev.cakeworld.entity.CinnamonPuffProjectile;
 import com.mcmoddev.cakeworld.entity.CinnamonSpark;
 import com.mcmoddev.cakeworld.entity.CocoaCow;
+import com.mcmoddev.cakeworld.entity.CustardCat;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
@@ -20,6 +21,7 @@ import net.minecraft.world.entity.animal.Bee;
 import net.minecraft.world.entity.animal.axolotl.Axolotl;
 import net.minecraft.world.entity.ambient.Bat;
 import net.minecraft.world.entity.animal.Chicken;
+import net.minecraft.world.entity.animal.Cat;
 import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.animal.Sheep;
@@ -58,6 +60,12 @@ public final class CakeWorldEntities {
 					EntityType.Builder.of(SugarBee::new,
 							MobCategory.CREATURE)
 							.sized(0.7F, 0.6F)
+							.clientTrackingRange(8));
+	public static final RegistryObject<EntityType<CustardCat>> CUSTARD_CAT =
+			entity("custard_cat",
+					EntityType.Builder.of(CustardCat::new,
+							MobCategory.CREATURE)
+							.sized(0.6F, 0.7F)
 							.clientTrackingRange(8));
 	public static final RegistryObject<EntityType<CinnamonSpark>> CINNAMON_SPARK =
 			entity("cinnamon_spark",
@@ -102,6 +110,7 @@ public final class CakeWorldEntities {
 		event.put(JELLYLOTL.get(), Axolotl.createAttributes().build());
 		event.put(BONBON_BAT.get(), Bat.createAttributes().build());
 		event.put(SUGAR_BEE.get(), Bee.createAttributes().build());
+		event.put(CUSTARD_CAT.get(), Cat.createAttributes().build());
 		event.put(CINNAMON_SPARK.get(),
 				Blaze.createAttributes().build());
 		event.put(COCOA_COW.get(), Cow.createAttributes().build());
@@ -122,6 +131,10 @@ public final class CakeWorldEntities {
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					BonbonBat::checkBonbonBatSpawnRules);
 			SpawnPlacements.register(SUGAR_BEE.get(),
+					SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					Animal::checkAnimalSpawnRules);
+			SpawnPlacements.register(CUSTARD_CAT.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					Animal::checkAnimalSpawnRules);

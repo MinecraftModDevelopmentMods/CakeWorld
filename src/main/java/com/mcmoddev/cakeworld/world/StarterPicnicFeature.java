@@ -4,7 +4,9 @@ import java.util.List;
 import java.util.Random;
 
 import com.mcmoddev.cakeworld.CakeWorld;
+import com.mcmoddev.cakeworld.entity.CustardCat;
 import com.mcmoddev.cakeworld.init.CakeWorldBlocks;
+import com.mcmoddev.cakeworld.init.CakeWorldEntities;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -115,7 +117,24 @@ public final class StarterPicnicFeature extends Feature<NoneFeatureConfiguration
 		} else {
 			world.setBlock(floorCentre.offset(3, 1, 3), icingLayer, 2);
 		}
+		spawnCompanion(world, random, floorCentre);
 		return true;
+	}
+
+	private static void spawnCompanion(WorldGenLevel world, Random random,
+			BlockPos floorCentre) {
+		CustardCat cat = CakeWorldEntities.CUSTARD_CAT.get()
+				.create(world.getLevel());
+		if (cat == null) {
+			return;
+		}
+		BlockPos shelter = floorCentre.offset(-2, 1, -2);
+		cat.setPos(shelter.getX() + 0.5D, shelter.getY(),
+				shelter.getZ() + 0.5D);
+		cat.setCatType(random.nextInt(10));
+		cat.setPersistenceRequired();
+		cat.restrictTo(floorCentre, 12);
+		world.addFreshEntity(cat);
 	}
 
 	private static boolean hasSafeFootprint(WorldGenLevel world,

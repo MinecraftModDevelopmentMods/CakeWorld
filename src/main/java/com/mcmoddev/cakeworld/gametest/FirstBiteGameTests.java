@@ -34,6 +34,7 @@ import com.mcmoddev.cakeworld.entity.CocoaCow;
 import com.mcmoddev.cakeworld.entity.CinnamonPuffProjectile;
 import com.mcmoddev.cakeworld.entity.CinnamonSpark;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
+import com.mcmoddev.cakeworld.entity.CustardCat;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
 import com.mcmoddev.cakeworld.entity.SugarBee;
@@ -53,6 +54,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.advancements.Advancement;
+import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
@@ -72,12 +74,14 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.animal.Pig;
+import net.minecraft.world.entity.animal.Cat;
 import net.minecraft.world.entity.animal.Cod;
 import net.minecraft.world.entity.animal.axolotl.Axolotl;
 import net.minecraft.world.entity.projectile.SmallFireball;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemNameBlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -1929,6 +1933,85 @@ public final class FirstBiteGameTests {
 	}
 
 	@GameTest(template = EMPTY)
+	public static void custardCatsKeepTamingAndCatalogueRoles(
+			GameTestHelper helper) {
+		CustardCat first = CakeWorldEntities.CUSTARD_CAT.get()
+				.create(helper.getLevel());
+		CustardCat second = CakeWorldEntities.CUSTARD_CAT.get()
+				.create(helper.getLevel());
+		require(helper, first != null && second != null,
+				"Could not create Custard Cat breeding fixtures");
+		UUID owner = UUID.fromString(
+				"1978feed-feed-4bad-babe-1978feed2005");
+		first.setCatType(Cat.TYPE_BRITISH);
+		second.setCatType(Cat.TYPE_JELLIE);
+		first.setOwnerUUID(owner);
+		second.setOwnerUUID(owner);
+		first.setTame(true);
+		second.setTame(true);
+		first.setCollarColor(DyeColor.PINK);
+		second.setCollarColor(DyeColor.YELLOW);
+
+		Cat child = first.getBreedOffspring(helper.getLevel(), second);
+		require(helper, child instanceof CustardCat
+						&& child.getType()
+								== CakeWorldEntities.CUSTARD_CAT.get(),
+				"Custard Cats did not breed into their own entity type");
+		require(helper,
+				(child.getCatType() == Cat.TYPE_BRITISH
+						|| child.getCatType() == Cat.TYPE_JELLIE)
+						&& child.isTame()
+						&& owner.equals(child.getOwnerUUID())
+						&& (child.getCollarColor() == DyeColor.PINK
+								|| child.getCollarColor()
+										== DyeColor.YELLOW),
+				"Custard Cat offspring lost variant, owner, tame, or collar inheritance");
+		require(helper,
+				child.isFood(new ItemStack(Items.COD))
+						&& child.isFood(new ItemStack(Items.SALMON))
+						&& !child.isFood(new ItemStack(
+								CakeWorldItems.SIMPLE_BISCUIT.get())),
+				"Custard Cat changed the compatible vanilla cat food role");
+
+		CompoundTag saved = new CompoundTag();
+		child.addAdditionalSaveData(saved);
+		CustardCat restored = CakeWorldEntities.CUSTARD_CAT.get()
+				.create(helper.getLevel());
+		require(helper, restored != null,
+				"Could not create Custard Cat save fixture");
+		restored.readAdditionalSaveData(saved);
+		require(helper,
+				restored.getCatType() == child.getCatType()
+						&& restored.isTame()
+						&& owner.equals(restored.getOwnerUUID())
+						&& restored.getCollarColor()
+								== child.getCollarColor(),
+				"Custard Cat did not retain variant/taming data");
+
+		ServerPlayer advancementPlayer = new ServerPlayer(
+				helper.getLevel().getServer(), helper.getLevel(),
+				new GameProfile(owner, "CakeWorldCustardCatRoleTest"));
+		VanillaRoleAdvancements.creditBredRole(advancementPlayer,
+				CakeWorldEntities.CUSTARD_CAT.get());
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:husbandry/bred_all_animals",
+				"minecraft:cat");
+		CustardCat catalogueCat = CakeWorldEntities.CUSTARD_CAT.get()
+				.create(helper.getLevel());
+		require(helper, catalogueCat != null,
+				"Could not create Custard Cat catalogue fixture");
+		catalogueCat.setCatType(Cat.TYPE_BRITISH);
+		CriteriaTriggers.TAME_ANIMAL.trigger(advancementPlayer,
+				catalogueCat);
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:husbandry/complete_catalogue",
+				"textures/entity/cat/british_shorthair.png");
+		require(helper, CakeWorldItems.CUSTARD_CAT_SPAWN_EGG.isPresent(),
+				"Custard Cat has no creative/testing spawn egg");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
 	public static void starterPicnicBuildsAReadableCookbookLandmark(
 			GameTestHelper helper) {
 		BlockPos relativeCentre = new BlockPos(5, 20, 5);
@@ -1970,6 +2053,15 @@ public final class FirstBiteGameTests {
 		require(helper, spongeSeatsAndBorder == 35 && icingRoof == 18,
 				"The picnic lost its cushioned border, seats, or two icing roofs: "
 						+ spongeSeatsAndBorder + " sponge, " + icingRoof + " icing");
+		java.util.List<CustardCat> companions =
+				helper.getLevel().getEntitiesOfClass(CustardCat.class,
+						new AABB(absoluteCentre).inflate(12.0D));
+		require(helper, companions.size() == 1
+						&& companions.get(0).isPersistenceRequired()
+						&& companions.get(0).hasRestriction()
+						&& companions.get(0).getRestrictCenter()
+								.equals(absoluteCentre),
+				"The First Bite picnic did not receive one persistent, home-restricted Custard Cat");
 
 		Biome candyPlains = helper.getLevel().registryAccess()
 				.registryOrThrow(Registry.BIOME_REGISTRY)
