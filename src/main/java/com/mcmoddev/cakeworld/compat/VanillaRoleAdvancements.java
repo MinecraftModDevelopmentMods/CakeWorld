@@ -84,6 +84,11 @@ public final class VanillaRoleAdvancements {
 		award(player, KILL_ALL, "minecraft:drowned");
 	}
 
+	public static void creditKilledElderGuardianRole(
+			ServerPlayer player) {
+		award(player, KILL_ALL, "minecraft:elder_guardian");
+	}
+
 	private static String killedCriterion(EntityType<?> type) {
 		if (type == CakeWorldEntities.STALE_CRUMBLER.get()) {
 			return "minecraft:zombie";
@@ -99,6 +104,9 @@ public final class VanillaRoleAdvancements {
 		}
 		if (type == CakeWorldEntities.SOGGY_BISCUIT.get()) {
 			return "minecraft:drowned";
+		}
+		if (type == CakeWorldEntities.GRAND_GUMBALL_GUARDIAN.get()) {
+			return "minecraft:elder_guardian";
 		}
 		return null;
 	}

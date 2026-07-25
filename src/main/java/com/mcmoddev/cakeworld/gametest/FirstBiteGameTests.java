@@ -37,6 +37,7 @@ import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.CustardCat;
 import com.mcmoddev.cakeworld.entity.DeepLiquoriceWeaver;
 import com.mcmoddev.cakeworld.entity.DoughDonkey;
+import com.mcmoddev.cakeworld.entity.GrandGumballGuardian;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.PopRockPopper;
 import com.mcmoddev.cakeworld.entity.SodaCod;
@@ -78,10 +79,12 @@ import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.MobType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.MobCategory;
@@ -92,6 +95,7 @@ import net.minecraft.world.entity.animal.WaterAnimal;
 import net.minecraft.world.entity.animal.axolotl.Axolotl;
 import net.minecraft.world.entity.animal.horse.Horse;
 import net.minecraft.world.entity.monster.Drowned;
+import net.minecraft.world.entity.monster.ElderGuardian;
 import net.minecraft.world.entity.projectile.SmallFireball;
 import net.minecraft.world.entity.projectile.ThrownTrident;
 import net.minecraft.world.entity.player.Player;
@@ -134,6 +138,7 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.world.BlockEvent;
 import com.mcmoddev.cakeworld.world.StarterPicnicFeature;
 import com.mcmoddev.cakeworld.world.CakeWorldDrownedReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldElderGuardianReplacement;
 
 @GameTestHolder(CakeWorld.MODID)
 @PrefixGameTestTemplate(false)
@@ -2595,6 +2600,173 @@ public final class FirstBiteGameTests {
 		requireCriterion(helper, advancementPlayer,
 				"minecraft:adventure/kill_all_mobs",
 				"minecraft:drowned");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void grandGumballGuardiansKeepPalaceRolesGentleUntilHard(
+			GameTestHelper helper) {
+		GrandGumballGuardian guardian =
+				CakeWorldEntities.GRAND_GUMBALL_GUARDIAN.get()
+						.create(helper.getLevel());
+		Pig safeTarget = EntityType.PIG.create(helper.getLevel());
+		require(helper, guardian != null && safeTarget != null,
+				"Could not create Grand Gumball Guardian fixtures");
+		BlockPos anchor = helper.absolutePos(new BlockPos(2, 3, 2));
+		guardian.setPos(anchor.getX(), anchor.getY(), anchor.getZ());
+		safeTarget.setPos(anchor.getX() + 4.0D,
+				anchor.getY(), anchor.getZ());
+		helper.getLevel().addFreshEntity(guardian);
+		helper.getLevel().addFreshEntity(safeTarget);
+		require(helper,
+				guardian instanceof ElderGuardian
+						&& guardian.isPersistenceRequired()
+						&& guardian.canBreatheUnderwater()
+						&& guardian.getMobType() == MobType.WATER
+						&& guardian.getAttackDuration() == 60
+						&& Math.abs(guardian.getMaxHealth() - 80.0F)
+								< 0.001F
+						&& Math.abs(guardian.getAttributeValue(
+								Attributes.ATTACK_DAMAGE) - 8.0D)
+								< 0.001D
+						&& Math.abs(guardian.getAttributeValue(
+								Attributes.MOVEMENT_SPEED) - 0.3D)
+								< 0.001D,
+				"Grand Gumball Guardian lost the persistent Elder Guardian water, beam, fatigue-boss or attribute contract");
+
+		Difficulty originalDifficulty = helper.getLevel().getDifficulty();
+		try {
+			for (Difficulty safeDifficulty :
+					new Difficulty[] {Difficulty.EASY, Difficulty.NORMAL}) {
+				helper.getLevel().getServer().setDifficulty(
+						safeDifficulty, true);
+				safeTarget.removeAllEffects();
+				safeTarget.setHealth(10.0F);
+				safeTarget.setSecondsOnFire(5);
+				safeTarget.fallDistance = 8.0F;
+				safeTarget.setDeltaMovement(Vec3.ZERO);
+				safeTarget.invulnerableTime = 0;
+				safeTarget.hurt(
+						DamageSource.indirectMagic(
+								guardian, guardian), 13.0F);
+				require(helper,
+						Math.abs(safeTarget.getHealth()
+										- 10.0F) < 0.001F
+								&& !safeTarget.isOnFire()
+								&& safeTarget.fallDistance == 0.0F
+								&& safeTarget.hasEffect(
+										MobEffects.MOVEMENT_SLOWDOWN)
+								&& safeTarget.getEffect(
+										MobEffects.MOVEMENT_SLOWDOWN)
+										.getAmplifier() == 1
+								&& safeTarget.hasEffect(
+										MobEffects.DIG_SLOWDOWN)
+								&& safeTarget.hasEffect(
+										MobEffects.SLOW_FALLING)
+								&& safeTarget.hasEffect(
+										MobEffects.FIRE_RESISTANCE)
+								&& safeTarget.hasEffect(
+										MobEffects.DAMAGE_RESISTANCE)
+								&& safeTarget.getEffect(
+										MobEffects.DAMAGE_RESISTANCE)
+										.getAmplifier() == 4,
+						safeDifficulty
+								+ " Grand Gumball beam caused health damage or lacked sticky/rescue effects");
+
+				safeTarget.removeAllEffects();
+				safeTarget.setHealth(10.0F);
+				safeTarget.invulnerableTime = 0;
+				safeTarget.hurt(
+						DamageSource.thorns(guardian), 2.0F);
+				require(helper,
+						Math.abs(safeTarget.getHealth()
+										- 10.0F) < 0.001F
+								&& safeTarget.hasEffect(
+										MobEffects.MOVEMENT_SLOWDOWN)
+								&& safeTarget.hasEffect(
+										MobEffects.DAMAGE_RESISTANCE),
+						safeDifficulty
+								+ " Grand Gumball thorns caused health damage or lost their safe bounce");
+			}
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			Pig hardTarget = EntityType.PIG.create(helper.getLevel());
+			require(helper, hardTarget != null,
+					"Could not create Hard guardian target");
+			hardTarget.setPos(anchor.getX() + 5.0D,
+					anchor.getY(), anchor.getZ());
+			hardTarget.setHealth(10.0F);
+			helper.getLevel().addFreshEntity(hardTarget);
+			require(helper,
+					hardTarget.hurt(DamageSource.indirectMagic(
+									guardian, guardian), 5.0F)
+							&& hardTarget.getHealth() < 10.0F,
+					"Hard Grand Gumball Guardian did not retain real beam damage");
+		} finally {
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		ElderGuardian monumentGuardian =
+				EntityType.ELDER_GUARDIAN.create(helper.getLevel());
+		require(helper, monumentGuardian != null,
+				"Could not create ocean-monument conversion fixture");
+		ResourceLocation fixtureBiome = helper.getLevel()
+				.getBiome(anchor).unwrapKey()
+				.map(key -> key.location()).orElse(null);
+		require(helper, fixtureBiome != null
+						&& CakeWorld.MODID.equals(
+								fixtureBiome.getNamespace()),
+				"Ocean-monument conversion fixture was not in a CakeWorld biome");
+		monumentGuardian.moveTo(anchor.getX(), anchor.getY(),
+				anchor.getZ(), 29.0F, 0.0F);
+		monumentGuardian.setHealth(37.0F);
+		monumentGuardian.setCustomName(
+				new TextComponent("Grand Gumdrop"));
+		monumentGuardian.setPersistenceRequired();
+		GrandGumballGuardian converted =
+				CakeWorldElderGuardianReplacement
+						.convertIfInCakeWorldBiome(
+								helper.getLevel(),
+								monumentGuardian);
+		require(helper, converted != null
+						&& converted.getType()
+								== CakeWorldEntities
+										.GRAND_GUMBALL_GUARDIAN.get()
+						&& Math.abs(converted.getHealth() - 37.0F)
+								< 0.001F
+						&& converted.hasCustomName()
+						&& converted.getCustomName().getString()
+								.equals("Grand Gumdrop")
+						&& converted.isPersistenceRequired()
+						&& Math.abs(converted.getYRot() - 29.0F)
+								< 0.001F,
+				"Ocean-monument conversion lost boss type, health, name, persistence or rotation");
+
+		TagKey<EntityType<?>> axolotlHostiles = TagKey.create(
+				Registry.ENTITY_TYPE_REGISTRY,
+				new ResourceLocation("minecraft",
+						"axolotl_always_hostiles"));
+		require(helper,
+				CakeWorldEntities.GRAND_GUMBALL_GUARDIAN.get()
+						.is(axolotlHostiles),
+				"Grand Gumball Guardian did not preserve Elder Guardian's axolotl-hostile tag role");
+		require(helper,
+				CakeWorldItems.GRAND_GUMBALL_GUARDIAN_SPAWN_EGG
+						.isPresent(),
+				"Grand Gumball Guardian has no creative/testing spawn egg");
+
+		ServerPlayer advancementPlayer = new ServerPlayer(
+				helper.getLevel().getServer(), helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2014"),
+						"CakeWorldGrandGuardianRoleTest"));
+		VanillaRoleAdvancements.creditKilledElderGuardianRole(
+				advancementPlayer);
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:adventure/kill_all_mobs",
+				"minecraft:elder_guardian");
 		helper.succeed();
 	}
 

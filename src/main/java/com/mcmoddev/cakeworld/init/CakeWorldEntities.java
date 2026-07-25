@@ -9,6 +9,7 @@ import com.mcmoddev.cakeworld.entity.CocoaCow;
 import com.mcmoddev.cakeworld.entity.CustardCat;
 import com.mcmoddev.cakeworld.entity.DeepLiquoriceWeaver;
 import com.mcmoddev.cakeworld.entity.DoughDonkey;
+import com.mcmoddev.cakeworld.entity.GrandGumballGuardian;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.PopRockPopper;
@@ -39,6 +40,7 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.monster.Blaze;
 import net.minecraft.world.entity.monster.CaveSpider;
 import net.minecraft.world.entity.monster.Creeper;
+import net.minecraft.world.entity.monster.ElderGuardian;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
@@ -117,6 +119,14 @@ public final class CakeWorldEntities {
 							.sized(0.5F, 0.5F)
 							.clientTrackingRange(4)
 							.updateInterval(20));
+	public static final RegistryObject<EntityType<GrandGumballGuardian>>
+			GRAND_GUMBALL_GUARDIAN = entity(
+					"grand_gumball_guardian",
+					EntityType.Builder.of(
+							GrandGumballGuardian::new,
+							MobCategory.MONSTER)
+							.sized(1.9975F, 1.9975F)
+							.clientTrackingRange(10));
 	public static final RegistryObject<EntityType<PopRockPopper>>
 			POP_ROCK_POPPER = entity("pop_rock_popper",
 					EntityType.Builder.of(PopRockPopper::new,
@@ -176,6 +186,8 @@ public final class CakeWorldEntities {
 						.build());
 		event.put(SOGGY_BISCUIT.get(),
 				Zombie.createAttributes().build());
+		event.put(GRAND_GUMBALL_GUARDIAN.get(),
+				ElderGuardian.createAttributes().build());
 		event.put(POP_ROCK_POPPER.get(), Creeper.createAttributes().build());
 		event.put(CINNAMON_SPARK.get(),
 				Blaze.createAttributes().build());
