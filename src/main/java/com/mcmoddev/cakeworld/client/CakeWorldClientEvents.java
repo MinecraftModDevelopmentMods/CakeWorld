@@ -32,6 +32,7 @@ import net.minecraft.client.renderer.entity.IronGolemRenderer;
 import net.minecraft.client.renderer.entity.LlamaRenderer;
 import net.minecraft.client.renderer.entity.MagmaCubeRenderer;
 import net.minecraft.client.renderer.entity.MushroomCowRenderer;
+import net.minecraft.client.renderer.entity.OcelotRenderer;
 import net.minecraft.client.renderer.entity.CowRenderer;
 import net.minecraft.client.renderer.entity.PigRenderer;
 import net.minecraft.client.renderer.entity.SheepRenderer;
@@ -61,6 +62,9 @@ public final class CakeWorldClientEvents {
 				BeeRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.CUSTARD_CAT.get(),
 				CatRenderer::new);
+		event.registerEntityRenderer(
+				CakeWorldEntities.SHERBET_OCELOT.get(),
+				OcelotRenderer::new);
 		event.registerEntityRenderer(
 				CakeWorldEntities.DEEP_LIQUORICE_WEAVER.get(),
 				CaveSpiderRenderer::new);

@@ -64,6 +64,7 @@ import com.mcmoddev.cakeworld.entity.SodaCod;
 import com.mcmoddev.cakeworld.entity.SodaDolphin;
 import com.mcmoddev.cakeworld.entity.SoggyBiscuit;
 import com.mcmoddev.cakeworld.entity.SoggyTridentProjectile;
+import com.mcmoddev.cakeworld.entity.SherbetOcelot;
 import com.mcmoddev.cakeworld.entity.SourSorcerer;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
 import com.mcmoddev.cakeworld.entity.SugarBee;
@@ -118,6 +119,7 @@ import net.minecraft.world.entity.MobType;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.LlamaFollowCaravanGoal;
+import net.minecraft.world.entity.ai.goal.WrappedGoal;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.sensing.GolemSensor;
 import net.minecraft.world.entity.ai.sensing.HoglinSpecificSensor;
@@ -129,10 +131,14 @@ import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.animal.Cat;
+import net.minecraft.world.entity.animal.Chicken;
 import net.minecraft.world.entity.animal.Cod;
 import net.minecraft.world.entity.animal.Fox;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.animal.MushroomCow;
+import net.minecraft.world.entity.animal.Ocelot;
+import net.minecraft.world.entity.animal.Rabbit;
+import net.minecraft.world.entity.animal.Turtle;
 import net.minecraft.world.entity.animal.goat.Goat;
 import net.minecraft.world.entity.animal.WaterAnimal;
 import net.minecraft.world.entity.animal.axolotl.Axolotl;
@@ -185,6 +191,7 @@ import net.minecraft.world.item.crafting.StonecutterRecipe;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.NaturalSpawner;
 import net.minecraft.world.level.block.Blocks;
@@ -3044,18 +3051,11 @@ public final class FirstBiteGameTests {
 				EntityType.GUARDIAN.create(helper.getLevel());
 		require(helper, monumentGuardian != null,
 				"Could not create monument Guardian conversion fixture");
-		var nearestCakeWorldBiome =
-				helper.getLevel().findNearestBiome(
-						holder -> holder.unwrapKey()
-								.map(key -> CakeWorld.MODID
-										.equals(key.location()
-												.getNamespace()))
-								.orElse(false),
-						anchor, 512, 4);
-		require(helper, nearestCakeWorldBiome != null,
-				"Could not locate a generated CakeWorld biome for monument Guardian conversion");
 		BlockPos monumentAnchor =
-				nearestCakeWorldBiome.getFirst();
+				findCakeWorldBiomePosition(
+						helper, anchor, 512);
+		require(helper, monumentAnchor != null,
+				"Could not locate a generated CakeWorld biome for monument Guardian conversion");
 		ResourceLocation fixtureBiome = helper.getLevel()
 				.getBiome(monumentAnchor).unwrapKey()
 				.map(key -> key.location()).orElse(null);
@@ -7605,6 +7605,589 @@ public final class FirstBiteGameTests {
 		vanillaShearCows.forEach(Entity::discard);
 		forgeShearCows.forEach(Entity::discard);
 		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void sherbetOcelotsKeepTrustPreyAndJungleRole(
+			GameTestHelper helper) {
+		SherbetOcelotProbe ocelot =
+				new SherbetOcelotProbe(helper.getLevel());
+		CompoundTag initialState = new CompoundTag();
+		ocelot.addAdditionalSaveData(initialState);
+		float healthBeforeFall = ocelot.getHealth();
+		boolean causedFallDamage = ocelot.causeFallDamage(
+				20.0F, 1.0F, DamageSource.FALL);
+		require(helper,
+				ocelot instanceof Ocelot
+						&& ocelot.getType()
+								== CakeWorldEntities
+										.SHERBET_OCELOT.get()
+						&& ocelot.getType().getCategory()
+								== MobCategory.CREATURE
+						&& close(ocelot.getMaxHealth(), 10.0D)
+						&& close(ocelot.getAttributeValue(
+								Attributes.MOVEMENT_SPEED),
+								0.3D)
+						&& close(ocelot.getAttributeValue(
+								Attributes.ATTACK_DAMAGE),
+								3.0D)
+						&& close(ocelot.getDimensions(
+								Pose.STANDING).width,
+								0.6D)
+						&& close(ocelot.getDimensions(
+								Pose.STANDING).height,
+								0.7D)
+						&& ocelot.getMaxSpawnClusterSize() == 4
+						&& ocelot.getAmbientSoundInterval()
+								== 900
+						&& !causedFallDamage
+						&& close(ocelot.getHealth(),
+								healthBeforeFall)
+						&& !initialState.getBoolean(
+								"Trusting")
+						&& ocelot.countGoalsNamed(
+								"OcelotAvoidEntityGoal")
+								== 1
+						&& ocelot.countTargetGoalsNamed(
+								"NearestAttackableTargetGoal")
+								== 2
+						&& ocelot.getLootTable().equals(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/sherbet_ocelot")),
+				"Sherbet Ocelot lost its genuine type, attributes, body, zero-fall, shy-goal, prey-goal, sound interval or loot contract");
+
+		ocelot.getMoveControl().setWantedPosition(
+				ocelot.getX() + 2.0D, ocelot.getY(),
+				ocelot.getZ(), 0.6D);
+		ocelot.customServerAiStep();
+		require(helper,
+				ocelot.getPose() == Pose.CROUCHING
+						&& ocelot.isSteppingCarefully()
+						&& !ocelot.isSprinting(),
+				"Sherbet Ocelot lost its scared/tempted crouching pose");
+		ocelot.getMoveControl().setWantedPosition(
+				ocelot.getX() + 4.0D, ocelot.getY(),
+				ocelot.getZ(), 1.33D);
+		ocelot.customServerAiStep();
+		require(helper,
+				ocelot.getPose() == Pose.STANDING
+						&& ocelot.isSprinting(),
+				"Sherbet Ocelot lost its attack/flee sprint pose");
+
+		require(helper,
+				ocelot.isFood(new ItemStack(Items.COD))
+						&& ocelot.isFood(
+								new ItemStack(Items.SALMON))
+						&& !ocelot.isFood(new ItemStack(
+								Items.TROPICAL_FISH)),
+				"Sherbet Ocelot lost its exact Cod/Salmon diet");
+
+		ServerPlayer trustingPlayer = new ServerPlayer(
+				helper.getLevel().getServer(),
+				helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2034"),
+						"CakeWorldSherbetOcelotTrustTest"));
+		BlockPos trustPos = helper.absolutePos(
+				new BlockPos(4, 2, 4));
+		ocelot.setPos(trustPos.getX() + 0.5D,
+				trustPos.getY(), trustPos.getZ() + 0.5D);
+		trustingPlayer.setPos(ocelot.getX() + 1.0D,
+				ocelot.getY(), ocelot.getZ());
+		trustingPlayer.setItemInHand(
+				InteractionHand.MAIN_HAND,
+				new ItemStack(Items.COD, 2));
+		helper.getLevel().players().add(trustingPlayer);
+		try {
+			require(helper, ocelot.startFishTemptation(),
+					"Sherbet Ocelot did not enter its real fish TemptGoal for a nearby player");
+			ocelot.seedRandom(0L);
+			InteractionResult trustResult = ocelot.mobInteract(
+					trustingPlayer, InteractionHand.MAIN_HAND);
+			CompoundTag trustedState = new CompoundTag();
+			ocelot.addAdditionalSaveData(trustedState);
+			require(helper,
+					trustResult.consumesAction()
+							&& trustingPlayer
+									.getItemInHand(
+											InteractionHand
+													.MAIN_HAND)
+									.getCount() == 1
+							&& trustedState.getBoolean(
+									"Trusting")
+							&& ocelot.countGoalsNamed(
+									"OcelotAvoidEntityGoal")
+									== 0,
+					"Sherbet Ocelot did not consume one fish, pass the deterministic one-in-three trust roll and remove player avoidance");
+
+			SherbetOcelotProbe restored =
+					new SherbetOcelotProbe(
+							helper.getLevel());
+			restored.readAdditionalSaveData(trustedState);
+			CompoundTag reloadedState = new CompoundTag();
+			restored.addAdditionalSaveData(reloadedState);
+			restored.setTestTickCount(2401);
+			require(helper,
+					reloadedState.getBoolean("Trusting")
+							&& restored.countGoalsNamed(
+									"OcelotAvoidEntityGoal")
+									== 0
+							&& !restored.removeWhenFarAway(
+									256.0D),
+					"Sherbet Ocelot lost trust NBT, trusted approach or trusted despawn immunity");
+		} finally {
+			helper.getLevel().players().remove(
+					trustingPlayer);
+		}
+
+		SherbetOcelotProbe oldUntrusted =
+				new SherbetOcelotProbe(helper.getLevel());
+		oldUntrusted.setTestTickCount(2401);
+		require(helper,
+				oldUntrusted.countGoalsNamed(
+						"OcelotAvoidEntityGoal") == 1
+						&& oldUntrusted.removeWhenFarAway(
+								256.0D),
+				"Old untrusted Sherbet Ocelot no longer uses vanilla conditional despawning");
+
+		SherbetOcelot partner =
+				CakeWorldEntities.SHERBET_OCELOT.get()
+						.create(helper.getLevel());
+		SherbetOcelot child = ocelot.getBreedOffspring(
+				helper.getLevel(), partner);
+		require(helper,
+				partner != null && child != null
+						&& child.getType()
+								== CakeWorldEntities
+										.SHERBET_OCELOT.get(),
+				"Sherbet Ocelot breeding leaked a literal Ocelot");
+
+		BlockPos preyPos = helper.absolutePos(
+				new BlockPos(7, 2, 7));
+		Chicken chicken = EntityType.CHICKEN.create(
+				helper.getLevel());
+		require(helper, chicken != null,
+				"Could not create Chicken prey fixture");
+		chicken.setPos(preyPos.getX() + 0.5D,
+				preyPos.getY(), preyPos.getZ() + 0.5D);
+		helper.getLevel().addFreshEntity(chicken);
+		SherbetOcelotProbe chickenHunter =
+				new SherbetOcelotProbe(helper.getLevel());
+		chickenHunter.setPos(chicken.getX() + 2.0D,
+				chicken.getY(), chicken.getZ());
+		require(helper,
+				chickenHunter.acquirePreyTarget(200)
+						&& chickenHunter.getTarget()
+								== chicken,
+				"Sherbet Ocelot did not select Chicken through its inherited prey goal");
+		Difficulty originalDifficulty =
+				helper.getLevel().getDifficulty();
+		try {
+			float chickenHealth = chicken.getHealth();
+			for (Difficulty safeDifficulty :
+					new Difficulty[] {
+							Difficulty.EASY,
+							Difficulty.NORMAL}) {
+				helper.getLevel().getServer().setDifficulty(
+						safeDifficulty, true);
+				chicken.removeAllEffects();
+				chicken.setHealth(chickenHealth);
+				chicken.setSecondsOnFire(5);
+				chicken.fallDistance = 7.0F;
+				chicken.setDeltaMovement(Vec3.ZERO);
+				require(helper,
+						chickenHunter
+								.doHurtTarget(chicken)
+								&& close(
+										chicken.getHealth(),
+										chickenHealth)
+								&& !chicken.isOnFire()
+								&& chicken.fallDistance
+										== 0.0F
+								&& chicken.hasEffect(
+										MobEffects
+												.MOVEMENT_SLOWDOWN)
+								&& chicken.hasEffect(
+										MobEffects
+												.SLOW_FALLING)
+								&& chicken.hasEffect(
+										MobEffects
+												.FIRE_RESISTANCE)
+								&& chicken.getEffect(
+										MobEffects
+												.DAMAGE_RESISTANCE)
+										.getAmplifier()
+										== 4,
+						safeDifficulty
+								+ " Sherbet Ocelot pounce caused health damage or lacked sticky rescue effects");
+			}
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			chicken.removeAllEffects();
+			chicken.invulnerableTime = 0;
+			require(helper,
+					chickenHunter.doHurtTarget(chicken)
+							&& close(chicken.getHealth(),
+									chickenHealth - 3.0D),
+					"Hard Sherbet Ocelot lost the exact three-point Ocelot prey attack");
+		} finally {
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+		chicken.discard();
+
+		Turtle babyTurtle = EntityType.TURTLE.create(
+				helper.getLevel());
+		require(helper, babyTurtle != null,
+				"Could not create baby Turtle prey fixture");
+		babyTurtle.setBaby(true);
+		babyTurtle.setPos(preyPos.getX() + 4.5D,
+				preyPos.getY(), preyPos.getZ() + 0.5D);
+		helper.getLevel().addFreshEntity(babyTurtle);
+		SherbetOcelotProbe turtleHunter =
+				new SherbetOcelotProbe(helper.getLevel());
+		turtleHunter.setPos(babyTurtle.getX() + 2.0D,
+				babyTurtle.getY(), babyTurtle.getZ());
+		require(helper,
+				!babyTurtle.isInWater()
+						&& turtleHunter.acquirePreyTarget(
+								300)
+						&& turtleHunter.getTarget()
+								== babyTurtle,
+				"Sherbet Ocelot did not select a baby Turtle on land through its inherited prey goal");
+		babyTurtle.discard();
+
+		Turtle adultTurtle = EntityType.TURTLE.create(
+				helper.getLevel());
+		Rabbit rabbit = EntityType.RABBIT.create(
+				helper.getLevel());
+		require(helper, adultTurtle != null && rabbit != null,
+				"Could not create non-prey fixtures");
+		adultTurtle.setPos(preyPos.getX() + 8.5D,
+				preyPos.getY(), preyPos.getZ() + 0.5D);
+		rabbit.setPos(preyPos.getX() + 9.5D,
+				preyPos.getY(), preyPos.getZ() + 0.5D);
+		helper.getLevel().addFreshEntity(adultTurtle);
+		helper.getLevel().addFreshEntity(rabbit);
+		SherbetOcelotProbe selectiveHunter =
+				new SherbetOcelotProbe(helper.getLevel());
+		selectiveHunter.setPos(preyPos.getX() + 7.0D,
+				preyPos.getY(), preyPos.getZ() + 0.5D);
+		require(helper,
+				!selectiveHunter.acquirePreyTarget(400)
+						&& selectiveHunter.getTarget()
+								== null,
+				"Sherbet Ocelot incorrectly targets adult Turtles or Rabbits in 1.18.2");
+
+		int seaLevel = helper.getLevel().getSeaLevel();
+		BlockPos localSpawn = helper.absolutePos(
+				new BlockPos(5, 2, 5));
+		BlockPos spawnPos = new BlockPos(localSpawn.getX(),
+				seaLevel + 1, localSpawn.getZ());
+		helper.getLevel().setBlock(spawnPos.below(),
+				CakeWorldBlocks.CHOCOLATE_SPONGE.get()
+						.defaultBlockState(), 3);
+		helper.getLevel().setBlock(spawnPos,
+				Blocks.AIR.defaultBlockState(), 3);
+		helper.getLevel().setBlock(spawnPos.above(),
+				Blocks.AIR.defaultBlockState(), 3);
+		SherbetOcelot spawnProbe =
+				CakeWorldEntities.SHERBET_OCELOT.get()
+						.create(helper.getLevel());
+		require(helper, spawnProbe != null,
+				"Could not create Sherbet Ocelot spawn fixture");
+		spawnProbe.setPos(spawnPos.getX() + 0.5D,
+				spawnPos.getY(), spawnPos.getZ() + 0.5D);
+		Random rejectCandidate = new Random() {
+			@Override
+			public int nextInt(int bound) {
+				return 0;
+			}
+		};
+		Random acceptCandidate = new Random() {
+			@Override
+			public int nextInt(int bound) {
+				return 1;
+			}
+		};
+		require(helper,
+				helper.getLevel()
+						.getBlockState(spawnPos.below())
+						.is(SherbetOcelot.SPAWNABLE_ON)
+						&& spawnProbe.checkSpawnObstruction(
+								helper.getLevel())
+						&& !SherbetOcelot
+								.checkSherbetOcelotSpawnRules(
+										CakeWorldEntities
+												.SHERBET_OCELOT
+												.get(),
+										helper.getLevel(),
+										MobSpawnType.NATURAL,
+										spawnPos,
+										rejectCandidate)
+						&& SherbetOcelot
+								.checkSherbetOcelotSpawnRules(
+										CakeWorldEntities
+												.SHERBET_OCELOT
+												.get(),
+										helper.getLevel(),
+										MobSpawnType.NATURAL,
+										spawnPos,
+										acceptCandidate)
+						&& SpawnPlacements
+								.getPlacementType(
+										CakeWorldEntities
+												.SHERBET_OCELOT
+												.get())
+								== SpawnPlacements.Type.ON_GROUND
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+												.SHERBET_OCELOT
+												.get())
+								== Heightmap.Types
+										.MOTION_BLOCKING_NO_LEAVES,
+				"Sherbet Ocelot lost edible obstruction, exact two-thirds probability or registered ground placement");
+		BlockPos lowPos = new BlockPos(spawnPos.getX(),
+				seaLevel - 1, spawnPos.getZ());
+		helper.getLevel().setBlock(lowPos.below(),
+				CakeWorldBlocks.GUMMY_BLOCK.get()
+						.defaultBlockState(), 3);
+		helper.getLevel().setBlock(lowPos,
+				Blocks.AIR.defaultBlockState(), 3);
+		helper.getLevel().setBlock(lowPos.above(),
+				Blocks.AIR.defaultBlockState(), 3);
+		spawnProbe.setPos(lowPos.getX() + 0.5D,
+				lowPos.getY(), lowPos.getZ() + 0.5D);
+		require(helper,
+				helper.getLevel().getBlockState(
+						lowPos.below())
+						.is(SherbetOcelot.SPAWNABLE_ON)
+						&& !spawnProbe.checkSpawnObstruction(
+								helper.getLevel()),
+				"Sherbet Ocelot ignored the vanilla sea-level obstruction boundary");
+
+		MobSpawnSettingsBuilder futureSpawns =
+				new MobSpawnSettingsBuilder(
+						MobSpawnSettings.EMPTY);
+		BiomeLoadingEvent futureJungle =
+				new BiomeLoadingEvent(
+						new ResourceLocation(
+								CakeWorld.MODID,
+								"gummy_jungle"),
+						null, null, null,
+						new BiomeGenerationSettingsBuilder(
+								BiomeGenerationSettings
+										.EMPTY),
+						futureSpawns);
+		CakeWorldCreatureSpawns.onBiomeLoading(
+				futureJungle);
+		MobSpawnSettings.SpawnerData futureSpawn =
+				futureSpawns
+						.getSpawner(MobCategory.MONSTER)
+						.stream()
+						.filter(spawn -> spawn.type
+								== CakeWorldEntities
+										.SHERBET_OCELOT
+										.get())
+						.findFirst().orElse(null);
+		require(helper,
+				futureSpawn != null
+						&& futureSpawn.getWeight().asInt() == 2
+						&& futureSpawn.minCount == 1
+						&& futureSpawn.maxCount == 3
+						&& futureSpawns
+								.getSpawner(
+										MobCategory.MONSTER)
+								.stream().noneMatch(
+										spawn -> spawn.type
+												== EntityType.OCELOT)
+						&& futureSpawns
+								.getSpawner(
+										MobCategory.CREATURE)
+								.stream().noneMatch(
+										spawn -> spawn.type
+												== CakeWorldEntities
+														.SHERBET_OCELOT
+														.get()),
+				"Future Gummy Jungle hook lost vanilla Jungle's deliberate MONSTER-list 2/1-3 Ocelot profile");
+
+		MobSpawnSettingsBuilder futureDunesSpawns =
+				new MobSpawnSettingsBuilder(
+						MobSpawnSettings.EMPTY);
+		BiomeLoadingEvent futureDunes =
+				new BiomeLoadingEvent(
+						new ResourceLocation(
+								CakeWorld.MODID,
+								"sherbet_dunes"),
+						null, null, null,
+						new BiomeGenerationSettingsBuilder(
+								BiomeGenerationSettings
+										.EMPTY),
+						futureDunesSpawns);
+		CakeWorldCreatureSpawns.onBiomeLoading(
+				futureDunes);
+		MobSpawnSettings.SpawnerData dunesSpawn =
+				futureDunesSpawns
+						.getSpawner(MobCategory.MONSTER)
+						.stream()
+						.filter(spawn -> spawn.type
+								== CakeWorldEntities
+										.SHERBET_OCELOT
+										.get())
+						.findFirst().orElse(null);
+		require(helper,
+				dunesSpawn != null
+						&& dunesSpawn.getWeight().asInt() == 1
+						&& dunesSpawn.minCount == 1
+						&& dunesSpawn.maxCount == 1
+						&& futureDunesSpawns
+								.getSpawner(
+										MobCategory.MONSTER)
+								.stream().noneMatch(
+										spawn -> spawn.type
+												== EntityType.OCELOT)
+						&& futureDunesSpawns
+								.getSpawner(
+										MobCategory.CREATURE)
+								.stream().noneMatch(
+										spawn -> spawn.type
+												== CakeWorldEntities
+														.SHERBET_OCELOT
+														.get()),
+				"Future Sherbet Dunes hook lost its rare MONSTER-list 1/1-1 desert-edge profile");
+
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS
+						.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS
+						.getId())) {
+			Biome biome = helper.getLevel()
+					.registryAccess()
+					.registryOrThrow(
+							Registry.BIOME_REGISTRY)
+					.get(biomeId);
+			require(helper,
+					biome != null
+							&& List.of(
+									MobCategory.MONSTER,
+									MobCategory.CREATURE)
+									.stream().allMatch(
+											category -> biome
+													.getMobSettings()
+													.getMobs(category)
+													.unwrap().stream()
+													.noneMatch(spawn ->
+															spawn.type
+																	== EntityType
+																			.OCELOT
+															|| spawn.type
+																	== CakeWorldEntities
+																			.SHERBET_OCELOT
+																			.get())),
+					"Current biome leaked Ocelot/Sherbet Ocelot spawning before Gummy Jungle exists: "
+							+ biomeId);
+		}
+
+		require(helper,
+				CakeWorldItems.SHERBET_OCELOT_SPAWN_EGG
+						.isPresent(),
+				"Sherbet Ocelot lost its creative/testing egg");
+		ServerPlayer advancementPlayer = new ServerPlayer(
+				helper.getLevel().getServer(),
+				helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed3034"),
+						"CakeWorldSherbetOcelotRoleTest"));
+		VanillaRoleAdvancements.creditBredRole(
+				advancementPlayer,
+				CakeWorldEntities.SHERBET_OCELOT.get());
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:husbandry/bred_all_animals",
+				"minecraft:ocelot");
+
+		chicken.discard();
+		babyTurtle.discard();
+		adultTurtle.discard();
+		rabbit.discard();
+		helper.getLevel().setBlock(spawnPos.below(),
+				Blocks.AIR.defaultBlockState(), 3);
+		helper.getLevel().setBlock(lowPos.below(),
+				Blocks.AIR.defaultBlockState(), 3);
+		helper.succeed();
+	}
+
+	private static final class SherbetOcelotProbe
+			extends SherbetOcelot {
+		private SherbetOcelotProbe(Level level) {
+			super(CakeWorldEntities.SHERBET_OCELOT.get(),
+					level);
+		}
+
+		private void seedRandom(long seed) {
+			random.setSeed(seed);
+		}
+
+		private void setTestTickCount(int ticks) {
+			tickCount = ticks;
+		}
+
+		private int countGoalsNamed(String name) {
+			return (int)goalSelector.getAvailableGoals()
+					.stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
+		}
+
+		private int countTargetGoalsNamed(String name) {
+			return (int)targetSelector.getAvailableGoals()
+					.stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
+		}
+
+		private boolean startFishTemptation() {
+			for (WrappedGoal wrapped :
+					goalSelector.getAvailableGoals()) {
+				if ("OcelotTemptGoal".equals(wrapped
+						.getGoal().getClass()
+						.getSimpleName())
+						&& wrapped.canUse()) {
+					wrapped.start();
+					return wrapped.isRunning();
+				}
+			}
+			return false;
+		}
+
+		private boolean acquirePreyTarget(int attempts) {
+			for (int attempt = 0; attempt < attempts;
+					attempt++) {
+				for (WrappedGoal wrapped :
+						targetSelector.getAvailableGoals()) {
+					if ("NearestAttackableTargetGoal"
+							.equals(wrapped.getGoal()
+									.getClass()
+									.getSimpleName())
+							&& wrapped.canUse()) {
+						wrapped.start();
+						return getTarget() != null;
+					}
+				}
+			}
+			return false;
+		}
 	}
 
 	private static FoodProperties requireFood(GameTestHelper helper, ItemStack stack) {

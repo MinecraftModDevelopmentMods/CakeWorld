@@ -64,7 +64,19 @@ public final class CakeWorldCreatureSpawns {
 					CakeWorldEntities.CUPCAKE_COW,
 					8, 4, 8);
 		}
+		if ("gummy_jungle".equals(biome.getPath())) {
+			// Ocelots are CREATURE entities, but 1.18.2 deliberately
+			// places Jungle Ocelots in the MONSTER spawn-cap list.
+			replace(event, MobCategory.MONSTER,
+					EntityType.OCELOT,
+					CakeWorldEntities.SHERBET_OCELOT,
+					2, 1, 3);
+		}
 		if ("sherbet_dunes".equals(biome.getPath())) {
+			replace(event, MobCategory.MONSTER,
+					EntityType.OCELOT,
+					CakeWorldEntities.SHERBET_OCELOT,
+					1, 1, 1);
 			replace(event, MobCategory.MONSTER, EntityType.HUSK,
 					CakeWorldEntities.DRIED_CRUMBLER, 80, 4, 4);
 		}

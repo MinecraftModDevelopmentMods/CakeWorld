@@ -34,6 +34,7 @@ import com.mcmoddev.cakeworld.entity.SodaCod;
 import com.mcmoddev.cakeworld.entity.SodaDolphin;
 import com.mcmoddev.cakeworld.entity.SoggyBiscuit;
 import com.mcmoddev.cakeworld.entity.SoggyTridentProjectile;
+import com.mcmoddev.cakeworld.entity.SherbetOcelot;
 import com.mcmoddev.cakeworld.entity.SourSorcerer;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
 import com.mcmoddev.cakeworld.entity.SugarBee;
@@ -58,6 +59,7 @@ import net.minecraft.world.entity.animal.Fox;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.entity.animal.MushroomCow;
+import net.minecraft.world.entity.animal.Ocelot;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.animal.Sheep;
 import net.minecraft.world.entity.animal.goat.Goat;
@@ -124,6 +126,12 @@ public final class CakeWorldEntities {
 							MobCategory.CREATURE)
 							.sized(0.6F, 0.7F)
 							.clientTrackingRange(8));
+	public static final RegistryObject<EntityType<SherbetOcelot>>
+			SHERBET_OCELOT = entity("sherbet_ocelot",
+					EntityType.Builder.of(SherbetOcelot::new,
+							MobCategory.CREATURE)
+							.sized(0.6F, 0.7F)
+							.clientTrackingRange(10));
 	public static final RegistryObject<EntityType<DeepLiquoriceWeaver>>
 			DEEP_LIQUORICE_WEAVER = entity("deep_liquorice_weaver",
 					EntityType.Builder.of(DeepLiquoriceWeaver::new,
@@ -347,6 +355,8 @@ public final class CakeWorldEntities {
 		event.put(BONBON_BAT.get(), Bat.createAttributes().build());
 		event.put(SUGAR_BEE.get(), Bee.createAttributes().build());
 		event.put(CUSTARD_CAT.get(), Cat.createAttributes().build());
+		event.put(SHERBET_OCELOT.get(),
+				Ocelot.createAttributes().build());
 		event.put(DEEP_LIQUORICE_WEAVER.get(),
 				CaveSpider.createCaveSpider().build());
 		event.put(SODA_COD.get(), Cod.createMobAttributes().build());
@@ -424,6 +434,10 @@ public final class CakeWorldEntities {
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					Animal::checkAnimalSpawnRules);
+			SpawnPlacements.register(SHERBET_OCELOT.get(),
+					SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					SherbetOcelot::checkSherbetOcelotSpawnRules);
 			SpawnPlacements.register(DEEP_LIQUORICE_WEAVER.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,

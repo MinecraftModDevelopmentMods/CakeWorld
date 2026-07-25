@@ -129,9 +129,9 @@ ambient loop, climate, neighbouring-biome logic, and OreSpawn mechanism.
 | BIO-OW-002 | Core | 3 | Gingerbread Hearthlands | Gingerbread villages, candy-cane roads, Cookbook libraries, wafer windmills, orchards, and friendly trade. |
 | BIO-OW-003 | Core | 1 | Cookie Crumb Forest | Biscuit paths, wafer trunks, cookie canopies, hidden crumb burrows, and Mallow Chicks. |
 | BIO-OW-004 | Expansion | 3 | Peppermint Pinewoods | Striped trunks, cool mint air, chiming branches, frosted clearings, and Peppermint Foxes. |
-| BIO-OW-005 | Expansion | 3 | Gummy Jungle | Translucent foliage, elastic vines, jelly pools, bright canopy layers, and bouncing wildlife. |
+| BIO-OW-005 | Expansion | 3 | Gummy Jungle | Translucent foliage, elastic vines, jelly pools, bright canopy layers, bouncing wildlife, and shy Sherbet Ocelots. |
 | BIO-OW-006 | Core | 2 | Caramel Bogs | Sticky ground, treacle reeds, toffee mangroves, covered caramel deposits, and slow safe routes. |
-| BIO-OW-007 | Expansion | 3 | Sherbet Dunes | Coloured powder dunes, fizzy dust weather, buried sweet jars, sugar fossils, and Sherbet Ocelots. |
+| BIO-OW-007 | Expansion | 3 | Sherbet Dunes | Coloured powder dunes, fizzy dust weather, buried sweet jars, sugar fossils, and rare Sherbet Ocelots. |
 | BIO-OW-008 | Core | 2 | Candy-Cane Badlands | Dramatic striped geological layers, crystal mines, wafer mesas, and visible OreSpawn formation boundaries. |
 | BIO-OW-009 | Core | 3 | Marshmallow Peaks | Soft summits, icing snow, Candyfloss Sheep, cloud bridges, and safe bouncing descents. |
 | BIO-OW-010 | Expansion | 3 | Ice-Cream Tundra | Scoop-shaped hills, frozen lemonade lakes, wafer igloos, Vanilla-Ice Bears, and cooling foods. |
@@ -267,7 +267,7 @@ document explicitly says otherwise.
 | MOB-031 | `minecraft:magma_cube` | Hot-Fudge Blob | Size-scaled, fireproof elastic Nether hazard retaining Magma Cube jumps, splitting, freeze vulnerability and magma-cream progression; sticky protected contact below Hard and real size-scaled collision damage on Hard. Ordinary Fudge Wastes spawns are replaced in the biome list, while fresh literal Nether-Fortress spawns are converted only inside CakeWorld biomes. |
 | MOB-032 | `minecraft:mule` | Marzipan Mule | Sterile rideable pack-animal hybrid created by Gingerbread Pony and Dough Donkey from either parent direction; retains inherited physical attributes, chest storage, saddle, rider control, charged jump, food, fall behavior and leather progression without open-biome spawning. |
 | MOB-033 | `minecraft:mooshroom` | Cupcake Cow | Red/brown garden cow retaining bowl stew, flower-fed suspicious stew, lightning switching, variant inheritance, shearing and exact food/loot progression. Shearing turns it into Cocoa Cow rather than leaking a vanilla Cow. Its exact Mushroom Fields spawn profile is reserved for Cupcake Gardens. |
-| MOB-034 | `minecraft:ocelot` | Sherbet Ocelot | Shy jungle/desert-edge animal preserving trust behaviour. |
+| MOB-034 | `minecraft:ocelot` | Sherbet Ocelot | Shy Gummy Jungle and desert-edge hunter retaining fish temptation and one-in-three trust, player avoidance until trusted, stalking poses, chicken and baby-on-land Turtle prey, breeding, conditional despawn, zero fall damage, exact empty loot and progression roles. Pounces are sticky and protective below Hard; Hard restores the exact three-point prey attack. Its dormant Gummy Jungle hook deliberately uses the unusual vanilla Jungle `MONSTER` spawn-cap list at weight 2 in groups of 1-3 even though the entity itself remains a creature; Sherbet Dunes adds a rare 1/1-1 encounter in that same cap list. |
 | MOB-035 | `minecraft:panda` | Chocolate Panda | Bamboo-role animal adapted to edible cane vegetation. |
 | MOB-036 | `minecraft:parrot` | Lollipop Lorikeet | Tameable mimic and shoulder companion. |
 | MOB-037 | `minecraft:phantom` | Wafer Wraith | Sleep-pressure role using swoops and displacement below Hard. |
