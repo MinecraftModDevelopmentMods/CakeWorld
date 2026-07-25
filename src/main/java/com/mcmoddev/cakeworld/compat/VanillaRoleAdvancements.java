@@ -140,6 +140,11 @@ public final class VanillaRoleAdvancements {
 		award(player, KILL_ALL, "minecraft:husk");
 	}
 
+	public static void creditKilledMagmaCubeRole(
+			ServerPlayer player) {
+		award(player, KILL_ALL, "minecraft:magma_cube");
+	}
+
 	public static void creditKilledEndermanRole(ServerPlayer player) {
 		award(player, KILL_ALL, "minecraft:enderman");
 	}
@@ -192,6 +197,9 @@ public final class VanillaRoleAdvancements {
 		}
 		if (type == CakeWorldEntities.DRIED_CRUMBLER.get()) {
 			return "minecraft:husk";
+		}
+		if (type == CakeWorldEntities.HOT_FUDGE_BLOB.get()) {
+			return "minecraft:magma_cube";
 		}
 		if (type == CakeWorldEntities.TAFFY_TALLWALKER.get()) {
 			return "minecraft:enderman";

@@ -45,6 +45,8 @@ import com.mcmoddev.cakeworld.entity.GlowJelly;
 import com.mcmoddev.cakeworld.entity.GumballGuardian;
 import com.mcmoddev.cakeworld.entity.FudgeBoar;
 import com.mcmoddev.cakeworld.entity.GingerbreadPony;
+import com.mcmoddev.cakeworld.entity.HotFudgeBlob;
+import com.mcmoddev.cakeworld.entity.HotFudgeBlobDamageSafety;
 import com.mcmoddev.cakeworld.entity.JawbreakerGuardian;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.MallowFloater;
@@ -91,6 +93,7 @@ import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.Difficulty;
@@ -102,6 +105,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.GlowSquid;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -142,6 +146,7 @@ import net.minecraft.world.entity.monster.Giant;
 import net.minecraft.world.entity.monster.Guardian;
 import net.minecraft.world.entity.monster.Husk;
 import net.minecraft.world.entity.monster.Illusioner;
+import net.minecraft.world.entity.monster.MagmaCube;
 import net.minecraft.world.entity.monster.Pillager;
 import net.minecraft.world.entity.monster.Ravager;
 import net.minecraft.world.entity.monster.Vex;
@@ -185,7 +190,9 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.MobSpawnSettings;
 import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.levelgen.feature.NetherFortressFeature;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
+import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 import net.minecraft.world.entity.raid.Raid;
 import net.minecraft.world.entity.vehicle.Boat;
 import net.minecraft.world.phys.BlockHitResult;
@@ -198,6 +205,7 @@ import net.minecraftforge.event.entity.EntityMountEvent;
 import net.minecraftforge.common.util.FakePlayerFactory;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
+import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.world.BlockEvent;
 import com.mcmoddev.cakeworld.world.StarterPicnicFeature;
@@ -209,6 +217,7 @@ import com.mcmoddev.cakeworld.world.CakeWorldGiantReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldGuardianReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldIllusionerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldIronGolemReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldMagmaCubeReplacement;
 
 @GameTestHolder(CakeWorld.MODID)
 @PrefixGameTestTemplate(false)
@@ -5990,18 +5999,11 @@ public final class FirstBiteGameTests {
 		require(helper, raider.getNoActionTime() == 0,
 				"Jawbreaker Guardian did not preserve active Raider-versus-golem combat");
 
-		var nearestCakeWorldBiome =
-				helper.getLevel().findNearestBiome(
-						holder -> holder.unwrapKey()
-								.map(key -> CakeWorld.MODID
-										.equals(key.location()
-												.getNamespace()))
-								.orElse(false),
-						anchor, 512, 4);
-		require(helper, nearestCakeWorldBiome != null,
-				"Could not locate CakeWorld terrain for Iron Golem conversion");
 		BlockPos conversionPos =
-				nearestCakeWorldBiome.getFirst();
+				findCakeWorldBiomePosition(
+						helper, anchor, 512);
+		require(helper, conversionPos != null,
+				"Could not locate CakeWorld terrain for Iron Golem conversion");
 		IronGolem literal =
 				EntityType.IRON_GOLEM.create(
 						helper.getLevel());
@@ -6032,11 +6034,48 @@ public final class FirstBiteGameTests {
 				"minecraft:adventure/summon_iron_golem",
 				"summoned_golem");
 		literal.startRiding(ravager, true);
+		// Riding can reposition the passenger across a vertical 3D-biome
+		// boundary; keep this conversion fixture at the already matched
+		// CakeWorld coordinate while retaining its vehicle relationship.
+		literal.moveTo(conversionPos.getX(),
+				conversionPos.getY(),
+				conversionPos.getZ(), 29.0F, 0.0F);
 		JawbreakerGuardian converted =
 				CakeWorldIronGolemReplacement
 						.replaceIfInCakeWorldBiome(
 								helper.getLevel(),
 								literal);
+		String conversionState = converted == null
+				? "converted=null, literalRemoved="
+						+ literal.isRemoved()
+				: "type=" + converted.getType()
+						+ ", literalRemoved="
+						+ literal.isRemoved()
+						+ ", health="
+						+ converted.getHealth()
+						+ ", crack="
+						+ converted.getCrackiness()
+						+ ", name="
+						+ converted.getCustomName()
+						+ ", persistent="
+						+ converted.isPersistenceRequired()
+						+ ", noAi="
+						+ converted.isNoAi()
+						+ ", playerCreated="
+						+ converted.isPlayerCreated()
+						+ ", angerTime="
+						+ converted
+								.getRemainingPersistentAngerTime()
+						+ ", angerTarget="
+						+ converted.getPersistentAngerTarget()
+						+ ", expectedTarget="
+						+ player.getUUID()
+						+ ", yRot="
+						+ converted.getYRot()
+						+ ", vehicle="
+						+ converted.getVehicle()
+						+ ", expectedVehicle="
+						+ ravager;
 		require(helper,
 				converted != null
 						&& literal.isRemoved()
@@ -6061,7 +6100,8 @@ public final class FirstBiteGameTests {
 								.getPersistentAngerTarget())
 						&& close(converted.getYRot(), 29.0D)
 						&& converted.getVehicle() == ravager,
-				"Literal Iron Golem conversion lost type, NBT, crack, loyalty, anger, rotation, or vehicle state");
+				"Literal Iron Golem conversion lost type, NBT, crack, loyalty, anger, rotation, or vehicle state: "
+						+ conversionState);
 
 		for (ResourceLocation biomeId :
 				new ResourceLocation[] {
@@ -6549,10 +6589,412 @@ public final class FirstBiteGameTests {
 		});
 	}
 
+	@GameTest(template = EMPTY)
+	public static void hotFudgeBlobsKeepSizesJumpsSplitsCreamAndSafeContact(
+			GameTestHelper helper) {
+		var blob = new HotFudgeBlob(
+				CakeWorldEntities.HOT_FUDGE_BLOB.get(),
+				helper.getLevel()) {
+			public int sampleJumpDelay() {
+				return getJumpDelay();
+			}
+
+			public float sampleAttackDamage() {
+				return getAttackDamage();
+			}
+
+			public void performGroundJump() {
+				jumpFromGround();
+			}
+
+			public void performLavaJump() {
+				jumpInLiquid(FluidTags.LAVA);
+			}
+		};
+		Pig target = EntityType.PIG.create(helper.getLevel());
+		require(helper, target != null,
+				"Could not create Hot-Fudge Blob contact target");
+		CompoundTag largeState = new CompoundTag();
+		largeState.putInt("Size", 3);
+		blob.readAdditionalSaveData(largeState);
+		blob.setHealth(blob.getMaxHealth());
+		BlockPos anchor = helper.absolutePos(
+				new BlockPos(1, 2, 1));
+		blob.setPos(anchor.getX(), anchor.getY(),
+				anchor.getZ());
+		blob.setNoAi(true);
+		target.setPos(anchor.getX() + 0.25D,
+				anchor.getY(), anchor.getZ());
+		target.setNoAi(true);
+		helper.getLevel().addFreshEntity(blob);
+		helper.getLevel().addFreshEntity(target);
+
+		int jumpDelay = blob.sampleJumpDelay();
+		blob.setDeltaMovement(Vec3.ZERO);
+		blob.performGroundJump();
+		double groundJump = blob.getDeltaMovement().y;
+		blob.setDeltaMovement(Vec3.ZERO);
+		blob.performLavaJump();
+		double lavaJump = blob.getDeltaMovement().y;
+		require(helper,
+				blob instanceof MagmaCube
+						&& blob.getType()
+								== CakeWorldEntities
+										.HOT_FUDGE_BLOB.get()
+						&& blob.getType().getCategory()
+								== MobCategory.MONSTER
+						&& blob.getSize() == 4
+						&& close(blob.getMaxHealth(), 16.0D)
+						&& close(blob.getAttributeValue(
+								Attributes.MOVEMENT_SPEED),
+								0.6D)
+						&& close(blob.getAttributeValue(
+								Attributes.ATTACK_DAMAGE),
+								4.0D)
+						&& close(blob.getAttributeValue(
+								Attributes.ARMOR), 12.0D)
+						&& close(blob.sampleAttackDamage(),
+								6.0D)
+						&& close(blob.getDimensions(
+								Pose.STANDING).width,
+								2.0808D)
+						&& close(blob.getDimensions(
+								Pose.STANDING).height,
+								2.0808D)
+						&& jumpDelay >= 40
+						&& jumpDelay <= 116
+						&& close(groundJump, 0.82D)
+						&& close(lavaJump, 0.42D),
+				"Hot-Fudge Blob lost Magma Cube size-four health, speed, damage, armour, body or jump scaling");
+		require(helper,
+				blob.fireImmune()
+						&& !blob.isOnFire()
+						&& close(blob.getBrightness(), 1.0D)
+						&& !blob.causeFallDamage(
+								100.0F, 1.0F,
+								DamageSource.FALL),
+				"Hot-Fudge Blob lost its fire immunity, full brightness or fall immunity");
+
+		for (Difficulty safeDifficulty :
+				new Difficulty[] {
+						Difficulty.PEACEFUL,
+						Difficulty.EASY,
+						Difficulty.NORMAL}) {
+			target.setPos(anchor.getX() + 0.25D,
+					anchor.getY(), anchor.getZ());
+			target.removeAllEffects();
+			target.setHealth(10.0F);
+			target.invulnerableTime = 0;
+			target.setSecondsOnFire(5);
+			target.fallDistance = 12.0F;
+			target.setDeltaMovement(Vec3.ZERO);
+			LivingHurtEvent protectedHit =
+					new LivingHurtEvent(target,
+							DamageSource.mobAttack(blob),
+							blob.sampleAttackDamage());
+			HotFudgeBlobDamageSafety
+					.applyForDifficulty(
+							protectedHit,
+							safeDifficulty);
+			require(helper,
+					protectedHit.isCanceled()
+							&& close(target.getHealth(), 10.0D)
+							&& !target.isOnFire()
+							&& target.fallDistance == 0.0F
+							&& target.hasEffect(
+									MobEffects
+											.MOVEMENT_SLOWDOWN)
+							&& target.getEffect(
+									MobEffects
+											.MOVEMENT_SLOWDOWN)
+									.getAmplifier() == 1
+							&& target.hasEffect(
+									MobEffects.GLOWING)
+							&& target.hasEffect(
+									MobEffects.SLOW_FALLING)
+							&& target.hasEffect(
+									MobEffects.FIRE_RESISTANCE)
+							&& target.getEffect(
+									MobEffects
+											.DAMAGE_RESISTANCE)
+									.getAmplifier() == 4
+							&& target.getDeltaMovement()
+									.lengthSqr() > 0.0D,
+					safeDifficulty
+							+ " Hot-Fudge Blob did not cancel contact or lost its sticky protected bounce");
+		}
+		target.removeAllEffects();
+		target.setDeltaMovement(Vec3.ZERO);
+		LivingHurtEvent hardHit = new LivingHurtEvent(
+				target, DamageSource.mobAttack(blob),
+				blob.sampleAttackDamage());
+		HotFudgeBlobDamageSafety.applyForDifficulty(
+				hardHit, Difficulty.HARD);
+		require(helper,
+				!hardHit.isCanceled()
+						&& close(hardHit.getAmount(), 6.0D)
+						&& target.getActiveEffects().isEmpty()
+						&& target.getDeltaMovement()
+								.equals(Vec3.ZERO),
+				"Hard size-four Hot-Fudge Blob did not retain an unmodified six-point Magma Cube contact");
+		target.discard();
+		blob.discard();
+
+		HotFudgeBlob tiny =
+				CakeWorldEntities.HOT_FUDGE_BLOB.get()
+						.create(helper.getLevel());
+		require(helper, tiny != null,
+				"Could not create tiny Hot-Fudge Blob fixture");
+		CompoundTag tinyState = new CompoundTag();
+		tinyState.putInt("Size", 0);
+		tiny.readAdditionalSaveData(tinyState);
+		require(helper,
+				tiny.isTiny()
+						&& close(tiny.getMaxHealth(), 1.0D)
+						&& close(tiny.getAttributeValue(
+								Attributes.MOVEMENT_SPEED),
+								0.3D)
+						&& close(tiny.getAttributeValue(
+								Attributes.ATTACK_DAMAGE),
+								1.0D)
+						&& close(tiny.getAttributeValue(
+								Attributes.ARMOR), 3.0D)
+						&& close(tiny.getDimensions(
+								Pose.STANDING).width,
+								0.5202D)
+						&& tiny.getLootTable().equals(
+								BuiltInLootTables.EMPTY)
+						&& blob.getLootTable().equals(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/hot_fudge_blob")),
+				"Hot-Fudge Blob lost tiny size scaling or size-gated magma-cream loot");
+
+		HotFudgeBlob parent =
+				CakeWorldEntities.HOT_FUDGE_BLOB.get()
+						.create(helper.getLevel());
+		require(helper, parent != null,
+				"Could not create Hot-Fudge Blob split fixture");
+		parent.readAdditionalSaveData(largeState);
+		BlockPos splitPos = anchor;
+		parent.setPos(splitPos.getX(), splitPos.getY(),
+				splitPos.getZ());
+		parent.setCustomName(new TextComponent(
+				"Family Fudge"));
+		parent.setPersistenceRequired();
+		parent.setNoAi(true);
+		parent.setInvulnerable(true);
+		helper.getLevel().addFreshEntity(parent);
+		parent.setHealth(0.0F);
+		parent.remove(Entity.RemovalReason.KILLED);
+		List<HotFudgeBlob> children = helper.getLevel()
+				.getEntitiesOfClass(HotFudgeBlob.class,
+						new AABB(splitPos).inflate(3.0D));
+		require(helper,
+				parent.isRemoved()
+						&& children.size() >= 2
+						&& children.size() <= 4
+						&& children.stream().allMatch(child ->
+								child.getType()
+										== CakeWorldEntities
+												.HOT_FUDGE_BLOB
+												.get()
+										&& child.getSize() == 2
+										&& close(child.getHealth(),
+												4.0D)
+										&& child.isPersistenceRequired()
+										&& child.isNoAi()
+										&& child.isInvulnerable()
+										&& child.hasCustomName()
+										&& "Family Fudge".equals(
+												child.getName()
+														.getString())),
+				"Hot-Fudge Blob split leaked literal Magma Cubes or lost child size, health, name, persistence, AI or invulnerability");
+		children.forEach(Entity::discard);
+
+		BlockPos spawnPos = anchor;
+		helper.getLevel().setBlock(spawnPos.below(),
+				CakeWorldBlocks.FUDGE_ROCK.get()
+						.defaultBlockState(), 3);
+		helper.getLevel().setBlock(spawnPos,
+				Blocks.AIR.defaultBlockState(), 3);
+		helper.getLevel().setBlock(spawnPos.above(),
+				Blocks.AIR.defaultBlockState(), 3);
+		require(helper,
+				!HotFudgeBlob.allowsNaturalSpawn(
+						Difficulty.PEACEFUL)
+						&& HotFudgeBlob.allowsNaturalSpawn(
+								Difficulty.EASY)
+						&& HotFudgeBlob.allowsNaturalSpawn(
+								Difficulty.NORMAL)
+						&& HotFudgeBlob.allowsNaturalSpawn(
+								Difficulty.HARD)
+						&& SpawnPlacements
+									.getPlacementType(
+											CakeWorldEntities
+													.HOT_FUDGE_BLOB
+													.get())
+									== SpawnPlacements.Type.ON_GROUND
+							&& SpawnPlacements
+									.getHeightmapType(
+											CakeWorldEntities
+													.HOT_FUDGE_BLOB
+													.get())
+									== Heightmap.Types
+											.MOTION_BLOCKING_NO_LEAVES
+							&& SpawnPlacements.Type.ON_GROUND
+									.canSpawnAt(
+											helper.getLevel(),
+											spawnPos,
+											CakeWorldEntities
+													.HOT_FUDGE_BLOB
+													.get()),
+				"Hot-Fudge Blob lost Peaceful suppression or exact Magma Cube ground placement on Fudge Rock");
+
+		Biome fudgeWastes = helper.getLevel()
+				.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY)
+				.get(CakeWorldBiomes.FUDGE_WASTES.getId());
+		require(helper, fudgeWastes != null,
+				"Could not inspect Fudge Wastes Hot-Fudge Blob spawning");
+		requireSpawnReplacement(helper, fudgeWastes,
+				EntityType.MAGMA_CUBE,
+				CakeWorldEntities.HOT_FUDGE_BLOB.get(),
+				MobCategory.MONSTER);
+		MobSpawnSettings.SpawnerData biomeSpawn =
+				fudgeWastes.getMobSettings()
+						.getMobs(MobCategory.MONSTER)
+						.unwrap().stream()
+						.filter(spawn -> spawn.type
+								== CakeWorldEntities
+										.HOT_FUDGE_BLOB.get())
+						.findFirst().orElse(null);
+		MobSpawnSettings.SpawnerData fortressSpawn =
+				NetherFortressFeature.FORTRESS_ENEMIES
+						.unwrap().stream()
+						.filter(spawn -> spawn.type
+								== EntityType.MAGMA_CUBE)
+						.findFirst().orElse(null);
+		require(helper,
+				biomeSpawn != null
+						&& biomeSpawn.getWeight().asInt() == 2
+						&& biomeSpawn.minCount == 4
+						&& biomeSpawn.maxCount == 4
+						&& fortressSpawn != null
+						&& fortressSpawn.getWeight().asInt() == 3
+						&& fortressSpawn.minCount == 4
+						&& fortressSpawn.maxCount == 4,
+				"Hot-Fudge Blob lost the Nether Wastes 2/4-4 profile or the audited Fortress 3/4-4 conversion seam");
+
+		MagmaCube literal =
+				EntityType.MAGMA_CUBE.create(
+						helper.getLevel());
+		require(helper, literal != null,
+				"Could not create literal Fortress Magma Cube fixture");
+		literal.readAdditionalSaveData(largeState);
+		literal.setPos(anchor.getX(),
+				anchor.getY(), anchor.getZ());
+		literal.setHealth(13.0F);
+		literal.setCustomName(new TextComponent(
+				"Fortress Fudge"));
+		literal.setPersistenceRequired();
+		literal.setNoAi(true);
+		literal.setInvulnerable(true);
+		helper.getLevel().addFreshEntity(literal);
+		ResourceLocation fixtureBiome = helper.getLevel()
+				.getBiome(literal.blockPosition())
+				.unwrapKey().map(key -> key.location())
+				.orElse(null);
+		require(helper,
+				fixtureBiome != null
+						&& CakeWorld.MODID.equals(
+								fixtureBiome.getNamespace()),
+				"Hot-Fudge Blob conversion fixture is not in a CakeWorld biome: "
+						+ fixtureBiome);
+		HotFudgeBlob converted =
+				CakeWorldMagmaCubeReplacement
+						.replaceIfInCakeWorldBiome(
+								helper.getLevel(),
+								literal);
+		require(helper,
+				converted != null
+						&& literal.isRemoved()
+						&& converted.getType()
+								== CakeWorldEntities
+										.HOT_FUDGE_BLOB.get()
+						&& converted.getSize() == 4
+						&& close(converted.getHealth(), 13.0D)
+						&& converted.isPersistenceRequired()
+						&& converted.isNoAi()
+						&& converted.isInvulnerable()
+						&& converted.hasCustomName()
+						&& "Fortress Fudge".equals(
+								converted.getName()
+										.getString()),
+				"Fresh CakeWorld Fortress conversion lost Magma Cube size, health, name, persistence, AI or invulnerability");
+
+		TagKey<EntityType<?>> freezeHurtsExtra =
+				TagKey.create(Registry.ENTITY_TYPE_REGISTRY,
+						new ResourceLocation("minecraft",
+								"freeze_hurts_extra_types"));
+		require(helper,
+				CakeWorldEntities.HOT_FUDGE_BLOB.get()
+						.is(freezeHurtsExtra)
+						&& blob.canFreeze()
+						&& CakeWorldItems
+								.HOT_FUDGE_BLOB_SPAWN_EGG
+								.isPresent(),
+				"Hot-Fudge Blob lost extra freeze vulnerability or its creative/testing egg");
+
+		ServerPlayer advancementPlayer = new ServerPlayer(
+				helper.getLevel().getServer(),
+				helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2031"),
+						"CakeWorldHotFudgeRoleTest"));
+		VanillaRoleAdvancements
+				.creditKilledMagmaCubeRole(
+						advancementPlayer);
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:adventure/kill_all_mobs",
+				"minecraft:magma_cube");
+		converted.discard();
+		helper.succeed();
+	}
+
 	private static FoodProperties requireFood(GameTestHelper helper, ItemStack stack) {
 		FoodProperties food = stack.getItem().getFoodProperties();
 		require(helper, food != null, stack.getItem() + " has no food properties");
 		return food;
+	}
+
+	private static BlockPos findCakeWorldBiomePosition(
+			GameTestHelper helper, BlockPos origin,
+			int maximumRadius) {
+		for (int radius = 0; radius <= maximumRadius;
+				radius += 4) {
+			for (int x = -radius; x <= radius; x += 4) {
+				for (int z = -radius; z <= radius;
+						z += 4) {
+					if (Math.max(Math.abs(x),
+							Math.abs(z)) != radius) {
+						continue;
+					}
+					BlockPos candidate =
+							origin.offset(x, 0, z);
+					boolean cakeWorld = helper.getLevel()
+							.getBiome(candidate).unwrapKey()
+							.map(key -> CakeWorld.MODID
+									.equals(key.location()
+											.getNamespace()))
+							.orElse(false);
+					if (cakeWorld) {
+						return candidate;
+					}
+				}
+			}
+		}
+		return null;
 	}
 
 	private static void requireSpawnReplacement(GameTestHelper helper, Biome biome,

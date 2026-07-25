@@ -193,6 +193,10 @@ public final class CakeWorldItems {
 			spawnEgg("meringue_llama_spawn_egg",
 					CakeWorldEntities.MERINGUE_LLAMA,
 					0xFFF5E6, 0xF4B6D2);
+	public static final RegistryObject<Item> HOT_FUDGE_BLOB_SPAWN_EGG =
+			spawnEgg("hot_fudge_blob_spawn_egg",
+					CakeWorldEntities.HOT_FUDGE_BLOB,
+					0x3B160F, 0xE06B37);
 	public static final RegistryObject<Item> DRIED_CRUMBLER_SPAWN_EGG =
 			spawnEgg("dried_crumbler_spawn_egg",
 					CakeWorldEntities.DRIED_CRUMBLER,

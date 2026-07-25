@@ -16,6 +16,7 @@ import com.mcmoddev.cakeworld.entity.GrandGumballGuardian;
 import com.mcmoddev.cakeworld.entity.GiantStaleCrumbler;
 import com.mcmoddev.cakeworld.entity.GlowJelly;
 import com.mcmoddev.cakeworld.entity.GumballGuardian;
+import com.mcmoddev.cakeworld.entity.HotFudgeBlob;
 import com.mcmoddev.cakeworld.entity.JawbreakerGuardian;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.MallowChick;
@@ -72,6 +73,7 @@ import net.minecraft.world.entity.monster.Ghast;
 import net.minecraft.world.entity.monster.Giant;
 import net.minecraft.world.entity.monster.Guardian;
 import net.minecraft.world.entity.monster.Illusioner;
+import net.minecraft.world.entity.monster.MagmaCube;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.monster.hoglin.Hoglin;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -214,6 +216,13 @@ public final class CakeWorldEntities {
 							MobCategory.CREATURE)
 							.sized(0.9F, 1.87F)
 							.clientTrackingRange(10));
+	public static final RegistryObject<EntityType<HotFudgeBlob>>
+			HOT_FUDGE_BLOB = entity("hot_fudge_blob",
+					EntityType.Builder.of(HotFudgeBlob::new,
+							MobCategory.MONSTER)
+							.fireImmune()
+							.sized(2.04F, 2.04F)
+							.clientTrackingRange(8));
 	public static final RegistryObject<EntityType<TaffyTallwalker>>
 			TAFFY_TALLWALKER = entity("taffy_tallwalker",
 					EntityType.Builder.of(TaffyTallwalker::new,
@@ -349,6 +358,8 @@ public final class CakeWorldEntities {
 				IronGolem.createAttributes().build());
 		event.put(MERINGUE_LLAMA.get(),
 				Llama.createAttributes().build());
+		event.put(HOT_FUDGE_BLOB.get(),
+				MagmaCube.createAttributes().build());
 		event.put(TAFFY_TALLWALKER.get(),
 				EnderMan.createAttributes().build());
 		event.put(SUGAR_MITE.get(),
@@ -439,6 +450,11 @@ public final class CakeWorldEntities {
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					Animal::checkAnimalSpawnRules);
+			SpawnPlacements.register(HOT_FUDGE_BLOB.get(),
+					SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					HotFudgeBlob
+							::checkHotFudgeBlobSpawnRules);
 			SpawnPlacements.register(TAFFY_TALLWALKER.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,

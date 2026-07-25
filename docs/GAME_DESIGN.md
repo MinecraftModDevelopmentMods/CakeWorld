@@ -264,7 +264,7 @@ document explicitly says otherwise.
 | MOB-028 | `minecraft:illusioner` | Mirage Confectioner | Command-only compatibility caster retaining mirage copies, invisibility, Hard-only blindness, bow AI, raider state and empty loot; harmless obscuring sweet shots below Hard and real arrows on Hard. |
 | MOB-029 | `minecraft:iron_golem` | Jawbreaker Guardian | Settlement defender retaining village patrol, hostile targeting, player-created loyalty, flower offering, anger, crack/repair and construction roles; protected slowing bounce below Hard and real launch damage on Hard. |
 | MOB-030 | `minecraft:llama` | Meringue Llama | Carpet-decorated caravan and strength-scaled pack-animal role; sticky protected spit below Hard and real one-point spit on Hard. |
-| MOB-031 | `minecraft:magma_cube` | Hot-Fudge Blob | Elastic Nether hazard and cream ingredient source. |
+| MOB-031 | `minecraft:magma_cube` | Hot-Fudge Blob | Size-scaled, fireproof elastic Nether hazard retaining Magma Cube jumps, splitting, freeze vulnerability and magma-cream progression; sticky protected contact below Hard and real size-scaled collision damage on Hard. Ordinary Fudge Wastes spawns are replaced in the biome list, while fresh literal Nether-Fortress spawns are converted only inside CakeWorld biomes. |
 | MOB-032 | `minecraft:mule` | Marzipan Mule | Rideable pack-animal hybrid. |
 | MOB-033 | `minecraft:mooshroom` | Cupcake Cow | Rare garden cow with bowl interaction role. |
 | MOB-034 | `minecraft:ocelot` | Sherbet Ocelot | Shy jungle/desert-edge animal preserving trust behaviour. |
