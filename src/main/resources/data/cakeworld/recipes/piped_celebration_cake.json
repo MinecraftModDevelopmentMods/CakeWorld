@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "cakeworld:piping_bag"
+    },
+    {
+      "item": "cakeworld:warm_sponge_cake"
+    },
+    {
+      "item": "cakeworld:icing_spoonful"
+    },
+    {
+      "item": "cakeworld:boiled_sweet"
+    }
+  ],
+  "result": {
+    "item": "cakeworld:piped_celebration_cake"
+  }
+}

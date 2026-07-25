@@ -586,6 +586,57 @@ public final class FirstBiteGameTests {
 	}
 
 	@GameTest(template = EMPTY)
+	public static void pipingBagDecoratesCakeAndReturnsForReuse(
+			GameTestHelper helper) {
+		var recipes = helper.getLevel().getRecipeManager();
+		var decoratingRecipe = recipes.byKey(new ResourceLocation(
+				CakeWorld.MODID, "piped_celebration_cake"));
+		require(helper,
+				decoratingRecipe.orElse(null) instanceof ShapelessRecipe
+						&& recipes.byKey(new ResourceLocation(CakeWorld.MODID,
+								"piping_bag")).orElse(null)
+								instanceof ShapedRecipe,
+				"Piping Bag is missing its acquisition or decoration recipe");
+
+		ItemStack pipingBag =
+				new ItemStack(CakeWorldItems.PIPING_BAG.get());
+		require(helper, pipingBag.hasContainerItem()
+						&& pipingBag.getContainerItem().is(
+								CakeWorldItems.PIPING_BAG.get()),
+				"Piping Bag is not a reusable crafting tool");
+		AbstractContainerMenu recipeMenu =
+				new AbstractContainerMenu(null, 0) {
+					@Override
+					public boolean stillValid(Player player) {
+						return true;
+					}
+				};
+		CraftingContainer ingredients =
+				new CraftingContainer(recipeMenu, 3, 3);
+		ingredients.setItem(0, pipingBag);
+		ingredients.setItem(2,
+				new ItemStack(CakeWorldItems.BOILED_SWEET.get()));
+		ingredients.setItem(4,
+				new ItemStack(CakeWorldItems.WARM_SPONGE_CAKE.get()));
+		ingredients.setItem(8,
+				new ItemStack(CakeWorldItems.ICING_SPOONFUL.get()));
+		ShapelessRecipe decorating =
+				(ShapelessRecipe) decoratingRecipe.orElseThrow();
+		ItemStack cake = decorating.assemble(ingredients);
+		require(helper,
+				decorating.matches(ingredients, helper.getLevel())
+						&& cake.is(
+								CakeWorldItems.PIPED_CELEBRATION_CAKE.get())
+						&& decorating.getRemainingItems(ingredients)
+								.get(0).is(CakeWorldItems.PIPING_BAG.get())
+						&& cake.getFoodProperties(null).getNutrition()
+								> CakeWorldItems.WARM_SPONGE_CAKE.get()
+										.getFoodProperties().getNutrition(),
+				"Piping did not improve the cake and return the bag");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
 	public static void coolingRackUsesTaggedRecipesAndReturnsContainers(
 			GameTestHelper helper) {
 		var recipes = helper.getLevel().getRecipeManager();

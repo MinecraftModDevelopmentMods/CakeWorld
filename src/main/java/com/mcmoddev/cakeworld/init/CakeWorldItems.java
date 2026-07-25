@@ -105,10 +105,18 @@ public final class CakeWorldItems {
 							new Item.Properties()
 									.tab(CreativeModeTab.TAB_TOOLS)
 									.stacksTo(1)));
+	public static final RegistryObject<Item> PIPING_BAG =
+			ITEMS.register("piping_bag",
+					() -> new ReusableKitchenToolItem(
+							new Item.Properties()
+									.tab(CreativeModeTab.TAB_TOOLS)
+									.stacksTo(1)));
 	public static final RegistryObject<Item> ROLLED_BISCUIT_DOUGH =
 			ITEMS.register("rolled_biscuit_dough",
 					() -> new Item(new Item.Properties()
 							.tab(CreativeModeTab.TAB_MISC)));
+	public static final RegistryObject<Item> PIPED_CELEBRATION_CAKE =
+			food("piped_celebration_cake", 9, 0.9F);
 	public static final RegistryObject<Item> EXPLORERS_COOKBOOK =
 			ITEMS.register("explorers_cookbook",
 					() -> new ExplorersCookbookItem(new Item.Properties()
