@@ -10,6 +10,7 @@ import com.mcmoddev.cakeworld.entity.CustardCat;
 import com.mcmoddev.cakeworld.entity.DeepLiquoriceWeaver;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.MallowChick;
+import com.mcmoddev.cakeworld.entity.PopRockPopper;
 import com.mcmoddev.cakeworld.entity.SodaCod;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
 import com.mcmoddev.cakeworld.entity.SugarBee;
@@ -31,6 +32,7 @@ import net.minecraft.world.entity.animal.Sheep;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.monster.Blaze;
 import net.minecraft.world.entity.monster.CaveSpider;
+import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
@@ -83,6 +85,12 @@ public final class CakeWorldEntities {
 							MobCategory.WATER_AMBIENT)
 							.sized(0.5F, 0.3F)
 							.clientTrackingRange(4));
+	public static final RegistryObject<EntityType<PopRockPopper>>
+			POP_ROCK_POPPER = entity("pop_rock_popper",
+					EntityType.Builder.of(PopRockPopper::new,
+							MobCategory.MONSTER)
+							.sized(0.6F, 1.7F)
+							.clientTrackingRange(8));
 	public static final RegistryObject<EntityType<CinnamonSpark>> CINNAMON_SPARK =
 			entity("cinnamon_spark",
 					EntityType.Builder.of(CinnamonSpark::new,
@@ -130,6 +138,7 @@ public final class CakeWorldEntities {
 		event.put(DEEP_LIQUORICE_WEAVER.get(),
 				CaveSpider.createCaveSpider().build());
 		event.put(SODA_COD.get(), Cod.createMobAttributes().build());
+		event.put(POP_ROCK_POPPER.get(), Creeper.createAttributes().build());
 		event.put(CINNAMON_SPARK.get(),
 				Blaze.createAttributes().build());
 		event.put(COCOA_COW.get(), Cow.createAttributes().build());
@@ -165,6 +174,10 @@ public final class CakeWorldEntities {
 					SpawnPlacements.Type.IN_WATER,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					SodaCod::checkSodaCodSpawnRules);
+			SpawnPlacements.register(POP_ROCK_POPPER.get(),
+					SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					Monster::checkMonsterSpawnRules);
 			SpawnPlacements.register(CINNAMON_SPARK.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,

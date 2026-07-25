@@ -37,6 +37,7 @@ import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.CustardCat;
 import com.mcmoddev.cakeworld.entity.DeepLiquoriceWeaver;
 import com.mcmoddev.cakeworld.entity.MallowChick;
+import com.mcmoddev.cakeworld.entity.PopRockPopper;
 import com.mcmoddev.cakeworld.entity.SodaCod;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
 import com.mcmoddev.cakeworld.entity.SugarBee;
@@ -101,6 +102,7 @@ import net.minecraft.world.item.crafting.StonecutterRecipe;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FallingBlock;
 import net.minecraft.world.level.block.Rotation;
@@ -1983,11 +1985,14 @@ public final class FirstBiteGameTests {
 				bucket.is(CakeWorldItems.SODA_COD_BUCKET.get())
 						&& bucket.hasCustomHoverName(),
 				"Soda Cod did not capture into its dedicated named bucket");
+		AABB releaseArea = new AABB(lemonadePos).inflate(2.0D);
+		helper.getLevel().getEntitiesOfClass(SodaCod.class, releaseArea)
+				.forEach(SodaCod::discard);
 		((MobBucketItem) bucket.getItem()).checkExtraContent(null,
 				helper.getLevel(), bucket, lemonadePos);
 		java.util.List<SodaCod> released =
 				helper.getLevel().getEntitiesOfClass(SodaCod.class,
-						new AABB(lemonadePos).inflate(2.0D));
+						releaseArea);
 		require(helper, released.size() == 1
 						&& released.get(0).fromBucket()
 						&& released.get(0).hasCustomName()
@@ -2005,6 +2010,155 @@ public final class FirstBiteGameTests {
 				MobCategory.WATER_AMBIENT);
 		require(helper, CakeWorldItems.SODA_COD_SPAWN_EGG.isPresent(),
 				"Soda Cod has no creative/testing spawn egg");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void popRockPoppersStayHarmlessUntilHard(
+			GameTestHelper helper) {
+		Difficulty originalDifficulty = helper.getLevel().getDifficulty();
+		boolean originalMobGriefing = helper.getLevel().getGameRules()
+				.getBoolean(GameRules.RULE_MOBGRIEFING);
+		BlockPos centre = helper.absolutePos(new BlockPos(3, 3, 3));
+		try {
+			for (Difficulty safeDifficulty :
+					new Difficulty[] {Difficulty.EASY, Difficulty.NORMAL}) {
+				helper.getLevel().getServer().setDifficulty(
+						safeDifficulty, true);
+				PopRockPopper popper =
+						CakeWorldEntities.POP_ROCK_POPPER.get()
+								.create(helper.getLevel());
+				Pig target = EntityType.PIG.create(helper.getLevel());
+				require(helper, popper != null && target != null,
+						"Could not create Pop-Rock Popper safety fixtures");
+				popper.setNoAi(true);
+				popper.setPos(centre.getX(), centre.getY(),
+						centre.getZ());
+				target.setPos(centre.getX() + 2.0D, centre.getY(),
+						centre.getZ());
+				target.setHealth(10.0F);
+				target.setSecondsOnFire(5);
+				target.fallDistance = 20.0F;
+				target.setDeltaMovement(Vec3.ZERO);
+				BlockPos protectedBlock = centre.offset(0, 0, 1);
+				helper.getLevel().setBlock(protectedBlock,
+						Blocks.GLASS.defaultBlockState(), 3);
+				ItemEntity protectedItem = new ItemEntity(
+						helper.getLevel(), centre.getX(),
+						centre.getY(), centre.getZ() + 1.5D,
+						new ItemStack(Items.DIAMOND, 3));
+				protectedItem.setDeltaMovement(Vec3.ZERO);
+				helper.getLevel().addFreshEntity(popper);
+				helper.getLevel().addFreshEntity(target);
+				helper.getLevel().addFreshEntity(protectedItem);
+
+				popper.ignite();
+				for (int tick = 0; tick < 31
+						&& !popper.isRemoved(); tick++) {
+					popper.tick();
+				}
+				require(helper, popper.isRemoved(),
+						safeDifficulty
+								+ " Pop-Rock Popper did not complete its safe fuse");
+				require(helper,
+						Math.abs(target.getHealth() - 10.0F) < 0.001F
+								&& !target.isOnFire()
+								&& target.fallDistance == 0.0F,
+						safeDifficulty
+								+ " safe pop caused health/fire/fall damage");
+				require(helper,
+						target.hasEffect(MobEffects.SLOW_FALLING)
+								&& target.hasEffect(
+										MobEffects.FIRE_RESISTANCE)
+								&& target.hasEffect(
+										MobEffects.DAMAGE_RESISTANCE)
+								&& target.getEffect(
+										MobEffects.DAMAGE_RESISTANCE)
+										.getAmplifier() == 4
+								&& target.getDeltaMovement().x > 0.0D
+								&& target.getDeltaMovement().y > 0.0D,
+						safeDifficulty
+								+ " safe pop lacked controlled knockback and landing protection");
+				require(helper,
+						helper.getLevel().getBlockState(protectedBlock)
+								.is(Blocks.GLASS)
+								&& !protectedItem.isRemoved()
+								&& protectedItem.getItem()
+										.is(Items.DIAMOND)
+								&& protectedItem.getItem().getCount() == 3
+								&& protectedItem.getDeltaMovement()
+										.equals(Vec3.ZERO),
+						safeDifficulty
+								+ " safe pop altered a block or item entity");
+				target.discard();
+				protectedItem.discard();
+			}
+
+			helper.getLevel().getGameRules()
+					.getRule(GameRules.RULE_MOBGRIEFING)
+					.set(false, helper.getLevel().getServer());
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			PopRockPopper hardPopper =
+					CakeWorldEntities.POP_ROCK_POPPER.get()
+							.create(helper.getLevel());
+			Pig hardTarget = EntityType.PIG.create(helper.getLevel());
+			require(helper, hardPopper != null && hardTarget != null,
+					"Could not create Hard Pop-Rock Popper fixtures");
+			hardPopper.setNoAi(true);
+			hardPopper.setPos(centre.getX(), centre.getY(),
+					centre.getZ());
+			hardTarget.setPos(centre.getX() + 2.0D, centre.getY(),
+					centre.getZ());
+			hardTarget.setHealth(10.0F);
+			helper.getLevel().addFreshEntity(hardPopper);
+			helper.getLevel().addFreshEntity(hardTarget);
+			hardPopper.ignite();
+			for (int tick = 0; tick < 31
+					&& !hardPopper.isRemoved(); tick++) {
+				hardPopper.tick();
+			}
+			require(helper,
+					hardPopper.isRemoved()
+							&& hardTarget.getHealth() < 10.0F,
+					"Hard Pop-Rock Popper did not retain a real Creeper explosion");
+			hardTarget.discard();
+		} finally {
+			helper.getLevel().getGameRules()
+					.getRule(GameRules.RULE_MOBGRIEFING)
+					.set(originalMobGriefing,
+							helper.getLevel().getServer());
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		for (ResourceLocation biomeId : new ResourceLocation[] {
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId()}) {
+			Biome loaded = helper.getLevel().registryAccess()
+					.registryOrThrow(Registry.BIOME_REGISTRY)
+					.get(biomeId);
+			require(helper, loaded != null,
+					"Could not inspect Pop-Rock Popper biome role");
+			requireSpawnReplacement(helper, loaded, EntityType.CREEPER,
+					CakeWorldEntities.POP_ROCK_POPPER.get(),
+					MobCategory.MONSTER);
+		}
+		require(helper,
+				CakeWorldItems.POP_ROCK_POPPER_SPAWN_EGG.isPresent(),
+				"Pop-Rock Popper has no creative/testing spawn egg");
+		ServerPlayer advancementPlayer = new ServerPlayer(
+				helper.getLevel().getServer(), helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2010"),
+						"CakeWorldPopRockRoleTest"));
+		VanillaRoleAdvancements.creditKilledCreeperRole(
+				advancementPlayer);
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:adventure/kill_all_mobs",
+				"minecraft:creeper");
 		helper.succeed();
 	}
 

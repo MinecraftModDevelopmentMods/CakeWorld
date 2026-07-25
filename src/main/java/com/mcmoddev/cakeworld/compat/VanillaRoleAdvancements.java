@@ -74,6 +74,10 @@ public final class VanillaRoleAdvancements {
 		award(player, KILL_ALL, "minecraft:cave_spider");
 	}
 
+	public static void creditKilledCreeperRole(ServerPlayer player) {
+		award(player, KILL_ALL, "minecraft:creeper");
+	}
+
 	private static String killedCriterion(EntityType<?> type) {
 		if (type == CakeWorldEntities.STALE_CRUMBLER.get()) {
 			return "minecraft:zombie";
@@ -83,6 +87,9 @@ public final class VanillaRoleAdvancements {
 		}
 		if (type == CakeWorldEntities.DEEP_LIQUORICE_WEAVER.get()) {
 			return "minecraft:cave_spider";
+		}
+		if (type == CakeWorldEntities.POP_ROCK_POPPER.get()) {
+			return "minecraft:creeper";
 		}
 		return null;
 	}

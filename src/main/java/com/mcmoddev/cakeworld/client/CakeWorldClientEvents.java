@@ -11,6 +11,7 @@ import net.minecraft.client.renderer.entity.BlazeRenderer;
 import net.minecraft.client.renderer.entity.CatRenderer;
 import net.minecraft.client.renderer.entity.CaveSpiderRenderer;
 import net.minecraft.client.renderer.entity.CodRenderer;
+import net.minecraft.client.renderer.entity.CreeperRenderer;
 import net.minecraft.client.renderer.entity.CowRenderer;
 import net.minecraft.client.renderer.entity.PigRenderer;
 import net.minecraft.client.renderer.entity.SheepRenderer;
@@ -42,6 +43,8 @@ public final class CakeWorldClientEvents {
 				CaveSpiderRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.SODA_COD.get(),
 				CodRenderer::new);
+		event.registerEntityRenderer(CakeWorldEntities.POP_ROCK_POPPER.get(),
+				CreeperRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.CINNAMON_SPARK.get(),
 				BlazeRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.CINNAMON_PUFF.get(),

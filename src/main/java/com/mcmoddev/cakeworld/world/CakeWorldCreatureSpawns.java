@@ -38,6 +38,8 @@ public final class CakeWorldCreatureSpawns {
 					CakeWorldEntities.STALE_CRUMBLER, 95, 4, 4);
 			replace(event, MobCategory.AMBIENT, EntityType.BAT,
 					CakeWorldEntities.BONBON_BAT, 10, 4, 8);
+			replace(event, MobCategory.MONSTER, EntityType.CREEPER,
+					CakeWorldEntities.POP_ROCK_POPPER, 100, 4, 4);
 		}
 		if ("candy_plains".equals(biome.getPath())) {
 			replace(event, MobCategory.CREATURE, EntityType.BEE,
