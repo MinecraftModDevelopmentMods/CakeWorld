@@ -24,6 +24,7 @@ import com.mcmoddev.cakeworld.entity.CocoaCow;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
 import com.mcmoddev.cakeworld.entity.TrufflePig;
+import com.mcmoddev.cakeworld.effect.FizzyFeetEffect;
 import com.mcmoddev.cakeworld.init.CakeWorldBiomes;
 import com.mcmoddev.cakeworld.init.CakeWorldBlocks;
 import com.mcmoddev.cakeworld.init.CakeWorldEffects;
@@ -459,6 +460,68 @@ public final class FirstBiteGameTests {
 						&& recipe.getRemainingItems(ingredients).get(2)
 								.is(Items.GLASS_BOTTLE),
 				"Sherbet Fizz recipe did not yield two and return its bottle");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void comfortMintAndFizzStayGentleAndDistinct(
+			GameTestHelper helper) {
+		var comfort = CakeWorldEffects.COCOA_COMFORT.get();
+		var mint = CakeWorldEffects.MINTY_FRESH.get();
+		var fizz = CakeWorldEffects.FIZZY_FEET.get();
+		require(helper, comfort.getCategory() == MobEffectCategory.BENEFICIAL
+						&& mint.getCategory() == MobEffectCategory.BENEFICIAL
+						&& fizz.getCategory() == MobEffectCategory.BENEFICIAL,
+				"A playful food effect was not categorised as beneficial");
+
+		Pig comfortTester = helper.spawnWithNoFreeWill(
+				EntityType.PIG, 1.5F, 1.0F, 1.5F);
+		double ordinaryKnockback = comfortTester.getAttributeValue(
+				Attributes.KNOCKBACK_RESISTANCE);
+		double ordinaryArmour =
+				comfortTester.getAttributeValue(Attributes.ARMOR);
+		comfortTester.addEffect(new MobEffectInstance(comfort, 300));
+		require(helper, comfortTester.getAttributeValue(
+						Attributes.KNOCKBACK_RESISTANCE)
+								>= ordinaryKnockback + 0.25D
+						&& comfortTester.getAttributeValue(Attributes.ARMOR)
+								>= ordinaryArmour + 2.0D,
+				"Cocoa Comfort did not provide its modest defensive cushion");
+
+		Pig mintTester = helper.spawnWithNoFreeWill(
+				EntityType.PIG, 2.5F, 1.0F, 1.5F);
+		mintTester.setSecondsOnFire(5);
+		mint.applyEffectTick(mintTester, 0);
+		require(helper, !mintTester.isOnFire(),
+				"Minty Fresh did not extinguish its affected entity");
+
+		Pig fizzTester = helper.spawnWithNoFreeWill(
+				EntityType.PIG, 3.5F, 1.0F, 1.5F);
+		Vec3 falling = new Vec3(0.2D, -1.0D, -0.1D);
+		fizzTester.setDeltaMovement(falling);
+		fizz.applyEffectTick(fizzTester, 0);
+		Vec3 softened = fizzTester.getDeltaMovement();
+		require(helper, close(softened.x, falling.x)
+						&& close(softened.z, falling.z)
+						&& close(softened.y,
+								-FizzyFeetEffect.DESCENT_MULTIPLIER)
+						&& softened.y < 0.0D,
+				"Fizzy Feet lost steering or forced an upward camera bounce");
+
+		require(helper, grantsEffect(CakeWorldItems.COMFORT_COCOA.get(),
+							comfort, 300)
+						&& grantsEffect(CakeWorldItems.MINT_WAFER.get(),
+								mint, 200)
+						&& grantsEffect(CakeWorldItems.FIZZY_POPPERS.get(),
+								fizz, 200),
+				"A named food does not guarantee its intended effect");
+		for (String recipe : Set.of("comfort_cocoa", "mint_wafer",
+				"fizzy_poppers")) {
+			require(helper, helper.getLevel().getRecipeManager().byKey(
+							new ResourceLocation(CakeWorld.MODID, recipe))
+							.isPresent(),
+					"Missing playable recipe " + recipe);
+		}
 		helper.succeed();
 	}
 
@@ -1079,6 +1142,15 @@ public final class FirstBiteGameTests {
 
 	private static boolean close(double actual, double expected) {
 		return Math.abs(actual - expected) < 0.000001D;
+	}
+
+	private static boolean grantsEffect(Item item,
+			net.minecraft.world.effect.MobEffect effect, int duration) {
+		FoodProperties food = item.getFoodProperties();
+		return food != null && food.getEffects().stream().anyMatch(entry ->
+				entry.getFirst().getEffect() == effect
+						&& entry.getFirst().getDuration() == duration
+						&& close(entry.getSecond(), 1.0D));
 	}
 
 	private static void require(GameTestHelper helper, boolean condition, String message) {

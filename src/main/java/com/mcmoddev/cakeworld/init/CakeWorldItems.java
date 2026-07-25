@@ -55,6 +55,37 @@ public final class CakeWorldItems {
 											CakeWorldEffects.SUGAR_RUSH.get(),
 											200), 1.0F)
 									.build())));
+	public static final RegistryObject<Item> COMFORT_COCOA =
+			ITEMS.register("comfort_cocoa",
+					() -> new BowlFoodItem(new Item.Properties()
+							.tab(CreativeModeTab.TAB_FOOD)
+							.stacksTo(1)
+							.food(new FoodProperties.Builder()
+									.nutrition(5).saturationMod(0.6F)
+									.effect(() -> new MobEffectInstance(
+											CakeWorldEffects.COCOA_COMFORT.get(),
+											300), 1.0F)
+									.build())));
+	public static final RegistryObject<Item> MINT_WAFER =
+			ITEMS.register("mint_wafer",
+					() -> new Item(new Item.Properties()
+							.tab(CreativeModeTab.TAB_FOOD)
+							.food(new FoodProperties.Builder()
+									.nutrition(4).saturationMod(0.4F)
+									.effect(() -> new MobEffectInstance(
+											CakeWorldEffects.MINTY_FRESH.get(),
+											200), 1.0F)
+									.build())));
+	public static final RegistryObject<Item> FIZZY_POPPERS =
+			ITEMS.register("fizzy_poppers",
+					() -> new Item(new Item.Properties()
+							.tab(CreativeModeTab.TAB_FOOD)
+							.food(new FoodProperties.Builder()
+									.nutrition(2).saturationMod(0.2F)
+									.effect(() -> new MobEffectInstance(
+											CakeWorldEffects.FIZZY_FEET.get(),
+											200), 1.0F)
+									.build())));
 	public static final RegistryObject<Item> SPRINKLE_SEEDS =
 			ITEMS.register("sprinkle_seeds",
 					() -> new ItemNameBlockItem(
