@@ -21,6 +21,7 @@ import com.mcmoddev.cakeworld.entity.GumballGuardian;
 import com.mcmoddev.cakeworld.entity.HotFudgeBlob;
 import com.mcmoddev.cakeworld.entity.JawbreakerGuardian;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
+import com.mcmoddev.cakeworld.entity.LollipopLorikeet;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.MallowFloater;
 import com.mcmoddev.cakeworld.entity.MallowPuffProjectile;
@@ -62,6 +63,7 @@ import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.entity.animal.MushroomCow;
 import net.minecraft.world.entity.animal.Ocelot;
 import net.minecraft.world.entity.animal.Panda;
+import net.minecraft.world.entity.animal.Parrot;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.animal.Sheep;
 import net.minecraft.world.entity.animal.goat.Goat;
@@ -140,6 +142,12 @@ public final class CakeWorldEntities {
 							MobCategory.CREATURE)
 							.sized(1.3F, 1.25F)
 							.clientTrackingRange(10));
+	public static final RegistryObject<EntityType<LollipopLorikeet>>
+			LOLLIPOP_LORIKEET = entity("lollipop_lorikeet",
+					EntityType.Builder.of(LollipopLorikeet::new,
+							MobCategory.CREATURE)
+							.sized(0.5F, 0.9F)
+							.clientTrackingRange(8));
 	public static final RegistryObject<EntityType<DeepLiquoriceWeaver>>
 			DEEP_LIQUORICE_WEAVER = entity("deep_liquorice_weaver",
 					EntityType.Builder.of(DeepLiquoriceWeaver::new,
@@ -367,6 +375,8 @@ public final class CakeWorldEntities {
 				Ocelot.createAttributes().build());
 		event.put(CHOCOLATE_PANDA.get(),
 				Panda.createAttributes().build());
+		event.put(LOLLIPOP_LORIKEET.get(),
+				Parrot.createAttributes().build());
 		event.put(DEEP_LIQUORICE_WEAVER.get(),
 				CaveSpider.createCaveSpider().build());
 		event.put(SODA_COD.get(), Cod.createMobAttributes().build());
@@ -452,6 +462,11 @@ public final class CakeWorldEntities {
 					SpawnPlacements.Type.NO_RESTRICTIONS,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					Animal::checkAnimalSpawnRules);
+			SpawnPlacements.register(LOLLIPOP_LORIKEET.get(),
+					SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING,
+					LollipopLorikeet
+							::checkLollipopLorikeetSpawnRules);
 			SpawnPlacements.register(DEEP_LIQUORICE_WEAVER.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,

@@ -1,0 +1,12 @@
+{
+  "replace": false,
+  "values": [
+    "cakeworld:chocolate_sponge",
+    "cakeworld:gummy_block",
+    "cakeworld:raspberry_gummy_block",
+    "cakeworld:blueberry_gummy_block",
+    "cakeworld:grape_gummy_block",
+    "cakeworld:wafer_block",
+    "cakeworld:candy_cane_pillar"
+  ]
+}

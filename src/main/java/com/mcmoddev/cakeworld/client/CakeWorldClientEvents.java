@@ -34,6 +34,8 @@ import net.minecraft.client.renderer.entity.MagmaCubeRenderer;
 import net.minecraft.client.renderer.entity.MushroomCowRenderer;
 import net.minecraft.client.renderer.entity.OcelotRenderer;
 import net.minecraft.client.renderer.entity.PandaRenderer;
+import net.minecraft.client.renderer.entity.ParrotRenderer;
+import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.client.renderer.entity.CowRenderer;
 import net.minecraft.client.renderer.entity.PigRenderer;
 import net.minecraft.client.renderer.entity.SheepRenderer;
@@ -69,6 +71,9 @@ public final class CakeWorldClientEvents {
 		event.registerEntityRenderer(
 				CakeWorldEntities.CHOCOLATE_PANDA.get(),
 				PandaRenderer::new);
+		event.registerEntityRenderer(
+				CakeWorldEntities.LOLLIPOP_LORIKEET.get(),
+				ParrotRenderer::new);
 		event.registerEntityRenderer(
 				CakeWorldEntities.DEEP_LIQUORICE_WEAVER.get(),
 				CaveSpiderRenderer::new);
@@ -153,5 +158,19 @@ public final class CakeWorldClientEvents {
 				SheepRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.STALE_CRUMBLER.get(),
 				ZombieRenderer::new);
+	}
+
+	@SubscribeEvent
+	public static void addPlayerLayers(
+			EntityRenderersEvent.AddLayers event) {
+		for (String skin : event.getSkins()) {
+			PlayerRenderer renderer = event.getSkin(skin);
+			if (renderer != null) {
+				renderer.addLayer(
+						new LollipopLorikeetOnShoulderLayer<>(
+								renderer,
+								event.getEntityModels()));
+			}
+		}
 	}
 }

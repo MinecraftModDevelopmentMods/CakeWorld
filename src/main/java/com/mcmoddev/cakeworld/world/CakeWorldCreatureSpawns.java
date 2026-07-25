@@ -65,6 +65,10 @@ public final class CakeWorldCreatureSpawns {
 					8, 4, 8);
 		}
 		if ("gummy_jungle".equals(biome.getPath())) {
+			replace(event, MobCategory.CREATURE,
+					EntityType.PARROT,
+					CakeWorldEntities.LOLLIPOP_LORIKEET,
+					40, 1, 2);
 			// Ocelots are CREATURE entities, but 1.18.2 deliberately
 			// places Jungle Ocelots in the MONSTER spawn-cap list.
 			replace(event, MobCategory.MONSTER,
@@ -75,6 +79,12 @@ public final class CakeWorldCreatureSpawns {
 					EntityType.PANDA,
 					CakeWorldEntities.CHOCOLATE_PANDA,
 					80, 1, 2);
+		}
+		if ("lollipop_orchards".equals(biome.getPath())) {
+			replace(event, MobCategory.CREATURE,
+					EntityType.PARROT,
+					CakeWorldEntities.LOLLIPOP_LORIKEET,
+					40, 1, 2);
 		}
 		if ("sherbet_dunes".equals(biome.getPath())) {
 			replace(event, MobCategory.MONSTER,

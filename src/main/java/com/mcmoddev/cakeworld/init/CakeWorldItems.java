@@ -160,6 +160,10 @@ public final class CakeWorldItems {
 			spawnEgg("chocolate_panda_spawn_egg",
 					CakeWorldEntities.CHOCOLATE_PANDA,
 					0x4A2618, 0xF0D7B0);
+	public static final RegistryObject<Item> LOLLIPOP_LORIKEET_SPAWN_EGG =
+			spawnEgg("lollipop_lorikeet_spawn_egg",
+					CakeWorldEntities.LOLLIPOP_LORIKEET,
+					0xE64A62, 0x58C7D9);
 	public static final RegistryObject<Item> DEEP_LIQUORICE_WEAVER_SPAWN_EGG =
 			spawnEgg("deep_liquorice_weaver_spawn_egg",
 					CakeWorldEntities.DEEP_LIQUORICE_WEAVER,

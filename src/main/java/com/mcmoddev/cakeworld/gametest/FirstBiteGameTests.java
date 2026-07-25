@@ -37,6 +37,7 @@ import com.mcmoddev.cakeworld.entity.CupcakeCow;
 import com.mcmoddev.cakeworld.entity.CinnamonPuffProjectile;
 import com.mcmoddev.cakeworld.entity.CinnamonSpark;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
+import com.mcmoddev.cakeworld.entity.LollipopLorikeet;
 import com.mcmoddev.cakeworld.entity.CustardCat;
 import com.mcmoddev.cakeworld.entity.DeepLiquoriceWeaver;
 import com.mcmoddev.cakeworld.entity.DoughDonkey;
@@ -96,6 +97,7 @@ import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.FluidTags;
@@ -121,6 +123,7 @@ import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.LlamaFollowCaravanGoal;
 import net.minecraft.world.entity.ai.goal.WrappedGoal;
+import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.sensing.GolemSensor;
 import net.minecraft.world.entity.ai.sensing.HoglinSpecificSensor;
@@ -139,6 +142,8 @@ import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.animal.MushroomCow;
 import net.minecraft.world.entity.animal.Ocelot;
 import net.minecraft.world.entity.animal.Panda;
+import net.minecraft.world.entity.animal.Parrot;
+import net.minecraft.world.entity.animal.FlyingAnimal;
 import net.minecraft.world.entity.animal.Rabbit;
 import net.minecraft.world.entity.animal.Turtle;
 import net.minecraft.world.entity.animal.goat.Goat;
@@ -4530,30 +4535,18 @@ public final class FirstBiteGameTests {
 				CakeWorldBlocks.ICING_LAYER.get()
 						.defaultBlockState(), 3);
 		helper.getLevel().setBlock(icing.above(),
-				Blocks.AIR.defaultBlockState(), 3);
+				Blocks.LIGHT.defaultBlockState(), 3);
 		helper.getLevel().setBlock(icing.above(2),
 				Blocks.AIR.defaultBlockState(), 3);
-		helper.getLevel().setBlock(icing.offset(2, 1, 0),
-				Blocks.GLOWSTONE.defaultBlockState(), 3);
 		BlockPos spawnPos = icing.above();
-		boolean vanillaRule = Goat.checkGoatSpawnRules(
-				CakeWorldEntities.NOUGAT_GOAT.get(),
-				helper.getLevel(), MobSpawnType.NATURAL,
-				spawnPos, new Random(1978L));
 		boolean vanillaBody = SpawnPlacements.Type.ON_GROUND.canSpawnAt(
 				helper.getLevel(), spawnPos,
 				CakeWorldEntities.NOUGAT_GOAT.get());
-		boolean nougatRule = NougatGoat.checkNougatGoatSpawnRules(
-				CakeWorldEntities.NOUGAT_GOAT.get(),
-				helper.getLevel(), MobSpawnType.NATURAL,
-				spawnPos, new Random(1978L));
 		require(helper,
 				CakeWorldBlocks.ICING_LAYER.get()
 						.defaultBlockState()
 						.is(BlockTags.GOATS_SPAWNABLE_ON)
-						&& vanillaRule
 						&& !vanillaBody
-						&& nougatRule
 						&& SpawnPlacements.getPlacementType(
 								CakeWorldEntities.NOUGAT_GOAT.get())
 								== SpawnPlacements.Type
@@ -4565,7 +4558,7 @@ public final class FirstBiteGameTests {
 								helper.getLevel().getFluidState(
 										spawnPos),
 								CakeWorldEntities.NOUGAT_GOAT.get()),
-				"Nougat Goat did not adapt thin edible icing into a safe, bright Goat spawn surface");
+				"Nougat Goat did not adapt thin edible icing into a safe Goat spawn surface with a collisionless light fixture");
 
 		Biome marshmallowPeaks = helper.getLevel().registryAccess()
 				.registryOrThrow(Registry.BIOME_REGISTRY)
@@ -4606,7 +4599,31 @@ public final class FirstBiteGameTests {
 		requireCriterion(helper, advancementPlayer,
 				"minecraft:husbandry/ride_a_boat_with_a_goat",
 				"ride_a_boat_with_a_goat");
-		helper.succeed();
+		helper.runAfterDelay(5, () -> {
+			int rawBrightness = helper.getLevel()
+					.getMaxLocalRawBrightness(spawnPos);
+			boolean vanillaRule = Goat.checkGoatSpawnRules(
+					CakeWorldEntities.NOUGAT_GOAT.get(),
+					helper.getLevel(),
+					MobSpawnType.NATURAL, spawnPos,
+					new Random(1978L));
+			boolean nougatRule =
+					NougatGoat.checkNougatGoatSpawnRules(
+							CakeWorldEntities.NOUGAT_GOAT.get(),
+							helper.getLevel(),
+							MobSpawnType.NATURAL,
+							spawnPos,
+							new Random(1978L));
+			require(helper,
+					rawBrightness > 8
+							&& vanillaRule
+							&& nougatRule,
+					"Nougat Goat did not retain its bright Goat spawn predicate after block-light propagation: rawBrightness="
+							+ rawBrightness);
+			helper.getLevel().setBlock(spawnPos,
+					Blocks.AIR.defaultBlockState(), 3);
+			helper.succeed();
+		});
 	}
 
 	@GameTest(template = EMPTY)
@@ -8763,6 +8780,500 @@ public final class FirstBiteGameTests {
 					Blocks.AIR.defaultBlockState(), 3);
 			helper.succeed();
 		});
+	}
+
+	@GameTest(template = EMPTY)
+	public static void lollipopLorikeetsKeepTamingShouldersAndMimicry(
+			GameTestHelper helper) {
+		LollipopLorikeetProbe lorikeet =
+				new LollipopLorikeetProbe(helper.getLevel());
+		require(helper,
+				lorikeet instanceof Parrot
+						&& lorikeet instanceof FlyingAnimal
+						&& lorikeet.getType()
+								== CakeWorldEntities
+										.LOLLIPOP_LORIKEET
+										.get()
+						&& close(lorikeet.getMaxHealth(),
+								6.0D)
+						&& close(lorikeet.getAttributeValue(
+								Attributes.FLYING_SPEED),
+								0.4D)
+						&& close(lorikeet.getAttributeValue(
+								Attributes.MOVEMENT_SPEED),
+								0.2D)
+						&& close(lorikeet.getBbWidth(),
+								0.5D)
+						&& close(lorikeet.getBbHeight(),
+								0.9D)
+						&& lorikeet.getType()
+								.clientTrackingRange() == 8
+						&& lorikeet
+								.getMaxSpawnClusterSize() == 4
+						&& lorikeet.getLootTable().equals(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/lollipop_lorikeet")),
+				"Lollipop Lorikeet lost its genuine Parrot type, flight role, attributes, body, tracking or cluster size");
+
+		for (int variant = 0; variant < 5; variant++) {
+			lorikeet.setVariant(variant);
+			require(helper,
+					lorikeet.getVariant() == variant,
+					"Lollipop Lorikeet lost variant "
+							+ variant);
+		}
+		lorikeet.setVariant(4);
+		CompoundTag variantData = new CompoundTag();
+		lorikeet.addAdditionalSaveData(variantData);
+		LollipopLorikeetProbe restored =
+				new LollipopLorikeetProbe(helper.getLevel());
+		restored.readAdditionalSaveData(variantData);
+		require(helper,
+				variantData.getInt("Variant") == 4
+						&& restored.getVariant() == 4,
+				"Lollipop Lorikeet lost variant NBT");
+
+		require(helper,
+				!lorikeet.isBaby()
+						&& !lorikeet.canMate(restored)
+						&& lorikeet.getBreedOffspring(
+								helper.getLevel(),
+								restored) == null
+						&& lorikeet.getNavigation()
+								instanceof FlyingPathNavigation
+						&& !lorikeet.causeFallDamage(
+								20.0F, 1.0F,
+								DamageSource.FALL)
+						&& lorikeet.countGoalsNamed(
+								"SitWhenOrderedToGoal") == 1
+						&& lorikeet.countGoalsNamed(
+								"FollowOwnerGoal") == 1
+						&& lorikeet.countGoalsNamed(
+								"ParrotWanderGoal") == 1
+						&& lorikeet.countGoalsNamed(
+								"LandOnOwnersShoulderGoal") == 1
+						&& lorikeet.countGoalsNamed(
+								"FollowMobGoal") == 1,
+				"Lollipop Lorikeet lost non-breeding, flying, fall-safe, owner, wandering or shoulder goals");
+
+		for (Item tamingFood : List.of(
+				Items.WHEAT_SEEDS,
+				Items.MELON_SEEDS,
+				Items.PUMPKIN_SEEDS,
+				Items.BEETROOT_SEEDS,
+				CakeWorldItems.SPRINKLE_SEEDS.get())) {
+			require(helper,
+					new ItemStack(tamingFood).is(
+							LollipopLorikeet
+									.TAMING_FOODS),
+					"Lollipop Lorikeet taming tag lost "
+							+ Registry.ITEM.getKey(
+									tamingFood));
+		}
+		require(helper,
+				!new ItemStack(Items.COOKIE).is(
+						LollipopLorikeet.TAMING_FOODS)
+						&& !lorikeet.isFood(
+								new ItemStack(
+										Items.WHEAT_SEEDS)),
+				"Lollipop Lorikeet confused taming food with breeding food or cookie danger");
+
+		BlockPos anchor = helper.absolutePos(
+				new BlockPos(4, 2, 4));
+		ServerPlayer owner = new ServerPlayer(
+				helper.getLevel().getServer(),
+				helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed3036"),
+						"CakeWorldLorikeetTameTest"));
+		owner.setPos(anchor.getX() + 1.5D,
+				anchor.getY(), anchor.getZ() + 0.5D);
+		owner.setOnGround(true);
+		helper.getLevel().players().add(owner);
+		try {
+			long successfulSeed = -1L;
+			for (long candidate = 0L;
+					candidate < 1000L; candidate++) {
+				Random prediction = new Random(candidate);
+				prediction.nextFloat();
+				prediction.nextFloat();
+				if (prediction.nextInt(10) == 0) {
+					successfulSeed = candidate;
+					break;
+				}
+			}
+			require(helper, successfulSeed >= 0L,
+					"Could not prepare deterministic Lorikeet taming seed");
+			lorikeet.seedRandom(successfulSeed);
+			lorikeet.setPos(anchor.getX() + 0.5D,
+					anchor.getY(), anchor.getZ() + 0.5D);
+			owner.setItemInHand(
+					InteractionHand.MAIN_HAND,
+					new ItemStack(CakeWorldItems
+							.SPRINKLE_SEEDS.get(), 2));
+			InteractionResult tameResult =
+					lorikeet.mobInteract(owner,
+							InteractionHand.MAIN_HAND);
+			require(helper,
+					tameResult.consumesAction()
+							&& lorikeet.isTame()
+							&& lorikeet.isOwnedBy(owner)
+							&& owner.getItemInHand(
+									InteractionHand
+											.MAIN_HAND)
+									.getCount() == 1,
+					"Lollipop Lorikeet did not consume tagged Sprinkle Seeds and tame at the exact one-in-ten gate");
+			requireCriterion(helper, owner,
+					"minecraft:husbandry/tame_an_animal",
+					"tamed_animal");
+
+			owner.setItemInHand(
+					InteractionHand.MAIN_HAND,
+					ItemStack.EMPTY);
+			lorikeet.setOnGround(true);
+			require(helper,
+					lorikeet.mobInteract(owner,
+							InteractionHand.MAIN_HAND)
+									.consumesAction()
+							&& lorikeet
+									.isOrderedToSit(),
+					"Tamed grounded Lollipop Lorikeet lost owner sit toggling");
+
+			LollipopLorikeetProbe shoulderBird =
+					new LollipopLorikeetProbe(
+							helper.getLevel());
+			shoulderBird.setOwnerUUID(owner.getUUID());
+			shoulderBird.setTame(true);
+			shoulderBird.setVariant(3);
+			shoulderBird.setPos(owner.getX(),
+					owner.getY(), owner.getZ());
+			require(helper,
+					shoulderBird.setEntityOnShoulder(
+							owner),
+					"Lollipop Lorikeet could not enter an empty owner shoulder");
+			CompoundTag shoulder =
+					owner.getShoulderEntityLeft();
+			require(helper,
+					LollipopLorikeet
+							.isShoulderTag(shoulder)
+							&& (CakeWorld.MODID
+									+ ":lollipop_lorikeet")
+											.equals(
+													shoulder
+															.getString(
+																	"id"))
+							&& shoulder.getInt(
+									"Variant") == 3,
+					"Lollipop Lorikeet shoulder NBT lost its custom identity or variant");
+		} finally {
+			helper.getLevel().players().remove(owner);
+		}
+
+		LollipopLorikeetProbe cookieBird =
+				new LollipopLorikeetProbe(helper.getLevel());
+		ServerPlayer cookieFeeder = new ServerPlayer(
+				helper.getLevel().getServer(),
+				helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed4036"),
+						"CakeWorldLorikeetCookieTest"));
+		cookieFeeder.setItemInHand(
+				InteractionHand.MAIN_HAND,
+				new ItemStack(Items.COOKIE, 2));
+		require(helper,
+				cookieBird.mobInteract(cookieFeeder,
+						InteractionHand.MAIN_HAND)
+								.consumesAction()
+						&& cookieFeeder.getItemInHand(
+								InteractionHand
+										.MAIN_HAND)
+								.getCount() == 1
+						&& cookieBird.hasEffect(
+								MobEffects.POISON)
+						&& cookieBird.getEffect(
+								MobEffects.POISON)
+								.getDuration() == 900
+						&& cookieBird
+								.isDeadOrDying(),
+				"Lollipop Lorikeet lost the exact poisonous-cookie interaction");
+
+		BlockPos jukebox = anchor.offset(3, 0, 0);
+		helper.getLevel().setBlock(jukebox,
+				Blocks.JUKEBOX.defaultBlockState(), 3);
+		lorikeet.setPos(jukebox.getX() + 0.5D,
+				jukebox.getY(), jukebox.getZ() + 0.5D);
+		lorikeet.setRecordPlayingNearby(jukebox, true);
+		lorikeet.aiStep();
+		require(helper, lorikeet.isPartyParrot(),
+				"Lollipop Lorikeet did not dance beside a jukebox");
+		helper.getLevel().setBlock(jukebox,
+				Blocks.AIR.defaultBlockState(), 3);
+		lorikeet.aiStep();
+		require(helper, !lorikeet.isPartyParrot(),
+				"Lollipop Lorikeet kept dancing after its jukebox disappeared");
+
+		PopRockPopper mimicTarget =
+				CakeWorldEntities.POP_ROCK_POPPER.get()
+						.create(helper.getLevel());
+		require(helper, mimicTarget != null,
+				"Could not create Lorikeet mimic target");
+		mimicTarget.setPos(lorikeet.getX() + 1.0D,
+				lorikeet.getY(), lorikeet.getZ());
+		helper.getLevel().addFreshEntity(mimicTarget);
+		boolean mimicked = false;
+		for (int attempt = 0;
+				attempt < 16 && !mimicked; attempt++) {
+			mimicked = LollipopLorikeet
+					.imitateNearbyCakeWorldMobs(
+							helper.getLevel(),
+							lorikeet);
+		}
+		require(helper,
+				LollipopLorikeet
+						.getCakeWorldImitatedSound(
+								CakeWorldEntities
+										.POP_ROCK_POPPER
+										.get())
+								== SoundEvents
+										.PARROT_IMITATE_CREEPER
+						&& mimicked,
+				"Lollipop Lorikeet lost CakeWorld replacement-mob mimicry");
+		mimicTarget.discard();
+
+		Pig peckTarget = EntityType.PIG.create(
+				helper.getLevel());
+		require(helper, peckTarget != null,
+				"Could not create Lollipop Lorikeet peck target");
+		LollipopLorikeetProbe pecker =
+				new LollipopLorikeetProbe(helper.getLevel());
+		float peckHealth = peckTarget.getHealth();
+		Difficulty originalDifficulty =
+				helper.getLevel().getDifficulty();
+		try {
+			for (Difficulty safeDifficulty :
+					new Difficulty[] {
+							Difficulty.PEACEFUL,
+							Difficulty.EASY,
+							Difficulty.NORMAL}) {
+				helper.getLevel().getServer()
+						.setDifficulty(safeDifficulty,
+								true);
+				peckTarget.setHealth(peckHealth);
+				peckTarget.invulnerableTime = 0;
+				peckTarget.removeAllEffects();
+				peckTarget.setSecondsOnFire(5);
+				peckTarget.fallDistance = 8.0F;
+				pecker.setTarget(peckTarget);
+				require(helper,
+						pecker.doHurtTarget(
+								peckTarget)
+								&& close(
+										peckTarget
+												.getHealth(),
+										peckHealth)
+								&& pecker.getTarget()
+										== null
+								&& !peckTarget.isOnFire()
+								&& peckTarget.fallDistance
+										== 0.0F
+								&& peckTarget.hasEffect(
+										MobEffects
+												.MOVEMENT_SLOWDOWN)
+								&& peckTarget.hasEffect(
+										MobEffects
+												.SLOW_FALLING)
+								&& peckTarget.hasEffect(
+										MobEffects
+												.FIRE_RESISTANCE)
+								&& peckTarget.getEffect(
+										MobEffects
+												.DAMAGE_RESISTANCE)
+										.getAmplifier()
+										== 4,
+						safeDifficulty
+								+ " Lollipop Lorikeet peck caused health damage or lacked sticky rescue effects");
+			}
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			peckTarget.setHealth(peckHealth);
+			peckTarget.invulnerableTime = 0;
+			peckTarget.removeAllEffects();
+			require(helper,
+					pecker.doHurtTarget(peckTarget)
+							&& close(
+									peckTarget.getHealth(),
+									peckHealth - 3.0D),
+					"Hard Lollipop Lorikeet lost the exact three-point Parrot attack");
+		} finally {
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		Registry<Biome> biomes = helper.getLevel()
+				.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY);
+		for (String futureBiome :
+				List.of("lollipop_orchards",
+						"gummy_jungle")) {
+			ResourceLocation biomeId =
+					new ResourceLocation(
+							CakeWorld.MODID,
+							futureBiome);
+			require(helper, biomes.get(biomeId) == null,
+					futureBiome
+							+ " unexpectedly exists; MOB-036's staged spawn gate must be revisited");
+			MobSpawnSettingsBuilder futureSpawns =
+					new MobSpawnSettingsBuilder(
+							MobSpawnSettings.EMPTY);
+			BiomeLoadingEvent futureEvent =
+					new BiomeLoadingEvent(
+							biomeId, null, null, null,
+							new BiomeGenerationSettingsBuilder(
+									BiomeGenerationSettings
+											.EMPTY),
+							futureSpawns);
+			CakeWorldCreatureSpawns.onBiomeLoading(
+					futureEvent);
+			MobSpawnSettings.SpawnerData futureSpawn =
+					futureSpawns.getSpawner(
+							MobCategory.CREATURE)
+							.stream()
+							.filter(spawn -> spawn.type
+									== CakeWorldEntities
+											.LOLLIPOP_LORIKEET
+											.get())
+							.findFirst().orElse(null);
+			require(helper,
+					futureSpawn != null
+							&& futureSpawn.getWeight()
+									.asInt() == 40
+							&& futureSpawn.minCount == 1
+							&& futureSpawn.maxCount == 2
+							&& futureSpawns
+									.getSpawner(
+											MobCategory
+													.CREATURE)
+									.stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType
+															.PARROT),
+					"Future " + futureBiome
+							+ " hook lost the exact Jungle 40/1-2 Parrot replacement");
+		}
+
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS
+						.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS
+						.getId())) {
+			Biome biome = biomes.get(biomeId);
+			require(helper,
+					biome != null
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory.CREATURE)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType.PARROT
+											|| spawn.type
+													== CakeWorldEntities
+															.LOLLIPOP_LORIKEET
+															.get()),
+					"Current biome leaked Parrot/Lollipop Lorikeet spawning before its biomes exist: "
+							+ biomeId);
+		}
+
+		BlockPos spawnPos = anchor.offset(8, 0, 8);
+		helper.getLevel().setBlock(spawnPos.below(),
+				CakeWorldBlocks.GUMMY_BLOCK.get()
+						.defaultBlockState(), 3);
+		helper.getLevel().setBlock(spawnPos,
+				Blocks.TORCH.defaultBlockState(), 3);
+		helper.getLevel().setBlock(spawnPos.above(),
+				Blocks.AIR.defaultBlockState(), 3);
+		require(helper,
+				CakeWorldItems
+						.LOLLIPOP_LORIKEET_SPAWN_EGG
+						.isPresent()
+						&& SpawnPlacements
+								.getPlacementType(
+										CakeWorldEntities
+												.LOLLIPOP_LORIKEET
+												.get())
+								== SpawnPlacements.Type
+										.ON_GROUND
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+												.LOLLIPOP_LORIKEET
+												.get())
+								== Heightmap.Types
+										.MOTION_BLOCKING
+						&& helper.getLevel()
+								.getBlockState(
+										spawnPos.below())
+								.is(BlockTags
+										.PARROTS_SPAWNABLE_ON)
+						&& SpawnPlacements.Type.ON_GROUND
+								.canSpawnAt(
+										helper.getLevel(),
+										spawnPos,
+										CakeWorldEntities
+												.LOLLIPOP_LORIKEET
+												.get()),
+				"Lollipop Lorikeet lost its egg, exact Parrot placement metadata or edible perch surface");
+
+		helper.runAfterDelay(5, () -> {
+			int rawBrightness = helper.getLevel()
+					.getMaxLocalRawBrightness(spawnPos);
+			require(helper,
+					rawBrightness > 8
+							&& LollipopLorikeet
+									.checkLollipopLorikeetSpawnRules(
+											CakeWorldEntities
+													.LOLLIPOP_LORIKEET
+													.get(),
+											helper.getLevel(),
+											MobSpawnType.NATURAL,
+											spawnPos,
+											new Random(1978L)),
+					"Lollipop Lorikeet lost the exact bright tagged-surface spawn predicate: rawBrightness="
+							+ rawBrightness);
+			helper.getLevel().setBlock(spawnPos,
+					Blocks.AIR.defaultBlockState(), 3);
+			helper.getLevel().setBlock(spawnPos.below(),
+					Blocks.AIR.defaultBlockState(), 3);
+			helper.succeed();
+		});
+	}
+
+	private static final class LollipopLorikeetProbe
+			extends LollipopLorikeet {
+		private LollipopLorikeetProbe(Level level) {
+			super(CakeWorldEntities.LOLLIPOP_LORIKEET.get(),
+					level);
+		}
+
+		private int countGoalsNamed(String name) {
+			return (int)goalSelector.getAvailableGoals()
+					.stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
+		}
+
+		private void seedRandom(long seed) {
+			random.setSeed(seed);
+		}
 	}
 
 	private static final class ChocolatePandaProbe
