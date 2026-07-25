@@ -94,6 +94,9 @@ public final class VanillaRoleAdvancements {
 		} else if (childType
 				== CakeWorldEntities.GINGERBREAD_PONY.get()) {
 			criterion = "minecraft:horse";
+		} else if (childType
+				== CakeWorldEntities.MERINGUE_LLAMA.get()) {
+			criterion = "minecraft:llama";
 		}
 		if (criterion != null) {
 			award(player, BRED_ALL, criterion);

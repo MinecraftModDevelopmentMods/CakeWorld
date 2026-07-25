@@ -21,6 +21,7 @@ import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.MallowFloater;
 import com.mcmoddev.cakeworld.entity.MallowPuffProjectile;
+import com.mcmoddev.cakeworld.entity.MeringueLlama;
 import com.mcmoddev.cakeworld.entity.MirageConfectioner;
 import com.mcmoddev.cakeworld.entity.MirageSweetProjectile;
 import com.mcmoddev.cakeworld.entity.NougatGoat;
@@ -58,6 +59,7 @@ import net.minecraft.world.entity.animal.Sheep;
 import net.minecraft.world.entity.animal.goat.Goat;
 import net.minecraft.world.entity.animal.horse.AbstractChestedHorse;
 import net.minecraft.world.entity.animal.horse.AbstractHorse;
+import net.minecraft.world.entity.animal.horse.Llama;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.monster.Blaze;
 import net.minecraft.world.entity.monster.CaveSpider;
@@ -206,6 +208,12 @@ public final class CakeWorldEntities {
 							MobCategory.MISC)
 							.sized(1.4F, 2.7F)
 							.clientTrackingRange(10));
+	public static final RegistryObject<EntityType<MeringueLlama>>
+			MERINGUE_LLAMA = entity("meringue_llama",
+					EntityType.Builder.of(MeringueLlama::new,
+							MobCategory.CREATURE)
+							.sized(0.9F, 1.87F)
+							.clientTrackingRange(10));
 	public static final RegistryObject<EntityType<TaffyTallwalker>>
 			TAFFY_TALLWALKER = entity("taffy_tallwalker",
 					EntityType.Builder.of(TaffyTallwalker::new,
@@ -339,6 +347,8 @@ public final class CakeWorldEntities {
 				Illusioner.createAttributes().build());
 		event.put(JAWBREAKER_GUARDIAN.get(),
 				IronGolem.createAttributes().build());
+		event.put(MERINGUE_LLAMA.get(),
+				Llama.createAttributes().build());
 		event.put(TAFFY_TALLWALKER.get(),
 				EnderMan.createAttributes().build());
 		event.put(SUGAR_MITE.get(),
@@ -425,6 +435,10 @@ public final class CakeWorldEntities {
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					Mob::checkMobSpawnRules);
+			SpawnPlacements.register(MERINGUE_LLAMA.get(),
+					SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					Animal::checkAnimalSpawnRules);
 			SpawnPlacements.register(TAFFY_TALLWALKER.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,

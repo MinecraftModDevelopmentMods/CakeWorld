@@ -72,6 +72,13 @@ public final class CakeWorldCreatureSpawns {
 			replace(event, MobCategory.CREATURE, EntityType.GOAT,
 					CakeWorldEntities.NOUGAT_GOAT, 5, 1, 3);
 		}
+		if ("candyfloss_cloudbanks".equals(
+				biome.getPath())) {
+			replace(event, MobCategory.CREATURE,
+					EntityType.LLAMA,
+					CakeWorldEntities.MERINGUE_LLAMA,
+					5, 4, 6);
+		}
 		if ("soda_ocean".equals(biome.getPath())) {
 			replace(event, MobCategory.MONSTER, EntityType.DROWNED,
 					CakeWorldEntities.SOGGY_BISCUIT, 5, 1, 1);

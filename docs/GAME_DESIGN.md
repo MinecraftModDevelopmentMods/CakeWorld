@@ -263,7 +263,7 @@ document explicitly says otherwise.
 | MOB-027 | `minecraft:husk` | Dried Crumbler | Daylight-safe Sherbet Dunes Crumbler retaining Husk dimensions, attributes, sounds, loot, water conversion and progression roles; dusty harmless contact below Hard, real damage and Hunger on Hard. |
 | MOB-028 | `minecraft:illusioner` | Mirage Confectioner | Command-only compatibility caster retaining mirage copies, invisibility, Hard-only blindness, bow AI, raider state and empty loot; harmless obscuring sweet shots below Hard and real arrows on Hard. |
 | MOB-029 | `minecraft:iron_golem` | Jawbreaker Guardian | Settlement defender retaining village patrol, hostile targeting, player-created loyalty, flower offering, anger, crack/repair and construction roles; protected slowing bounce below Hard and real launch damage on Hard. |
-| MOB-030 | `minecraft:llama` | Meringue Llama | Caravan and pack-animal role. |
+| MOB-030 | `minecraft:llama` | Meringue Llama | Carpet-decorated caravan and strength-scaled pack-animal role; sticky protected spit below Hard and real one-point spit on Hard. |
 | MOB-031 | `minecraft:magma_cube` | Hot-Fudge Blob | Elastic Nether hazard and cream ingredient source. |
 | MOB-032 | `minecraft:mule` | Marzipan Mule | Rideable pack-animal hybrid. |
 | MOB-033 | `minecraft:mooshroom` | Cupcake Cow | Rare garden cow with bowl interaction role. |
@@ -356,6 +356,18 @@ and defence AI. They keep Iron Golem's exact loot and ground placement but
 have no biome spawn list, spawn egg or Monsters Hunted criterion. Gingerbread
 Villages and their natural defender encounter remain a STRUCT-001 integration
 dependency rather than an invented open-biome spawn.
+
+Delivery dependency for MOB-030: Meringue Llama is registered, summonable,
+breedable and fully testable before Candyfloss Cloudbanks exists, but it has
+no natural encounter in the currently shipped biomes. Its exact Llama
+replacement hook is dormant on `cakeworld:candyfloss_cloudbanks`, using the
+vanilla windswept-hills weight and group size of 5/4-6. BIO-END-002 must
+provide a block in `minecraft:animals_spawnable_on` and reverify that spawn
+contract when it activates. Vanilla 1.18.2 caravan AI searches only the two
+literal vanilla Llama types, so the Meringue Llama replaces just that goal
+with a subclass-friendly equivalent. Trader Llamas remain untouched for the
+separate Sprinkle Llama and Travelling Confectioner work in MOB-058 and
+MOB-064.
 
 Projectiles, vehicles, decorative entities, experience, items, the player, and
 other non-mob entity types retain vanilla identity unless a later feature

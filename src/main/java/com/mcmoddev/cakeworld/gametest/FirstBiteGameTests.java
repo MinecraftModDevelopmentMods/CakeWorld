@@ -49,6 +49,8 @@ import com.mcmoddev.cakeworld.entity.JawbreakerGuardian;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.MallowFloater;
 import com.mcmoddev.cakeworld.entity.MallowPuffProjectile;
+import com.mcmoddev.cakeworld.entity.MeringueLlama;
+import com.mcmoddev.cakeworld.entity.MeringueLlamaFollowCaravanGoal;
 import com.mcmoddev.cakeworld.entity.MirageConfectioner;
 import com.mcmoddev.cakeworld.entity.MirageSweetProjectile;
 import com.mcmoddev.cakeworld.entity.NougatGoat;
@@ -107,6 +109,7 @@ import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.MobType;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.goal.LlamaFollowCaravanGoal;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.sensing.GolemSensor;
 import net.minecraft.world.entity.ai.sensing.HoglinSpecificSensor;
@@ -125,7 +128,9 @@ import net.minecraft.world.entity.animal.goat.Goat;
 import net.minecraft.world.entity.animal.WaterAnimal;
 import net.minecraft.world.entity.animal.axolotl.Axolotl;
 import net.minecraft.world.entity.animal.horse.Horse;
+import net.minecraft.world.entity.animal.horse.Llama;
 import net.minecraft.world.entity.animal.horse.Markings;
+import net.minecraft.world.entity.animal.horse.TraderLlama;
 import net.minecraft.world.entity.animal.horse.Variant;
 import net.minecraft.world.entity.monster.Drowned;
 import net.minecraft.world.entity.monster.ElderGuardian;
@@ -147,6 +152,7 @@ import net.minecraft.world.entity.projectile.AbstractHurtingProjectile;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.EvokerFangs;
 import net.minecraft.world.entity.projectile.LargeFireball;
+import net.minecraft.world.entity.projectile.LlamaSpit;
 import net.minecraft.world.entity.projectile.SmallFireball;
 import net.minecraft.world.entity.projectile.ThrownTrident;
 import net.minecraft.world.entity.player.Player;
@@ -6118,6 +6124,429 @@ public final class FirstBiteGameTests {
 										"entities/jawbreaker_guardian")),
 				"Jawbreaker Guardian lost Iron Golem placement/loot or fabricated an egg or Monsters Hunted criterion");
 		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void meringueLlamasKeepPacksCaravansDecorBreedingAndSafeSpit(
+			GameTestHelper helper) {
+		MeringueLlama first =
+				CakeWorldEntities.MERINGUE_LLAMA.get()
+						.create(helper.getLevel());
+		MeringueLlama second =
+				CakeWorldEntities.MERINGUE_LLAMA.get()
+						.create(helper.getLevel());
+		Pig target = EntityType.PIG.create(helper.getLevel());
+		TraderLlama trader =
+				EntityType.TRADER_LLAMA.create(
+						helper.getLevel());
+		require(helper, first != null && second != null
+						&& target != null && trader != null,
+				"Could not create Meringue Llama fixtures");
+		BlockPos anchor = helper.absolutePos(
+				new BlockPos(2, 3, 2));
+		first.setNoAi(true);
+		second.setNoAi(true);
+		first.setPos(anchor.getX(), anchor.getY(),
+				anchor.getZ());
+		second.setPos(anchor.getX() - 2.0D,
+				anchor.getY(), anchor.getZ());
+		target.setPos(anchor.getX() + 3.0D,
+				anchor.getY(), anchor.getZ());
+		helper.getLevel().addFreshEntity(first);
+		helper.getLevel().addFreshEntity(second);
+		helper.getLevel().addFreshEntity(target);
+
+		require(helper,
+				first instanceof Llama
+						&& first.getType()
+								== CakeWorldEntities
+										.MERINGUE_LLAMA.get()
+						&& first.getType().getCategory()
+								== MobCategory.CREATURE
+						&& close(first.getMaxHealth(), 53.0D)
+						&& close(first.getAttributeValue(
+								Attributes.MOVEMENT_SPEED),
+								0.175D)
+						&& close(first.getAttributeValue(
+								Attributes.JUMP_STRENGTH),
+								0.5D)
+						&& close(first.getAttributeValue(
+								Attributes.FOLLOW_RANGE),
+								40.0D)
+						&& close(first
+								.getDimensions(Pose.STANDING)
+								.width, 0.9D)
+						&& close(first
+								.getDimensions(Pose.STANDING)
+								.height, 1.87D)
+						&& close(first.maxUpStep, 1.0D)
+						&& first.getMaxSpawnClusterSize() == 6
+						&& first.getMaxTemper() == 30
+						&& !first.isTraderLlama()
+						&& trader.isTraderLlama()
+						&& trader.getType()
+								== EntityType.TRADER_LLAMA
+						&& !first.isSaddleable()
+						&& !first.canBeControlledByRider()
+						&& first.canWearArmor()
+						&& first.isFood(new ItemStack(
+								Items.WHEAT))
+						&& first.isFood(new ItemStack(
+								Items.HAY_BLOCK)),
+				"Meringue Llama lost its exact Llama type, body, attributes, taming, food, pack, or Trader separation");
+
+		CompoundTag firstGenes = new CompoundTag();
+		firstGenes.putInt("Strength", 5);
+		firstGenes.putInt("Variant", 3);
+		first.readAdditionalSaveData(firstGenes);
+		CompoundTag secondGenes = new CompoundTag();
+		secondGenes.putInt("Strength", 2);
+		secondGenes.putInt("Variant", 1);
+		second.readAdditionalSaveData(secondGenes);
+		UUID owner = UUID.fromString(
+				"1978feed-feed-4bad-babe-1978feed2030");
+		ServerPlayer player = new ServerPlayer(
+				helper.getLevel().getServer(),
+				helper.getLevel(),
+				new GameProfile(owner,
+						"CakeWorldMeringueLlamaRoleTest"));
+		first.setTamed(true);
+		first.setOwnerUUID(owner);
+		second.setTamed(true);
+		second.setOwnerUUID(owner);
+		require(helper,
+				first.getSlot(499).set(
+						new ItemStack(Items.CHEST))
+						&& first.getSlot(401).set(
+								new ItemStack(
+										Items.PINK_CARPET))
+						&& first.getSlot(500).set(
+								new ItemStack(
+										CakeWorldItems
+												.BOILED_SWEET
+												.get(), 3))
+						&& first.getSlot(514).set(
+								new ItemStack(
+										CakeWorldItems
+												.MINT_WAFER
+												.get(), 2))
+						&& !first.getSlot(515).set(
+								new ItemStack(
+										Items.DIAMOND))
+						&& first.hasChest()
+						&& first.getInventoryColumns() == 5
+						&& first.getStrength() == 5
+						&& first.getVariant() == 3
+						&& first.getSwag() == DyeColor.PINK
+						&& first.isWearingArmor(),
+				"Meringue Llama lost strength-scaled 15-slot storage or carpet decor");
+
+		CompoundTag saved =
+				first.saveWithoutId(new CompoundTag());
+		MeringueLlama restored =
+				CakeWorldEntities.MERINGUE_LLAMA.get()
+						.create(helper.getLevel());
+		require(helper, restored != null,
+				"Could not create Meringue Llama reload fixture");
+		restored.load(saved);
+		require(helper,
+				restored.isTamed()
+						&& owner.equals(
+								restored.getOwnerUUID())
+						&& restored.hasChest()
+						&& restored.getStrength() == 5
+						&& restored.getInventoryColumns() == 5
+						&& restored.getVariant() == 3
+						&& restored.getSwag()
+								== DyeColor.PINK
+						&& restored.getSlot(401).get()
+								.is(Items.PINK_CARPET)
+						&& restored.getSlot(500).get()
+								.is(CakeWorldItems
+										.BOILED_SWEET.get())
+						&& restored.getSlot(500).get()
+								.getCount() == 3
+						&& restored.getSlot(514).get()
+								.is(CakeWorldItems
+										.MINT_WAFER.get())
+						&& restored.getSlot(514).get()
+								.getCount() == 2,
+				"Meringue Llama reload lost owner, strength, variant, chest, carpet, or edge pack slot");
+
+		player.setItemInHand(InteractionHand.MAIN_HAND,
+				ItemStack.EMPTY);
+		InteractionResult mounted = player.interactOn(
+				first, InteractionHand.MAIN_HAND);
+		require(helper,
+				mounted.consumesAction()
+						&& player.getVehicle() == first
+						&& !first.canBeControlledByRider(),
+				"Tame Meringue Llama lost its mountable but deliberately uncontrollable passenger role");
+		player.stopRiding();
+
+		first.setHealth(first.getMaxHealth());
+		second.setHealth(second.getMaxHealth());
+		first.setAge(0);
+		second.setAge(0);
+		first.setInLove(player);
+		second.setInLove(player);
+		require(helper, first.canMate(second),
+				"Two healthy tame Meringue Llamas could not mate");
+		Llama child = first.getBreedOffspring(
+				helper.getLevel(), second);
+		require(helper,
+				child instanceof MeringueLlama
+						&& child.getType()
+								== CakeWorldEntities
+										.MERINGUE_LLAMA.get()
+						&& child.getStrength() >= 1
+						&& child.getStrength() <= 5
+						&& (child.getVariant() == 3
+								|| child.getVariant() == 1)
+						&& child.getAttributeBaseValue(
+								Attributes.MAX_HEALTH)
+								>= 40.0D
+						&& child.getAttributeBaseValue(
+								Attributes.MAX_HEALTH)
+								<= 46.0D,
+				"Meringue Llama breeding leaked a literal Llama or lost strength, variant, or inherited physical attributes");
+
+		MeringueLlama caravanLeader =
+				CakeWorldEntities.MERINGUE_LLAMA.get()
+						.create(helper.getLevel());
+		MeringueLlama caravanFollower =
+				CakeWorldEntities.MERINGUE_LLAMA.get()
+						.create(helper.getLevel());
+		require(helper, caravanLeader != null
+						&& caravanFollower != null,
+				"Could not create Meringue Llama caravan fixtures");
+		caravanLeader.setNoAi(true);
+		caravanFollower.setNoAi(true);
+		caravanLeader.setPos(anchor.getX(),
+				anchor.getY(), anchor.getZ() + 6.0D);
+		caravanFollower.setPos(anchor.getX() + 5.0D,
+				anchor.getY(), anchor.getZ() + 6.0D);
+		helper.getLevel().addFreshEntity(caravanLeader);
+		helper.getLevel().addFreshEntity(caravanFollower);
+		caravanLeader.setLeashedTo(player, false);
+		long literalGoals = caravanFollower.goalSelector
+				.getAvailableGoals().stream()
+				.filter(wrapped -> wrapped.getGoal()
+						instanceof LlamaFollowCaravanGoal)
+				.count();
+		MeringueLlamaFollowCaravanGoal caravanGoal =
+				caravanFollower.goalSelector
+						.getAvailableGoals().stream()
+						.map(wrapped -> wrapped.getGoal())
+						.filter(MeringueLlamaFollowCaravanGoal.class
+								::isInstance)
+						.map(MeringueLlamaFollowCaravanGoal.class
+								::cast)
+						.findFirst().orElse(null);
+		require(helper,
+				literalGoals == 0
+						&& caravanGoal != null
+						&& caravanGoal.canUse()
+						&& caravanFollower.inCaravan()
+						&& caravanFollower.getCaravanHead()
+								== caravanLeader
+						&& caravanLeader.hasCaravanTail(),
+				"Meringue Llama did not replace the literal-type vanilla goal or form a genuine custom caravan");
+		caravanFollower.leaveCaravan();
+
+		first.performRangedAttack(target, 1.0F);
+		LlamaSpit spit = helper.getLevel()
+				.getEntitiesOfClass(LlamaSpit.class,
+						new AABB(anchor).inflate(10.0D))
+				.stream()
+				.filter(projectile ->
+						projectile.getOwner() == first)
+				.findFirst().orElse(null);
+		require(helper, spit != null,
+				"Meringue Llama did not retain its visible vanilla Llama spit projectile");
+		Difficulty originalDifficulty =
+				helper.getLevel().getDifficulty();
+		try {
+			for (Difficulty safeDifficulty :
+					new Difficulty[] {
+							Difficulty.PEACEFUL,
+							Difficulty.EASY,
+							Difficulty.NORMAL}) {
+				helper.getLevel().getServer().setDifficulty(
+						safeDifficulty, true);
+				target.removeAllEffects();
+				target.setHealth(10.0F);
+				target.invulnerableTime = 0;
+				target.setSecondsOnFire(5);
+				target.fallDistance = 12.0F;
+				target.setDeltaMovement(Vec3.ZERO);
+				target.hurt(
+						DamageSource.indirectMobAttack(
+								spit, first)
+								.setProjectile(),
+						1.0F);
+				require(helper,
+						close(target.getHealth(), 10.0D)
+								&& !target.isOnFire()
+								&& target.fallDistance == 0.0F
+								&& target.hasEffect(
+										MobEffects
+												.MOVEMENT_SLOWDOWN)
+								&& target.getEffect(
+										MobEffects
+												.MOVEMENT_SLOWDOWN)
+										.getAmplifier() == 1
+								&& target.hasEffect(
+										MobEffects.GLOWING)
+								&& target.hasEffect(
+										MobEffects
+												.SLOW_FALLING)
+								&& target.hasEffect(
+										MobEffects
+												.FIRE_RESISTANCE)
+								&& target.getEffect(
+										MobEffects
+												.DAMAGE_RESISTANCE)
+										.getAmplifier() == 4
+								&& target.getDeltaMovement()
+										.x > 0.0D
+								&& target.getDeltaMovement()
+										.y > 0.0D,
+						safeDifficulty
+								+ " Meringue spit caused health damage or lost its sticky visible nudge and rescue envelope");
+			}
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			target.removeAllEffects();
+			target.setHealth(10.0F);
+			target.invulnerableTime = 0;
+			target.setDeltaMovement(Vec3.ZERO);
+			target.hurt(
+					DamageSource.indirectMobAttack(
+							spit, first).setProjectile(),
+					1.0F);
+			require(helper,
+					close(target.getHealth(), 9.0D)
+							&& target.getActiveEffects().isEmpty()
+							&& target.getDeltaMovement()
+									.lengthSqr() > 0.0D,
+					"Hard Meringue Llama did not retain exact one-point vanilla spit damage and hit motion");
+		} finally {
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		float beforeFall = restored.getHealth();
+		restored.causeFallDamage(
+				8.0F, 1.0F, DamageSource.FALL);
+		require(helper, restored.getHealth() < beforeFall,
+				"Meringue Llama incorrectly erased genuine environmental fall damage");
+
+		BlockPos spawnPos = anchor.offset(8, 0, 8);
+		helper.getLevel().setBlock(spawnPos.below(),
+				Blocks.GRASS_BLOCK.defaultBlockState(), 3);
+		helper.getLevel().setBlock(spawnPos,
+				Blocks.TORCH.defaultBlockState(), 3);
+		helper.getLevel().setBlock(spawnPos.above(),
+				Blocks.AIR.defaultBlockState(), 3);
+		boolean chocolateTag =
+				CakeWorldBlocks.CHOCOLATE_SPONGE.get()
+						.defaultBlockState()
+						.is(BlockTags.ANIMALS_SPAWNABLE_ON);
+		boolean grassTag = Blocks.GRASS_BLOCK
+				.defaultBlockState()
+				.is(BlockTags.ANIMALS_SPAWNABLE_ON);
+		boolean groundBody =
+				SpawnPlacements.Type.ON_GROUND.canSpawnAt(
+						helper.getLevel(), spawnPos,
+						CakeWorldEntities.MERINGUE_LLAMA.get());
+		boolean placementType =
+				SpawnPlacements.getPlacementType(
+						CakeWorldEntities.MERINGUE_LLAMA.get())
+						== SpawnPlacements.Type.ON_GROUND;
+		boolean heightmapType =
+				SpawnPlacements.getHeightmapType(
+						CakeWorldEntities.MERINGUE_LLAMA.get())
+						== Heightmap.Types
+								.MOTION_BLOCKING_NO_LEAVES;
+		require(helper,
+				chocolateTag && grassTag
+						&& groundBody && placementType
+						&& heightmapType,
+				"Meringue Llama lost the exact vanilla-valid animal ground metadata contract: chocolateTag="
+						+ chocolateTag + ", grassTag="
+						+ grassTag + ", groundBody="
+						+ groundBody + ", placementType="
+						+ placementType + ", heightmapType="
+						+ heightmapType);
+
+		Registry<Biome> biomes = helper.getLevel()
+				.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY);
+		ResourceLocation cloudbanks = new ResourceLocation(
+				CakeWorld.MODID,
+				"candyfloss_cloudbanks");
+		require(helper, biomes.get(cloudbanks) == null,
+				"Candyfloss Cloudbanks unexpectedly exists; MOB-030's staged spawn gate must be revisited");
+		for (ResourceLocation biomeId :
+				new ResourceLocation[] {
+						CakeWorldBiomes.CANDY_PLAINS.getId(),
+						CakeWorldBiomes.COOKIE_FOREST.getId(),
+						CakeWorldBiomes.MARSHMALLOW_PEAKS
+								.getId(),
+						CakeWorldBiomes.SODA_OCEAN.getId(),
+						CakeWorldBiomes.FUDGE_WASTES.getId(),
+						CakeWorldBiomes.MERINGUE_ISLANDS
+								.getId()}) {
+			Biome biome = biomes.get(biomeId);
+			require(helper, biome != null,
+					"Could not inspect staged Meringue Llama biome gate for "
+							+ biomeId);
+			boolean leaked = biome.getMobSettings()
+					.getMobs(MobCategory.CREATURE)
+					.unwrap().stream()
+					.anyMatch(spawn ->
+							spawn.type == EntityType.LLAMA
+									|| spawn.type
+											== CakeWorldEntities
+													.MERINGUE_LLAMA
+													.get());
+			require(helper, !leaked,
+					"Meringue Llama or vanilla Llama leaked into existing biome "
+							+ biomeId);
+		}
+
+		require(helper,
+				CakeWorldItems.MERINGUE_LLAMA_SPAWN_EGG
+						.isPresent()
+						&& first.getLootTable().equals(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/meringue_llama")),
+				"Meringue Llama lost its spawn egg or dedicated Llama-equivalent loot table");
+		VanillaRoleAdvancements.creditBredRole(
+				player,
+				CakeWorldEntities.MERINGUE_LLAMA.get());
+		requireCriterion(helper, player,
+				"minecraft:husbandry/bred_all_animals",
+				"minecraft:llama");
+		helper.runAfterDelay(5, () -> {
+			int rawBrightness = helper.getLevel()
+					.getMaxLocalRawBrightness(spawnPos);
+			require(helper,
+					rawBrightness > 8
+							&& Animal.checkAnimalSpawnRules(
+									CakeWorldEntities
+											.MERINGUE_LLAMA
+											.get(),
+									helper.getLevel(),
+									MobSpawnType.NATURAL,
+									spawnPos,
+									new Random(1978L)),
+					"Meringue Llama lost the inherited bright animal predicate after block-light propagation: rawBrightness="
+							+ rawBrightness);
+			helper.succeed();
+		});
 	}
 
 	private static FoodProperties requireFood(GameTestHelper helper, ItemStack stack) {

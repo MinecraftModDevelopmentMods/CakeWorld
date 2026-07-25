@@ -29,6 +29,7 @@ import net.minecraft.client.renderer.entity.HorseRenderer;
 import net.minecraft.client.renderer.entity.HuskRenderer;
 import net.minecraft.client.renderer.entity.IllusionerRenderer;
 import net.minecraft.client.renderer.entity.IronGolemRenderer;
+import net.minecraft.client.renderer.entity.LlamaRenderer;
 import net.minecraft.client.renderer.entity.CowRenderer;
 import net.minecraft.client.renderer.entity.PigRenderer;
 import net.minecraft.client.renderer.entity.SheepRenderer;
@@ -94,6 +95,10 @@ public final class CakeWorldClientEvents {
 		event.registerEntityRenderer(
 				CakeWorldEntities.JAWBREAKER_GUARDIAN.get(),
 				IronGolemRenderer::new);
+		event.registerEntityRenderer(
+				CakeWorldEntities.MERINGUE_LLAMA.get(),
+				context -> new LlamaRenderer(
+						context, ModelLayers.LLAMA));
 		event.registerEntityRenderer(
 				CakeWorldEntities.TAFFY_TALLWALKER.get(),
 				EndermanRenderer::new);
