@@ -265,7 +265,7 @@ document explicitly says otherwise.
 | MOB-029 | `minecraft:iron_golem` | Jawbreaker Guardian | Settlement defender retaining village patrol, hostile targeting, player-created loyalty, flower offering, anger, crack/repair and construction roles; protected slowing bounce below Hard and real launch damage on Hard. |
 | MOB-030 | `minecraft:llama` | Meringue Llama | Carpet-decorated caravan and strength-scaled pack-animal role; sticky protected spit below Hard and real one-point spit on Hard. |
 | MOB-031 | `minecraft:magma_cube` | Hot-Fudge Blob | Size-scaled, fireproof elastic Nether hazard retaining Magma Cube jumps, splitting, freeze vulnerability and magma-cream progression; sticky protected contact below Hard and real size-scaled collision damage on Hard. Ordinary Fudge Wastes spawns are replaced in the biome list, while fresh literal Nether-Fortress spawns are converted only inside CakeWorld biomes. |
-| MOB-032 | `minecraft:mule` | Marzipan Mule | Rideable pack-animal hybrid. |
+| MOB-032 | `minecraft:mule` | Marzipan Mule | Sterile rideable pack-animal hybrid created by Gingerbread Pony and Dough Donkey from either parent direction; retains inherited physical attributes, chest storage, saddle, rider control, charged jump, food, fall behavior and leather progression without open-biome spawning. |
 | MOB-033 | `minecraft:mooshroom` | Cupcake Cow | Rare garden cow with bowl interaction role. |
 | MOB-034 | `minecraft:ocelot` | Sherbet Ocelot | Shy jungle/desert-edge animal preserving trust behaviour. |
 | MOB-035 | `minecraft:panda` | Chocolate Panda | Bamboo-role animal adapted to edible cane vegetation. |
@@ -322,10 +322,11 @@ MOB-069 is implemented, an unprotected Fudge Boar that completes its
 Overworld conversion becomes a vanilla Zoglin. Both seams must remain visible
 in the evidence ledger and be revisited with Fudge Folk and Stale Fudge Boar.
 
-Delivery dependency for MOB-026: Gingerbread Pony and Dough Donkey
-crossbreeding keeps the vanilla Mule result until MOB-032 supplies Marzipan
-Mule. This preserves working Horse-family progression during staged delivery;
-MOB-032 must replace the temporary result from both parent directions.
+MOB-032 completes the MOB-026/MOB-012 crossbreeding triangle. Gingerbread
+Pony and Dough Donkey now produce Marzipan Mule from either parent direction
+using vanilla's hybrid physical-attribute calculation. The Mule role remains
+sterile, chest-capable, rideable and absent from open-biome spawn lists; its
+spawn egg is retained for creative/testing parity.
 
 Delivery dependency for MOB-027: Dried Crumbler is registered, summonable and
 fully testable before Sherbet Dunes exists, but it deliberately has no natural

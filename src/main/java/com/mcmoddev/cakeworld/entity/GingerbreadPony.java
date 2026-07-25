@@ -12,7 +12,9 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.entity.animal.horse.AbstractHorse;
 import net.minecraft.world.entity.animal.horse.Horse;
+import net.minecraft.world.entity.animal.horse.Mule;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.NaturalSpawner;
 import net.minecraft.world.level.ServerLevelAccessor;
@@ -24,8 +26,8 @@ import net.minecraft.world.level.ServerLevelAccessor;
  * {@code EntityType.HORSE}, and its appearance setter is private. Same-family
  * breeding therefore lets vanilla calculate the genetic result, then copies
  * only that appearance and the calculated physical attributes into a
- * Gingerbread Pony. Crossbreeding with a Donkey deliberately retains the
- * vanilla Mule result until the Marzipan Mule feature exists.</p>
+ * Gingerbread Pony. Crossbreeding with a Dough Donkey copies the same
+ * calculated physical result into a Marzipan Mule.</p>
  */
 public final class GingerbreadPony extends Horse {
 	public GingerbreadPony(
@@ -38,6 +40,23 @@ public final class GingerbreadPony extends Horse {
 			ServerLevel level, AgeableMob mate) {
 		AgeableMob inherited =
 				super.getBreedOffspring(level, mate);
+		if (mate instanceof DoughDonkey
+				&& inherited instanceof Mule mule) {
+			MarzipanMule child =
+					CakeWorldEntities.MARZIPAN_MULE.get()
+							.create(level);
+			if (child == null) {
+				return null;
+			}
+			copyBaseAttribute(mule, child,
+					Attributes.MAX_HEALTH);
+			copyBaseAttribute(mule, child,
+					Attributes.JUMP_STRENGTH);
+			copyBaseAttribute(mule, child,
+					Attributes.MOVEMENT_SPEED);
+			child.setHealth(child.getMaxHealth());
+			return child;
+		}
 		if (!(mate instanceof GingerbreadPony)
 				|| !(inherited instanceof Horse horse)) {
 			return inherited;
@@ -83,7 +102,7 @@ public final class GingerbreadPony extends Horse {
 	}
 
 	private static void copyBaseAttribute(
-			Horse source, GingerbreadPony target,
+			AbstractHorse source, AbstractHorse target,
 			net.minecraft.world.entity.ai.attributes.Attribute attribute) {
 		target.getAttribute(attribute).setBaseValue(
 				source.getAttributeBaseValue(attribute));

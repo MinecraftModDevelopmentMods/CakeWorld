@@ -11,9 +11,9 @@ import net.minecraft.world.level.Level;
 /**
  * CakeWorld's genuine Donkey-role pack animal.
  *
- * <p>The future Marzipan Mule will complete the mixed horse-family breeding
- * contract. Until then, vanilla's cross-species Mule result remains intact
- * while two Dough Donkeys always produce a Dough Donkey.</p>
+ * <p>Two Dough Donkeys produce their own type. Crossbreeding with a
+ * Gingerbread Pony preserves vanilla's inherited physical calculation while
+ * producing a Marzipan Mule.</p>
  */
 public final class DoughDonkey extends Donkey {
 	public DoughDonkey(EntityType<? extends Donkey> type, Level level) {
@@ -27,6 +27,16 @@ public final class DoughDonkey extends Donkey {
 					.create(level);
 			if (child != null) {
 				setOffspringAttributes(mate, child);
+			}
+			return child;
+		}
+		if (mate instanceof GingerbreadPony) {
+			MarzipanMule child =
+					CakeWorldEntities.MARZIPAN_MULE.get()
+							.create(level);
+			if (child != null) {
+				setOffspringAttributes(mate, child);
+				child.setHealth(child.getMaxHealth());
 			}
 			return child;
 		}

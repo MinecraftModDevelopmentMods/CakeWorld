@@ -22,6 +22,7 @@ import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.MallowFloater;
 import com.mcmoddev.cakeworld.entity.MallowPuffProjectile;
+import com.mcmoddev.cakeworld.entity.MarzipanMule;
 import com.mcmoddev.cakeworld.entity.MeringueLlama;
 import com.mcmoddev.cakeworld.entity.MirageConfectioner;
 import com.mcmoddev.cakeworld.entity.MirageSweetProjectile;
@@ -139,6 +140,12 @@ public final class CakeWorldEntities {
 							MobCategory.CREATURE)
 							.sized(1.3964844F, 1.5F)
 							.clientTrackingRange(10));
+	public static final RegistryObject<EntityType<MarzipanMule>>
+			MARZIPAN_MULE = entity("marzipan_mule",
+					EntityType.Builder.of(MarzipanMule::new,
+							MobCategory.CREATURE)
+							.sized(1.3964844F, 1.6F)
+							.clientTrackingRange(8));
 	public static final RegistryObject<EntityType<SoggyBiscuit>> SOGGY_BISCUIT =
 			entity("soggy_biscuit",
 					EntityType.Builder.of(SoggyBiscuit::new,
@@ -339,6 +346,9 @@ public final class CakeWorldEntities {
 		event.put(DOUGH_DONKEY.get(),
 				AbstractChestedHorse.createBaseChestedHorseAttributes()
 						.build());
+		event.put(MARZIPAN_MULE.get(),
+				AbstractChestedHorse.createBaseChestedHorseAttributes()
+						.build());
 		event.put(SOGGY_BISCUIT.get(),
 				Zombie.createAttributes().build());
 		event.put(GRAND_GUMBALL_GUARDIAN.get(),
@@ -417,6 +427,10 @@ public final class CakeWorldEntities {
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					SodaDolphin::checkSodaDolphinSpawnRules);
 			SpawnPlacements.register(DOUGH_DONKEY.get(),
+					SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					Animal::checkAnimalSpawnRules);
+			SpawnPlacements.register(MARZIPAN_MULE.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					Animal::checkAnimalSpawnRules);

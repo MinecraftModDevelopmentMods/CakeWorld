@@ -51,6 +51,7 @@ import com.mcmoddev.cakeworld.entity.JawbreakerGuardian;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.MallowFloater;
 import com.mcmoddev.cakeworld.entity.MallowPuffProjectile;
+import com.mcmoddev.cakeworld.entity.MarzipanMule;
 import com.mcmoddev.cakeworld.entity.MeringueLlama;
 import com.mcmoddev.cakeworld.entity.MeringueLlamaFollowCaravanGoal;
 import com.mcmoddev.cakeworld.entity.MirageConfectioner;
@@ -134,6 +135,7 @@ import net.minecraft.world.entity.animal.axolotl.Axolotl;
 import net.minecraft.world.entity.animal.horse.Horse;
 import net.minecraft.world.entity.animal.horse.Llama;
 import net.minecraft.world.entity.animal.horse.Markings;
+import net.minecraft.world.entity.animal.horse.Mule;
 import net.minecraft.world.entity.animal.horse.TraderLlama;
 import net.minecraft.world.entity.animal.horse.Variant;
 import net.minecraft.world.entity.monster.Drowned;
@@ -2421,9 +2423,11 @@ public final class FirstBiteGameTests {
 				"Could not create the staged horse-family fixture");
 		AgeableMob transitionalMule = first.getBreedOffspring(
 				helper.getLevel(), transitionalHorse);
-		require(helper, transitionalMule != null
-						&& transitionalMule.getType() == EntityType.MULE,
-				"Dough Donkey and Gingerbread Pony broke vanilla horse-to-mule breeding before Marzipan Mule exists");
+		require(helper,
+				transitionalMule instanceof MarzipanMule
+						&& transitionalMule.getType()
+								== CakeWorldEntities.MARZIPAN_MULE.get(),
+				"Dough Donkey and Gingerbread Pony did not produce Marzipan Mule");
 
 		DoughDonkey packAnimal = CakeWorldEntities.DOUGH_DONKEY.get()
 				.create(helper.getLevel());
@@ -4965,13 +4969,13 @@ public final class FirstBiteGameTests {
 		AgeableMob donkeySideMule = donkey.getBreedOffspring(
 				helper.getLevel(), first);
 		require(helper,
-				ponySideMule != null
+				ponySideMule instanceof MarzipanMule
 						&& ponySideMule.getType()
-								== EntityType.MULE
-						&& donkeySideMule != null
+								== CakeWorldEntities.MARZIPAN_MULE.get()
+						&& donkeySideMule instanceof MarzipanMule
 						&& donkeySideMule.getType()
-								== EntityType.MULE,
-				"Staged Pony/Donkey crossbreeding failed to preserve vanilla Mule progression from both parent directions");
+								== CakeWorldEntities.MARZIPAN_MULE.get(),
+				"Pony/Donkey crossbreeding did not produce Marzipan Mule from both parent directions");
 
 		GingerbreadPony mount =
 				CakeWorldEntities.GINGERBREAD_PONY.get()
@@ -5171,6 +5175,235 @@ public final class FirstBiteGameTests {
 		requireCriterion(helper, advancementPlayer,
 				"minecraft:husbandry/bred_all_animals",
 				"minecraft:horse");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void marzipanMulesKeepHybridPacksMountsAndSterility(
+			GameTestHelper helper) {
+		GingerbreadPony pony =
+				CakeWorldEntities.GINGERBREAD_PONY.get()
+						.create(helper.getLevel());
+		DoughDonkey donkey =
+				CakeWorldEntities.DOUGH_DONKEY.get()
+						.create(helper.getLevel());
+		MarzipanMule role =
+				CakeWorldEntities.MARZIPAN_MULE.get()
+						.create(helper.getLevel());
+		require(helper, pony != null && donkey != null
+						&& role != null,
+				"Could not create Marzipan Mule role fixtures");
+
+		pony.getAttribute(Attributes.MAX_HEALTH)
+				.setBaseValue(24.0D);
+		pony.getAttribute(Attributes.JUMP_STRENGTH)
+				.setBaseValue(0.8D);
+		pony.getAttribute(Attributes.MOVEMENT_SPEED)
+				.setBaseValue(0.25D);
+		donkey.getAttribute(Attributes.MAX_HEALTH)
+				.setBaseValue(30.0D);
+		donkey.getAttribute(Attributes.JUMP_STRENGTH)
+				.setBaseValue(0.6D);
+		donkey.getAttribute(Attributes.MOVEMENT_SPEED)
+				.setBaseValue(0.18D);
+		for (net.minecraft.world.entity.animal.horse.AbstractHorse parent :
+				new net.minecraft.world.entity.animal.horse.AbstractHorse[] {
+						pony, donkey}) {
+			parent.setHealth(parent.getMaxHealth());
+			parent.setTamed(true);
+			parent.setInLove(null);
+		}
+		require(helper, pony.canMate(donkey)
+						&& donkey.canMate(pony),
+				"Marzipan Mule parents lost bidirectional Horse-family compatibility");
+		AgeableMob ponyResult = pony.getBreedOffspring(
+				helper.getLevel(), donkey);
+		AgeableMob donkeyResult = donkey.getBreedOffspring(
+				helper.getLevel(), pony);
+		require(helper,
+				hasInheritedMuleAttributes(ponyResult)
+						&& hasInheritedMuleAttributes(
+								donkeyResult),
+				"Marzipan Mule offspring lost custom type or vanilla hybrid physical inheritance");
+
+		require(helper,
+				role instanceof Mule
+						&& role.getType()
+								== CakeWorldEntities
+										.MARZIPAN_MULE.get()
+						&& close(role.getMaxHealth(), 53.0D)
+						&& close(role.getAttributeValue(
+								Attributes.MOVEMENT_SPEED),
+								0.175D)
+						&& close(role.getAttributeValue(
+								Attributes.JUMP_STRENGTH),
+								0.5D)
+						&& close(role.getDimensions(Pose.STANDING)
+								.width, 1.3964844D)
+						&& close(role.getDimensions(Pose.STANDING)
+								.height, 1.6D)
+						&& role.getMaxTemper() == 100
+						&& role.getMaxSpawnClusterSize() == 6
+						&& role.getInventoryColumns() == 5
+						&& !role.canWearArmor(),
+				"Marzipan Mule lost exact Mule attributes, body, temper, cluster, pack, or armour roles");
+		role.setTamed(true);
+		role.setHealth(role.getMaxHealth());
+		role.setInLove(null);
+		require(helper,
+				!role.canMate(pony)
+						&& !pony.canMate(role)
+						&& role.getBreedOffspring(
+								helper.getLevel(), pony)
+								instanceof MarzipanMule,
+				"Marzipan Mule lost sterility or leaked a literal Mule through its unreachable offspring factory");
+		require(helper,
+				role.isFood(new ItemStack(Items.WHEAT))
+						&& role.isFood(new ItemStack(Items.SUGAR))
+						&& role.isFood(new ItemStack(
+								Items.HAY_BLOCK))
+						&& role.isFood(new ItemStack(Items.APPLE))
+						&& role.isFood(new ItemStack(
+								Items.GOLDEN_CARROT))
+						&& role.isFood(new ItemStack(
+								Items.GOLDEN_APPLE))
+						&& role.isFood(new ItemStack(
+								Items.ENCHANTED_GOLDEN_APPLE)),
+				"Marzipan Mule lost the full vanilla Horse-family food set");
+
+		Player rider = helper.makeMockPlayer();
+		BlockPos anchor = helper.absolutePos(
+				new BlockPos(2, 3, 2));
+		role.setPos(anchor.getX(), anchor.getY(),
+				anchor.getZ());
+		role.setOwnerUUID(rider.getUUID());
+		role.setTamed(true);
+		role.setHealth(role.getMaxHealth());
+		helper.getLevel().addFreshEntity(role);
+		rider.getAbilities().instabuild = false;
+		rider.setItemInHand(InteractionHand.MAIN_HAND,
+				new ItemStack(Items.CHEST));
+		InteractionResult chestResult = role.mobInteract(
+				rider, InteractionHand.MAIN_HAND);
+		require(helper, chestResult.consumesAction()
+						&& role.hasChest()
+						&& rider.getMainHandItem().isEmpty()
+						&& role.getSlot(500).set(
+								new ItemStack(Items.DIAMOND, 3))
+						&& role.getSlot(514).set(
+								new ItemStack(Items.GOLD_INGOT, 2)),
+				"Marzipan Mule did not equip a chest or expose all fifteen pack slots");
+		require(helper, role.getSlot(400).set(
+						new ItemStack(Items.SADDLE))
+						&& role.isSaddled(),
+				"Marzipan Mule could not equip its saddle");
+		rider.setItemInHand(InteractionHand.MAIN_HAND,
+				ItemStack.EMPTY);
+		InteractionResult rideResult = role.mobInteract(
+				rider, InteractionHand.MAIN_HAND);
+		require(helper, rideResult.consumesAction()
+						&& rider.getVehicle() == role
+						&& role.hasPassenger(rider)
+						&& role.canBeControlledByRider()
+						&& role.canJump(),
+				"Marzipan Mule lost tame saddle riding, rider control, or charged-jump support");
+		role.onPlayerJump(90);
+		role.handleStartJump(90);
+		require(helper, role.isStanding(),
+				"Marzipan Mule lost its visible full-charge jump cue");
+		rider.stopRiding();
+
+		role.setHealth(role.getMaxHealth());
+		float healthBeforeFall = role.getHealth();
+		require(helper,
+				role.causeFallDamage(8.0F, 1.0F,
+						DamageSource.FALL)
+						&& role.getHealth()
+								< healthBeforeFall,
+				"Marzipan Mule incorrectly removed the real environmental fall hazard");
+		CompoundTag saved = role.saveWithoutId(
+				new CompoundTag());
+		saved.remove("UUID");
+		MarzipanMule restored =
+				CakeWorldEntities.MARZIPAN_MULE.get()
+						.create(helper.getLevel());
+		require(helper, restored != null,
+				"Could not create Marzipan Mule reload fixture");
+		restored.load(saved);
+		require(helper,
+				restored.isTamed()
+						&& rider.getUUID().equals(
+								restored.getOwnerUUID())
+						&& restored.hasChest()
+						&& restored.isSaddled()
+						&& restored.getSlot(500).get()
+								.is(Items.DIAMOND)
+						&& restored.getSlot(500).get()
+								.getCount() == 3
+						&& restored.getSlot(514).get()
+								.is(Items.GOLD_INGOT)
+						&& restored.getSlot(514).get()
+								.getCount() == 2,
+				"Marzipan Mule lost owner, tame, chest, saddle, or edge pack slots across save/load");
+
+		for (ResourceLocation biomeId :
+				new ResourceLocation[] {
+						CakeWorldBiomes.CANDY_PLAINS.getId(),
+						CakeWorldBiomes.COOKIE_FOREST.getId(),
+						CakeWorldBiomes.MARSHMALLOW_PEAKS
+								.getId(),
+						CakeWorldBiomes.SODA_OCEAN.getId(),
+						CakeWorldBiomes.FUDGE_WASTES.getId(),
+						CakeWorldBiomes.MERINGUE_ISLANDS
+								.getId()}) {
+			Biome biome = helper.getLevel().registryAccess()
+					.registryOrThrow(
+							Registry.BIOME_REGISTRY)
+					.get(biomeId);
+			require(helper, biome != null,
+					"Could not inspect Marzipan Mule spawn boundary for "
+							+ biomeId);
+			boolean leaked = biome.getMobSettings()
+					.getMobs(MobCategory.CREATURE)
+					.unwrap().stream()
+					.anyMatch(spawn ->
+							spawn.type == EntityType.MULE
+									|| spawn.type
+											== CakeWorldEntities
+													.MARZIPAN_MULE
+													.get());
+			require(helper, !leaked,
+					"Marzipan Mule leaked into open-biome spawning at "
+							+ biomeId);
+		}
+		require(helper,
+				SpawnPlacements.getPlacementType(
+						CakeWorldEntities.MARZIPAN_MULE.get())
+								== SpawnPlacements.Type.ON_GROUND
+						&& SpawnPlacements.getHeightmapType(
+								CakeWorldEntities
+										.MARZIPAN_MULE.get())
+								== Heightmap.Types
+										.MOTION_BLOCKING_NO_LEAVES
+						&& CakeWorldItems
+								.MARZIPAN_MULE_SPAWN_EGG
+								.isPresent()
+						&& role.getLootTable().equals(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/marzipan_mule")),
+				"Marzipan Mule lost exact placement, egg, or dedicated Mule-equivalent loot");
+		ServerPlayer advancementPlayer = new ServerPlayer(
+				helper.getLevel().getServer(), helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2032"),
+						"CakeWorldMarzipanMuleRoleTest"));
+		VanillaRoleAdvancements.creditBredRole(
+				advancementPlayer,
+				CakeWorldEntities.MARZIPAN_MULE.get());
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:husbandry/bred_all_animals",
+				"minecraft:mule");
 		helper.succeed();
 	}
 
@@ -7009,6 +7242,27 @@ public final class FirstBiteGameTests {
 		require(helper, !foundVanilla && foundReplacement,
 				"Biome did not replace " + Registry.ENTITY_TYPE.getKey(vanilla)
 						+ " with " + Registry.ENTITY_TYPE.getKey(replacement));
+	}
+
+	private static boolean hasInheritedMuleAttributes(
+			AgeableMob child) {
+		return child instanceof MarzipanMule
+				&& child.getType()
+						== CakeWorldEntities.MARZIPAN_MULE.get()
+				&& child.getAttributeBaseValue(
+						Attributes.MAX_HEALTH) >= 23.0D
+				&& child.getAttributeBaseValue(
+						Attributes.MAX_HEALTH) <= 28.0D
+				&& child.getAttributeBaseValue(
+						Attributes.JUMP_STRENGTH) >= 0.6D
+				&& child.getAttributeBaseValue(
+						Attributes.JUMP_STRENGTH) <= 0.8D
+				&& child.getAttributeBaseValue(
+						Attributes.MOVEMENT_SPEED)
+								>= 0.180833D
+				&& child.getAttributeBaseValue(
+						Attributes.MOVEMENT_SPEED)
+								<= 0.255834D;
 	}
 
 	private static void requireCriterion(GameTestHelper helper, ServerPlayer player,

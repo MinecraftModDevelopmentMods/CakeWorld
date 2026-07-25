@@ -69,6 +69,8 @@ public final class CakeWorldClientEvents {
 				DolphinRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.DOUGH_DONKEY.get(),
 				DoughDonkeyRenderer::new);
+		event.registerEntityRenderer(CakeWorldEntities.MARZIPAN_MULE.get(),
+				MarzipanMuleRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.SOGGY_BISCUIT.get(),
 				DrownedRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.SOGGY_TRIDENT.get(),

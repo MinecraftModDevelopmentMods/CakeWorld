@@ -168,6 +168,10 @@ public final class CakeWorldItems {
 			spawnEgg("dough_donkey_spawn_egg",
 					CakeWorldEntities.DOUGH_DONKEY,
 					0xB47A43, 0xF1D39A);
+	public static final RegistryObject<Item> MARZIPAN_MULE_SPAWN_EGG =
+			spawnEgg("marzipan_mule_spawn_egg",
+					CakeWorldEntities.MARZIPAN_MULE,
+					0xE2B77E, 0x8B5A3C);
 	public static final RegistryObject<Item> SOGGY_BISCUIT_SPAWN_EGG =
 			spawnEgg("soggy_biscuit_spawn_egg",
 					CakeWorldEntities.SOGGY_BISCUIT,
