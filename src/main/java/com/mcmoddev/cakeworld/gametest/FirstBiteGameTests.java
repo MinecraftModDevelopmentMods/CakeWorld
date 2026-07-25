@@ -31,6 +31,7 @@ import com.mcmoddev.cakeworld.cookbook.SharedCookbookLibrary;
 import com.mcmoddev.cakeworld.compat.VanillaRoleAdvancements;
 import com.mcmoddev.cakeworld.entity.CandyflossSheep;
 import com.mcmoddev.cakeworld.entity.BonbonBat;
+import com.mcmoddev.cakeworld.entity.ChocolatePanda;
 import com.mcmoddev.cakeworld.entity.CocoaCow;
 import com.mcmoddev.cakeworld.entity.CupcakeCow;
 import com.mcmoddev.cakeworld.entity.CinnamonPuffProjectile;
@@ -137,6 +138,7 @@ import net.minecraft.world.entity.animal.Fox;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.animal.MushroomCow;
 import net.minecraft.world.entity.animal.Ocelot;
+import net.minecraft.world.entity.animal.Panda;
 import net.minecraft.world.entity.animal.Rabbit;
 import net.minecraft.world.entity.animal.Turtle;
 import net.minecraft.world.entity.animal.goat.Goat;
@@ -8184,6 +8186,626 @@ public final class FirstBiteGameTests {
 						wrapped.start();
 						return getTarget() != null;
 					}
+				}
+			}
+			return false;
+		}
+	}
+
+	@GameTest(template = EMPTY)
+	public static void chocolatePandasKeepGenesMoodsCaneAndSafeBites(
+			GameTestHelper helper) {
+		ChocolatePandaProbe panda =
+				new ChocolatePandaProbe(helper.getLevel());
+		require(helper,
+				panda instanceof Panda
+						&& panda.getType()
+								== CakeWorldEntities
+										.CHOCOLATE_PANDA.get()
+						&& panda.getType().getCategory()
+								== MobCategory.CREATURE
+						&& close(panda.getMaxHealth(), 20.0D)
+						&& close(panda.getAttributeValue(
+								Attributes.MOVEMENT_SPEED),
+								0.15D)
+						&& close(panda.getAttributeValue(
+								Attributes.ATTACK_DAMAGE),
+								6.0D)
+						&& close(panda.getDimensions(
+								Pose.STANDING).width,
+								1.3D)
+						&& close(panda.getDimensions(
+								Pose.STANDING).height,
+								1.25D)
+						&& panda.getMaxSpawnClusterSize() == 4
+						&& panda.getAmbientSoundInterval()
+								== 120
+						&& !panda.canBeLeashed(null)
+						&& panda.getLootTable().equals(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/chocolate_panda"))
+						&& panda.countGoalsNamed(
+								"PandaRollGoal") == 1
+						&& panda.countGoalsNamed(
+								"PandaSneezeGoal") == 1
+						&& panda.countGoalsNamed(
+								"PandaSitGoal") == 1
+						&& panda.countGoalsNamed(
+								"CakeWorldPandaBreedGoal")
+								== 1
+						&& panda.countGoalsNamed(
+								"CakeWorldPandaFoodGoal")
+								== 1
+						&& panda.countGoalsNamed(
+								"TemptGoal") == 2
+						&& panda.countTargetGoalsNamed(
+								"PandaHurtByTargetGoal")
+								== 1,
+				"Chocolate Panda lost its genuine type, exact physical, loot, no-leash or inherited/custom AI contract");
+
+		for (Panda.Gene gene : List.of(
+				Panda.Gene.NORMAL,
+				Panda.Gene.LAZY,
+				Panda.Gene.WORRIED,
+				Panda.Gene.PLAYFUL,
+				Panda.Gene.AGGRESSIVE)) {
+			panda.setMainGene(gene);
+			panda.setHiddenGene(Panda.Gene.NORMAL);
+			require(helper, panda.getVariant() == gene,
+					"Chocolate Panda lost dominant gene phenotype "
+							+ gene);
+		}
+		panda.setMainGene(Panda.Gene.BROWN);
+		panda.setHiddenGene(Panda.Gene.NORMAL);
+		require(helper,
+				panda.getVariant() == Panda.Gene.NORMAL,
+				"Chocolate Panda lost recessive brown masking");
+		panda.setHiddenGene(Panda.Gene.BROWN);
+		require(helper,
+				panda.getVariant() == Panda.Gene.BROWN
+						&& panda.isBrown(),
+				"Chocolate Panda lost homozygous brown phenotype");
+		panda.setMainGene(Panda.Gene.WEAK);
+		panda.setHiddenGene(Panda.Gene.WEAK);
+		panda.setAttributes();
+		require(helper,
+				panda.getVariant() == Panda.Gene.WEAK
+						&& panda.isWeak()
+						&& close(panda.getMaxHealth(),
+								10.0D),
+				"Chocolate Panda lost weak recessive health");
+		ChocolatePandaProbe lazy =
+				new ChocolatePandaProbe(helper.getLevel());
+		lazy.setMainGene(Panda.Gene.LAZY);
+		lazy.setHiddenGene(Panda.Gene.NORMAL);
+		lazy.setAttributes();
+		require(helper,
+				lazy.isLazy()
+						&& close(lazy.getAttributeValue(
+								Attributes.MOVEMENT_SPEED),
+								0.07D),
+				"Chocolate Panda lost lazy movement speed");
+
+		panda.setMainGene(Panda.Gene.PLAYFUL);
+		panda.setHiddenGene(Panda.Gene.AGGRESSIVE);
+		CompoundTag genes = new CompoundTag();
+		panda.addAdditionalSaveData(genes);
+		ChocolatePandaProbe restored =
+				new ChocolatePandaProbe(helper.getLevel());
+		restored.readAdditionalSaveData(genes);
+		require(helper,
+				"playful".equals(
+						genes.getString("MainGene"))
+						&& "aggressive".equals(
+								genes.getString(
+										"HiddenGene"))
+						&& restored.getMainGene()
+								== Panda.Gene.PLAYFUL
+						&& restored.getHiddenGene()
+								== Panda.Gene.AGGRESSIVE,
+				"Chocolate Panda lost main/hidden gene NBT");
+
+		ChocolatePandaProbe brownParent =
+				new ChocolatePandaProbe(helper.getLevel());
+		brownParent.setMainGene(Panda.Gene.BROWN);
+		brownParent.setHiddenGene(Panda.Gene.BROWN);
+		ChocolatePandaProbe weakParent =
+				new ChocolatePandaProbe(helper.getLevel());
+		weakParent.setMainGene(Panda.Gene.WEAK);
+		weakParent.setHiddenGene(Panda.Gene.WEAK);
+		ChocolatePanda child = brownParent
+				.getBreedOffspring(helper.getLevel(),
+						weakParent);
+		require(helper,
+				child != null
+						&& child.getType()
+								== CakeWorldEntities
+										.CHOCOLATE_PANDA.get()
+						&& Set.of(child.getMainGene(),
+								child.getHiddenGene())
+								.equals(Set.of(
+										Panda.Gene.BROWN,
+										Panda.Gene.WEAK))
+						&& child.getVariant()
+								== Panda.Gene.NORMAL,
+				"Chocolate Panda offspring leaked a literal Panda or lost parent-gene inheritance");
+
+		ChocolatePandaProbe animation =
+				new ChocolatePandaProbe(helper.getLevel());
+		animation.setNoAi(true);
+		animation.roll(true);
+		for (int tick = 0; tick < 33; tick++) {
+			animation.tick();
+		}
+		require(helper, !animation.isRolling(),
+				"Chocolate Panda roll did not complete after its exact 32-step sequence");
+		animation.sneeze(true);
+		for (int tick = 0; tick < 21; tick++) {
+			animation.tick();
+		}
+		animation.sit(true);
+		animation.eat(true);
+		animation.setOnBack(true);
+		require(helper,
+				!animation.isSneezing()
+						&& animation.getSneezeCounter() == 0
+						&& animation.isSitting()
+						&& animation.isEating()
+						&& animation.isOnBack()
+						&& !animation.canPerformAction(),
+				"Chocolate Panda lost sneeze completion, sitting, eating or on-back state");
+
+		ChocolatePandaProbe worried =
+				new ChocolatePandaProbe(helper.getLevel());
+		worried.setMainGene(Panda.Gene.WORRIED);
+		worried.setHiddenGene(Panda.Gene.NORMAL);
+		try {
+			helper.getLevel().setRainLevel(1.0F);
+			helper.getLevel().setThunderLevel(1.0F);
+			worried.tick();
+			require(helper,
+					worried.isWorried()
+							&& worried.isScared()
+							&& worried.isSitting()
+							&& !worried.isEating(),
+					"Worried Chocolate Panda lost its thunder fear and sitting response");
+		} finally {
+			helper.getLevel().setRainLevel(0.0F);
+			helper.getLevel().setThunderLevel(0.0F);
+			helper.getLevel().setWeatherParameters(
+					6000, 0, false, false);
+		}
+
+		require(helper,
+				panda.isFood(new ItemStack(
+						Blocks.BAMBOO))
+						&& panda.isFood(new ItemStack(
+								CakeWorldItems
+										.SPRINKLE_SEEDS
+										.get()))
+						&& panda.isFood(new ItemStack(
+								CakeWorldBlocks
+										.CANDY_CANE_PILLAR
+										.get()))
+						&& !panda.isFood(new ItemStack(
+								CakeWorldItems
+										.SIMPLE_BISCUIT
+										.get()))
+						&& new ItemStack(CakeWorldItems
+								.SPRINKLE_SEEDS.get())
+								.is(ChocolatePanda.FOODS)
+						&& new ItemStack(CakeWorldBlocks
+								.CANDY_CANE_PILLAR.get())
+								.is(ChocolatePanda.FOODS)
+						&& CakeWorldBlocks.CANDY_SPROUT
+								.get().defaultBlockState()
+								.is(ChocolatePanda
+										.BREEDING_PLANTS)
+						&& CakeWorldBlocks
+								.CANDY_CANE_PILLAR.get()
+								.defaultBlockState()
+								.is(ChocolatePanda
+										.BREEDING_PLANTS),
+				"Chocolate Panda lost Bamboo compatibility or tagged Candy Sprout/Candy-Cane food roles");
+
+		BlockPos anchor = helper.absolutePos(
+				new BlockPos(4, 2, 4));
+		ServerPlayer feeder = new ServerPlayer(
+				helper.getLevel().getServer(),
+				helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed3035"),
+						"CakeWorldChocolatePandaFoodTest"));
+		ChocolatePandaProbe handFed =
+				new ChocolatePandaProbe(helper.getLevel());
+		handFed.setPos(anchor.getX() + 0.5D,
+				anchor.getY(), anchor.getZ() + 0.5D);
+		feeder.setPos(handFed.getX() + 1.0D,
+				handFed.getY(), handFed.getZ());
+		feeder.setItemInHand(InteractionHand.MAIN_HAND,
+				new ItemStack(CakeWorldItems
+						.SPRINKLE_SEEDS.get(), 2));
+		helper.getLevel().players().add(feeder);
+		try {
+			require(helper,
+					handFed.startGoalNamed(
+							"TemptGoal")
+							&& handFed.mobInteract(
+									feeder,
+									InteractionHand
+											.MAIN_HAND)
+									.consumesAction()
+							&& handFed.isInLove()
+							&& feeder.getItemInHand(
+									InteractionHand
+											.MAIN_HAND)
+									.getCount() == 1,
+					"Chocolate Panda did not follow and consume a tagged Candy Sprout food");
+		} finally {
+			helper.getLevel().players().remove(feeder);
+		}
+
+		ChocolatePandaProbe droppedFoodPanda =
+				new ChocolatePandaProbe(helper.getLevel());
+		droppedFoodPanda.setPos(anchor.getX() + 3.5D,
+				anchor.getY(), anchor.getZ() + 0.5D);
+		ItemEntity droppedFood = new ItemEntity(
+				helper.getLevel(),
+				droppedFoodPanda.getX() + 0.5D,
+				droppedFoodPanda.getY(),
+				droppedFoodPanda.getZ(),
+				new ItemStack(CakeWorldItems
+						.SPRINKLE_SEEDS.get(), 2));
+		helper.getLevel().addFreshEntity(droppedFood);
+		require(helper,
+				droppedFoodPanda.startGoalNamed(
+						"CakeWorldPandaFoodGoal")
+						&& droppedFood.isRemoved()
+						&& droppedFoodPanda
+								.getMainHandItem()
+								.is(ChocolatePanda.FOODS)
+						&& droppedFoodPanda
+								.getMainHandItem()
+								.getCount() == 2
+						&& droppedFoodPanda.isSitting()
+						&& droppedFoodPanda.isEating(),
+				"Chocolate Panda did not collect, sit with and eat dropped tagged food");
+
+		ChocolatePandaProbe breedingFirst =
+				new ChocolatePandaProbe(helper.getLevel());
+		ChocolatePandaProbe breedingSecond =
+				new ChocolatePandaProbe(helper.getLevel());
+		breedingFirst.setPos(anchor.getX() + 6.5D,
+				anchor.getY(), anchor.getZ() + 0.5D);
+		breedingSecond.setPos(anchor.getX() + 7.5D,
+				anchor.getY(), anchor.getZ() + 0.5D);
+		breedingFirst.setInLove(null);
+		breedingSecond.setInLove(null);
+		helper.getLevel().addFreshEntity(breedingFirst);
+		helper.getLevel().addFreshEntity(breedingSecond);
+		BlockPos breedingPlant = anchor.offset(6, 0, 2);
+		helper.getLevel().setBlock(breedingPlant,
+				CakeWorldBlocks.CANDY_SPROUT.get()
+						.defaultBlockState(), 3);
+		require(helper,
+				breedingFirst.startGoalNamed(
+						"CakeWorldPandaBreedGoal")
+						&& breedingFirst
+								.getUnhappyCounter() == 0,
+				"Chocolate Panda did not accept nearby tagged Candy Sprout vegetation for breeding");
+
+		ChocolatePandaProbe attacked =
+				new ChocolatePandaProbe(helper.getLevel());
+		ChocolatePandaProbe aggressiveAlly =
+				new ChocolatePandaProbe(helper.getLevel());
+		Pig familyAttacker = EntityType.PIG.create(
+				helper.getLevel());
+		require(helper, familyAttacker != null,
+				"Could not create Chocolate Panda family-response attacker");
+		attacked.setMainGene(Panda.Gene.NORMAL);
+		attacked.setHiddenGene(Panda.Gene.NORMAL);
+		aggressiveAlly.setMainGene(
+				Panda.Gene.AGGRESSIVE);
+		aggressiveAlly.setHiddenGene(
+				Panda.Gene.NORMAL);
+		attacked.setPos(anchor.getX() + 2.5D,
+				anchor.getY(), anchor.getZ() + 4.5D);
+		aggressiveAlly.setPos(anchor.getX() + 3.5D,
+				anchor.getY(), anchor.getZ() + 4.5D);
+		familyAttacker.setPos(anchor.getX() + 4.5D,
+				anchor.getY(), anchor.getZ() + 4.5D);
+		helper.getLevel().addFreshEntity(attacked);
+		helper.getLevel().addFreshEntity(aggressiveAlly);
+		helper.getLevel().addFreshEntity(familyAttacker);
+		attacked.setTestTickCount(1);
+		attacked.hurt(DamageSource.mobAttack(
+				familyAttacker), 1.0F);
+		require(helper,
+				attacked.startTargetGoalNamed(
+						"PandaHurtByTargetGoal")
+						&& attacked.getTarget()
+								== familyAttacker
+						&& aggressiveAlly.getTarget()
+								== familyAttacker,
+				"Chocolate Panda lost inherited hurt response or aggressive-family alerting");
+
+		Pig biteTarget = EntityType.PIG.create(
+				helper.getLevel());
+		require(helper, biteTarget != null,
+				"Could not create Chocolate Panda bite target");
+		ChocolatePandaProbe biter =
+				new ChocolatePandaProbe(helper.getLevel());
+		float biteHealth = biteTarget.getHealth();
+		Difficulty originalDifficulty =
+				helper.getLevel().getDifficulty();
+		try {
+			for (Difficulty safeDifficulty :
+					new Difficulty[] {
+							Difficulty.PEACEFUL,
+							Difficulty.EASY,
+							Difficulty.NORMAL}) {
+				helper.getLevel().getServer()
+						.setDifficulty(safeDifficulty,
+								true);
+				biteTarget.setHealth(biteHealth);
+				biteTarget.invulnerableTime = 0;
+				biteTarget.removeAllEffects();
+				biteTarget.setSecondsOnFire(5);
+				biteTarget.fallDistance = 8.0F;
+				biteTarget.setDeltaMovement(Vec3.ZERO);
+				biter.setTarget(biteTarget);
+				require(helper,
+						biter.doHurtTarget(
+								biteTarget)
+								&& close(
+										biteTarget
+												.getHealth(),
+										biteHealth)
+								&& biter.getTarget()
+										== null
+								&& !biteTarget.isOnFire()
+								&& biteTarget.fallDistance
+										== 0.0F
+								&& biteTarget.hasEffect(
+										MobEffects
+												.MOVEMENT_SLOWDOWN)
+								&& biteTarget.hasEffect(
+										MobEffects
+												.SLOW_FALLING)
+								&& biteTarget.hasEffect(
+										MobEffects
+												.FIRE_RESISTANCE)
+								&& biteTarget.getEffect(
+										MobEffects
+												.DAMAGE_RESISTANCE)
+										.getAmplifier()
+										== 4,
+						safeDifficulty
+								+ " Chocolate Panda bite caused health damage, retained a normal target or lacked sticky rescue effects");
+			}
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			biteTarget.setHealth(biteHealth);
+			biteTarget.invulnerableTime = 0;
+			biteTarget.removeAllEffects();
+			require(helper,
+					biter.doHurtTarget(biteTarget)
+							&& close(
+									biteTarget.getHealth(),
+									biteHealth - 6.0D),
+					"Hard Chocolate Panda lost the exact six-point Panda bite");
+		} finally {
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		Registry<Biome> biomes = helper.getLevel()
+				.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY);
+		ResourceLocation gummyJungle = new ResourceLocation(
+				CakeWorld.MODID, "gummy_jungle");
+		require(helper, biomes.get(gummyJungle) == null,
+				"Gummy Jungle unexpectedly exists; MOB-035's staged spawn gate must be revisited");
+		MobSpawnSettingsBuilder futureSpawns =
+				new MobSpawnSettingsBuilder(
+						MobSpawnSettings.EMPTY);
+		BiomeLoadingEvent futureJungle =
+				new BiomeLoadingEvent(gummyJungle,
+						null, null, null,
+						new BiomeGenerationSettingsBuilder(
+								BiomeGenerationSettings
+										.EMPTY),
+						futureSpawns);
+		CakeWorldCreatureSpawns.onBiomeLoading(
+				futureJungle);
+		MobSpawnSettings.SpawnerData futureSpawn =
+				futureSpawns
+						.getSpawner(MobCategory.CREATURE)
+						.stream()
+						.filter(spawn -> spawn.type
+								== CakeWorldEntities
+										.CHOCOLATE_PANDA
+										.get())
+						.findFirst().orElse(null);
+		require(helper,
+				futureSpawn != null
+						&& futureSpawn.getWeight().asInt()
+								== 80
+						&& futureSpawn.minCount == 1
+						&& futureSpawn.maxCount == 2
+						&& futureSpawns
+								.getSpawner(
+										MobCategory.CREATURE)
+								.stream().noneMatch(
+										spawn -> spawn.type
+												== EntityType.PANDA),
+				"Future Gummy Jungle hook lost the exact Bamboo Jungle 80/1-2 Panda replacement");
+
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS
+						.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS
+						.getId())) {
+			Biome biome = biomes.get(biomeId);
+			require(helper,
+					biome != null
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory.CREATURE)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType.PANDA
+											|| spawn.type
+													== CakeWorldEntities
+															.CHOCOLATE_PANDA
+															.get()),
+					"Current biome leaked Panda/Chocolate Panda spawning before Gummy Jungle exists: "
+							+ biomeId);
+		}
+
+		require(helper,
+				CakeWorldItems.CHOCOLATE_PANDA_SPAWN_EGG
+						.isPresent()
+						&& SpawnPlacements
+								.getPlacementType(
+										CakeWorldEntities
+												.CHOCOLATE_PANDA
+												.get())
+								== SpawnPlacements.Type
+										.NO_RESTRICTIONS
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+												.CHOCOLATE_PANDA
+												.get())
+								== Heightmap.Types
+										.MOTION_BLOCKING_NO_LEAVES,
+				"Chocolate Panda lost its egg or exact Panda spawn placement metadata");
+		ServerPlayer advancementPlayer = new ServerPlayer(
+				helper.getLevel().getServer(),
+				helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed4035"),
+						"CakeWorldChocolatePandaRoleTest"));
+		VanillaRoleAdvancements.creditBredRole(
+				advancementPlayer,
+				CakeWorldEntities.CHOCOLATE_PANDA.get());
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:husbandry/bred_all_animals",
+				"minecraft:panda");
+
+		BlockPos spawnPos = anchor.offset(8, 0, 8);
+		helper.getLevel().setBlock(spawnPos.below(),
+				CakeWorldBlocks.CHOCOLATE_SPONGE.get()
+						.defaultBlockState(), 3);
+		helper.getLevel().setBlock(spawnPos,
+				Blocks.TORCH.defaultBlockState(), 3);
+		helper.getLevel().setBlock(spawnPos.above(),
+				Blocks.AIR.defaultBlockState(), 3);
+		require(helper,
+				helper.getLevel()
+						.getBlockState(spawnPos.below())
+						.is(BlockTags
+								.ANIMALS_SPAWNABLE_ON)
+						&& SpawnPlacements.Type
+								.NO_RESTRICTIONS.canSpawnAt(
+										helper.getLevel(),
+										spawnPos,
+										CakeWorldEntities
+												.CHOCOLATE_PANDA
+												.get()),
+				"Chocolate Panda lost its edible animal surface or body-valid unrestricted placement");
+
+		breedingFirst.discard();
+		breedingSecond.discard();
+		attacked.discard();
+		aggressiveAlly.discard();
+		familyAttacker.discard();
+		droppedFoodPanda.discard();
+		helper.getLevel().setBlock(breedingPlant,
+				Blocks.AIR.defaultBlockState(), 3);
+		helper.runAfterDelay(5, () -> {
+			int rawBrightness = helper.getLevel()
+					.getMaxLocalRawBrightness(spawnPos);
+			require(helper,
+					rawBrightness > 8
+							&& Animal.checkAnimalSpawnRules(
+									CakeWorldEntities
+											.CHOCOLATE_PANDA
+											.get(),
+									helper.getLevel(),
+									MobSpawnType.NATURAL,
+									spawnPos,
+									new Random(1978L)),
+					"Chocolate Panda lost the inherited bright animal predicate after block-light propagation: rawBrightness="
+							+ rawBrightness);
+			helper.getLevel().setBlock(spawnPos,
+					Blocks.AIR.defaultBlockState(), 3);
+			helper.getLevel().setBlock(spawnPos.below(),
+					Blocks.AIR.defaultBlockState(), 3);
+			helper.succeed();
+		});
+	}
+
+	private static final class ChocolatePandaProbe
+			extends ChocolatePanda {
+		private ChocolatePandaProbe(Level level) {
+			super(CakeWorldEntities.CHOCOLATE_PANDA.get(),
+					level);
+		}
+
+		private int countGoalsNamed(String name) {
+			return (int)goalSelector.getAvailableGoals()
+					.stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
+		}
+
+		private int countTargetGoalsNamed(String name) {
+			return (int)targetSelector.getAvailableGoals()
+					.stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
+		}
+
+		private void setTestTickCount(int ticks) {
+			tickCount = ticks;
+		}
+
+		private boolean startGoalNamed(String name) {
+			for (WrappedGoal wrapped :
+					goalSelector.getAvailableGoals()) {
+				if (name.equals(wrapped.getGoal()
+						.getClass().getSimpleName())
+						&& wrapped.canUse()) {
+					wrapped.start();
+					wrapped.tick();
+					return true;
+				}
+			}
+			return false;
+		}
+
+		private boolean startTargetGoalNamed(String name) {
+			for (WrappedGoal wrapped :
+					targetSelector.getAvailableGoals()) {
+				if (name.equals(wrapped.getGoal()
+						.getClass().getSimpleName())
+						&& wrapped.canUse()) {
+					wrapped.start();
+					return true;
 				}
 			}
 			return false;

@@ -71,6 +71,10 @@ public final class CakeWorldCreatureSpawns {
 					EntityType.OCELOT,
 					CakeWorldEntities.SHERBET_OCELOT,
 					2, 1, 3);
+			replace(event, MobCategory.CREATURE,
+					EntityType.PANDA,
+					CakeWorldEntities.CHOCOLATE_PANDA,
+					80, 1, 2);
 		}
 		if ("sherbet_dunes".equals(biome.getPath())) {
 			replace(event, MobCategory.MONSTER,
