@@ -47,6 +47,7 @@ import com.mcmoddev.cakeworld.entity.GiantStaleCrumbler;
 import com.mcmoddev.cakeworld.entity.GlowJelly;
 import com.mcmoddev.cakeworld.entity.GumballGuardian;
 import com.mcmoddev.cakeworld.entity.FudgeBoar;
+import com.mcmoddev.cakeworld.entity.FudgeFolk;
 import com.mcmoddev.cakeworld.entity.GingerbreadPony;
 import com.mcmoddev.cakeworld.entity.HotFudgeBlob;
 import com.mcmoddev.cakeworld.entity.HotFudgeBlobDamageSafety;
@@ -83,6 +84,7 @@ import com.mcmoddev.cakeworld.init.CakeWorldFluids;
 import com.mcmoddev.cakeworld.init.CakeWorldItems;
 import com.mcmoddev.cakeworld.init.CakeWorldSounds;
 import com.mcmoddev.cakeworld.item.JellylotlBucketItem;
+import com.mcmoddev.cakeworld.world.CakeWorldPiglinReplacement;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -168,6 +170,7 @@ import net.minecraft.world.entity.monster.Husk;
 import net.minecraft.world.entity.monster.Illusioner;
 import net.minecraft.world.entity.monster.MagmaCube;
 import net.minecraft.world.entity.monster.Pillager;
+import net.minecraft.world.entity.monster.CrossbowAttackMob;
 import net.minecraft.world.entity.monster.Phantom;
 import net.minecraft.world.entity.monster.Ravager;
 import net.minecraft.world.entity.monster.Vex;
@@ -177,6 +180,7 @@ import net.minecraft.world.entity.monster.hoglin.Hoglin;
 import net.minecraft.world.entity.monster.piglin.Piglin;
 import net.minecraft.world.entity.projectile.AbstractHurtingProjectile;
 import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.entity.projectile.Arrow;
 import net.minecraft.world.entity.projectile.EvokerFangs;
 import net.minecraft.world.entity.projectile.LargeFireball;
 import net.minecraft.world.entity.projectile.LlamaSpit;
@@ -5999,31 +6003,40 @@ public final class FirstBiteGameTests {
 						.replaceIfInCakeWorldBiome(
 								helper.getLevel(),
 								literal);
+		require(helper, converted != null,
+				"Literal Illusioner conversion did not create a Mirage Confectioner");
 		require(helper,
-				converted != null
-						&& literal.isRemoved()
+				literal.isRemoved()
 						&& converted.getType()
 								== CakeWorldEntities
 										.MIRAGE_CONFECTIONER
-										.get()
-						&& close(converted.getHealth(), 23.0D)
+										.get(),
+				"Literal Illusioner conversion lost its replacement type or source removal");
+		require(helper,
+				close(converted.getHealth(), 23.0D)
 						&& converted.hasCustomName()
 						&& "Four of a Kind".equals(
 								converted.getCustomName()
 										.getString())
 						&& converted.isPersistenceRequired()
 						&& converted.isNoAi()
-						&& converted.isCastingSpell()
-						&& close(converted.getYRot(), 29.0D)
+						&& close(converted.getYRot(), 29.0D),
+				"Literal Illusioner conversion lost health, name, persistence, AI, or rotation NBT");
+		require(helper,
+				converted.isCastingSpell()
 						&& converted.getItemBySlot(
 								EquipmentSlot.MAINHAND)
-								.is(Items.BOW)
-						&& converted.getCurrentRaid() == raid
+								.is(Items.BOW),
+				"Literal Illusioner conversion lost its active spell or command bow");
+		require(helper,
+				converted.getCurrentRaid() == raid
 						&& converted.getWave() == 2
 						&& raid.getLeader(2) == converted
-						&& raid.getTotalRaidersAlive() == 1
-						&& converted.getVehicle() == ravager,
-				"Literal Illusioner conversion lost type, NBT, spell, command bow, raid, leader, or Ravager state");
+						&& raid.getTotalRaidersAlive() == 1,
+				"Literal Illusioner conversion lost its raid membership, wave, leader, or count");
+		require(helper,
+				converted.getVehicle() == ravager,
+				"Literal Illusioner conversion lost its Ravager mount");
 
 		TagKey<EntityType<?>> raiders = TagKey.create(
 				Registry.ENTITY_TYPE_REGISTRY,
@@ -9939,6 +9952,509 @@ public final class FirstBiteGameTests {
 		});
 	}
 
+	@GameTest(template = EMPTY, timeoutTicks = 200)
+	public static void fudgeFolkKeepPiglinSocietyBarterAndSafePeril(
+			GameTestHelper helper) {
+		FudgeFolkProbe folk =
+				new FudgeFolkProbe(helper.getLevel());
+		require(helper,
+				folk instanceof Piglin
+						&& folk instanceof CrossbowAttackMob
+						&& folk.getType()
+								== CakeWorldEntities
+										.FUDGE_FOLK.get()
+						&& folk.getType().getCategory()
+								== MobCategory.MONSTER
+						&& close(folk.getMaxHealth(), 16.0D)
+						&& close(folk.getAttributeValue(
+								Attributes.MOVEMENT_SPEED),
+								0.35D)
+						&& close(folk.getAttributeValue(
+								Attributes.ATTACK_DAMAGE),
+								5.0D)
+						&& close(folk.getDimensions(
+								Pose.STANDING).width,
+								0.6D)
+						&& close(folk.getDimensions(
+								Pose.STANDING).height,
+								1.95D)
+						&& folk.getInventory()
+								.getContainerSize() == 8
+						&& folk.getExperienceValue() == 5
+						&& folk.canHuntRole()
+						&& !folk.despawnsInPeaceful()
+						&& folk.getLootTableId().equals(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/fudge_folk")),
+				"Fudge Folk lost exact Piglin type, body, attributes, brain inventory, hunt, Peaceful or loot roles");
+
+		BlockPos societyPos = helper.absolutePos(
+				new BlockPos(2, 3, 2));
+		folk.setPos(societyPos.getX() + 0.5D,
+				societyPos.getY(),
+				societyPos.getZ() + 0.5D);
+		helper.getLevel().addFreshEntity(folk);
+		ServerPlayer barterPlayer = new ServerPlayer(
+				helper.getLevel().getServer(),
+				helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2039"),
+						"CakeWorldFudgeFolkBarterTest"));
+		barterPlayer.setItemInHand(
+				InteractionHand.MAIN_HAND,
+				new ItemStack(Items.GOLD_INGOT));
+		InteractionResult barter = folk.mobInteract(
+				barterPlayer, InteractionHand.MAIN_HAND);
+		require(helper,
+				barter == InteractionResult.CONSUME
+						&& barterPlayer.getMainHandItem()
+								.isEmpty()
+						&& folk.getOffhandItem()
+								.is(Items.GOLD_INGOT)
+						&& folk.getBrain().hasMemoryValue(
+								MemoryModuleType
+										.ADMIRING_ITEM),
+				"Fudge Folk lost direct gold admiration");
+		requireCriterion(helper, barterPlayer,
+				"minecraft:nether/distract_piglin",
+				"distract_piglin_directly");
+		VanillaRoleAdvancements.creditDistractedPiglinRole(
+				barterPlayer, false);
+		requireCriterion(helper, barterPlayer,
+				"minecraft:nether/distract_piglin",
+				"distract_piglin");
+
+		folk.getBrain().eraseMemory(
+				MemoryModuleType.ADMIRING_ITEM);
+		folk.runServerAiStep();
+		List<ItemEntity> barterDrops = helper.getLevel()
+				.getEntitiesOfClass(
+						ItemEntity.class,
+						folk.getBoundingBox()
+								.inflate(8.0D));
+		require(helper,
+				folk.getOffhandItem().isEmpty()
+						&& !barterDrops.isEmpty()
+						&& barterDrops.stream().allMatch(
+								drop -> !drop.getItem()
+										.isEmpty()),
+				"Fudge Folk did not complete the inherited Piglin barter table after admiration");
+
+		FudgeBoar hunted =
+				CakeWorldEntities.FUDGE_BOAR.get()
+						.create(helper.getLevel());
+		FudgeFolk peer =
+				CakeWorldEntities.FUDGE_FOLK.get()
+						.create(helper.getLevel());
+		require(helper, hunted != null && peer != null,
+				"Could not create Fudge Folk society sensor fixtures");
+		hunted.setPos(folk.getX() + 2.0D,
+				folk.getY(), folk.getZ());
+		peer.setPos(folk.getX() + 1.0D,
+				folk.getY(), folk.getZ() + 1.0D);
+		hunted.setNoAi(true);
+		peer.setNoAi(true);
+		helper.getLevel().addFreshEntity(hunted);
+		helper.getLevel().addFreshEntity(peer);
+		NearestLivingEntitySensor nearest =
+				new NearestLivingEntitySensor();
+		PiglinSpecificSensor piglinSensor =
+				new PiglinSpecificSensor();
+		for (int scan = 0; scan < 21; ++scan) {
+			nearest.tick(helper.getLevel(), folk);
+		}
+		for (int scan = 0; scan < 21; ++scan) {
+			piglinSensor.tick(helper.getLevel(), folk);
+		}
+		require(helper,
+				folk.getBrain().getMemory(
+						MemoryModuleType
+								.NEAREST_VISIBLE_HUNTABLE_HOGLIN)
+						.filter(found -> found == hunted)
+						.isPresent()
+						&& folk.getBrain().getMemory(
+								MemoryModuleType
+										.NEAREST_VISIBLE_ADULT_PIGLINS)
+								.orElse(List.of())
+								.contains(peer),
+				"Piglin sensors did not recognise Fudge Folk society or the Fudge Boar hunt role");
+		folk.rememberFudgeBoarHunt();
+		require(helper,
+				folk.getBrain().hasMemoryValue(
+						MemoryModuleType.HUNTED_RECENTLY)
+						&& peer.getBrain().hasMemoryValue(
+								MemoryModuleType
+										.HUNTED_RECENTLY),
+				"Fudge Boar kill bookkeeping did not reach visible Fudge Folk");
+
+		Difficulty originalDifficulty =
+				helper.getLevel().getDifficulty();
+		ZombifiedPiglin conversion = null;
+		try {
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			folk.getBrain().setMemory(
+					MemoryModuleType
+							.VISIBLE_ADULT_PIGLIN_COUNT,
+					0);
+			folk.getBrain().setMemory(
+					MemoryModuleType
+							.VISIBLE_ADULT_HOGLIN_COUNT,
+					3);
+			require(helper,
+					folk.hurt(
+							DamageSource.mobAttack(hunted),
+							1.0F)
+							&& folk.getBrain()
+									.getMemory(
+											MemoryModuleType
+													.AVOID_TARGET)
+									.filter(target ->
+											target == hunted)
+									.isPresent()
+							&& !folk.getBrain()
+									.hasMemoryValue(
+											MemoryModuleType
+													.ATTACK_TARGET),
+					"Outnumbered Fudge Folk did not repair the literal-Hoglin retreat seam");
+
+			FudgeBoar retreating =
+					CakeWorldEntities.FUDGE_BOAR.get()
+							.create(helper.getLevel());
+			FudgeFolk pressure =
+					CakeWorldEntities.FUDGE_FOLK.get()
+							.create(helper.getLevel());
+			require(helper,
+					retreating != null && pressure != null,
+					"Could not create reciprocal Fudge Folk retreat fixtures");
+			retreating.setPos(folk.getX() + 4.0D,
+					folk.getY(), folk.getZ());
+			pressure.setPos(retreating.getX() + 1.0D,
+					retreating.getY(), retreating.getZ());
+			helper.getLevel().addFreshEntity(retreating);
+			helper.getLevel().addFreshEntity(pressure);
+			retreating.getBrain().setMemory(
+					MemoryModuleType
+							.VISIBLE_ADULT_PIGLIN_COUNT,
+					3);
+			retreating.getBrain().setMemory(
+					MemoryModuleType
+							.VISIBLE_ADULT_HOGLIN_COUNT,
+					0);
+			retreating.doHurtTarget(pressure);
+			require(helper,
+					retreating.getBrain().getMemory(
+							MemoryModuleType.AVOID_TARGET)
+							.filter(target ->
+									target == pressure)
+							.isPresent()
+							&& !retreating.getBrain()
+									.hasMemoryValue(
+											MemoryModuleType
+													.ATTACK_TARGET),
+					"Fudge Boar did not recognise the custom Piglin family when outnumbered");
+
+			for (Difficulty safeDifficulty :
+					List.of(Difficulty.EASY,
+							Difficulty.NORMAL)) {
+				helper.getLevel().getServer().setDifficulty(
+						safeDifficulty, true);
+				Pig meleeTarget = EntityType.PIG.create(
+						helper.getLevel());
+				require(helper, meleeTarget != null,
+						"Could not create safe melee Fudge Folk target");
+				meleeTarget.setPos(folk.getX() + 7.0D,
+						folk.getY(),
+						folk.getZ()
+								+ safeDifficulty.getId()
+										* 2.0D);
+				helper.getLevel().addFreshEntity(
+						meleeTarget);
+				meleeTarget.setSecondsOnFire(5);
+				meleeTarget.fallDistance = 8.0F;
+				folk.doHurtTarget(meleeTarget);
+				require(helper,
+						close(meleeTarget.getHealth(),
+								meleeTarget
+										.getMaxHealth())
+								&& !meleeTarget.isOnFire()
+								&& close(meleeTarget
+										.fallDistance,
+										0.0D)
+								&& meleeTarget.hasEffect(
+										MobEffects
+												.MOVEMENT_SLOWDOWN)
+								&& meleeTarget.hasEffect(
+										MobEffects
+												.SLOW_FALLING)
+								&& meleeTarget.getEffect(
+										MobEffects
+												.DAMAGE_RESISTANCE)
+										.getAmplifier() == 4,
+						safeDifficulty
+								+ " Fudge Folk sword splat caused damage or lacked rescue");
+
+				Pig rangedTarget = EntityType.PIG.create(
+						helper.getLevel());
+				require(helper, rangedTarget != null,
+						"Could not create safe ranged Fudge Folk target");
+				rangedTarget.setPos(meleeTarget.getX(),
+						meleeTarget.getY(),
+						meleeTarget.getZ() + 1.0D);
+				helper.getLevel().addFreshEntity(
+						rangedTarget);
+				Arrow arrow = new Arrow(
+						helper.getLevel(), folk);
+				rangedTarget.hurt(DamageSource.arrow(
+						arrow, folk), 5.0F);
+				require(helper,
+						close(rangedTarget.getHealth(),
+								rangedTarget.getMaxHealth())
+								&& rangedTarget.hasEffect(
+										MobEffects
+												.MOVEMENT_SLOWDOWN)
+								&& rangedTarget.hasEffect(
+										MobEffects
+												.FIRE_RESISTANCE),
+						safeDifficulty
+								+ " Fudge Folk crossbow source caused damage or lacked rescue");
+			}
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			Pig hardMeleeTarget =
+					EntityType.PIG.create(helper.getLevel());
+			require(helper, hardMeleeTarget != null,
+					"Could not create Hard melee Fudge Folk target");
+			hardMeleeTarget.setPos(folk.getX() + 7.0D,
+					folk.getY(), folk.getZ() + 6.0D);
+			helper.getLevel().addFreshEntity(
+					hardMeleeTarget);
+			folk.doHurtTarget(hardMeleeTarget);
+			require(helper,
+					hardMeleeTarget.getHealth()
+							< hardMeleeTarget.getMaxHealth(),
+					"Hard Fudge Folk sword attack did not cause real damage");
+			Pig hardRangedTarget =
+					EntityType.PIG.create(helper.getLevel());
+			require(helper, hardRangedTarget != null,
+					"Could not create Hard ranged Fudge Folk target");
+			hardRangedTarget.setPos(folk.getX() + 7.0D,
+					folk.getY(), folk.getZ() + 7.0D);
+			helper.getLevel().addFreshEntity(
+					hardRangedTarget);
+			Arrow hardArrow = new Arrow(
+					helper.getLevel(), folk);
+			hardRangedTarget.hurt(DamageSource.arrow(
+					hardArrow, folk), 5.0F);
+			require(helper,
+					hardRangedTarget.getHealth()
+							< hardRangedTarget.getMaxHealth(),
+					"Hard Fudge Folk crossbow source did not cause real damage");
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.PEACEFUL, true);
+			FudgeFolkProbe peaceful =
+					new FudgeFolkProbe(helper.getLevel());
+			peaceful.setPos(folk.getX() + 9.0D,
+					folk.getY(), folk.getZ());
+			helper.getLevel().addFreshEntity(peaceful);
+			peaceful.checkDespawn();
+			require(helper,
+					!peaceful.isRemoved()
+							&& !peaceful
+									.despawnsInPeaceful(),
+					"Peaceful Fudge Folk did not retain vanilla Piglin persistence");
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.NORMAL, true);
+			FudgeFolkProbe converting =
+					new FudgeFolkProbe(helper.getLevel());
+			converting.setPos(folk.getX() + 11.0D,
+					folk.getY(), folk.getZ());
+			converting.setBaby(true);
+			converting.setCustomName(new TextComponent(
+					"Staged Stale Fudge Folk"));
+			converting.setPersistenceRequired();
+			converting.setItemSlot(EquipmentSlot.MAINHAND,
+					new ItemStack(Items.CROSSBOW));
+			converting.getInventory().setItem(0,
+					new ItemStack(Items.GOLD_NUGGET, 3));
+			CompoundTag convertingState =
+					converting.saveWithoutId(
+							new CompoundTag());
+			convertingState.putInt(
+					"TimeInOverworld", 300);
+			converting.load(convertingState);
+			helper.getLevel().addFreshEntity(converting);
+			converting.runServerAiStep();
+			conversion = helper.getLevel()
+					.getEntitiesOfClass(
+							ZombifiedPiglin.class,
+							converting.getBoundingBox()
+									.inflate(3.0D))
+					.stream().findFirst().orElse(null);
+			require(helper,
+					converting.isRemoved()
+							&& conversion != null
+							&& conversion.isBaby()
+							&& conversion
+									.isPersistenceRequired()
+							&& conversion.getMainHandItem()
+									.is(Items.CROSSBOW)
+							&& "Staged Stale Fudge Folk"
+									.equals(conversion.getName()
+											.getString())
+							&& conversion.hasEffect(
+									MobEffects.CONFUSION),
+					"Fudge Folk lost the staged vanilla zombification state for MOB-073");
+		} finally {
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+			if (conversion != null) {
+				conversion.discard();
+			}
+		}
+
+		BlockPos cakeWorldPos =
+				findCakeWorldBiomePosition(helper,
+						helper.absolutePos(
+								new BlockPos(8, 3, 8)),
+						256);
+		require(helper, cakeWorldPos != null,
+				"Could not locate CakeWorld terrain for literal Piglin conversion");
+		Piglin literal =
+				EntityType.PIGLIN.create(helper.getLevel());
+		require(helper, literal != null,
+				"Could not create literal structure Piglin fixture");
+		literal.setPos(cakeWorldPos.getX() + 0.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		literal.setBaby(true);
+		literal.setNoAi(true);
+		literal.setCustomName(new TextComponent(
+				"Foundry Visitor"));
+		literal.setPersistenceRequired();
+		literal.getInventory().setItem(0,
+				new ItemStack(Items.GOLD_NUGGET, 2));
+		FudgeFolk structureReplacement =
+				CakeWorldPiglinReplacement
+						.replaceIfInCakeWorldBiome(
+								helper.getLevel(),
+								literal);
+		require(helper,
+				literal.isRemoved()
+						&& structureReplacement != null
+						&& structureReplacement.isBaby()
+						&& structureReplacement.isNoAi()
+						&& structureReplacement
+								.isPersistenceRequired()
+						&& "Foundry Visitor".equals(
+								structureReplacement
+										.getName()
+										.getString())
+						&& structureReplacement
+								.getInventory()
+								.countItem(
+										Items.GOLD_NUGGET)
+								== 2,
+				"Fresh literal Piglin conversion lost structure state");
+
+		Biome fudgeWastes = helper.getLevel()
+				.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY)
+				.get(CakeWorldBiomes.FUDGE_WASTES.getId());
+		require(helper, fudgeWastes != null,
+				"Could not inspect Fudge Wastes spawning");
+		MobSpawnSettings.SpawnerData folkSpawn =
+				fudgeWastes.getMobSettings()
+						.getMobs(MobCategory.MONSTER)
+						.unwrap().stream()
+						.filter(spawn -> spawn.type
+								== CakeWorldEntities
+										.FUDGE_FOLK.get())
+						.findFirst().orElse(null);
+		require(helper,
+				folkSpawn != null
+						&& folkSpawn.getWeight().asInt() == 15
+						&& folkSpawn.minCount == 4
+						&& folkSpawn.maxCount == 4
+						&& fudgeWastes.getMobSettings()
+								.getMobs(
+										MobCategory.MONSTER)
+								.unwrap().stream()
+								.noneMatch(spawn ->
+										spawn.type
+												== EntityType.PIGLIN)
+						&& CakeWorldItems
+								.FUDGE_FOLK_SPAWN_EGG
+								.isPresent()
+						&& SpawnPlacements
+								.getPlacementType(
+										CakeWorldEntities
+												.FUDGE_FOLK
+												.get())
+								== SpawnPlacements.Type
+										.ON_GROUND
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+												.FUDGE_FOLK
+												.get())
+								== Heightmap.Types
+										.MOTION_BLOCKING_NO_LEAVES
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+												.FUDGE_FOLK
+												.get())
+								== SoundEvents
+										.PARROT_IMITATE_PIGLIN,
+				"Fudge Folk lost exact Nether Wastes 15/4-4 replacement, egg, placement or mimic role");
+
+		BlockPos spawnPos = helper.absolutePos(
+				new BlockPos(14, 3, 2));
+		helper.getLevel().setBlock(spawnPos.below(),
+				CakeWorldBlocks.FUDGE_ROCK.get()
+						.defaultBlockState(), 3);
+		helper.getLevel().setBlock(spawnPos,
+				Blocks.AIR.defaultBlockState(), 3);
+		helper.getLevel().setBlock(spawnPos.above(),
+				Blocks.AIR.defaultBlockState(), 3);
+		require(helper,
+				FudgeFolk.checkFudgeFolkSpawnRules(
+						CakeWorldEntities.FUDGE_FOLK.get(),
+						helper.getLevel(),
+						MobSpawnType.NATURAL,
+						spawnPos, new Random(1978L))
+						&& SpawnPlacements.Type.ON_GROUND
+								.canSpawnAt(
+										helper.getLevel(),
+										spawnPos,
+										CakeWorldEntities
+												.FUDGE_FOLK
+												.get()),
+				"Fudge Folk rejected a valid edible Nether surface");
+		helper.getLevel().setBlock(spawnPos.below(),
+				Blocks.NETHER_WART_BLOCK
+						.defaultBlockState(), 3);
+		require(helper,
+				!FudgeFolk.checkFudgeFolkSpawnRules(
+						CakeWorldEntities.FUDGE_FOLK.get(),
+						helper.getLevel(),
+						MobSpawnType.NATURAL,
+						spawnPos, new Random(1978L)),
+				"Fudge Folk lost the exact Piglin Nether-wart spawn exclusion");
+
+		VanillaRoleAdvancements.creditKilledPiglinRole(
+				barterPlayer);
+		requireCriterion(helper, barterPlayer,
+				"minecraft:adventure/kill_all_mobs",
+				"minecraft:piglin");
+		helper.succeed();
+	}
+
 	private static final class LollipopLorikeetProbe
 			extends LollipopLorikeet {
 		private LollipopLorikeetProbe(Level level) {
@@ -10008,6 +10524,34 @@ public final class FirstBiteGameTests {
 							goal.getClass()
 									.getSimpleName()))
 					.count();
+		}
+	}
+
+	private static final class FudgeFolkProbe
+			extends FudgeFolk {
+		private FudgeFolkProbe(Level level) {
+			super(CakeWorldEntities.FUDGE_FOLK.get(),
+					level);
+		}
+
+		private boolean despawnsInPeaceful() {
+			return shouldDespawnInPeaceful();
+		}
+
+		private int getExperienceValue() {
+			return getExperienceReward(null);
+		}
+
+		private boolean canHuntRole() {
+			return canHunt();
+		}
+
+		private ResourceLocation getLootTableId() {
+			return getLootTable();
+		}
+
+		private void runServerAiStep() {
+			customServerAiStep();
 		}
 	}
 

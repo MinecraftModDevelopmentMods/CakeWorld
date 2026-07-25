@@ -126,6 +126,8 @@ public final class CakeWorldCreatureSpawns {
 					CakeWorldEntities.GLOW_JELLY, 10, 4, 6);
 		}
 		if ("fudge_wastes".equals(biome.getPath())) {
+			replace(event, MobCategory.MONSTER, EntityType.PIGLIN,
+					CakeWorldEntities.FUDGE_FOLK, 15, 4, 4);
 			replace(event, MobCategory.MONSTER,
 					EntityType.MAGMA_CUBE,
 					CakeWorldEntities.HOT_FUDGE_BLOB,

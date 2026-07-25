@@ -10,6 +10,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.LargeFireball;
 import net.minecraft.world.entity.vehicle.Boat;
+import net.minecraft.world.item.Items;
 import net.minecraftforge.event.entity.EntityMountEvent;
 import net.minecraftforge.event.entity.living.BabyEntitySpawnEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
@@ -24,6 +25,9 @@ public final class VanillaRoleAdvancements {
 			new ResourceLocation("minecraft", "adventure/kill_all_mobs");
 	private static final ResourceLocation RETURN_TO_SENDER =
 			new ResourceLocation("minecraft", "nether/return_to_sender");
+	private static final ResourceLocation DISTRACT_PIGLIN =
+			new ResourceLocation("minecraft",
+					"nether/distract_piglin");
 	private static final ResourceLocation TWO_BIRDS =
 			new ResourceLocation("minecraft",
 					"adventure/two_birds_one_arrow");
@@ -189,6 +193,31 @@ public final class VanillaRoleAdvancements {
 		award(player, KILL_ALL, "minecraft:phantom");
 	}
 
+	public static void creditKilledPiglinRole(ServerPlayer player) {
+		award(player, KILL_ALL, "minecraft:piglin");
+	}
+
+	public static void creditDistractedPiglinRole(
+			ServerPlayer player, boolean direct) {
+		if (player.getItemBySlot(
+						net.minecraft.world.entity.EquipmentSlot.HEAD)
+						.is(Items.GOLDEN_HELMET)
+				|| player.getItemBySlot(
+						net.minecraft.world.entity.EquipmentSlot.CHEST)
+						.is(Items.GOLDEN_CHESTPLATE)
+				|| player.getItemBySlot(
+						net.minecraft.world.entity.EquipmentSlot.LEGS)
+						.is(Items.GOLDEN_LEGGINGS)
+				|| player.getItemBySlot(
+						net.minecraft.world.entity.EquipmentSlot.FEET)
+						.is(Items.GOLDEN_BOOTS)) {
+			return;
+		}
+		award(player, DISTRACT_PIGLIN,
+				direct ? "distract_piglin_directly"
+						: "distract_piglin");
+	}
+
 	public static void recordPhantomRoleCrossbowKill(
 			ServerPlayer player, AbstractArrow arrow,
 			EntityType<?> victimType) {
@@ -264,6 +293,9 @@ public final class VanillaRoleAdvancements {
 		}
 		if (type == CakeWorldEntities.WAFER_WRAITH.get()) {
 			return "minecraft:phantom";
+		}
+		if (type == CakeWorldEntities.FUDGE_FOLK.get()) {
+			return "minecraft:piglin";
 		}
 		return null;
 	}
