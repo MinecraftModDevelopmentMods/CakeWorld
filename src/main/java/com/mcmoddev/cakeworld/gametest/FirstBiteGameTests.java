@@ -42,6 +42,8 @@ import com.mcmoddev.cakeworld.entity.CinnamonPuffProjectile;
 import com.mcmoddev.cakeworld.entity.CinnamonSpark;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.LollipopLorikeet;
+import com.mcmoddev.cakeworld.entity.MacaronClam;
+import com.mcmoddev.cakeworld.entity.MacaronClamProjectileSafety;
 import com.mcmoddev.cakeworld.entity.CustardCat;
 import com.mcmoddev.cakeworld.entity.DeepLiquoriceWeaver;
 import com.mcmoddev.cakeworld.entity.DoughDonkey;
@@ -103,6 +105,7 @@ import com.mcmoddev.cakeworld.world.CakeWorldPiglinReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldPiglinBruteReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldPillagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldRavagerReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldShulkerReplacement;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -206,6 +209,7 @@ import net.minecraft.world.entity.monster.CrossbowAttackMob;
 import net.minecraft.world.entity.monster.PatrollingMonster;
 import net.minecraft.world.entity.monster.Phantom;
 import net.minecraft.world.entity.monster.Ravager;
+import net.minecraft.world.entity.monster.Shulker;
 import net.minecraft.world.entity.monster.Vex;
 import net.minecraft.world.entity.monster.ZombifiedPiglin;
 import net.minecraft.world.entity.monster.Zoglin;
@@ -220,6 +224,7 @@ import net.minecraft.world.entity.projectile.Arrow;
 import net.minecraft.world.entity.projectile.EvokerFangs;
 import net.minecraft.world.entity.projectile.LargeFireball;
 import net.minecraft.world.entity.projectile.LlamaSpit;
+import net.minecraft.world.entity.projectile.ShulkerBullet;
 import net.minecraft.world.entity.projectile.SmallFireball;
 import net.minecraft.world.entity.projectile.ThrownTrident;
 import net.minecraft.world.entity.player.Player;
@@ -14271,6 +14276,435 @@ public final class FirstBiteGameTests {
 	}
 
 	@GameTest(template = EMPTY, timeoutTicks = 200)
+	public static void macaronClamsKeepShulkerStorageAndSafePeril(
+			GameTestHelper helper) {
+		MacaronClamProbe clam =
+				new MacaronClamProbe(helper.getLevel());
+		require(helper,
+				clam instanceof Shulker
+						&& clam.getType()
+								== CakeWorldEntities
+										.MACARON_CLAM.get()
+						&& clam.getType().getCategory()
+								== MobCategory.MONSTER
+						&& close(clam.getMaxHealth(), 30.0D)
+						&& close(clam.getDimensions(
+								Pose.STANDING).width,
+								1.0D)
+						&& close(clam.getDimensions(
+								Pose.STANDING).height,
+								1.0D)
+						&& clam.getType()
+								.clientTrackingRange() == 10
+						&& clam.fireImmune()
+						&& clam.getExperienceValue() == 5
+						&& clam.getSoundSource()
+								== SoundSource.HOSTILE
+						&& clam.getAttachFace()
+								== Direction.DOWN
+						&& clam.rawPeek() == 0
+						&& clam.getColor() == null
+						&& close(clam.standingEyeHeight(),
+								0.5D)
+						&& clam.getDeltaMovement()
+								.equals(Vec3.ZERO)
+						&& close(clam.getPickRadius(), 0.0D)
+						&& clam.canBeCollidedWith(),
+				"Macaron Clam lost its genuine Shulker body, attachment, shell or tracking contract");
+		require(helper,
+				clam.ambientSound()
+								== SoundEvents.SHULKER_AMBIENT
+						&& clam.hurtSound()
+								== SoundEvents
+										.SHULKER_HURT_CLOSED
+						&& clam.deathSound()
+								== SoundEvents.SHULKER_DEATH
+						&& clam.countGoalsNamed(
+								"LookAtPlayerGoal") == 1
+						&& clam.goalPriority(
+								"LookAtPlayerGoal") == 1
+						&& clam.countGoalsNamed(
+								"ShulkerAttackGoal") == 1
+						&& clam.goalPriority(
+								"ShulkerAttackGoal") == 4
+						&& clam.countGoalsNamed(
+								"ShulkerPeekGoal") == 1
+						&& clam.goalPriority(
+								"ShulkerPeekGoal") == 7
+						&& clam.countGoalsNamed(
+								"RandomLookAroundGoal") == 1
+						&& clam.goalPriority(
+								"RandomLookAroundGoal") == 8
+						&& clam.countTargetGoalsNamed(
+								"HurtByTargetGoal") == 1
+						&& clam.countTargetGoalsNamed(
+								"ShulkerNearestAttackGoal") == 1
+						&& clam.countTargetGoalsNamed(
+								"ShulkerDefenseAttackGoal") == 1,
+				"Macaron Clam lost exact Shulker sounds or goal priorities");
+
+		clam.setRawPeek(30);
+		clam.setRoleColor(DyeColor.MAGENTA);
+		require(helper,
+				clam.hurtSound()
+								== SoundEvents.SHULKER_HURT
+						&& clam.rawPeek() == 30
+						&& clam.getColor()
+								== DyeColor.MAGENTA,
+				"Open Macaron Clam lost its open hurt sound, peek or colour");
+		CompoundTag saved = clam.saveWithoutId(
+				new CompoundTag());
+		saved.putByte("AttachFace",
+				(byte)Direction.NORTH.get3DDataValue());
+		MacaronClamProbe restored =
+				new MacaronClamProbe(helper.getLevel());
+		restored.load(saved);
+		require(helper,
+				restored.getAttachFace()
+								== Direction.NORTH
+						&& restored.rawPeek() == 30
+						&& restored.getColor()
+								== DyeColor.MAGENTA,
+				"Macaron Clam lost AttachFace, Peek or Color NBT");
+
+		MacaronClamProbe closed =
+				new MacaronClamProbe(helper.getLevel());
+		Arrow arrow = new Arrow(helper.getLevel(), clam);
+		float closedHealth = closed.getHealth();
+		require(helper,
+				!closed.hurt(DamageSource.arrow(
+						arrow, clam), 5.0F)
+						&& close(closed.getHealth(),
+								closedHealth),
+				"Closed Macaron shell lost Shulker arrow immunity");
+
+		ShulkerBullet safeBullet = new ShulkerBullet(
+				EntityType.SHULKER_BULLET,
+				helper.getLevel());
+		safeBullet.setOwner(clam);
+		Pig safeTarget =
+				EntityType.PIG.create(helper.getLevel());
+		require(helper, safeTarget != null,
+				"Could not create Macaron Dust target");
+		safeTarget.setSecondsOnFire(5);
+		safeTarget.fallDistance = 20.0F;
+		LivingAttackEvent safeHit =
+				new LivingAttackEvent(safeTarget,
+						DamageSource.indirectMobAttack(
+								safeBullet, clam)
+								.setProjectile(),
+						4.0F);
+		MacaronClamProjectileSafety.applyForDifficulty(
+				safeHit, Difficulty.NORMAL);
+		require(helper,
+				safeHit.isCanceled()
+						&& !safeTarget.isOnFire()
+						&& close(safeTarget.fallDistance,
+								0.0D)
+						&& safeTarget.hasEffect(
+								MobEffects
+										.MOVEMENT_SLOWDOWN)
+						&& safeTarget.hasEffect(
+								MobEffects.GLOWING)
+						&& safeTarget.hasEffect(
+								MobEffects.SLOW_FALLING)
+						&& safeTarget.hasEffect(
+								MobEffects
+										.FIRE_RESISTANCE)
+						&& safeTarget.hasEffect(
+								MobEffects
+										.DAMAGE_RESISTANCE),
+				"Normal Macaron projectile was damaging or lacked the complete dust rescue envelope");
+		Pig hardPolicyTarget =
+				EntityType.PIG.create(helper.getLevel());
+		require(helper, hardPolicyTarget != null,
+				"Could not create Hard Macaron policy target");
+		LivingAttackEvent hardHit =
+				new LivingAttackEvent(hardPolicyTarget,
+						DamageSource.indirectMobAttack(
+								safeBullet, clam)
+								.setProjectile(),
+						4.0F);
+		MacaronClamProjectileSafety.applyForDifficulty(
+				hardHit, Difficulty.HARD);
+		require(helper,
+				!hardHit.isCanceled()
+						&& hardPolicyTarget
+								.getActiveEffects()
+								.isEmpty(),
+				"Hard Macaron projectile did not retain vanilla damage and Levitation handling");
+
+		Difficulty originalDifficulty =
+				helper.getLevel().getDifficulty();
+		BlockPos duplicateOrigin =
+				helper.absolutePos(new BlockPos(4, 4, 4));
+		MacaronClamProbe duplicateTarget =
+				new MacaronClamProbe(helper.getLevel());
+		MacaronClam projectileOwner =
+				CakeWorldEntities.MACARON_CLAM.get()
+						.create(helper.getLevel());
+		require(helper, projectileOwner != null,
+				"Could not create Macaron duplication owner");
+		duplicateTarget.moveTo(duplicateOrigin.getX() + 0.5D,
+				duplicateOrigin.getY(),
+				duplicateOrigin.getZ() + 0.5D);
+		duplicateTarget.setRawPeek(30);
+		duplicateTarget.setRoleColor(DyeColor.LIME);
+		helper.getLevel().addFreshEntity(duplicateTarget);
+		ShulkerBullet duplicateBullet = new ShulkerBullet(
+				EntityType.SHULKER_BULLET,
+				helper.getLevel());
+		duplicateBullet.setOwner(projectileOwner);
+		try {
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			int before = helper.getLevel()
+					.getEntitiesOfClass(
+							MacaronClam.class,
+							new AABB(duplicateOrigin)
+									.inflate(12.0D),
+							Entity::isAlive)
+					.size();
+			require(helper,
+					duplicateTarget.hurt(
+							DamageSource
+									.indirectMobAttack(
+											duplicateBullet,
+											projectileOwner)
+									.setProjectile(),
+							1.0F),
+					"Hard Shulker Bullet did not enter the inherited Macaron damage hook");
+			List<MacaronClam> duplicated = helper.getLevel()
+					.getEntitiesOfClass(
+							MacaronClam.class,
+							new AABB(duplicateOrigin)
+									.inflate(12.0D),
+							Entity::isAlive);
+			MacaronClam child = duplicated.stream()
+					.filter(candidate ->
+							candidate != duplicateTarget
+									&& candidate.distanceToSqr(
+											Vec3.atBottomCenterOf(
+													duplicateOrigin))
+											< 1.0D)
+					.findFirst().orElse(null);
+			require(helper,
+					duplicated.size() == before + 1
+							&& child != null
+							&& child.getType()
+									== CakeWorldEntities
+											.MACARON_CLAM
+											.get()
+							&& child.getColor()
+									== DyeColor.LIME,
+					"Open projectile hit did not create one colour-preserving Macaron Clam at the pre-teleport position");
+
+			BlockPos crowdedOrigin =
+					duplicateOrigin.offset(40, 0, 0);
+			MacaronClamProbe crowded =
+					new MacaronClamProbe(
+							helper.getLevel());
+			crowded.moveTo(crowdedOrigin.getX() + 0.5D,
+					crowdedOrigin.getY(),
+					crowdedOrigin.getZ() + 0.5D);
+			crowded.setRawPeek(30);
+			helper.getLevel().addFreshEntity(crowded);
+			for (int i = 0; i < 5; i++) {
+				MacaronClam neighbour =
+						CakeWorldEntities
+								.MACARON_CLAM.get()
+								.create(
+										helper.getLevel());
+				require(helper, neighbour != null,
+						"Could not create crowded Macaron fixture");
+				neighbour.moveTo(
+						crowdedOrigin.getX()
+								+ 1.5D + i,
+						crowdedOrigin.getY(),
+						crowdedOrigin.getZ() + 0.5D);
+				helper.getLevel()
+						.addFreshEntity(neighbour);
+			}
+			AABB crowdedArea = new AABB(crowdedOrigin)
+					.inflate(12.0D);
+			int crowdedBefore = helper.getLevel()
+					.getEntitiesOfClass(
+							MacaronClam.class,
+							crowdedArea,
+							Entity::isAlive)
+					.size();
+			crowded.triggerDuplicationHook();
+			int crowdedAfter = helper.getLevel()
+					.getEntitiesOfClass(
+							MacaronClam.class,
+							crowdedArea,
+							Entity::isAlive)
+					.size();
+			require(helper,
+					crowdedBefore >= 6
+							&& crowdedAfter
+									== crowdedBefore,
+					"Macaron duplication lost the exact five-neighbour Shulker crowding cap: before="
+							+ crowdedBefore
+							+ ", after="
+							+ crowdedAfter);
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.PEACEFUL, true);
+			MacaronClamProbe peaceful =
+					new MacaronClamProbe(
+							helper.getLevel());
+			peaceful.moveTo(
+					duplicateOrigin.getX() + 70.5D,
+					duplicateOrigin.getY(),
+					duplicateOrigin.getZ() + 0.5D);
+			helper.getLevel().addFreshEntity(peaceful);
+			peaceful.checkDespawn();
+			ShulkerBullet peacefulBullet =
+					new ShulkerBullet(
+							EntityType.SHULKER_BULLET,
+							helper.getLevel());
+			peacefulBullet.checkDespawn();
+			require(helper,
+					!peaceful.isRemoved()
+							&& !peaceful
+									.despawnsInPeaceful()
+							&& peacefulBullet
+									.isRemoved(),
+					"Peaceful Macaron Clam lost vanilla's non-despawning shell or bullet-removal contract");
+		} finally {
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		BlockPos conversionAnchor =
+				findCakeWorldBiomePosition(
+						helper, duplicateOrigin, 512);
+		require(helper, conversionAnchor != null,
+				"Could not locate CakeWorld biome for End City Shulker conversion");
+		Shulker vanilla =
+				EntityType.SHULKER.create(helper.getLevel());
+		require(helper, vanilla != null,
+				"Could not create End City Shulker fixture");
+		vanilla.moveTo(conversionAnchor.getX() + 0.5D,
+				conversionAnchor.getY(),
+				conversionAnchor.getZ() + 0.5D,
+				37.0F, 0.0F);
+		vanilla.setHealth(17.0F);
+		vanilla.setCustomName(
+				new TextComponent("Macaron Archive Guard"));
+		vanilla.setPersistenceRequired();
+		CompoundTag vanillaState = vanilla.saveWithoutId(
+				new CompoundTag());
+		vanillaState.putByte("Peek", (byte)30);
+		vanillaState.putByte("Color",
+				(byte)DyeColor.CYAN.getId());
+		vanilla.load(vanillaState);
+		MacaronClam converted =
+				CakeWorldShulkerReplacement
+						.replaceIfInCakeWorldBiome(
+								helper.getLevel(),
+								vanilla);
+		CompoundTag convertedState =
+				converted == null ? new CompoundTag()
+						: converted.saveWithoutId(
+								new CompoundTag());
+		require(helper,
+				converted != null
+						&& converted.getType()
+								== CakeWorldEntities
+										.MACARON_CLAM.get()
+						&& close(converted.getHealth(),
+								17.0D)
+						&& converted.hasCustomName()
+						&& "Macaron Archive Guard"
+								.equals(converted
+										.getCustomName()
+										.getString())
+						&& converted
+								.isPersistenceRequired()
+						&& converted.getColor()
+								== DyeColor.CYAN
+						&& convertedState
+								.getByte("Peek") == 30
+						&& vanilla.isRemoved(),
+				"End City conversion lost Macaron type, health, name, persistence, colour or shell state");
+
+		Registry<Biome> biomes = helper.getLevel()
+				.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY);
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS.getId())) {
+			Biome biome = biomes.get(biomeId);
+			require(helper,
+					biome != null
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory
+													.MONSTER)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType
+															.SHULKER
+											|| spawn.type
+													== CakeWorldEntities
+															.MACARON_CLAM
+															.get()),
+					"Structure-only Shulker/Macaron Clam leaked into open-biome spawning in "
+							+ biomeId);
+		}
+		require(helper,
+				SpawnPlacements.getPlacementType(
+								CakeWorldEntities
+										.MACARON_CLAM.get())
+								== SpawnPlacements.Type
+										.NO_RESTRICTIONS
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+												.MACARON_CLAM
+												.get())
+								== Heightmap.Types
+										.MOTION_BLOCKING_NO_LEAVES
+						&& CakeWorldItems
+								.MACARON_CLAM_SPAWN_EGG
+								.isPresent()
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+												.MACARON_CLAM
+												.get())
+								== SoundEvents
+										.PARROT_IMITATE_SHULKER
+						&& clam.getLootTable().equals(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/macaron_clam")),
+				"Macaron Clam lost placement metadata, egg, Shulker mimic or shell loot table");
+
+		ServerPlayer advancementPlayer = new ServerPlayer(
+				helper.getLevel().getServer(),
+				helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2048"),
+						"CakeWorldMacaronClamRoleTest"));
+		VanillaRoleAdvancements.onDeath(
+				new LivingDeathEvent(clam,
+						DamageSource.playerAttack(
+								advancementPlayer)));
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:adventure/kill_all_mobs",
+				"minecraft:shulker");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 200)
 	public static void fudgeFolkKeepPiglinSocietyBarterAndSafePeril(
 			GameTestHelper helper) {
 		FudgeFolkProbe folk =
@@ -15518,6 +15952,94 @@ public final class FirstBiteGameTests {
 				net.minecraft.sounds.SoundEvent sound,
 				float volume, float pitch) {
 			lastSound = sound;
+		}
+	}
+
+	private static final class MacaronClamProbe
+			extends MacaronClam {
+		private MacaronClamProbe(Level level) {
+			super(CakeWorldEntities.MACARON_CLAM.get(),
+					level);
+		}
+
+		private int getExperienceValue() {
+			return getExperienceReward(null);
+		}
+
+		private float standingEyeHeight() {
+			return getStandingEyeHeight(Pose.STANDING,
+					getDimensions(Pose.STANDING));
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				ambientSound() {
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent hurtSound() {
+			return getHurtSound(DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent deathSound() {
+			return getDeathSound();
+		}
+
+		private int rawPeek() {
+			return entityData.get(DATA_PEEK_ID);
+		}
+
+		private void setRawPeek(int amount) {
+			entityData.set(DATA_PEEK_ID, (byte)amount);
+		}
+
+		private void setRoleColor(DyeColor color) {
+			entityData.set(DATA_COLOR_ID,
+					(byte)color.getId());
+		}
+
+		private int countGoalsNamed(String name) {
+			return (int)goalSelector
+					.getAvailableGoals().stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
+		}
+
+		private int goalPriority(String name) {
+			return goalSelector.getAvailableGoals()
+					.stream()
+					.filter(wrapped -> name.equals(
+							wrapped.getGoal()
+									.getClass()
+									.getSimpleName()))
+					.mapToInt(WrappedGoal::getPriority)
+					.findFirst().orElse(-1);
+		}
+
+		private int countTargetGoalsNamed(String name) {
+			return (int)targetSelector
+					.getAvailableGoals().stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
+		}
+
+		private void triggerDuplicationHook() {
+			hitByShulkerBullet();
+		}
+
+		private boolean despawnsInPeaceful() {
+			return shouldDespawnInPeaceful();
+		}
+
+		@Override
+		protected boolean teleportSomewhere() {
+			setPos(getX() + 3.0D, getY(), getZ());
+			return true;
 		}
 	}
 

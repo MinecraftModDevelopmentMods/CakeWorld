@@ -46,6 +46,7 @@ import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.client.renderer.entity.CowRenderer;
 import net.minecraft.client.renderer.entity.PigRenderer;
 import net.minecraft.client.renderer.entity.SheepRenderer;
+import net.minecraft.client.renderer.entity.ShulkerRenderer;
 import net.minecraft.client.renderer.entity.ZombieRenderer;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.client.renderer.entity.ThrownTridentRenderer;
@@ -154,6 +155,9 @@ public final class CakeWorldClientEvents {
 		event.registerEntityRenderer(
 				CakeWorldEntities.TAFFY_TALLWALKER.get(),
 				EndermanRenderer::new);
+		event.registerEntityRenderer(
+				CakeWorldEntities.MACARON_CLAM.get(),
+				ShulkerRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.SUGAR_MITE.get(),
 				EndermiteRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.SOUR_SORCERER.get(),

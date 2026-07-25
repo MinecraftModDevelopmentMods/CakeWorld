@@ -28,6 +28,7 @@ import com.mcmoddev.cakeworld.entity.HotFudgeBlob;
 import com.mcmoddev.cakeworld.entity.JawbreakerGuardian;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.LollipopLorikeet;
+import com.mcmoddev.cakeworld.entity.MacaronClam;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.MallowFloater;
 import com.mcmoddev.cakeworld.entity.MallowPuffProjectile;
@@ -99,6 +100,7 @@ import net.minecraft.world.entity.monster.MagmaCube;
 import net.minecraft.world.entity.monster.PatrollingMonster;
 import net.minecraft.world.entity.monster.Pillager;
 import net.minecraft.world.entity.monster.Ravager;
+import net.minecraft.world.entity.monster.Shulker;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.monster.hoglin.Hoglin;
 import net.minecraft.world.entity.monster.piglin.Piglin;
@@ -345,6 +347,14 @@ public final class CakeWorldEntities {
 							MobCategory.MONSTER)
 							.sized(0.6F, 2.9F)
 							.clientTrackingRange(8));
+	public static final RegistryObject<EntityType<MacaronClam>>
+			MACARON_CLAM = entity("macaron_clam",
+					EntityType.Builder.of(MacaronClam::new,
+							MobCategory.MONSTER)
+							.fireImmune()
+							.canSpawnFarFromPlayer()
+							.sized(1.0F, 1.0F)
+							.clientTrackingRange(10));
 	public static final RegistryObject<EntityType<SugarMite>> SUGAR_MITE =
 			entity("sugar_mite",
 					EntityType.Builder.of(SugarMite::new,
@@ -505,6 +515,8 @@ public final class CakeWorldEntities {
 				MagmaCube.createAttributes().build());
 		event.put(TAFFY_TALLWALKER.get(),
 				EnderMan.createAttributes().build());
+		event.put(MACARON_CLAM.get(),
+				Shulker.createAttributes().build());
 		event.put(SUGAR_MITE.get(),
 				Endermite.createAttributes().build());
 		event.put(SOUR_SORCERER.get(),
@@ -656,6 +668,10 @@ public final class CakeWorldEntities {
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					Monster::checkMonsterSpawnRules);
+			SpawnPlacements.register(MACARON_CLAM.get(),
+					SpawnPlacements.Type.NO_RESTRICTIONS,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					Mob::checkMobSpawnRules);
 			SpawnPlacements.register(SUGAR_MITE.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,

@@ -331,6 +331,9 @@ public final class VanillaRoleAdvancements {
 		if (type == CakeWorldEntities.TAFFY_TALLWALKER.get()) {
 			return "minecraft:enderman";
 		}
+		if (type == CakeWorldEntities.MACARON_CLAM.get()) {
+			return "minecraft:shulker";
+		}
 		if (type == CakeWorldEntities.SUGAR_MITE.get()) {
 			return "minecraft:endermite";
 		}
