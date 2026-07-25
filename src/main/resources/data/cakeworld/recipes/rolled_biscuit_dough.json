@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "cakeworld:rolling_pin"
+    },
+    {
+      "item": "cakeworld:sponge_batter"
+    }
+  ],
+  "result": {
+    "item": "cakeworld:rolled_biscuit_dough",
+    "count": 2
+  }
+}

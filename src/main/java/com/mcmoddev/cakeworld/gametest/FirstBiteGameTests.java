@@ -526,6 +526,64 @@ public final class FirstBiteGameTests {
 	}
 
 	@GameTest(template = EMPTY)
+	public static void rollingPinPreparesReusableOvenReadyDough(
+			GameTestHelper helper) {
+		var recipes = helper.getLevel().getRecipeManager();
+		var rollingRecipe = recipes.byKey(
+				new ResourceLocation(CakeWorld.MODID,
+						"rolled_biscuit_dough"));
+		var bakingRecipe = recipes.byKey(
+				new ResourceLocation(CakeWorld.MODID,
+						"simple_biscuit_from_rolled_dough"));
+		require(helper, rollingRecipe.orElse(null) instanceof ShapelessRecipe
+						&& bakingRecipe.orElse(null) instanceof SmeltingRecipe
+						&& recipes.byKey(new ResourceLocation(CakeWorld.MODID,
+								"rolling_pin")).isPresent(),
+				"Rolling Pin is missing its acquisition or standard recipe chain");
+
+		ItemStack rollingPin =
+				new ItemStack(CakeWorldItems.ROLLING_PIN.get());
+		require(helper, rollingPin.hasContainerItem()
+						&& rollingPin.getContainerItem().is(
+								CakeWorldItems.ROLLING_PIN.get()),
+				"Rolling Pin is not a reusable crafting tool");
+		AbstractContainerMenu recipeMenu =
+				new AbstractContainerMenu(null, 0) {
+					@Override
+					public boolean stillValid(Player player) {
+						return true;
+					}
+				};
+		CraftingContainer ingredients =
+				new CraftingContainer(recipeMenu, 2, 2);
+		ingredients.setItem(0, rollingPin);
+		ingredients.setItem(3,
+				new ItemStack(CakeWorldItems.SPONGE_BATTER.get()));
+		ShapelessRecipe rolling =
+				(ShapelessRecipe) rollingRecipe.orElseThrow();
+		ItemStack dough = rolling.assemble(ingredients);
+		require(helper, rolling.matches(ingredients, helper.getLevel())
+						&& dough.is(CakeWorldItems.ROLLED_BISCUIT_DOUGH.get())
+						&& dough.getCount() == 2
+						&& rolling.getRemainingItems(ingredients).get(0)
+								.is(CakeWorldItems.ROLLING_PIN.get()),
+				"Rolling did not create two dough portions and return the pin");
+
+		TagKey<Item> ovenBatters = TagKey.create(Registry.ITEM_REGISTRY,
+				new ResourceLocation("forge", "oven_batters"));
+		SmeltingRecipe baking =
+				(SmeltingRecipe) bakingRecipe.orElseThrow();
+		SimpleContainer ovenInput = new SimpleContainer(
+				new ItemStack(CakeWorldItems.ROLLED_BISCUIT_DOUGH.get()));
+		require(helper, ovenInput.getItem(0).is(ovenBatters)
+						&& baking.matches(ovenInput, helper.getLevel())
+						&& baking.assemble(ovenInput).is(
+								CakeWorldItems.SIMPLE_BISCUIT.get()),
+				"Rolled dough is not compatible with the standard food-only oven");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
 	public static void candyCanePillarsKeepAllThreeStructuralAxes(
 			GameTestHelper helper) {
 		RotatedPillarBlock pillar =

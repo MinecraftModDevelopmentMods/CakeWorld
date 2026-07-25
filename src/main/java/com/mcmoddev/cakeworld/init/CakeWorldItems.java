@@ -5,6 +5,7 @@ import java.util.function.Supplier;
 import com.mcmoddev.cakeworld.CakeWorld;
 import com.mcmoddev.cakeworld.item.ExplorersCookbookItem;
 import com.mcmoddev.cakeworld.item.LemonadeBottleItem;
+import com.mcmoddev.cakeworld.item.ReusableKitchenToolItem;
 
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
@@ -94,6 +95,16 @@ public final class CakeWorldItems {
 									.tab(CreativeModeTab.TAB_MISC)));
 	public static final RegistryObject<Item> FROSTING_MORTAR =
 			ITEMS.register("frosting_mortar",
+					() -> new Item(new Item.Properties()
+							.tab(CreativeModeTab.TAB_MISC)));
+	public static final RegistryObject<Item> ROLLING_PIN =
+			ITEMS.register("rolling_pin",
+					() -> new ReusableKitchenToolItem(
+							new Item.Properties()
+									.tab(CreativeModeTab.TAB_TOOLS)
+									.stacksTo(1)));
+	public static final RegistryObject<Item> ROLLED_BISCUIT_DOUGH =
+			ITEMS.register("rolled_biscuit_dough",
 					() -> new Item(new Item.Properties()
 							.tab(CreativeModeTab.TAB_MISC)));
 	public static final RegistryObject<Item> EXPLORERS_COOKBOOK =

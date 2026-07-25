@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:smelting",
+  "ingredient": {
+    "item": "cakeworld:rolled_biscuit_dough"
+  },
+  "result": "cakeworld:simple_biscuit",
+  "experience": 0.1,
+  "cookingtime": 100
+}
