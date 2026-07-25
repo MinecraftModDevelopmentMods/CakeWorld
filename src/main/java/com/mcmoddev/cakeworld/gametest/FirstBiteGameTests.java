@@ -68,6 +68,7 @@ import com.mcmoddev.cakeworld.entity.FudgeBrute;
 import com.mcmoddev.cakeworld.entity.FudgeFolk;
 import com.mcmoddev.cakeworld.entity.FizzballFish;
 import com.mcmoddev.cakeworld.entity.FizzballFishDamageSafety;
+import com.mcmoddev.cakeworld.entity.FrostedArcher;
 import com.mcmoddev.cakeworld.entity.GingerbreadPony;
 import com.mcmoddev.cakeworld.entity.GingerbreadStomper;
 import com.mcmoddev.cakeworld.entity.GingerbreadStomperDamageSafety;
@@ -123,6 +124,7 @@ import com.mcmoddev.cakeworld.world.CakeWorldSkeletonHorseReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldSnowGolemReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldSpiderReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldSquidReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldStrayReplacement;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
@@ -15420,6 +15422,7 @@ public final class FirstBiteGameTests {
 		CandyCaneArcher converted = null;
 		Spider vehicle = null;
 		Stray convertedStray = null;
+		FrostedArcher convertedFrosted = null;
 		try {
 			helper.getLevel().getServer().setDifficulty(
 					Difficulty.NORMAL, true);
@@ -15644,9 +15647,10 @@ public final class FirstBiteGameTests {
 			CandyCaneArcherProbe freezing =
 					new CandyCaneArcherProbe(
 							helper.getLevel());
-			freezing.moveTo(center.getX() + 0.5D,
-					center.getY(),
-					center.getZ() + 3.5D);
+			freezing.moveTo(
+					cakeWorldPos.getX() + 0.5D,
+					cakeWorldPos.getY() + 2.0D,
+					cakeWorldPos.getZ() + 3.5D);
 			freezing.startFreezeConversionFromNbt(0);
 			require(helper,
 					freezing.isFreezeConverting()
@@ -15666,7 +15670,20 @@ public final class FirstBiteGameTests {
 			require(helper,
 					freezing.isRemoved()
 							&& convertedStray != null,
-					"Candy-Cane Archer lost vanilla Stray conversion pending MOB-056 Frosted Archer");
+					"Candy-Cane Archer lost its inherited intermediate Stray conversion");
+			convertedFrosted =
+					CakeWorldStrayReplacement
+							.replaceIfInCakeWorldBiome(
+									helper.getLevel(),
+									convertedStray);
+			require(helper,
+					convertedFrosted != null
+							&& convertedFrosted.getType()
+									== CakeWorldEntities
+											.FROSTED_ARCHER
+											.get()
+							&& convertedStray.isRemoved(),
+					"Candy-Cane Archer freeze output did not hand off to Frosted Archer");
 
 			Creeper charged =
 					EntityType.CREEPER.create(
@@ -15726,6 +15743,10 @@ public final class FirstBiteGameTests {
 			if (convertedStray != null
 					&& !convertedStray.isRemoved()) {
 				convertedStray.discard();
+			}
+			if (convertedFrosted != null
+					&& !convertedFrosted.isRemoved()) {
+				convertedFrosted.discard();
 			}
 			helper.getLevel().getServer().setDifficulty(
 					originalDifficulty, true);
@@ -15852,6 +15873,565 @@ public final class FirstBiteGameTests {
 		requireCriterion(helper, advancementPlayer,
 				"minecraft:adventure/sniper_duel",
 				"killed_skeleton");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 260)
+	public static void frostedArchersKeepStrayArrowsSnowEcologyAndSafeChills(
+			GameTestHelper helper) {
+		FrostedArcherProbe archer =
+				new FrostedArcherProbe(helper.getLevel());
+		require(helper,
+				archer instanceof Stray
+						&& archer
+								instanceof AbstractSkeleton
+						&& archer.getType()
+								== CakeWorldEntities
+										.FROSTED_ARCHER.get()
+						&& archer.getType().getCategory()
+								== MobCategory.MONSTER
+						&& close(archer.getMaxHealth(),
+								20.0D)
+						&& close(archer.getAttributeValue(
+								Attributes.MOVEMENT_SPEED),
+								0.25D)
+						&& close(archer.getAttributeValue(
+								Attributes.ATTACK_DAMAGE),
+								2.0D)
+						&& close(archer.getAttributeValue(
+								Attributes.FOLLOW_RANGE),
+								16.0D)
+						&& close(archer.getDimensions(
+								Pose.STANDING).width,
+								0.6D)
+						&& close(archer.getDimensions(
+								Pose.STANDING).height,
+								1.99D)
+						&& archer.getType()
+								.clientTrackingRange() == 8
+						&& archer.getExperienceValue() == 5
+						&& archer.getMobType()
+								== MobType.UNDEAD
+						&& close(archer.getMyRidingOffset(),
+								-0.6D)
+						&& close(archer
+								.standingEyeHeight(),
+								1.74D)
+						&& !archer.canFreeze()
+						&& !CakeWorldEntities
+								.FROSTED_ARCHER.get()
+								.isBlockDangerous(
+										Blocks.POWDER_SNOW
+												.defaultBlockState()),
+				"Frosted Archer lost its genuine Stray body, attributes, undead or powder-snow immunity");
+		require(helper,
+				archer.ambientSound()
+								== SoundEvents.STRAY_AMBIENT
+						&& archer.hurtSound()
+								== SoundEvents.STRAY_HURT
+						&& archer.deathSound()
+								== SoundEvents.STRAY_DEATH
+						&& archer.stepSound()
+								== SoundEvents.STRAY_STEP
+						&& archer.goalPriority(
+								"RestrictSunGoal") == 2
+						&& archer.goalPriority(
+								"FleeSunGoal") == 3
+						&& archer.goalPriority(
+								"AvoidEntityGoal") == 3
+						&& archer.goalPriority(
+								"WaterAvoidingRandomStrollGoal")
+								== 5
+						&& archer.goalPriority(
+								"LookAtPlayerGoal") == 6
+						&& archer.goalPriority(
+								"RandomLookAroundGoal") == 6
+						&& archer.targetGoalPriority(
+								"HurtByTargetGoal") == 1
+						&& archer.targetGoalPriority(
+								"NearestAttackableTargetGoal")
+								== 2
+						&& archer
+								.countTargetGoalsAtPriority(3)
+								== 2,
+				"Frosted Archer lost exact Stray sounds or inherited Skeleton AI priorities");
+
+		BlockPos center =
+				helper.absolutePos(new BlockPos(1, 2, 1));
+		helper.getLevel().setBlock(center.below(),
+				CakeWorldBlocks.BISCUIT_STONE.get()
+						.defaultBlockState(), 3);
+		for (int y = 0; y <= 4; y++) {
+			helper.getLevel().setBlock(center.above(y),
+					Blocks.AIR.defaultBlockState(), 3);
+		}
+		archer.moveTo(center.getX() + 0.5D,
+				center.getY(),
+				center.getZ() + 0.5D);
+		archer.equipDefault(
+				helper.getLevel()
+						.getCurrentDifficultyAt(center));
+		CompoundTag chilledArrowData =
+				archer.createChilledArrow()
+						.saveWithoutId(new CompoundTag());
+		require(helper,
+				archer.getMainHandItem().is(Items.BOW)
+						&& archer.canFireBow()
+						&& archer.goalPriority(
+								"RangedBowAttackGoal")
+								== 4
+						&& archer
+								.countGoalsAssignableTo(
+										net.minecraft.world
+												.entity.ai.goal
+												.MeleeAttackGoal
+												.class)
+								== 0
+						&& hasExactCustomEffect(
+								chilledArrowData,
+								MobEffects
+										.MOVEMENT_SLOWDOWN,
+								600, 0),
+				"Frosted Archer lost default Bow AI or the exact Slowness-tipped arrow");
+
+		archer.setItemSlot(EquipmentSlot.MAINHAND,
+				new ItemStack(Items.IRON_SWORD));
+		require(helper,
+				archer.countGoalsAssignableTo(
+								net.minecraft.world.entity.ai.goal
+										.MeleeAttackGoal.class)
+								== 1
+						&& archer.goalPriorityAssignableTo(
+								net.minecraft.world.entity.ai.goal
+										.MeleeAttackGoal.class)
+								== 4
+						&& archer.goalPriority(
+								"RangedBowAttackGoal") == -1,
+				"Frosted Archer no longer switches to inherited melee AI without a Bow");
+		archer.setItemSlot(EquipmentSlot.MAINHAND,
+				new ItemStack(Items.BOW));
+
+		archer.forceSunBurn(true);
+		archer.setItemSlot(EquipmentSlot.HEAD,
+				ItemStack.EMPTY);
+		archer.clearFire();
+		archer.aiStep();
+		require(helper, archer.isOnFire(),
+				"Frosted Archer lost inherited sunlight burning");
+		archer.clearFire();
+		archer.setItemSlot(EquipmentSlot.HEAD,
+				new ItemStack(Items.IRON_HELMET));
+		archer.aiStep();
+		require(helper,
+				!archer.isOnFire()
+						&& !archer.getItemBySlot(
+								EquipmentSlot.HEAD)
+								.isEmpty(),
+				"Frosted Archer helmet no longer shields sunlight");
+		archer.forceSunBurn(false);
+
+		Difficulty originalDifficulty =
+				helper.getLevel().getDifficulty();
+		FrostedArcher converted = null;
+		Spider vehicle = null;
+		try {
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.NORMAL, true);
+			archer.reassessWeaponGoal();
+			require(helper,
+					archer.bowAttackInterval() == 40,
+					"Normal Frosted Archer lost the exact 40-tick Skeleton bow interval");
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			archer.reassessWeaponGoal();
+			require(helper,
+					archer.bowAttackInterval() == 20,
+					"Hard Frosted Archer lost the exact 20-tick Skeleton bow interval");
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.NORMAL, true);
+			archer.reassessWeaponGoal();
+			helper.getLevel().addFreshEntity(archer);
+			Pig aimingTarget =
+					EntityType.PIG.create(
+							helper.getLevel());
+			require(helper, aimingTarget != null,
+					"Could not create Frosted Archer aiming target");
+			aimingTarget.moveTo(center.getX() + 8.5D,
+					center.getY(),
+					center.getZ() + 0.5D);
+			archer.clearLastSound();
+			archer.performRangedAttack(
+					aimingTarget, 1.0F);
+			AbstractArrow fired = helper.getLevel()
+					.getEntitiesOfClass(
+							AbstractArrow.class,
+							new AABB(center)
+									.inflate(16.0D),
+							arrow -> arrow.getOwner()
+									== archer)
+					.stream().findFirst().orElse(null);
+			CompoundTag firedData = fired == null
+					? new CompoundTag()
+					: fired.saveWithoutId(
+							new CompoundTag());
+			require(helper,
+					fired instanceof Arrow
+							&& fired.getOwner() == archer
+							&& hasExactCustomEffect(
+									firedData,
+									MobEffects
+											.MOVEMENT_SLOWDOWN,
+									600, 0)
+							&& archer.lastSound()
+									== SoundEvents
+											.SKELETON_SHOOT
+							&& fired.getDeltaMovement()
+									.length() > 1.0D,
+					"Frosted Archer did not fire the inherited aimed Slowness Arrow with Skeleton cue");
+
+			Pig safeTarget =
+					EntityType.PIG.create(
+							helper.getLevel());
+			require(helper, safeTarget != null,
+					"Could not create safe Frosted Archer arrow target");
+			safeTarget.moveTo(center.getX() + 2.5D,
+					center.getY(),
+					center.getZ() + 0.5D);
+			safeTarget.setHealth(10.0F);
+			safeTarget.setSecondsOnFire(5);
+			safeTarget.fallDistance = 20.0F;
+			boolean safeHit = safeTarget.hurt(
+					DamageSource.arrow(fired, archer),
+					4.0F);
+			require(helper,
+					!safeHit
+							&& close(safeTarget
+									.getHealth(), 10.0D)
+							&& !safeTarget.isOnFire()
+							&& close(safeTarget
+									.fallDistance, 0.0D)
+							&& safeTarget.hasEffect(
+									MobEffects
+											.MOVEMENT_SLOWDOWN)
+							&& safeTarget.getEffect(
+									MobEffects
+											.MOVEMENT_SLOWDOWN)
+									.getAmplifier() == 1
+							&& safeTarget.hasEffect(
+									MobEffects.GLOWING)
+							&& safeTarget.hasEffect(
+									MobEffects.SLOW_FALLING)
+							&& safeTarget.hasEffect(
+									MobEffects.FIRE_RESISTANCE)
+							&& safeTarget.hasEffect(
+									MobEffects.DAMAGE_RESISTANCE)
+							&& safeTarget
+									.getDeltaMovement().y
+									> 0.0D,
+					"Normal Frosted Arrow caused health damage or lacked visible chill rescue");
+
+			FrostedArcherProbe melee =
+					new FrostedArcherProbe(
+							helper.getLevel());
+			melee.moveTo(center.getX() - 2.5D,
+					center.getY(),
+					center.getZ() + 0.5D);
+			Pig safeMelee =
+					EntityType.PIG.create(
+							helper.getLevel());
+			require(helper, safeMelee != null,
+					"Could not create safe Frosted Archer melee target");
+			safeMelee.setHealth(10.0F);
+			require(helper,
+					melee.doHurtTarget(safeMelee)
+							&& close(safeMelee
+									.getHealth(), 10.0D)
+							&& safeMelee.hasEffect(
+									MobEffects
+											.MOVEMENT_SLOWDOWN),
+					"Normal Bow-less Frosted Archer bypassed the no-damage contract");
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			Pig hardArrowTarget =
+					EntityType.PIG.create(
+							helper.getLevel());
+			require(helper, hardArrowTarget != null,
+					"Could not create Hard Frosted Archer arrow target");
+			hardArrowTarget.setHealth(10.0F);
+			hardArrowTarget.invulnerableTime = 0;
+			require(helper,
+					hardArrowTarget.hurt(
+							DamageSource.arrow(
+									fired, archer),
+							4.0F)
+							&& close(hardArrowTarget
+									.getHealth(), 6.0D),
+					"Hard Frosted Arrow no longer permits exact incoming damage");
+			Pig hardMeleeTarget =
+					EntityType.PIG.create(
+							helper.getLevel());
+			require(helper, hardMeleeTarget != null,
+					"Could not create Hard Frosted Archer melee target");
+			hardMeleeTarget.setHealth(10.0F);
+			hardMeleeTarget.invulnerableTime = 0;
+			require(helper,
+					melee.doHurtTarget(
+							hardMeleeTarget)
+							&& close(hardMeleeTarget
+									.getHealth(), 8.0D),
+					"Hard Frosted Archer lost the exact two-point Skeleton melee attack");
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.NORMAL, true);
+			ServerLevelAccessor openSnow =
+					controlledFrostedArcherAccessor(
+							helper.getLevel(), center,
+							true);
+			ServerLevelAccessor coveredSnow =
+					controlledFrostedArcherAccessor(
+							helper.getLevel(), center,
+							false);
+			require(helper,
+					FrostedArcher
+							.checkFrostedArcherSpawnRules(
+									CakeWorldEntities
+											.FROSTED_ARCHER
+											.get(),
+									coveredSnow,
+									MobSpawnType.SPAWNER,
+									center,
+									new Random(1978L))
+							&& FrostedArcher
+									.checkFrostedArcherSpawnRules(
+											CakeWorldEntities
+													.FROSTED_ARCHER
+													.get(),
+											openSnow,
+											MobSpawnType.NATURAL,
+											center,
+											new Random(1978L))
+							&& !FrostedArcher
+									.checkFrostedArcherSpawnRules(
+											CakeWorldEntities
+													.FROSTED_ARCHER
+													.get(),
+											coveredSnow,
+											MobSpawnType.NATURAL,
+											center,
+											new Random(1978L)),
+					"Frosted Archer lost Stray's spawner bypass or exact top-of-powder-snow sky rule");
+
+			BlockPos cakeWorldPos =
+					findCakeWorldBiomePosition(
+							helper, center, 256);
+			require(helper, cakeWorldPos != null,
+					"Could not locate CakeWorld terrain for literal Stray conversion");
+			Stray literal =
+					EntityType.STRAY.create(
+							helper.getLevel());
+			vehicle = EntityType.SPIDER.create(
+					helper.getLevel());
+			require(helper,
+					literal != null && vehicle != null,
+					"Could not create literal Stray rider fixture");
+			literal.moveTo(
+					cakeWorldPos.getX() + 0.5D,
+					cakeWorldPos.getY() + 2.0D,
+					cakeWorldPos.getZ() + 0.5D);
+			vehicle.moveTo(literal.getX(),
+					literal.getY(), literal.getZ());
+			literal.setHealth(13.0F);
+			literal.setCustomName(
+					new TextComponent(
+							"Iced Sharpshooter"));
+			literal.setPersistenceRequired();
+			literal.setNoAi(true);
+			literal.setItemSlot(
+					EquipmentSlot.MAINHAND,
+					new ItemStack(Items.BOW));
+			literal.setItemSlot(
+					EquipmentSlot.HEAD,
+					new ItemStack(
+							Items.CHAINMAIL_HELMET));
+			helper.getLevel()
+					.addFreshEntity(vehicle);
+			helper.getLevel()
+					.addFreshEntity(literal);
+			literal.startRiding(vehicle, true);
+			converted = CakeWorldStrayReplacement
+					.replaceIfInCakeWorldBiome(
+							helper.getLevel(), literal);
+			require(helper,
+					converted != null
+							&& converted.getType()
+									== CakeWorldEntities
+											.FROSTED_ARCHER
+											.get()
+							&& close(converted
+									.getHealth(), 13.0D)
+							&& converted.hasCustomName()
+							&& "Iced Sharpshooter"
+									.equals(converted
+											.getCustomName()
+											.getString())
+							&& converted
+									.isPersistenceRequired()
+							&& converted.isNoAi()
+							&& converted
+									.getMainHandItem()
+									.is(Items.BOW)
+							&& converted.getItemBySlot(
+									EquipmentSlot.HEAD)
+									.is(Items
+											.CHAINMAIL_HELMET)
+							&& converted.getVehicle()
+									== vehicle
+							&& vehicle.getPassengers()
+									.contains(converted)
+							&& literal.isRemoved(),
+					"Fresh Stray conversion lost Frosted Archer state, equipment or mount");
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.PEACEFUL, true);
+			FrostedArcherProbe peaceful =
+					new FrostedArcherProbe(
+							helper.getLevel());
+			peaceful.moveTo(center.getX() + 0.5D,
+					center.getY(),
+					center.getZ() + 0.5D);
+			helper.getLevel()
+					.addFreshEntity(peaceful);
+			peaceful.checkDespawn();
+			require(helper,
+					peaceful.isRemoved()
+							&& peaceful
+									.despawnsInPeaceful(),
+					"Peaceful Frosted Archer lost vanilla Monster removal");
+		} finally {
+			if (!archer.isRemoved()) {
+				archer.discard();
+			}
+			if (converted != null
+					&& !converted.isRemoved()) {
+				converted.discard();
+			}
+			if (vehicle != null
+					&& !vehicle.isRemoved()) {
+				vehicle.discard();
+			}
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		Registry<Biome> biomes = helper.getLevel()
+				.registryAccess()
+				.registryOrThrow(
+						Registry.BIOME_REGISTRY);
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS.getId())) {
+			Biome biome = biomes.get(biomeId);
+			require(helper,
+					biome != null
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory
+													.MONSTER)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType
+															.STRAY
+											|| spawn.type
+													== CakeWorldEntities
+															.FROSTED_ARCHER
+															.get()),
+					"Stray ecology was invented before Ice-Cream Tundra in "
+							+ biomeId);
+		}
+
+		TagKey<EntityType<?>> skeletons =
+				TagKey.create(
+						Registry.ENTITY_TYPE_REGISTRY,
+						new ResourceLocation(
+								"minecraft",
+								"skeletons"));
+		require(helper,
+				SpawnPlacements.getPlacementType(
+								CakeWorldEntities
+										.FROSTED_ARCHER
+										.get())
+								== SpawnPlacements.Type
+										.ON_GROUND
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+												.FROSTED_ARCHER
+												.get())
+								== Heightmap.Types
+										.MOTION_BLOCKING_NO_LEAVES
+						&& CakeWorldEntities
+								.FROSTED_ARCHER.get()
+								.is(skeletons)
+						&& CakeWorldItems
+								.FROSTED_ARCHER_SPAWN_EGG
+								.isPresent()
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+												.FROSTED_ARCHER
+												.get())
+								== SoundEvents
+										.PARROT_IMITATE_STRAY
+						&& archer.getLootTable().equals(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/frosted_archer")),
+				"Frosted Archer lost placement, Skeleton tag, egg, Stray mimic or loot route");
+
+		ServerPlayer advancementPlayer =
+				new ServerPlayer(
+						helper.getLevel().getServer(),
+						helper.getLevel(),
+						new GameProfile(
+								UUID.fromString(
+										"1978feed-feed-4bad-babe-1978feed2055"),
+								"CakeWorldFrostedArcherRoleTest"));
+		advancementPlayer.setPos(center.getX() - 60.0D,
+				center.getY(), center.getZ());
+		archer.setPos(center.getX(),
+				center.getY(), center.getZ());
+		Arrow playerArrow = new Arrow(
+				helper.getLevel(),
+				advancementPlayer);
+		VanillaRoleAdvancements.onDeath(
+				new LivingDeathEvent(
+						archer,
+						DamageSource.arrow(
+								playerArrow,
+								advancementPlayer)));
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:adventure/kill_all_mobs",
+				"minecraft:stray");
+		Advancement sniper = helper.getLevel()
+				.getServer().getAdvancements()
+				.getAdvancement(new ResourceLocation(
+						"minecraft:adventure/sniper_duel"));
+		require(helper,
+				sniper != null
+						&& !advancementPlayer
+								.getAdvancements()
+								.getOrStartProgress(sniper)
+								.getCriterion(
+										"killed_skeleton")
+								.isDone(),
+				"Frosted Archer incorrectly inherited Skeleton-only Sniper Duel credit");
 		helper.succeed();
 	}
 
@@ -20061,6 +20641,169 @@ public final class FirstBiteGameTests {
 		}
 	}
 
+	private static final class FrostedArcherProbe
+			extends FrostedArcher {
+		private net.minecraft.sounds.SoundEvent lastSound;
+		private boolean forceSunBurn;
+
+		private FrostedArcherProbe(Level level) {
+			super(CakeWorldEntities.FROSTED_ARCHER.get(),
+					level);
+		}
+
+		private int getExperienceValue() {
+			return getExperienceReward(null);
+		}
+
+		private float standingEyeHeight() {
+			return getStandingEyeHeight(Pose.STANDING,
+					getDimensions(Pose.STANDING));
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				ambientSound() {
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent hurtSound() {
+			return getHurtSound(DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent deathSound() {
+			return getDeathSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent stepSound() {
+			lastSound = null;
+			playStepSound(BlockPos.ZERO,
+					CakeWorldBlocks.BISCUIT_STONE.get()
+							.defaultBlockState());
+			return lastSound;
+		}
+
+		private int goalPriority(String name) {
+			return goalSelector.getAvailableGoals()
+					.stream()
+					.filter(wrapped -> name.equals(
+							wrapped.getGoal()
+									.getClass()
+									.getSimpleName()))
+					.mapToInt(WrappedGoal::getPriority)
+					.findFirst().orElse(-1);
+		}
+
+		private int targetGoalPriority(String name) {
+			return targetSelector.getAvailableGoals()
+					.stream()
+					.filter(wrapped -> name.equals(
+							wrapped.getGoal()
+									.getClass()
+									.getSimpleName()))
+					.mapToInt(WrappedGoal::getPriority)
+					.findFirst().orElse(-1);
+		}
+
+		private int countTargetGoalsAtPriority(int priority) {
+			return (int)targetSelector.getAvailableGoals()
+					.stream()
+					.filter(wrapped ->
+							wrapped.getPriority()
+									== priority)
+					.count();
+		}
+
+		private int countGoalsAssignableTo(
+				Class<?> goalClass) {
+			return (int)goalSelector.getAvailableGoals()
+					.stream()
+					.filter(wrapped -> goalClass
+							.isInstance(
+									wrapped.getGoal()))
+					.count();
+		}
+
+		private int goalPriorityAssignableTo(
+				Class<?> goalClass) {
+			return goalSelector.getAvailableGoals()
+					.stream()
+					.filter(wrapped -> goalClass
+							.isInstance(
+									wrapped.getGoal()))
+					.mapToInt(WrappedGoal::getPriority)
+					.findFirst().orElse(-1);
+		}
+
+		private void equipDefault(
+				DifficultyInstance difficulty) {
+			populateDefaultEquipmentSlots(difficulty);
+		}
+
+		private boolean canFireBow() {
+			return Items.BOW
+							instanceof net.minecraft.world.item
+									.ProjectileWeaponItem weapon
+					&& canFireProjectileWeapon(weapon);
+		}
+
+		private int bowAttackInterval() {
+			for (WrappedGoal wrapped :
+					goalSelector.getAvailableGoals()) {
+				if ("RangedBowAttackGoal".equals(
+						wrapped.getGoal().getClass()
+								.getSimpleName())) {
+					try {
+						Field field = wrapped.getGoal()
+								.getClass()
+								.getDeclaredField(
+										"attackIntervalMin");
+						field.setAccessible(true);
+						return field.getInt(
+								wrapped.getGoal());
+					} catch (ReflectiveOperationException
+							exception) {
+						throw new IllegalStateException(
+								"Could not inspect Frosted Archer bow interval",
+								exception);
+					}
+				}
+			}
+			return -1;
+		}
+
+		private AbstractArrow createChilledArrow() {
+			return getArrow(
+					new ItemStack(Items.ARROW), 1.0F);
+		}
+
+		private void forceSunBurn(boolean force) {
+			forceSunBurn = force;
+		}
+
+		private void clearLastSound() {
+			lastSound = null;
+		}
+
+		private net.minecraft.sounds.SoundEvent lastSound() {
+			return lastSound;
+		}
+
+		private boolean despawnsInPeaceful() {
+			return shouldDespawnInPeaceful();
+		}
+
+		@Override
+		protected boolean isSunBurnTick() {
+			return forceSunBurn || super.isSunBurnTick();
+		}
+
+		@Override
+		public void playSound(
+				net.minecraft.sounds.SoundEvent sound,
+				float volume, float pitch) {
+			lastSound = sound;
+		}
+	}
+
 	private static final class BrittleBiscuitSteedProbe
 			extends BrittleBiscuitSteed {
 		private BrittleBiscuitSteedProbe(Level level) {
@@ -20895,6 +21638,57 @@ public final class FirstBiteGameTests {
 						});
 	}
 
+	private static ServerLevelAccessor
+			controlledFrostedArcherAccessor(
+					ServerLevel level,
+					BlockPos base,
+					boolean skyVisible) {
+		return (ServerLevelAccessor)
+				Proxy.newProxyInstance(
+						ServerLevelAccessor.class
+								.getClassLoader(),
+						new Class<?>[] {
+								ServerLevelAccessor.class },
+						(proxy, method, arguments) -> {
+							String name = method.getName();
+							if ("getBlockState".equals(name)
+									&& arguments != null
+									&& arguments.length == 1
+									&& arguments[0]
+											instanceof BlockPos pos
+									&& (pos.equals(
+											base.above())
+											|| pos.equals(
+													base.above(2)))) {
+								return Blocks.POWDER_SNOW
+										.defaultBlockState();
+							}
+							if ("canSeeSky".equals(name)
+									&& arguments != null
+									&& arguments.length == 1) {
+								return skyVisible
+										&& base.above(2)
+												.equals(
+														arguments[0]);
+							}
+							if ("getDifficulty".equals(name)) {
+								return Difficulty.NORMAL;
+							}
+							if ("getRandom".equals(name)) {
+								return new Random(1978L);
+							}
+							if ("getBrightness".equals(name)
+									|| "getRawBrightness"
+											.equals(name)
+									|| "getMaxLocalRawBrightness"
+											.equals(name)) {
+								return 0;
+							}
+							return method.invoke(level,
+									arguments);
+						});
+	}
+
 	private static boolean close(double actual, double expected) {
 		return Math.abs(actual - expected) < 0.000001D;
 	}
@@ -20906,6 +21700,28 @@ public final class FirstBiteGameTests {
 				entry.getFirst().getEffect() == effect
 						&& entry.getFirst().getDuration() == duration
 						&& close(entry.getSecond(), 1.0D));
+	}
+
+	private static boolean hasExactCustomEffect(
+			CompoundTag projectile,
+			net.minecraft.world.effect.MobEffect effect,
+			int duration, int amplifier) {
+		ListTag effects = projectile.getList(
+				"CustomPotionEffects", 10);
+		for (int index = 0; index < effects.size();
+				index++) {
+			MobEffectInstance instance =
+					MobEffectInstance.load(
+							effects.getCompound(index));
+			if (instance != null
+					&& instance.getEffect() == effect
+					&& instance.getDuration() == duration
+					&& instance.getAmplifier()
+							== amplifier) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private static void clearServerPlayerSpawnInvulnerability(

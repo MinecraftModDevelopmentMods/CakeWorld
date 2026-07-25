@@ -20,6 +20,7 @@ import com.mcmoddev.cakeworld.entity.FudgeBoar;
 import com.mcmoddev.cakeworld.entity.FudgeBrute;
 import com.mcmoddev.cakeworld.entity.FudgeFolk;
 import com.mcmoddev.cakeworld.entity.FizzballFish;
+import com.mcmoddev.cakeworld.entity.FrostedArcher;
 import com.mcmoddev.cakeworld.entity.GingerbreadPony;
 import com.mcmoddev.cakeworld.entity.GingerbreadStomper;
 import com.mcmoddev.cakeworld.entity.GrandGumballGuardian;
@@ -379,6 +380,15 @@ public final class CakeWorldEntities {
 					EntityType.Builder.of(
 							CandyCaneArcher::new,
 							MobCategory.MONSTER)
+						.sized(0.6F, 1.99F)
+						.clientTrackingRange(8));
+	public static final RegistryObject<EntityType<FrostedArcher>>
+			FROSTED_ARCHER = entity("frosted_archer",
+					EntityType.Builder.of(
+							FrostedArcher::new,
+							MobCategory.MONSTER)
+							.immuneTo(
+									Blocks.POWDER_SNOW)
 							.sized(0.6F, 1.99F)
 							.clientTrackingRange(8));
 	public static final RegistryObject<
@@ -587,6 +597,8 @@ public final class CakeWorldEntities {
 				Silverfish.createAttributes().build());
 		event.put(CANDY_CANE_ARCHER.get(),
 				Skeleton.createAttributes().build());
+		event.put(FROSTED_ARCHER.get(),
+				Skeleton.createAttributes().build());
 		event.put(BRITTLE_BISCUIT_STEED.get(),
 				SkeletonHorse.createAttributes().build());
 		event.put(JELLY_BLOB.get(),
@@ -762,6 +774,12 @@ public final class CakeWorldEntities {
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					CandyCaneArcher
 							::checkCandyCaneArcherSpawnRules);
+			SpawnPlacements.register(
+					FROSTED_ARCHER.get(),
+					SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					FrostedArcher
+							::checkFrostedArcherSpawnRules);
 			SpawnPlacements.register(
 					BRITTLE_BISCUIT_STEED.get(),
 					SpawnPlacements.Type.ON_GROUND,

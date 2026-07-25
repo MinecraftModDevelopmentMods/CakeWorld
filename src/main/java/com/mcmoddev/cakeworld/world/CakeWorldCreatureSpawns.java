@@ -42,6 +42,9 @@ public final class CakeWorldCreatureSpawns {
 				EntityType.SKELETON,
 				CakeWorldEntities.CANDY_CANE_ARCHER);
 		replaceExisting(event, MobCategory.MONSTER,
+				EntityType.STRAY,
+				CakeWorldEntities.FROSTED_ARCHER);
+		replaceExisting(event, MobCategory.MONSTER,
 				EntityType.SLIME,
 				CakeWorldEntities.JELLY_BLOB);
 		replaceExisting(event, MobCategory.MONSTER,
