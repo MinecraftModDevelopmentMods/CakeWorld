@@ -14,7 +14,7 @@ import net.minecraft.world.phys.Vec3;
  *
  * <p>The 1.18.2 goal searches only {@code minecraft:llama} and
  * {@code minecraft:trader_llama}. Using the shared Llama class contract lets
- * Meringue Llamas form their own caravans and follow compatible Llama
+ * CakeWorld Llamas form their own caravans and follow compatible Llama
  * subclasses without replacing or rewriting those other entities.</p>
  */
 public final class MeringueLlamaFollowCaravanGoal extends Goal {

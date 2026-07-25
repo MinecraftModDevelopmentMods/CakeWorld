@@ -158,6 +158,11 @@ public final class CakeWorldClientEvents {
 				context -> new LlamaRenderer(
 						context, ModelLayers.LLAMA));
 		event.registerEntityRenderer(
+				CakeWorldEntities.SPRINKLE_LLAMA.get(),
+				context -> new LlamaRenderer(
+						context,
+						ModelLayers.TRADER_LLAMA));
+		event.registerEntityRenderer(
 				CakeWorldEntities.HOT_FUDGE_BLOB.get(),
 				MagmaCubeRenderer::new);
 		event.registerEntityRenderer(

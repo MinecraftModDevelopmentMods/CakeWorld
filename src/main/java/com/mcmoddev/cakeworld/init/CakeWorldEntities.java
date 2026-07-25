@@ -55,6 +55,7 @@ import com.mcmoddev.cakeworld.entity.SoggyTridentProjectile;
 import com.mcmoddev.cakeworld.entity.SherbetOcelot;
 import com.mcmoddev.cakeworld.entity.SherbetSalmon;
 import com.mcmoddev.cakeworld.entity.SourSorcerer;
+import com.mcmoddev.cakeworld.entity.SprinkleLlama;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
 import com.mcmoddev.cakeworld.entity.SugarBee;
 import com.mcmoddev.cakeworld.entity.SugarMite;
@@ -350,6 +351,13 @@ public final class CakeWorldEntities {
 							MobCategory.CREATURE)
 							.sized(0.9F, 1.87F)
 							.clientTrackingRange(10));
+	public static final RegistryObject<EntityType<SprinkleLlama>>
+			SPRINKLE_LLAMA = entity("sprinkle_llama",
+					EntityType.Builder.of(
+							SprinkleLlama::new,
+							MobCategory.CREATURE)
+							.sized(0.9F, 1.87F)
+							.clientTrackingRange(10));
 	public static final RegistryObject<EntityType<HotFudgeBlob>>
 			HOT_FUDGE_BLOB = entity("hot_fudge_blob",
 					EntityType.Builder.of(HotFudgeBlob::new,
@@ -597,6 +605,8 @@ public final class CakeWorldEntities {
 				IronGolem.createAttributes().build());
 		event.put(MERINGUE_LLAMA.get(),
 				Llama.createAttributes().build());
+		event.put(SPRINKLE_LLAMA.get(),
+				Llama.createAttributes().build());
 		event.put(HOT_FUDGE_BLOB.get(),
 				MagmaCube.createAttributes().build());
 		event.put(TAFFY_TALLWALKER.get(),
@@ -761,6 +771,10 @@ public final class CakeWorldEntities {
 					Mob::checkMobSpawnRules);
 			SpawnPlacements.register(MERINGUE_LLAMA.get(),
 					SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					Animal::checkAnimalSpawnRules);
+			SpawnPlacements.register(SPRINKLE_LLAMA.get(),
+					SpawnPlacements.Type.NO_RESTRICTIONS,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					Animal::checkAnimalSpawnRules);
 			SpawnPlacements.register(HOT_FUDGE_BLOB.get(),

@@ -97,6 +97,7 @@ import com.mcmoddev.cakeworld.entity.SoggyTridentProjectile;
 import com.mcmoddev.cakeworld.entity.SherbetOcelot;
 import com.mcmoddev.cakeworld.entity.SherbetSalmon;
 import com.mcmoddev.cakeworld.entity.SourSorcerer;
+import com.mcmoddev.cakeworld.entity.SprinkleLlama;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
 import com.mcmoddev.cakeworld.entity.SugarBee;
 import com.mcmoddev.cakeworld.entity.SugarMite;
@@ -127,6 +128,7 @@ import com.mcmoddev.cakeworld.world.CakeWorldSpiderReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldSquidReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldStrayReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldStriderReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldTraderLlamaReplacement;
 import com.mcmoddev.cakeworld.world.FudgeSkaterRideCompatibility;
 
 import net.minecraft.core.BlockPos;
@@ -224,6 +226,7 @@ import net.minecraft.world.entity.animal.horse.SkeletonHorse;
 import net.minecraft.world.entity.animal.horse.SkeletonTrapGoal;
 import net.minecraft.world.entity.animal.horse.TraderLlama;
 import net.minecraft.world.entity.animal.horse.Variant;
+import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.monster.Drowned;
 import net.minecraft.world.entity.monster.AbstractSkeleton;
 import net.minecraft.world.entity.monster.Creeper;
@@ -16963,6 +16966,1045 @@ public final class FirstBiteGameTests {
 	}
 
 	@GameTest(template = EMPTY, timeoutTicks = 300)
+	public static void sprinkleLlamasKeepTraderCaravansPacksDefenceAndDespawn(
+			GameTestHelper helper) {
+		SprinkleLlamaProbe llama =
+				new SprinkleLlamaProbe(
+						helper.getLevel());
+		llama.seedRandom(1978L);
+		int experience = llama.getExperienceValue();
+		require(helper,
+				llama instanceof TraderLlama
+						&& llama instanceof Llama
+						&& llama.getType()
+								== CakeWorldEntities
+										.SPRINKLE_LLAMA
+										.get()
+						&& llama.getType().getCategory()
+								== MobCategory.CREATURE
+						&& !llama.getType().fireImmune()
+						&& close(llama.getMaxHealth(),
+								53.0D)
+						&& close(llama
+								.getAttributeValue(
+										Attributes
+												.MOVEMENT_SPEED),
+								0.175D)
+						&& close(llama
+								.getAttributeValue(
+										Attributes
+												.JUMP_STRENGTH),
+								0.5D)
+						&& close(llama
+								.getAttributeValue(
+										Attributes
+												.FOLLOW_RANGE),
+								40.0D)
+						&& llama.getAttribute(
+								Attributes.ATTACK_DAMAGE)
+								== null
+						&& close(llama
+								.getDimensions(
+										Pose.STANDING)
+								.width, 0.9D)
+						&& close(llama
+								.getDimensions(
+										Pose.STANDING)
+								.height, 1.87D)
+						&& llama.getType()
+								.clientTrackingRange()
+								== 10
+						&& close(llama.maxUpStep, 1.0D)
+						&& llama
+								.getMaxSpawnClusterSize()
+								== 6
+						&& llama.getMaxTemper() == 30
+						&& llama.isTraderLlama()
+						&& !llama.isSaddleable()
+						&& !llama
+								.canBeControlledByRider()
+						&& llama.canWearArmor()
+						&& experience >= 1
+						&& experience <= 3,
+				"Sprinkle Llama lost the genuine Trader Llama body, attributes, pack, tracking or passive role");
+		require(helper,
+				llama.hasGoalAt("FloatGoal", 0)
+						&& llama.hasGoalAt(
+								"RunAroundLikeCrazyGoal",
+								1)
+						&& llama.hasGoalAt(
+								"MeringueLlamaFollowCaravanGoal",
+								2)
+						&& llama.countGoalsNamed(
+								"LlamaFollowCaravanGoal")
+								== 0
+						&& llama.hasGoalAt(
+								"RangedAttackGoal", 3)
+						&& llama
+								.countGoalsNamed(
+										"PanicGoal")
+								== 2
+						&& llama.hasGoalAt(
+								"PanicGoal", 1)
+						&& llama.hasGoalAt(
+								"PanicGoal", 3)
+						&& llama.hasGoalAt(
+								"BreedGoal", 4)
+						&& llama.hasGoalAt(
+								"TemptGoal", 5)
+						&& llama.hasGoalAt(
+								"FollowParentGoal", 6)
+						&& llama.hasGoalAt(
+								"WaterAvoidingRandomStrollGoal",
+								7)
+						&& llama.hasGoalAt(
+								"LookAtPlayerGoal", 8)
+						&& llama.hasGoalAt(
+								"RandomLookAroundGoal",
+								9)
+						&& llama.hasTargetGoalAt(
+								"LlamaHurtByTargetGoal",
+								1)
+						&& llama.hasTargetGoalAt(
+								"TraderLlamaDefendWanderingTraderGoal",
+								1)
+						&& llama.hasTargetGoalAt(
+								"LlamaAttackWolfGoal",
+								2)
+						&& llama.ambientSound()
+								== SoundEvents
+										.LLAMA_AMBIENT
+						&& llama.angrySound()
+								== SoundEvents
+										.LLAMA_ANGRY
+						&& llama.hurtSound()
+								== SoundEvents.LLAMA_HURT
+						&& llama.deathSound()
+								== SoundEvents
+										.LLAMA_DEATH
+						&& llama.eatingSound()
+								== SoundEvents.LLAMA_EAT,
+				"Sprinkle Llama lost exact Llama goals, Trader panic/defence additions or sounds");
+		require(helper,
+				llama.isFood(new ItemStack(
+								Items.WHEAT))
+						&& llama.isFood(new ItemStack(
+								Items.HAY_BLOCK))
+						&& !llama.isFood(new ItemStack(
+								CakeWorldItems
+										.BOILED_SWEET
+										.get())),
+				"Sprinkle Llama changed the exact Wheat and Hay Block diet");
+
+		BlockPos anchor = helper.absolutePos(
+				new BlockPos(2, 3, 2));
+		llama.setNoAi(true);
+		llama.setPos(anchor.getX(),
+				anchor.getY(), anchor.getZ());
+		helper.getLevel().addFreshEntity(llama);
+		Pig target = EntityType.PIG.create(
+				helper.getLevel());
+		require(helper, target != null,
+				"Could not create Sprinkle Llama spit target");
+		target.setPos(anchor.getX() + 3.0D,
+				anchor.getY(), anchor.getZ());
+		helper.getLevel().addFreshEntity(target);
+
+		CompoundTag genes = new CompoundTag();
+		genes.putInt("Strength", 5);
+		genes.putInt("Variant", 3);
+		llama.readAdditionalSaveData(genes);
+		UUID owner = UUID.fromString(
+				"1978feed-feed-4bad-babe-1978feed2058");
+		ServerPlayer player = new ServerPlayer(
+				helper.getLevel().getServer(),
+				helper.getLevel(),
+				new GameProfile(owner,
+						"CakeWorldSprinkleLlamaRoleTest"));
+		llama.setTamed(true);
+		llama.setOwnerUUID(owner);
+		llama.setDespawnDelay(1234);
+		require(helper,
+				llama.getSlot(499).set(
+						new ItemStack(Items.CHEST))
+						&& llama.getSlot(401).set(
+								new ItemStack(
+										Items.CYAN_CARPET))
+						&& llama.getSlot(500).set(
+								new ItemStack(
+										CakeWorldItems
+												.BOILED_SWEET
+												.get(), 3))
+						&& llama.getSlot(514).set(
+								new ItemStack(
+										CakeWorldItems
+												.MINT_WAFER
+												.get(), 2))
+						&& !llama.getSlot(515).set(
+								new ItemStack(
+										Items.DIAMOND))
+						&& llama.hasChest()
+						&& llama.getStrength() == 5
+						&& llama
+								.getInventoryColumns()
+								== 5
+						&& llama.getVariant() == 3
+						&& llama.getSwag()
+								== DyeColor.CYAN
+						&& llama.isWearingArmor(),
+				"Sprinkle Llama lost strength-five storage, edge pack slot or carpet decor");
+		CompoundTag saved = llama.saveWithoutId(
+				new CompoundTag());
+		SprinkleLlama restored =
+				CakeWorldEntities.SPRINKLE_LLAMA
+						.get().create(
+								helper.getLevel());
+		require(helper, restored != null,
+				"Could not create Sprinkle Llama reload fixture");
+		restored.load(saved);
+		require(helper,
+				restored.isTraderLlama()
+						&& restored.isTamed()
+						&& owner.equals(
+								restored.getOwnerUUID())
+						&& restored.hasChest()
+						&& restored.getStrength() == 5
+						&& restored
+								.getInventoryColumns()
+								== 5
+						&& restored.getVariant() == 3
+						&& restored.getSwag()
+								== DyeColor.CYAN
+						&& restored.getSlot(401).get()
+								.is(Items.CYAN_CARPET)
+						&& restored.getSlot(500).get()
+								.is(CakeWorldItems
+										.BOILED_SWEET
+										.get())
+						&& restored.getSlot(500).get()
+								.getCount() == 3
+						&& restored.getSlot(514).get()
+								.is(CakeWorldItems
+										.MINT_WAFER.get())
+						&& restored.getSlot(514).get()
+								.getCount() == 2
+						&& restored
+								.saveWithoutId(
+										new CompoundTag())
+								.getInt("DespawnDelay")
+								== 1234,
+				"Sprinkle Llama reload lost Trader delay, owner, genes, chest, carpet or pack inventory");
+
+		SprinkleLlamaProbe eventLlama =
+				new SprinkleLlamaProbe(
+						helper.getLevel());
+		eventLlama.setAge(-24000);
+		SpawnGroupData eventGroup =
+				eventLlama.finalizeSpawn(
+						helper.getLevel(),
+						helper.getLevel()
+								.getCurrentDifficultyAt(
+										anchor),
+						MobSpawnType.EVENT,
+						null, null);
+		require(helper,
+				eventGroup != null
+						&& !eventLlama.isBaby()
+						&& eventLlama.getStrength()
+								>= 1
+						&& eventLlama.getStrength()
+								<= 5
+						&& eventLlama.getVariant()
+								>= 0
+						&& eventLlama.getVariant()
+								<= 3,
+				"Sprinkle Llama lost the adult EVENT-spawn and randomized Llama group contract");
+
+		WanderingTrader trader =
+				EntityType.WANDERING_TRADER
+						.create(helper.getLevel());
+		Pig attacker =
+				EntityType.PIG.create(
+						helper.getLevel());
+		SprinkleLlamaProbe traderBound =
+				new SprinkleLlamaProbe(
+						helper.getLevel());
+		require(helper,
+				trader != null && attacker != null,
+				"Could not create trader-defence fixtures");
+		trader.setPos(anchor.getX() + 8.0D,
+				anchor.getY(), anchor.getZ());
+		attacker.setPos(trader.getX() + 2.0D,
+				trader.getY(), trader.getZ());
+		traderBound.setPos(trader.getX() + 1.0D,
+				trader.getY(), trader.getZ());
+		traderBound.setNoAi(true);
+		helper.getLevel().addFreshEntity(trader);
+		helper.getLevel().addFreshEntity(attacker);
+		helper.getLevel().addFreshEntity(
+				traderBound);
+		traderBound.setLeashedTo(trader, false);
+		trader.setDespawnDelay(50);
+		traderBound.setDespawnDelay(999);
+		traderBound.aiStep();
+		require(helper,
+				traderBound.despawnDelay() == 49,
+				"Trader-bound Sprinkle Llama did not synchronize to trader delay minus one");
+		trader.tickCount = 20;
+		trader.setLastHurtByMob(attacker);
+		var defendGoal = traderBound
+				.targetSelector.getAvailableGoals()
+				.stream()
+				.map(WrappedGoal::getGoal)
+				.filter(goal -> goal.getClass()
+						.getSimpleName().equals(
+								"TraderLlamaDefendWanderingTraderGoal"))
+				.findFirst().orElse(null);
+		require(helper,
+				defendGoal != null
+						&& defendGoal.canUse(),
+				"Sprinkle Llama did not notice its leashed trader's attacker");
+		defendGoal.start();
+		require(helper,
+				traderBound.getTarget() == attacker,
+				"Sprinkle Llama defence goal did not target the trader's attacker");
+
+		SprinkleLlama mountLlama =
+				CakeWorldEntities.SPRINKLE_LLAMA
+						.get().create(
+								helper.getLevel());
+		require(helper, mountLlama != null,
+				"Could not create trader-leash mount fixture");
+		mountLlama.setPos(trader.getX() + 3.0D,
+				trader.getY(), trader.getZ());
+		mountLlama.setTamed(true);
+		mountLlama.setOwnerUUID(owner);
+		helper.getLevel().addFreshEntity(mountLlama);
+		mountLlama.setLeashedTo(trader, false);
+		player.setItemInHand(
+				InteractionHand.MAIN_HAND,
+				ItemStack.EMPTY);
+		player.interactOn(
+				mountLlama,
+				InteractionHand.MAIN_HAND);
+		require(helper,
+				player.getVehicle() == null,
+				"Trader-leashed Sprinkle Llama incorrectly allowed a rider");
+		mountLlama.dropLeash(true, false);
+		InteractionResult mounted = player.interactOn(
+				mountLlama,
+				InteractionHand.MAIN_HAND);
+		require(helper,
+				mounted.consumesAction()
+						&& player.getVehicle()
+								== mountLlama
+						&& !mountLlama
+								.canBeControlledByRider(),
+				"Unleashed tame Sprinkle Llama lost its mountable but uncontrollable role");
+		player.stopRiding();
+
+		SprinkleLlamaProbe tamedProtected =
+				new SprinkleLlamaProbe(
+						helper.getLevel());
+		tamedProtected.setNoAi(true);
+		tamedProtected.setTamed(true);
+		tamedProtected.setDespawnDelay(1);
+		helper.getLevel().addFreshEntity(
+				tamedProtected);
+		tamedProtected.aiStep();
+		require(helper,
+				!tamedProtected.isRemoved()
+						&& tamedProtected
+								.despawnDelay() == 1,
+				"Tamed Sprinkle Llama did not retain the exact despawn exemption");
+
+		SprinkleLlamaProbe leashedProtected =
+				new SprinkleLlamaProbe(
+						helper.getLevel());
+		leashedProtected.setNoAi(true);
+		leashedProtected.setDespawnDelay(1);
+		helper.getLevel().addFreshEntity(
+				leashedProtected);
+		leashedProtected.setLeashedTo(
+				player, false);
+		leashedProtected.aiStep();
+		require(helper,
+				!leashedProtected.isRemoved()
+						&& leashedProtected
+								.despawnDelay() == 1,
+				"Non-trader leash did not retain the exact Sprinkle Llama despawn exemption");
+
+		SprinkleLlamaProbe passengerProtected =
+				new SprinkleLlamaProbe(
+						helper.getLevel());
+		ServerPlayer passengerPlayer =
+				new ServerPlayer(
+						helper.getLevel()
+								.getServer(),
+						helper.getLevel(),
+						new GameProfile(
+								UUID.fromString(
+										"1978feed-feed-4bad-babe-1978feed3058"),
+								"CakeWorldSprinklePassengerTest"));
+		passengerProtected.setNoAi(true);
+		passengerProtected.setDespawnDelay(1);
+		helper.getLevel().addFreshEntity(
+				passengerProtected);
+		require(helper,
+				passengerPlayer.startRiding(
+						passengerProtected, true),
+				"Could not create one-player Sprinkle Llama passenger exemption");
+		passengerProtected.aiStep();
+		require(helper,
+				!passengerProtected.isRemoved()
+						&& passengerProtected
+								.despawnDelay() == 1,
+				"Exactly one player passenger did not prevent Sprinkle Llama despawn");
+		passengerPlayer.stopRiding();
+
+		SprinkleLlamaProbe expiring =
+				new SprinkleLlamaProbe(
+						helper.getLevel());
+		expiring.setNoAi(true);
+		expiring.setDespawnDelay(1);
+		helper.getLevel().addFreshEntity(expiring);
+		expiring.aiStep();
+		require(helper, expiring.isRemoved(),
+				"Unprotected zero-delay Sprinkle Llama did not discard exactly like a Trader Llama");
+
+		SprinkleLlama mate =
+				CakeWorldEntities.SPRINKLE_LLAMA
+						.get().create(
+								helper.getLevel());
+		require(helper, mate != null,
+				"Could not create Sprinkle Llama mate");
+		CompoundTag mateGenes =
+				new CompoundTag();
+		mateGenes.putInt("Strength", 2);
+		mateGenes.putInt("Variant", 1);
+		mate.readAdditionalSaveData(mateGenes);
+		mate.setTamed(true);
+		mate.setOwnerUUID(owner);
+		mate.setAge(0);
+		mate.setHealth(mate.getMaxHealth());
+		llama.setAge(0);
+		llama.setHealth(llama.getMaxHealth());
+		llama.setInLove(player);
+		mate.setInLove(player);
+		require(helper, llama.canMate(mate),
+				"Two tame adult Sprinkle Llamas could not mate");
+		Llama child = llama.getBreedOffspring(
+				helper.getLevel(), mate);
+		require(helper,
+				child instanceof SprinkleLlama
+						&& child.getType()
+								== CakeWorldEntities
+										.SPRINKLE_LLAMA
+										.get()
+						&& child.isTraderLlama()
+						&& child.getStrength() >= 1
+						&& child.getStrength() <= 5
+						&& (child.getVariant() == 3
+								|| child.getVariant()
+										== 1)
+						&& child.getAttributeBaseValue(
+								Attributes.MAX_HEALTH)
+								>= 40.0D
+						&& child.getAttributeBaseValue(
+								Attributes.MAX_HEALTH)
+								<= 46.0D,
+				"Sprinkle Llama breeding leaked a literal Trader Llama or lost physical, strength or variant inheritance");
+		VanillaRoleAdvancements.creditBredRole(
+				player, child.getType());
+		requireCriterion(helper, player,
+				"minecraft:husbandry/bred_all_animals",
+				"minecraft:llama");
+
+		SprinkleLlama caravanLeader =
+				CakeWorldEntities.SPRINKLE_LLAMA
+						.get().create(
+								helper.getLevel());
+		SprinkleLlama caravanFollower =
+				CakeWorldEntities.SPRINKLE_LLAMA
+						.get().create(
+								helper.getLevel());
+		require(helper, caravanLeader != null
+						&& caravanFollower != null,
+				"Could not create Sprinkle Llama caravan fixtures");
+		caravanLeader.setNoAi(true);
+		caravanFollower.setNoAi(true);
+		caravanLeader.setPos(anchor.getX(),
+				anchor.getY(),
+				anchor.getZ() + 30.0D);
+		caravanFollower.setPos(
+				anchor.getX() + 5.0D,
+				anchor.getY(),
+				anchor.getZ() + 30.0D);
+		helper.getLevel().addFreshEntity(
+				caravanLeader);
+		helper.getLevel().addFreshEntity(
+				caravanFollower);
+		caravanLeader.setLeashedTo(
+				player, false);
+		long literalGoals = caravanFollower
+				.goalSelector.getAvailableGoals()
+				.stream()
+				.filter(wrapped -> wrapped.getGoal()
+						instanceof LlamaFollowCaravanGoal)
+				.count();
+		MeringueLlamaFollowCaravanGoal caravanGoal =
+				caravanFollower.goalSelector
+						.getAvailableGoals().stream()
+						.map(WrappedGoal::getGoal)
+						.filter(MeringueLlamaFollowCaravanGoal
+								.class::isInstance)
+						.map(MeringueLlamaFollowCaravanGoal
+								.class::cast)
+						.findFirst().orElse(null);
+		require(helper,
+				literalGoals == 0
+						&& caravanGoal != null
+						&& caravanGoal.canUse()
+						&& caravanFollower.inCaravan()
+						&& caravanFollower
+								.getCaravanHead()
+								== caravanLeader
+						&& caravanLeader
+								.hasCaravanTail(),
+				"Sprinkle Llama retained the literal-type caravan goal or failed to form a custom caravan");
+		caravanFollower.leaveCaravan();
+
+		llama.performRangedAttack(target, 1.0F);
+		LlamaSpit spit = helper.getLevel()
+				.getEntitiesOfClass(
+						LlamaSpit.class,
+						new AABB(anchor).inflate(10.0D))
+				.stream()
+				.filter(projectile ->
+						projectile.getOwner() == llama)
+				.findFirst().orElse(null);
+		require(helper, spit != null,
+				"Sprinkle Llama did not retain a visible vanilla Llama spit projectile");
+		Difficulty originalDifficulty =
+				helper.getLevel().getDifficulty();
+		try {
+			for (Difficulty safeDifficulty :
+					new Difficulty[] {
+							Difficulty.PEACEFUL,
+							Difficulty.EASY,
+							Difficulty.NORMAL}) {
+				helper.getLevel().getServer()
+						.setDifficulty(
+								safeDifficulty,
+								true);
+				target.removeAllEffects();
+				target.setHealth(10.0F);
+				target.invulnerableTime = 0;
+				target.setSecondsOnFire(5);
+				target.fallDistance = 12.0F;
+				target.setDeltaMovement(Vec3.ZERO);
+				target.hurt(
+						DamageSource.indirectMobAttack(
+								spit, llama)
+								.setProjectile(),
+						1.0F);
+				require(helper,
+						close(target.getHealth(),
+								10.0D)
+								&& !target.isOnFire()
+								&& target.fallDistance
+										== 0.0F
+								&& target.hasEffect(
+										MobEffects
+												.MOVEMENT_SLOWDOWN)
+								&& target.getEffect(
+										MobEffects
+												.MOVEMENT_SLOWDOWN)
+										.getAmplifier()
+										== 1
+								&& target.hasEffect(
+										MobEffects
+												.GLOWING)
+								&& target.hasEffect(
+										MobEffects
+												.SLOW_FALLING)
+								&& target.hasEffect(
+										MobEffects
+												.FIRE_RESISTANCE)
+								&& target.getEffect(
+										MobEffects
+												.DAMAGE_RESISTANCE)
+										.getAmplifier()
+										== 4
+								&& target
+										.getDeltaMovement().y
+										> 0.0D,
+						safeDifficulty
+								+ " Sprinkle spit caused health damage or lost its sticky rescue envelope");
+			}
+			helper.getLevel().getServer()
+					.setDifficulty(
+							Difficulty.HARD, true);
+			target.removeAllEffects();
+			target.setHealth(10.0F);
+			target.invulnerableTime = 0;
+			target.setDeltaMovement(Vec3.ZERO);
+			target.hurt(
+					DamageSource.indirectMobAttack(
+							spit, llama)
+							.setProjectile(),
+					1.0F);
+			require(helper,
+					close(target.getHealth(), 9.0D)
+							&& target
+									.getActiveEffects()
+									.isEmpty()
+							&& target
+									.getDeltaMovement()
+									.lengthSqr() > 0.0D,
+					"Hard Sprinkle Llama lost exact one-point vanilla spit damage and hit motion");
+		} finally {
+			helper.getLevel().getServer()
+					.setDifficulty(
+							originalDifficulty, true);
+		}
+		restored.setHealth(restored.getMaxHealth());
+		float beforeFall = restored.getHealth();
+		restored.causeFallDamage(
+				8.0F, 1.0F, DamageSource.FALL);
+		require(helper,
+				restored.getHealth() < beforeFall,
+				"Sprinkle Llama incorrectly erased genuine environmental fall damage");
+
+		BlockPos cakeWorldPos =
+				findCakeWorldBiomePosition(
+						helper, anchor, 256);
+		require(helper, cakeWorldPos != null,
+				"Could not locate CakeWorld terrain for literal Trader Llama conversion");
+		TraderLlama literal =
+				EntityType.TRADER_LLAMA
+						.create(helper.getLevel());
+		Boat vehicle =
+				EntityType.BOAT.create(
+						helper.getLevel());
+		Pig passenger =
+				EntityType.PIG.create(
+						helper.getLevel());
+		require(helper,
+				literal != null
+						&& vehicle != null
+						&& passenger != null,
+				"Could not create literal Trader Llama relationship fixtures");
+		literal.setPos(
+				cakeWorldPos.getX() + 0.5D,
+				cakeWorldPos.getY() + 2.0D,
+				cakeWorldPos.getZ() + 0.5D);
+		vehicle.setPos(literal.getX(),
+				literal.getY(), literal.getZ());
+		passenger.setPos(literal.getX(),
+				literal.getY(), literal.getZ());
+		CompoundTag literalGenes =
+				new CompoundTag();
+		literalGenes.putInt("Strength", 5);
+		literalGenes.putInt("Variant", 2);
+		literal.readAdditionalSaveData(
+				literalGenes);
+		literal.setTamed(true);
+		literal.setOwnerUUID(owner);
+		literal.setHealth(13.0F);
+		literal.setCustomName(
+				new TextComponent(
+						"Sprinkle Porter"));
+		literal.setPersistenceRequired();
+		literal.setNoAi(true);
+		literal.setInvulnerable(true);
+		literal.setDespawnDelay(321);
+		require(helper,
+				literal.getSlot(499).set(
+						new ItemStack(Items.CHEST))
+						&& literal.getSlot(401).set(
+								new ItemStack(
+										Items.YELLOW_CARPET))
+						&& literal.getSlot(500).set(
+								new ItemStack(
+										CakeWorldItems
+												.SIMPLE_BISCUIT
+												.get(), 4)),
+				"Could not prepare literal Trader Llama pack state");
+		helper.getLevel().addFreshEntity(vehicle);
+		helper.getLevel().addFreshEntity(literal);
+		helper.getLevel().addFreshEntity(passenger);
+		require(helper,
+				literal.startRiding(vehicle, true)
+						&& passenger.startRiding(
+								literal, true)
+						&& literal.getVehicle()
+								== vehicle
+						&& passenger.getVehicle()
+								== literal,
+				"Could not prepare nested literal Trader Llama ride");
+		literal.setLeashedTo(trader, false);
+		require(helper,
+				literal.getVehicle() == null
+						&& passenger.getVehicle()
+								== literal
+						&& literal.getLeashHolder()
+								== trader,
+				"Literal Trader Llama did not preserve vanilla's leash-dismount invariant before conversion");
+		SprinkleLlama converted =
+				CakeWorldTraderLlamaReplacement
+						.replaceIfInCakeWorldBiome(
+								helper.getLevel(),
+								literal);
+		require(helper, converted != null,
+				"Fresh literal Trader Llama was not converted in CakeWorld terrain");
+		CompoundTag convertedState =
+				converted.saveWithoutId(
+						new CompoundTag());
+		require(helper,
+				converted.getType()
+								== CakeWorldEntities
+										.SPRINKLE_LLAMA
+										.get()
+						&& converted
+								.isTraderLlama()
+						&& close(converted.getHealth(),
+								13.0D)
+						&& converted.hasCustomName()
+						&& "Sprinkle Porter".equals(
+								converted
+										.getCustomName()
+										.getString())
+						&& converted
+								.isPersistenceRequired()
+						&& converted.isNoAi()
+						&& converted
+								.isInvulnerable()
+						&& converted.isTamed()
+						&& owner.equals(
+								converted
+										.getOwnerUUID())
+						&& converted.getStrength()
+								== 5
+						&& converted.getVariant()
+								== 2
+						&& converted.hasChest()
+						&& converted.getSwag()
+								== DyeColor.YELLOW
+						&& converted.getSlot(500)
+								.get().is(
+										CakeWorldItems
+												.SIMPLE_BISCUIT
+												.get())
+						&& converted.getSlot(500)
+								.get().getCount() == 4
+						&& convertedState
+								.getInt("DespawnDelay")
+								== 321,
+				"Fresh literal Trader Llama conversion lost saved state or pack: type="
+						+ converted.getType()
+						+ ", trader="
+						+ converted.isTraderLlama()
+						+ ", health="
+						+ converted.getHealth()
+						+ ", name="
+						+ converted.getName()
+								.getString()
+						+ ", persistence="
+						+ converted.isPersistenceRequired()
+						+ ", noAi="
+						+ converted.isNoAi()
+						+ ", invulnerable="
+						+ converted.isInvulnerable()
+						+ ", tamed="
+						+ converted.isTamed()
+						+ ", owner="
+						+ converted.getOwnerUUID()
+						+ ", strength="
+						+ converted.getStrength()
+						+ ", variant="
+						+ converted.getVariant()
+						+ ", chest="
+						+ converted.hasChest()
+						+ ", decor="
+						+ converted.getSwag()
+						+ ", pack="
+						+ converted.getSlot(500).get()
+						+ ", delay="
+						+ convertedState.getInt(
+								"DespawnDelay"));
+		require(helper,
+				converted.getVehicle() == null
+						&& converted.getPassengers()
+								.contains(passenger)
+						&& passenger.getVehicle()
+								== converted
+						&& converted
+								.getLeashHolder()
+								== trader
+						&& literal.isRemoved(),
+				"Fresh literal Trader Llama conversion lost relationships: vehicle="
+						+ converted.getVehicle()
+						+ ", passengers="
+						+ converted.getPassengers()
+						+ ", passengerVehicle="
+						+ passenger.getVehicle()
+						+ ", leash="
+						+ converted.getLeashHolder()
+						+ ", expectedLeash="
+						+ trader
+						+ ", literalRemoved="
+						+ literal.isRemoved());
+
+		TraderLlama ridingLiteral =
+				EntityType.TRADER_LLAMA
+						.create(helper.getLevel());
+		require(helper, ridingLiteral != null,
+				"Could not create separate riding Trader Llama fixture");
+		ridingLiteral.setPos(
+				cakeWorldPos.getX() + 2.5D,
+				cakeWorldPos.getY() + 2.0D,
+				cakeWorldPos.getZ() + 0.5D);
+		helper.getLevel().addFreshEntity(
+				ridingLiteral);
+		require(helper,
+				ridingLiteral.startRiding(
+						vehicle, true)
+						&& ridingLiteral
+								.getVehicle()
+								== vehicle,
+				"Literal Trader Llama could not enter its separate vehicle-transfer fixture");
+		SprinkleLlama convertedRider =
+				CakeWorldTraderLlamaReplacement
+						.replaceIfInCakeWorldBiome(
+								helper.getLevel(),
+								ridingLiteral);
+		require(helper,
+				convertedRider != null
+						&& convertedRider
+								.getVehicle()
+								== vehicle
+						&& vehicle.getPassengers()
+								.contains(
+										convertedRider)
+						&& ridingLiteral.isRemoved(),
+				"Fresh literal Trader Llama conversion lost a valid vehicle relationship");
+
+		Registry<Biome> biomes = helper.getLevel()
+				.registryAccess()
+				.registryOrThrow(
+						Registry.BIOME_REGISTRY);
+		for (ResourceLocation biomeId :
+				List.of(
+						CakeWorldBiomes.CANDY_PLAINS
+								.getId(),
+						CakeWorldBiomes.COOKIE_FOREST
+								.getId(),
+						CakeWorldBiomes.MARSHMALLOW_PEAKS
+								.getId(),
+						CakeWorldBiomes.SODA_OCEAN
+								.getId(),
+						CakeWorldBiomes.FUDGE_WASTES
+								.getId(),
+						CakeWorldBiomes.MERINGUE_ISLANDS
+								.getId())) {
+			Biome biome = biomes.get(biomeId);
+			require(helper, biome != null,
+					"Missing CakeWorld biome "
+							+ biomeId);
+			require(helper,
+					biome.getMobSettings()
+							.getMobs(
+									MobCategory.CREATURE)
+							.unwrap().stream()
+							.noneMatch(spawn ->
+									spawn.type
+											== EntityType
+													.TRADER_LLAMA
+											|| spawn.type
+													== CakeWorldEntities
+															.SPRINKLE_LLAMA
+															.get()),
+					"Event-only Trader/Sprinkle Llama leaked into biome ecology in "
+							+ biomeId);
+		}
+
+		require(helper,
+				SpawnPlacements.getPlacementType(
+								CakeWorldEntities
+										.SPRINKLE_LLAMA
+										.get())
+								== SpawnPlacements.Type
+										.NO_RESTRICTIONS
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+												.SPRINKLE_LLAMA
+												.get())
+								== Heightmap.Types
+										.MOTION_BLOCKING_NO_LEAVES
+						&& CakeWorldItems
+								.SPRINKLE_LLAMA_SPAWN_EGG
+								.isPresent()
+						&& llama.getLootTableId()
+								.equals(
+										new ResourceLocation(
+												CakeWorld.MODID,
+												"entities/sprinkle_llama"))
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+												.SPRINKLE_LLAMA
+												.get())
+								== null,
+				"Sprinkle Llama lost exact dormant placement, egg, Trader-Llama loot route or deliberate no-mimic role");
+
+		BlockPos spawnPos =
+				cakeWorldPos.offset(12, 3, 0);
+		helper.getLevel().setBlock(
+				spawnPos.below(),
+				Blocks.GRASS_BLOCK
+						.defaultBlockState(), 3);
+		helper.getLevel().setBlock(spawnPos,
+				Blocks.LIGHT.defaultBlockState(), 3);
+		helper.getLevel().setBlock(
+				spawnPos.above(),
+				Blocks.AIR.defaultBlockState(), 3);
+
+		WanderingTrader sourceTrader =
+				EntityType.WANDERING_TRADER
+						.create(helper.getLevel());
+		TraderLlama sourceLiteral =
+				EntityType.TRADER_LLAMA
+						.create(helper.getLevel());
+		require(helper,
+				sourceTrader != null
+						&& sourceLiteral != null,
+				"Could not create deferred wandering-caravan conversion fixtures");
+		BlockPos sourcePos =
+				cakeWorldPos.offset(18, 2, 0);
+		sourceTrader.setPos(
+				sourcePos.getX() + 0.5D,
+				sourcePos.getY(),
+				sourcePos.getZ() + 0.5D);
+		sourceTrader.setDespawnDelay(1200);
+		helper.getLevel().addFreshEntity(
+				sourceTrader);
+		sourceLiteral.setPos(
+				sourceTrader.getX() + 1.0D,
+				sourceTrader.getY(),
+				sourceTrader.getZ());
+		sourceLiteral.setAge(-24000);
+		sourceLiteral.finalizeSpawn(
+				helper.getLevel(),
+				helper.getLevel()
+						.getCurrentDifficultyAt(
+								sourcePos),
+				MobSpawnType.EVENT, null, null);
+		sourceLiteral.setCustomName(
+				new TextComponent(
+						"Fresh Sprinkle Caravan"));
+		sourceLiteral.setNoAi(true);
+		sourceLiteral.setDespawnDelay(600);
+		helper.getLevel().addFreshEntity(
+				sourceLiteral);
+		sourceLiteral.setLeashedTo(
+				sourceTrader, false);
+
+		helper.runAfterDelay(5, () -> {
+			List<SprinkleLlama> automatic =
+					helper.getLevel()
+							.getEntitiesOfClass(
+									SprinkleLlama.class,
+									new AABB(sourcePos)
+											.inflate(
+													5.0D),
+									candidate ->
+											candidate
+													.hasCustomName()
+													&& "Fresh Sprinkle Caravan"
+															.equals(
+																	candidate
+																			.getCustomName()
+																			.getString()));
+			boolean literalRemains =
+					helper.getLevel()
+							.getEntitiesOfClass(
+									TraderLlama.class,
+									new AABB(sourcePos)
+											.inflate(
+													5.0D),
+									candidate ->
+											candidate.getType()
+													== EntityType
+															.TRADER_LLAMA
+													&& candidate
+															.hasCustomName()
+													&& "Fresh Sprinkle Caravan"
+															.equals(
+																	candidate
+																			.getCustomName()
+																			.getString()))
+							.size() > 0;
+			SprinkleLlama automaticLlama =
+					automatic.size() == 1
+							? automatic.get(0)
+							: null;
+			require(helper,
+					automaticLlama != null
+							&& !automaticLlama
+									.isBaby()
+							&& automaticLlama
+									.getLeashHolder()
+									== sourceTrader
+							&& automaticLlama
+									.saveWithoutId(
+											new CompoundTag())
+									.getInt(
+											"DespawnDelay")
+									> 0
+							&& !literalRemains,
+					"Deferred fresh EVENT source did not convert after the wandering-trader leash was attached");
+			require(helper,
+					helper.getLevel()
+							.getMaxLocalRawBrightness(
+									spawnPos) > 8
+							&& Animal
+									.checkAnimalSpawnRules(
+											CakeWorldEntities
+													.SPRINKLE_LLAMA
+													.get(),
+											helper.getLevel(),
+											MobSpawnType
+													.NATURAL,
+											spawnPos,
+											new Random(
+													1978L))
+							&& SpawnPlacements
+									.checkSpawnRules(
+											CakeWorldEntities
+													.SPRINKLE_LLAMA
+													.get(),
+											helper.getLevel(),
+											MobSpawnType
+													.NATURAL,
+											spawnPos,
+											new Random(
+													2058L))
+							&& SpawnPlacements.Type
+									.NO_RESTRICTIONS
+									.canSpawnAt(
+											helper.getLevel(),
+											spawnPos,
+											CakeWorldEntities
+													.SPRINKLE_LLAMA
+													.get()),
+					"Sprinkle Llama lost vanilla Trader Llama's dormant NO_RESTRICTIONS placement plus animal predicate");
+			helper.succeed();
+		});
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 300)
 	public static void brittleBiscuitSteedsKeepTheCompleteSkeletonTrap(
 			GameTestHelper helper) {
 		BrittleBiscuitSteedProbe steed =
@@ -21445,6 +22487,93 @@ public final class FirstBiteGameTests {
 				net.minecraft.sounds.SoundEvent sound,
 				float volume, float pitch) {
 			lastSound = sound;
+		}
+	}
+
+	private static final class SprinkleLlamaProbe
+			extends SprinkleLlama {
+		private SprinkleLlamaProbe(Level level) {
+			super(CakeWorldEntities.SPRINKLE_LLAMA
+					.get(), level);
+		}
+
+		private void seedRandom(long seed) {
+			random.setSeed(seed);
+		}
+
+		private int getExperienceValue() {
+			return getExperienceReward(null);
+		}
+
+		private boolean hasGoalAt(
+				String name, int priority) {
+			return goalSelector.getAvailableGoals()
+					.stream().anyMatch(wrapped ->
+							wrapped.getPriority()
+									== priority
+									&& name.equals(
+											wrapped
+													.getGoal()
+													.getClass()
+													.getSimpleName()));
+		}
+
+		private int countGoalsNamed(String name) {
+			return (int)goalSelector
+					.getAvailableGoals().stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
+		}
+
+		private boolean hasTargetGoalAt(
+				String name, int priority) {
+			return targetSelector
+					.getAvailableGoals().stream()
+					.anyMatch(wrapped ->
+							wrapped.getPriority()
+									== priority
+									&& name.equals(
+											wrapped
+													.getGoal()
+													.getClass()
+													.getSimpleName()));
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				ambientSound() {
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				angrySound() {
+			return getAngrySound();
+		}
+
+		private net.minecraft.sounds.SoundEvent hurtSound() {
+			return getHurtSound(
+					DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent deathSound() {
+			return getDeathSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				eatingSound() {
+			return getEatingSound();
+		}
+
+		private ResourceLocation getLootTableId() {
+			return getLootTable();
+		}
+
+		private int despawnDelay() {
+			return saveWithoutId(
+					new CompoundTag())
+							.getInt("DespawnDelay");
 		}
 	}
 
