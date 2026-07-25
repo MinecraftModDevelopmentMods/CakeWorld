@@ -29,6 +29,7 @@ import com.mcmoddev.cakeworld.entity.GummyBunny;
 import com.mcmoddev.cakeworld.entity.GumballGuardian;
 import com.mcmoddev.cakeworld.entity.HotFudgeBlob;
 import com.mcmoddev.cakeworld.entity.JawbreakerGuardian;
+import com.mcmoddev.cakeworld.entity.JellyBlob;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.LollipopLorikeet;
 import com.mcmoddev.cakeworld.entity.MacaronClam;
@@ -383,6 +384,12 @@ public final class CakeWorldEntities {
 							MobCategory.CREATURE)
 							.sized(1.3964844F, 1.6F)
 							.clientTrackingRange(10));
+	public static final RegistryObject<EntityType<JellyBlob>>
+			JELLY_BLOB = entity("jelly_blob",
+					EntityType.Builder.of(JellyBlob::new,
+							MobCategory.MONSTER)
+							.sized(2.04F, 2.04F)
+							.clientTrackingRange(10));
 	public static final RegistryObject<EntityType<SugarMite>> SUGAR_MITE =
 			entity("sugar_mite",
 					EntityType.Builder.of(SugarMite::new,
@@ -551,6 +558,8 @@ public final class CakeWorldEntities {
 				Skeleton.createAttributes().build());
 		event.put(BRITTLE_BISCUIT_STEED.get(),
 				SkeletonHorse.createAttributes().build());
+		event.put(JELLY_BLOB.get(),
+				Monster.createMonsterAttributes().build());
 		event.put(SUGAR_MITE.get(),
 				Endermite.createAttributes().build());
 		event.put(SOUR_SORCERER.get(),
@@ -722,6 +731,12 @@ public final class CakeWorldEntities {
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					BrittleBiscuitSteed
 							::checkBrittleBiscuitSteedSpawnRules);
+			SpawnPlacements.register(
+					JELLY_BLOB.get(),
+					SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					JellyBlob
+							::checkJellyBlobSpawnRules);
 			SpawnPlacements.register(SUGAR_MITE.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,

@@ -45,6 +45,8 @@ import com.mcmoddev.cakeworld.entity.CrumbMiteGriefSafety;
 import com.mcmoddev.cakeworld.entity.CinnamonPuffProjectile;
 import com.mcmoddev.cakeworld.entity.CinnamonSpark;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
+import com.mcmoddev.cakeworld.entity.JellyBlob;
+import com.mcmoddev.cakeworld.entity.JellyBlobDamageSafety;
 import com.mcmoddev.cakeworld.entity.LollipopLorikeet;
 import com.mcmoddev.cakeworld.entity.MacaronClam;
 import com.mcmoddev.cakeworld.entity.MacaronClamProjectileSafety;
@@ -224,6 +226,7 @@ import net.minecraft.world.entity.monster.Ravager;
 import net.minecraft.world.entity.monster.Shulker;
 import net.minecraft.world.entity.monster.Silverfish;
 import net.minecraft.world.entity.monster.Skeleton;
+import net.minecraft.world.entity.monster.Slime;
 import net.minecraft.world.entity.monster.Spider;
 import net.minecraft.world.entity.monster.Stray;
 import net.minecraft.world.entity.monster.Vex;
@@ -268,6 +271,7 @@ import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.NaturalSpawner;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CarrotBlock;
 import net.minecraft.world.level.block.FallingBlock;
@@ -281,6 +285,7 @@ import net.minecraft.world.level.biome.BiomeGenerationSettings;
 import net.minecraft.world.level.biome.MobSpawnSettings;
 import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.levelgen.WorldgenRandom;
 import net.minecraft.world.level.levelgen.feature.NetherFortressFeature;
 import net.minecraft.data.worldgen.StructureFeatures;
 import net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature;
@@ -16307,6 +16312,463 @@ public final class FirstBiteGameTests {
 	}
 
 	@GameTest(template = EMPTY, timeoutTicks = 200)
+	public static void jellyBlobsKeepSlimeEcologySplitsAndSafeElasticContact(
+			GameTestHelper helper) {
+		JellyBlobProbe large =
+				new JellyBlobProbe(helper.getLevel());
+		large.setTestSize(4);
+		large.setHealth(large.getMaxHealth());
+		large.seedRandom(1978L);
+		int jumpDelay = large.sampleJumpDelay();
+		large.setDeltaMovement(Vec3.ZERO);
+		large.performGroundJump();
+		require(helper,
+				large instanceof Slime
+						&& large.getType()
+								== CakeWorldEntities
+										.JELLY_BLOB.get()
+						&& large.getType().getCategory()
+								== MobCategory.MONSTER
+						&& large.getSize() == 4
+						&& close(large.getMaxHealth(),
+								16.0D)
+						&& close(large.getAttributeValue(
+								Attributes.MOVEMENT_SPEED),
+								0.6D)
+						&& close(large.getAttributeValue(
+								Attributes.ATTACK_DAMAGE),
+								4.0D)
+						&& close(large.getAttributeValue(
+								Attributes.ARMOR), 0.0D)
+						&& close(large.getAttributeValue(
+								Attributes.ARMOR_TOUGHNESS),
+								0.0D)
+						&& close(large.sampleAttackDamage(),
+								4.0D)
+						&& large.getExperienceValue() == 4
+						&& close(large.getDimensions(
+								Pose.STANDING).width,
+								2.0808D)
+						&& close(large.getDimensions(
+								Pose.STANDING).height,
+								2.0808D)
+						&& close(large.standingEyeHeight(),
+								1.3005D)
+						&& large.getType()
+								.clientTrackingRange() == 10
+						&& large.getMaxSpawnClusterSize()
+								== 4
+						&& jumpDelay >= 10
+						&& jumpDelay <= 29
+						&& close(large
+								.getDeltaMovement().y,
+								0.42D)
+						&& large.canDealContactDamage()
+						&& large.despawnsInPeaceful(),
+				"Jelly Blob lost exact size-four Slime body, scaling, experience, jump, tracking, group or hostility");
+		require(helper,
+				large.goalPriority(
+						"SlimeFloatGoal") == 1
+						&& large.goalPriority(
+								"SlimeAttackGoal") == 2
+						&& large.goalPriority(
+								"SlimeRandomDirectionGoal")
+								== 3
+						&& large.goalPriority(
+								"SlimeKeepOnJumpingGoal")
+								== 5
+						&& large.targetGoalCountAtPriority(
+								1) == 1
+						&& large.targetGoalCountAtPriority(
+								3) == 1
+						&& large.targetGoalCount() == 2,
+				"Jelly Blob lost Slime float, attack, direction, hopping, Player or Iron Golem goals");
+		require(helper,
+				large.hurtSound()
+								== SoundEvents.SLIME_HURT
+						&& large.deathSound()
+								== SoundEvents.SLIME_DEATH
+						&& large.squishSound()
+								== SoundEvents.SLIME_SQUISH
+						&& large.jumpSound()
+								== SoundEvents.SLIME_JUMP
+						&& close(large.soundVolume(),
+								1.6D),
+				"Large Jelly Blob lost exact Slime sound roles or size-scaled volume");
+
+		CompoundTag saved = new CompoundTag();
+		large.addAdditionalSaveData(saved);
+		JellyBlobProbe restored =
+				new JellyBlobProbe(helper.getLevel());
+		restored.readAdditionalSaveData(saved);
+		CompoundTag belowMinimum =
+				new CompoundTag();
+		belowMinimum.putInt("Size", -100);
+		JellyBlobProbe minimum =
+				new JellyBlobProbe(helper.getLevel());
+		minimum.readAdditionalSaveData(
+				belowMinimum);
+		CompoundTag atMaximum =
+				new CompoundTag();
+		atMaximum.putInt("Size", 126);
+		JellyBlobProbe maximum =
+				new JellyBlobProbe(helper.getLevel());
+		maximum.readAdditionalSaveData(atMaximum);
+		require(helper,
+				saved.getInt("Size") == 3
+						&& saved.contains(
+								"wasOnGround")
+						&& restored.getSize() == 4
+						&& close(restored
+								.getMaxHealth(),
+								16.0D)
+						&& minimum.getSize() == 1
+						&& maximum.getSize() == 127
+						&& close(maximum.getAttribute(
+								Attributes.MAX_HEALTH)
+								.getBaseValue(),
+								16129.0D)
+						&& close(maximum
+								.getMaxHealth(),
+								1024.0D),
+				"Jelly Blob lost Slime size NBT, ground-state field or 1..127 clamping");
+
+		Pig target = EntityType.PIG.create(
+				helper.getLevel());
+		require(helper, target != null,
+				"Could not create Jelly Blob contact target");
+		BlockPos anchor = helper.absolutePos(
+				new BlockPos(1, 2, 1));
+		large.setPos(anchor.getX(),
+				anchor.getY(), anchor.getZ());
+		target.setPos(anchor.getX() + 0.25D,
+				anchor.getY(), anchor.getZ());
+		for (Difficulty safeDifficulty :
+				new Difficulty[] {
+						Difficulty.PEACEFUL,
+						Difficulty.EASY,
+						Difficulty.NORMAL}) {
+			target.removeAllEffects();
+			target.setHealth(10.0F);
+			target.setSecondsOnFire(5);
+			target.fallDistance = 12.0F;
+			target.setDeltaMovement(Vec3.ZERO);
+			large.clearLastSound();
+			LivingHurtEvent protectedHit =
+					new LivingHurtEvent(target,
+							DamageSource.mobAttack(
+									large),
+							large.sampleAttackDamage());
+			JellyBlobDamageSafety
+					.applyForDifficulty(
+							protectedHit,
+							safeDifficulty);
+			require(helper,
+					protectedHit.isCanceled()
+							&& close(target.getHealth(),
+									10.0D)
+							&& !target.isOnFire()
+							&& target.fallDistance == 0.0F
+							&& target.hasEffect(
+									MobEffects
+											.MOVEMENT_SLOWDOWN)
+							&& target.hasEffect(
+									MobEffects.GLOWING)
+							&& target.hasEffect(
+									MobEffects.SLOW_FALLING)
+							&& target.hasEffect(
+									MobEffects
+											.FIRE_RESISTANCE)
+							&& target.getEffect(
+									MobEffects
+											.DAMAGE_RESISTANCE)
+									.getAmplifier() == 4
+							&& target
+									.getDeltaMovement().y
+									>= 0.6D
+							&& large.lastSound()
+									== SoundEvents
+											.SLIME_SQUISH,
+					safeDifficulty
+							+ " Jelly Blob did not replace contact damage with the protected elastic rescue");
+		}
+		target.removeAllEffects();
+		target.setDeltaMovement(Vec3.ZERO);
+		large.clearLastSound();
+		LivingHurtEvent hardHit =
+				new LivingHurtEvent(target,
+						DamageSource.mobAttack(large),
+						large.sampleAttackDamage());
+		JellyBlobDamageSafety.applyForDifficulty(
+				hardHit, Difficulty.HARD);
+		require(helper,
+				!hardHit.isCanceled()
+						&& close(hardHit.getAmount(),
+								4.0D)
+						&& target.getActiveEffects()
+								.isEmpty()
+						&& target.getDeltaMovement()
+								.equals(Vec3.ZERO)
+						&& large.lastSound() == null,
+				"Hard size-four Jelly Blob did not retain an unmodified four-point Slime contact");
+
+		JellyBlobProbe tiny =
+				new JellyBlobProbe(helper.getLevel());
+		tiny.setTestSize(1);
+		require(helper,
+				tiny.isTiny()
+						&& close(tiny.getMaxHealth(),
+								1.0D)
+						&& close(tiny.getAttributeValue(
+								Attributes.MOVEMENT_SPEED),
+								0.3D)
+						&& close(tiny.getAttributeValue(
+								Attributes.ATTACK_DAMAGE),
+								1.0D)
+						&& tiny.getExperienceValue() == 1
+						&& close(tiny.getDimensions(
+								Pose.STANDING).width,
+								0.5202D)
+						&& !tiny.canDealContactDamage()
+						&& tiny.hurtSound()
+								== SoundEvents
+										.SLIME_HURT_SMALL
+						&& tiny.deathSound()
+								== SoundEvents
+										.SLIME_DEATH_SMALL
+						&& tiny.squishSound()
+								== SoundEvents
+										.SLIME_SQUISH_SMALL
+						&& tiny.jumpSound()
+								== SoundEvents
+										.SLIME_JUMP_SMALL
+						&& tiny.getLootTableId().equals(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/jelly_blob"))
+						&& large.getLootTableId().equals(
+								BuiltInLootTables.EMPTY),
+				"Tiny Jelly Blob lost harmless contact, exact scaling, small sounds or Slime-Ball loot gate");
+
+		JellyBlobProbe parent =
+				new JellyBlobProbe(helper.getLevel());
+		parent.setTestSize(4);
+		parent.setPos(anchor.getX(),
+				anchor.getY(), anchor.getZ());
+		parent.setCustomName(new TextComponent(
+				"Jiggly Family"));
+		parent.setPersistenceRequired();
+		parent.setNoAi(true);
+		parent.setInvulnerable(true);
+		helper.getLevel().addFreshEntity(parent);
+		parent.setHealth(0.0F);
+		parent.remove(Entity.RemovalReason.KILLED);
+		List<JellyBlob> children = helper.getLevel()
+				.getEntitiesOfClass(JellyBlob.class,
+						new AABB(anchor).inflate(3.0D));
+		require(helper,
+				parent.isRemoved()
+						&& children.size() >= 2
+						&& children.size() <= 4
+						&& children.stream()
+								.allMatch(child ->
+										child.getType()
+												== CakeWorldEntities
+														.JELLY_BLOB
+														.get()
+										&& child
+												.getSize() == 2
+										&& close(child
+												.getHealth(),
+												4.0D)
+										&& child
+												.isPersistenceRequired()
+										&& child.isNoAi()
+										&& child
+												.isInvulnerable()
+										&& "Jiggly Family"
+												.equals(child
+														.getName()
+														.getString()))
+						&& helper.getLevel()
+								.getEntitiesOfClass(
+										Slime.class,
+										new AABB(anchor)
+												.inflate(3.0D),
+										slime -> slime
+												.getType()
+												== EntityType
+														.SLIME)
+								.isEmpty(),
+				"Jelly Blob split leaked literal Slimes or lost child size, health, name, persistence, AI or invulnerability");
+		children.forEach(Entity::discard);
+
+		Registry<Biome> biomes = helper.getLevel()
+				.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY);
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId())) {
+			Biome biome = biomes.get(biomeId);
+			require(helper, biome != null,
+					"Could not inspect Jelly Blob spawning in "
+							+ biomeId);
+			List<MobSpawnSettings.SpawnerData>
+					roleSpawns = biome.getMobSettings()
+							.getMobs(
+									MobCategory.MONSTER)
+							.unwrap().stream()
+							.filter(spawn ->
+									spawn.type
+											== EntityType.SLIME
+									|| spawn.type
+											== CakeWorldEntities
+													.JELLY_BLOB
+													.get())
+							.toList();
+			require(helper,
+					roleSpawns.size() == 1
+							&& roleSpawns.get(0).type
+									== CakeWorldEntities
+											.JELLY_BLOB.get()
+							&& roleSpawns.get(0)
+									.getWeight().asInt()
+									== 100
+							&& roleSpawns.get(0)
+									.minCount == 4
+							&& roleSpawns.get(0)
+									.maxCount == 4,
+					"Jelly Blob did not exactly replace the common Overworld Slime 100/4-4 profile in "
+							+ biomeId);
+		}
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS
+						.getId())) {
+			Biome biome = biomes.get(biomeId);
+			require(helper,
+					biome != null
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory
+													.MONSTER)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType
+															.SLIME
+											|| spawn.type
+													== CakeWorldEntities
+															.JELLY_BLOB
+															.get()),
+					"Jelly Blob role leaked outside the Overworld ecology in "
+							+ biomeId);
+		}
+
+		ChunkPos slimeChunk = null;
+		ChunkPos ordinaryChunk = null;
+		long worldSeed = helper.getLevel().getSeed();
+		for (int x = -20; x <= 20
+				&& (slimeChunk == null
+						|| ordinaryChunk == null); x++) {
+			for (int z = -20; z <= 20
+					&& (slimeChunk == null
+							|| ordinaryChunk == null);
+					z++) {
+				ChunkPos candidate =
+						new ChunkPos(x, z);
+				boolean expected =
+						WorldgenRandom.seedSlimeChunk(
+								x, z, worldSeed,
+								987234911L)
+								.nextInt(10) == 0;
+				if (expected
+						&& JellyBlob.isSlimeChunk(
+								worldSeed,
+								candidate)) {
+					slimeChunk = candidate;
+				} else if (!expected
+						&& !JellyBlob.isSlimeChunk(
+								worldSeed,
+								candidate)) {
+					ordinaryChunk = candidate;
+				}
+			}
+		}
+		require(helper,
+				slimeChunk != null
+						&& ordinaryChunk != null
+						&& !JellyBlob.allowsNaturalSpawn(
+								Difficulty.PEACEFUL)
+						&& JellyBlob.allowsNaturalSpawn(
+								Difficulty.EASY)
+						&& JellyBlob.allowsNaturalSpawn(
+								Difficulty.NORMAL)
+						&& JellyBlob.allowsNaturalSpawn(
+								Difficulty.HARD)
+						&& JellyBlob
+								.isCakeWorldSurfaceJellyBiome(
+										new ResourceLocation(
+												CakeWorld.MODID,
+												"caramel_bogs"))
+						&& !JellyBlob
+								.isCakeWorldSurfaceJellyBiome(
+										CakeWorldBiomes
+												.CANDY_PLAINS
+												.getId())
+						&& SpawnPlacements
+								.getPlacementType(
+										CakeWorldEntities
+												.JELLY_BLOB
+												.get())
+								== SpawnPlacements
+										.getPlacementType(
+												EntityType
+														.SLIME)
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+												.JELLY_BLOB
+												.get())
+								== SpawnPlacements
+										.getHeightmapType(
+												EntityType
+														.SLIME),
+				"Jelly Blob lost Peaceful suppression, exact slime-chunk salt, future Caramel Bogs routing or Slime placement metadata");
+
+		ServerPlayer advancementPlayer =
+				new ServerPlayer(
+						helper.getLevel().getServer(),
+						helper.getLevel(),
+						new GameProfile(
+								UUID.fromString(
+										"1978feed-feed-4bad-babe-1978feed2052"),
+								"CakeWorldJellyBlobRoleTest"));
+		VanillaRoleAdvancements.onDeath(
+				new LivingDeathEvent(tiny,
+						DamageSource.playerAttack(
+								advancementPlayer)));
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:adventure/kill_all_mobs",
+				"minecraft:slime");
+		require(helper,
+				CakeWorldItems
+								.JELLY_BLOB_SPAWN_EGG
+								.isPresent()
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+												.JELLY_BLOB
+												.get())
+								== SoundEvents
+										.PARROT_IMITATE_SLIME,
+				"Jelly Blob lost its testing egg, Slime advancement role or Lorikeet mimic");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 200)
 	public static void fudgeFolkKeepPiglinSocietyBarterAndSafePeril(
 			GameTestHelper helper) {
 		FudgeFolkProbe folk =
@@ -17986,6 +18448,123 @@ public final class FirstBiteGameTests {
 		private int targetGoalCount() {
 			return targetSelector.getAvailableGoals()
 					.size();
+		}
+	}
+
+	private static final class JellyBlobProbe
+			extends JellyBlob {
+		private net.minecraft.sounds.SoundEvent lastSound;
+
+		private JellyBlobProbe(Level level) {
+			super(CakeWorldEntities.JELLY_BLOB.get(),
+					level);
+		}
+
+		private void setTestSize(int size) {
+			setSize(size, true);
+		}
+
+		private int getExperienceValue() {
+			return getExperienceReward(null);
+		}
+
+		private int sampleJumpDelay() {
+			return getJumpDelay();
+		}
+
+		private float sampleAttackDamage() {
+			return getAttackDamage();
+		}
+
+		private void performGroundJump() {
+			jumpFromGround();
+		}
+
+		private boolean canDealContactDamage() {
+			return isDealsDamage();
+		}
+
+		private float standingEyeHeight() {
+			return getStandingEyeHeight(Pose.STANDING,
+					getDimensions(Pose.STANDING));
+		}
+
+		private int goalPriority(String name) {
+			return goalSelector.getAvailableGoals()
+					.stream()
+					.filter(wrapped -> name.equals(
+							wrapped.getGoal()
+									.getClass()
+									.getSimpleName()))
+					.mapToInt(WrappedGoal::getPriority)
+					.findFirst().orElse(-1);
+		}
+
+		private int targetGoalCountAtPriority(
+				int priority) {
+			return (int)targetSelector
+					.getAvailableGoals().stream()
+					.filter(wrapped ->
+							wrapped.getPriority()
+									== priority)
+					.count();
+		}
+
+		private int targetGoalCount() {
+			return targetSelector.getAvailableGoals()
+					.size();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				hurtSound() {
+			return getHurtSound(DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				deathSound() {
+			return getDeathSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				squishSound() {
+			return getSquishSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				jumpSound() {
+			return getJumpSound();
+		}
+
+		private float soundVolume() {
+			return getSoundVolume();
+		}
+
+		private ResourceLocation getLootTableId() {
+			return getLootTable();
+		}
+
+		private boolean despawnsInPeaceful() {
+			return shouldDespawnInPeaceful();
+		}
+
+		private void seedRandom(long seed) {
+			random.setSeed(seed);
+		}
+
+		private void clearLastSound() {
+			lastSound = null;
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				lastSound() {
+			return lastSound;
+		}
+
+		@Override
+		public void playSound(
+				net.minecraft.sounds.SoundEvent sound,
+				float volume, float pitch) {
+			lastSound = sound;
 		}
 	}
 
