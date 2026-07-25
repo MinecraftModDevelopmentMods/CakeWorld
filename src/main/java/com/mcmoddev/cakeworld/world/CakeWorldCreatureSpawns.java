@@ -104,6 +104,12 @@ public final class CakeWorldCreatureSpawns {
 			replace(event, MobCategory.CREATURE, EntityType.GOAT,
 					CakeWorldEntities.NOUGAT_GOAT, 5, 1, 3);
 		}
+		if ("ice_cream_tundra".equals(biome.getPath())) {
+			replace(event, MobCategory.CREATURE,
+					EntityType.POLAR_BEAR,
+					CakeWorldEntities.VANILLA_ICE_BEAR,
+					1, 1, 2);
+		}
 		if ("candyfloss_cloudbanks".equals(
 				biome.getPath())) {
 			replace(event, MobCategory.CREATURE,

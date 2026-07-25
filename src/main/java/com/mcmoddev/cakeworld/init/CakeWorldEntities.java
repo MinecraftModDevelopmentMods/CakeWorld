@@ -46,6 +46,7 @@ import com.mcmoddev.cakeworld.entity.SugarBee;
 import com.mcmoddev.cakeworld.entity.SugarMite;
 import com.mcmoddev.cakeworld.entity.TaffyTallwalker;
 import com.mcmoddev.cakeworld.entity.TrufflePig;
+import com.mcmoddev.cakeworld.entity.VanillaIceBear;
 import com.mcmoddev.cakeworld.entity.WaferWraith;
 
 import net.minecraft.world.entity.EntityType;
@@ -69,6 +70,7 @@ import net.minecraft.world.entity.animal.Ocelot;
 import net.minecraft.world.entity.animal.Panda;
 import net.minecraft.world.entity.animal.Parrot;
 import net.minecraft.world.entity.animal.Pig;
+import net.minecraft.world.entity.animal.PolarBear;
 import net.minecraft.world.entity.animal.Sheep;
 import net.minecraft.world.entity.animal.goat.Goat;
 import net.minecraft.world.entity.animal.horse.AbstractChestedHorse;
@@ -93,6 +95,7 @@ import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.monster.hoglin.Hoglin;
 import net.minecraft.world.entity.monster.piglin.Piglin;
 import net.minecraft.world.entity.monster.piglin.PiglinBrute;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -244,6 +247,13 @@ public final class CakeWorldEntities {
 							MobCategory.MONSTER)
 							.sized(0.6F, 1.95F)
 							.clientTrackingRange(8));
+	public static final RegistryObject<EntityType<VanillaIceBear>>
+			VANILLA_ICE_BEAR = entity("vanilla_ice_bear",
+					EntityType.Builder.of(VanillaIceBear::new,
+							MobCategory.CREATURE)
+							.immuneTo(Blocks.POWDER_SNOW)
+							.sized(1.4F, 1.4F)
+							.clientTrackingRange(10));
 	public static final RegistryObject<EntityType<GingerbreadPony>>
 			GINGERBREAD_PONY = entity("gingerbread_pony",
 					EntityType.Builder.of(GingerbreadPony::new,
@@ -435,6 +445,8 @@ public final class CakeWorldEntities {
 				PiglinBrute.createAttributes().build());
 		event.put(BISCUIT_BANDIT.get(),
 				Pillager.createAttributes().build());
+		event.put(VANILLA_ICE_BEAR.get(),
+				PolarBear.createAttributes().build());
 		event.put(GINGERBREAD_PONY.get(),
 				AbstractHorse.createBaseHorseAttributes()
 						.build());
@@ -552,6 +564,10 @@ public final class CakeWorldEntities {
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					PatrollingMonster
 							::checkPatrollingMonsterSpawnRules);
+			SpawnPlacements.register(VANILLA_ICE_BEAR.get(),
+					SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					Animal::checkAnimalSpawnRules);
 			SpawnPlacements.register(GINGERBREAD_PONY.get(),
 					SpawnPlacements.Type.NO_RESTRICTIONS,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,

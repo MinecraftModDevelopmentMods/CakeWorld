@@ -76,6 +76,8 @@ import com.mcmoddev.cakeworld.entity.SugarBee;
 import com.mcmoddev.cakeworld.entity.SugarMite;
 import com.mcmoddev.cakeworld.entity.TaffyTallwalker;
 import com.mcmoddev.cakeworld.entity.TrufflePig;
+import com.mcmoddev.cakeworld.entity.VanillaIceBear;
+import com.mcmoddev.cakeworld.entity.VanillaIceBearDamageSafety;
 import com.mcmoddev.cakeworld.entity.WaferWraith;
 import com.mcmoddev.cakeworld.effect.FizzyFeetEffect;
 import com.mcmoddev.cakeworld.init.CakeWorldBiomes;
@@ -127,6 +129,7 @@ import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.MobType;
+import net.minecraft.world.entity.NeutralMob;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.LlamaFollowCaravanGoal;
@@ -152,6 +155,7 @@ import net.minecraft.world.entity.animal.MushroomCow;
 import net.minecraft.world.entity.animal.Ocelot;
 import net.minecraft.world.entity.animal.Panda;
 import net.minecraft.world.entity.animal.Parrot;
+import net.minecraft.world.entity.animal.PolarBear;
 import net.minecraft.world.entity.animal.FlyingAnimal;
 import net.minecraft.world.entity.animal.Rabbit;
 import net.minecraft.world.entity.animal.Turtle;
@@ -11132,6 +11136,450 @@ public final class FirstBiteGameTests {
 	}
 
 	@GameTest(template = EMPTY, timeoutTicks = 200)
+	public static void vanillaIceBearsKeepCubDefenceAndSafeWarnings(
+			GameTestHelper helper) {
+		VanillaIceBearProbe bear =
+				new VanillaIceBearProbe(helper.getLevel());
+		VanillaIceBearProbe restored =
+				new VanillaIceBearProbe(helper.getLevel());
+		require(helper,
+				bear instanceof PolarBear
+						&& bear instanceof NeutralMob
+						&& bear.getType()
+								== CakeWorldEntities
+										.VANILLA_ICE_BEAR.get()
+						&& bear.getType().getCategory()
+								== MobCategory.CREATURE
+						&& close(bear.getMaxHealth(), 30.0D)
+						&& close(bear.getAttributeValue(
+								Attributes.FOLLOW_RANGE),
+								20.0D)
+						&& close(bear.getAttributeValue(
+								Attributes.MOVEMENT_SPEED),
+								0.25D)
+						&& close(bear.getAttributeValue(
+								Attributes.ATTACK_DAMAGE),
+								6.0D)
+						&& close(bear.getDimensions(
+								Pose.STANDING).width,
+								1.4D)
+						&& close(bear.getDimensions(
+								Pose.STANDING).height,
+								1.4D)
+						&& bear.getType()
+								.clientTrackingRange() == 10
+						&& bear.getMaxSpawnClusterSize() == 4
+						&& bear.getAmbientSoundInterval() == 120
+						&& close(bear.waterSlowDown(), 0.98D)
+						&& bear.getLootTableId().equals(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/vanilla_ice_bear")),
+				"Vanilla-Ice Bear lost exact Polar Bear type, body, attributes, tracking, group, ambient, swimming or loot roles");
+
+		bear.seedRandom(1978L);
+		int experience = bear.getExperienceValue();
+		require(helper,
+				experience >= 1 && experience <= 3
+						&& bear.countGoalsNamed(
+								"FloatGoal") == 1
+						&& bear.countGoalsNamed(
+								"PolarBearMeleeAttackGoal")
+								== 1
+						&& bear.countGoalsNamed(
+								"PolarBearPanicGoal") == 1
+						&& bear.countGoalsNamed(
+								"FollowParentGoal") == 1
+						&& bear.countGoalsNamed(
+								"RandomStrollGoal") == 1
+						&& bear.countGoalsNamed(
+								"LookAtPlayerGoal") == 1
+						&& bear.countGoalsNamed(
+								"RandomLookAroundGoal") == 1
+						&& bear.countTargetGoalsNamed(
+								"PolarBearHurtByTargetGoal")
+								== 1
+						&& bear.countTargetGoalsNamed(
+								"PolarBearAttackPlayersGoal")
+								== 1
+						&& bear.countTargetGoalsNamed(
+								"NearestAttackableTargetGoal")
+								== 2
+						&& bear.countTargetGoalsNamed(
+								"ResetUniversalAngerTargetGoal")
+								== 1,
+				"Vanilla-Ice Bear lost Polar Bear XP or exact movement, combat, cub-defence, anger or Fox-hunting goals");
+
+		require(helper,
+				!bear.isFood(new ItemStack(Items.COD))
+						&& !bear.isFood(
+								new ItemStack(Items.SALMON))
+						&& !bear.isFood(
+								new ItemStack(Items.CAKE)),
+				"Vanilla-Ice Bear invented a player breeding food that vanilla Polar Bears do not have");
+		VanillaIceBear child = bear.getBreedOffspring(
+				helper.getLevel(), restored);
+		require(helper,
+				child != null
+						&& child.getType()
+								== CakeWorldEntities
+										.VANILLA_ICE_BEAR.get(),
+				"Vanilla-Ice Bear command/mod family creation returned a literal vanilla Polar Bear");
+
+		UUID angerTarget = UUID.fromString(
+				"1978feed-feed-4bad-babe-1978feed2042");
+		bear.startPersistentAngerTimer();
+		require(helper,
+				bear.getRemainingPersistentAngerTime() >= 400
+						&& bear.getRemainingPersistentAngerTime()
+								<= 780,
+				"Vanilla-Ice Bear lost the exact 20-39 second persistent anger range");
+		bear.setRemainingPersistentAngerTime(500);
+		bear.setPersistentAngerTarget(angerTarget);
+		CompoundTag angerData = new CompoundTag();
+		bear.addAdditionalSaveData(angerData);
+		restored.readAdditionalSaveData(angerData);
+		require(helper,
+				restored.getRemainingPersistentAngerTime()
+								== 500
+						&& angerTarget.equals(
+								restored
+										.getPersistentAngerTarget()),
+				"Vanilla-Ice Bear did not retain persistent anger across save/reload");
+
+		require(helper,
+				bear.ambientSound()
+								== SoundEvents.POLAR_BEAR_AMBIENT
+						&& bear.hurtSound()
+								== SoundEvents.POLAR_BEAR_HURT
+						&& bear.deathSound()
+								== SoundEvents.POLAR_BEAR_DEATH,
+				"Adult Vanilla-Ice Bear lost exact Polar Bear sounds");
+		bear.setBaby(true);
+		require(helper,
+				bear.ambientSound()
+						== SoundEvents.POLAR_BEAR_AMBIENT_BABY,
+				"Baby Vanilla-Ice Bear lost its exact cub sound");
+		bear.setBaby(false);
+		bear.setStanding(true);
+		require(helper, bear.isStanding(),
+				"Vanilla-Ice Bear lost its visible standing warning state");
+		bear.runWarningSound();
+		require(helper,
+				bear.lastSound()
+						== SoundEvents.POLAR_BEAR_WARNING,
+				"Vanilla-Ice Bear lost its warning growl");
+		bear.runStepSound();
+		require(helper,
+				bear.lastSound()
+						== SoundEvents.POLAR_BEAR_STEP,
+				"Vanilla-Ice Bear lost its Polar Bear step sound");
+
+		BlockPos familyAnchor = helper.absolutePos(
+				new BlockPos(2, 3, 2));
+		VanillaIceBearProbe adult =
+				new VanillaIceBearProbe(helper.getLevel());
+		VanillaIceBearProbe cub =
+				new VanillaIceBearProbe(helper.getLevel());
+		Pig familyAttacker =
+				EntityType.PIG.create(helper.getLevel());
+		require(helper, familyAttacker != null,
+				"Could not create Vanilla-Ice Bear family alert fixture");
+		cub.setBaby(true);
+		adult.setPos(familyAnchor.getX() + 0.5D,
+				familyAnchor.getY(),
+				familyAnchor.getZ() + 0.5D);
+		cub.setPos(familyAnchor.getX() + 2.5D,
+				familyAnchor.getY(),
+				familyAnchor.getZ() + 0.5D);
+		familyAttacker.setPos(familyAnchor.getX() + 4.5D,
+				familyAnchor.getY(),
+				familyAnchor.getZ() + 0.5D);
+		helper.getLevel().addFreshEntity(adult);
+		helper.getLevel().addFreshEntity(cub);
+		helper.getLevel().addFreshEntity(familyAttacker);
+		// HurtByTargetGoal consumes LivingEntity's standard last-attacker
+		// state and ignores an initial timestamp of zero. Seed that vanilla
+		// input directly so this test isolates the inherited family alert
+		// rather than duplicating Minecraft's global damage bookkeeping.
+		cub.setTestTickCount(1);
+		cub.setLastHurtByMob(familyAttacker);
+		require(helper,
+				cub.getLastHurtByMob()
+								== familyAttacker
+						&& cub.getLastHurtByMobTimestamp()
+								> 0,
+				"Vanilla-Ice cub fixture did not record its living attacker");
+		require(helper,
+				cub.startTargetGoalNamed(
+						"PolarBearHurtByTargetGoal"),
+				"Injured Vanilla-Ice cub could not start the inherited hurt-by-target goal");
+		require(helper,
+				adult.getTarget() == familyAttacker,
+				"Injured Vanilla-Ice cub did not alert a nearby adult through the inherited Polar Bear family role");
+		require(helper, cub.getTarget() == null,
+				"Baby Vanilla-Ice Bear kept pursuing its attacker after alerting an adult");
+
+		Pig swipeTarget =
+				EntityType.PIG.create(helper.getLevel());
+		require(helper, swipeTarget != null,
+				"Could not create Vanilla-Ice Bear swipe target");
+		swipeTarget.setPos(familyAnchor.getX() + 2.0D,
+				familyAnchor.getY(),
+				familyAnchor.getZ() + 4.0D);
+		adult.setPos(familyAnchor.getX(),
+				familyAnchor.getY(),
+				familyAnchor.getZ() + 4.0D);
+		helper.getLevel().addFreshEntity(swipeTarget);
+		for (Difficulty safeDifficulty :
+				new Difficulty[] {
+						Difficulty.PEACEFUL,
+						Difficulty.EASY,
+						Difficulty.NORMAL}) {
+			swipeTarget.removeAllEffects();
+			swipeTarget.setHealth(
+					swipeTarget.getMaxHealth());
+			swipeTarget.invulnerableTime = 0;
+			swipeTarget.setSecondsOnFire(5);
+			swipeTarget.fallDistance = 12.0F;
+			swipeTarget.setDeltaMovement(Vec3.ZERO);
+			LivingHurtEvent protectedSwipe =
+					new LivingHurtEvent(swipeTarget,
+							DamageSource.mobAttack(adult),
+							6.0F);
+			VanillaIceBearDamageSafety
+					.applyForDifficulty(
+							protectedSwipe,
+							safeDifficulty);
+			require(helper,
+					protectedSwipe.isCanceled()
+							&& close(
+									swipeTarget.getHealth(),
+									swipeTarget
+											.getMaxHealth())
+							&& !swipeTarget.isOnFire()
+							&& swipeTarget.fallDistance
+									== 0.0F
+							&& swipeTarget.hasEffect(
+									MobEffects
+											.MOVEMENT_SLOWDOWN)
+							&& swipeTarget.hasEffect(
+									MobEffects
+											.SLOW_FALLING)
+							&& swipeTarget.hasEffect(
+									MobEffects
+											.FIRE_RESISTANCE)
+							&& swipeTarget.getEffect(
+									MobEffects
+											.DAMAGE_RESISTANCE)
+									.getAmplifier() == 4
+							&& swipeTarget
+									.getDeltaMovement().x
+									> 0.0D
+							&& swipeTarget
+									.getDeltaMovement().y
+									> 0.0D,
+					safeDifficulty
+							+ " Vanilla-Ice Bear swipe caused health or indirect peril, or lacked its cream-cushion rescue");
+		}
+		swipeTarget.removeAllEffects();
+		swipeTarget.setDeltaMovement(Vec3.ZERO);
+		LivingHurtEvent hardSwipe =
+				new LivingHurtEvent(swipeTarget,
+						DamageSource.mobAttack(adult),
+						6.0F);
+		VanillaIceBearDamageSafety.applyForDifficulty(
+				hardSwipe, Difficulty.HARD);
+		require(helper,
+				!hardSwipe.isCanceled()
+						&& close(hardSwipe.getAmount(), 6.0D)
+						&& swipeTarget.getActiveEffects()
+								.isEmpty()
+						&& swipeTarget.getDeltaMovement()
+								.equals(Vec3.ZERO),
+				"Hard Vanilla-Ice Bear did not retain an unmodified six-point Polar Bear swipe");
+
+		TagKey<EntityType<?>> freezeImmune =
+				TagKey.create(Registry.ENTITY_TYPE_REGISTRY,
+						new ResourceLocation("minecraft",
+								"freeze_immune_entity_types"));
+		require(helper,
+				CakeWorldEntities.VANILLA_ICE_BEAR.get()
+								.is(freezeImmune)
+						&& !bear.canFreeze()
+						&& !CakeWorldEntities
+								.VANILLA_ICE_BEAR.get()
+								.isBlockDangerous(
+										Blocks.POWDER_SNOW
+												.defaultBlockState())
+						&& CakeWorldItems
+								.VANILLA_ICE_BEAR_SPAWN_EGG
+								.isPresent(),
+				"Vanilla-Ice Bear lost freeze, powder-snow or creative/testing-egg contracts");
+
+		MobSpawnSettingsBuilder futureSpawns =
+				new MobSpawnSettingsBuilder(
+						MobSpawnSettings.EMPTY);
+		futureSpawns.getSpawner(MobCategory.CREATURE)
+				.add(new MobSpawnSettings.SpawnerData(
+						EntityType.POLAR_BEAR, 1, 1, 2));
+		BiomeLoadingEvent futureTundra =
+				new BiomeLoadingEvent(
+						new ResourceLocation(
+								CakeWorld.MODID,
+								"ice_cream_tundra"),
+						null, null, null,
+						new BiomeGenerationSettingsBuilder(
+								BiomeGenerationSettings
+										.EMPTY),
+						futureSpawns);
+		CakeWorldCreatureSpawns.onBiomeLoading(futureTundra);
+		MobSpawnSettings.SpawnerData futureSpawn =
+				futureSpawns
+						.getSpawner(MobCategory.CREATURE)
+						.stream()
+						.filter(spawn -> spawn.type
+								== CakeWorldEntities
+										.VANILLA_ICE_BEAR
+										.get())
+						.findFirst().orElse(null);
+		require(helper,
+				futureSpawn != null
+						&& futureSpawn.getWeight().asInt() == 1
+						&& futureSpawn.minCount == 1
+						&& futureSpawn.maxCount == 2
+						&& futureSpawns
+								.getSpawner(
+										MobCategory.CREATURE)
+								.stream().noneMatch(
+										spawn -> spawn.type
+												== EntityType
+														.POLAR_BEAR),
+				"Future Ice-Cream Tundra hook lost the exact snowy 1/1-2 Polar Bear replacement");
+
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS
+						.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS
+						.getId())) {
+			Biome biome = helper.getLevel()
+					.registryAccess()
+					.registryOrThrow(
+							Registry.BIOME_REGISTRY)
+					.get(biomeId);
+			require(helper,
+					biome != null
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory
+													.CREATURE)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType
+															.POLAR_BEAR
+											|| spawn.type
+													== CakeWorldEntities
+															.VANILLA_ICE_BEAR
+															.get()),
+					"Current biome leaked Polar/Vanilla-Ice Bear spawning before Ice-Cream Tundra exists: "
+							+ biomeId);
+		}
+
+		Advancement killAll = helper.getLevel().getServer()
+				.getAdvancements().getAdvancement(
+						new ResourceLocation(
+								"minecraft",
+								"adventure/kill_all_mobs"));
+		Advancement bredAll = helper.getLevel().getServer()
+				.getAdvancements().getAdvancement(
+						new ResourceLocation(
+								"minecraft",
+								"husbandry/bred_all_animals"));
+		require(helper,
+				killAll != null
+						&& bredAll != null
+						&& !killAll.getCriteria()
+								.containsKey(
+										"minecraft:polar_bear")
+						&& !bredAll.getCriteria()
+								.containsKey(
+										"minecraft:polar_bear")
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+												.VANILLA_ICE_BEAR
+												.get())
+								== null,
+				"Vanilla unexpectedly assigned a Polar Bear kill, breeding or Parrot-mimic role; reassess before inventing a compatibility bridge");
+
+		BlockPos spawnPos = familyAnchor.offset(8, 0, 0);
+		helper.getLevel().setBlock(spawnPos.below(),
+				CakeWorldBlocks.FROZEN_LEMONADE.get()
+						.defaultBlockState(), 3);
+		helper.getLevel().setBlock(spawnPos,
+				Blocks.LIGHT.defaultBlockState(), 3);
+		helper.getLevel().setBlock(spawnPos.above(),
+				Blocks.AIR.defaultBlockState(), 3);
+		helper.runAfterDelay(5, () -> {
+			require(helper,
+					helper.getLevel().getBlockState(
+							spawnPos.below())
+							.is(BlockTags
+									.ANIMALS_SPAWNABLE_ON)
+							&& Animal
+									.checkAnimalSpawnRules(
+											CakeWorldEntities
+													.VANILLA_ICE_BEAR
+													.get(),
+											helper.getLevel(),
+											MobSpawnType.NATURAL,
+											spawnPos,
+											new Random(1978L))
+							&& SpawnPlacements
+									.checkSpawnRules(
+											CakeWorldEntities
+													.VANILLA_ICE_BEAR
+													.get(),
+											helper.getLevel(),
+											MobSpawnType.NATURAL,
+											spawnPos,
+											new Random(1979L))
+							&& SpawnPlacements.Type
+									.ON_GROUND.canSpawnAt(
+											helper.getLevel(),
+											spawnPos,
+											CakeWorldEntities
+													.VANILLA_ICE_BEAR
+													.get())
+							&& SpawnPlacements
+									.getPlacementType(
+											CakeWorldEntities
+													.VANILLA_ICE_BEAR
+													.get())
+									== SpawnPlacements.Type
+											.ON_GROUND
+							&& SpawnPlacements
+									.getHeightmapType(
+											CakeWorldEntities
+													.VANILLA_ICE_BEAR
+													.get())
+									== Heightmap.Types
+											.MOTION_BLOCKING_NO_LEAVES,
+					"Vanilla-Ice Bear lost bright frozen-lemonade placement, edible surface or exact metadata");
+			adult.discard();
+			cub.discard();
+			familyAttacker.discard();
+			swipeTarget.discard();
+			helper.succeed();
+		});
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 200)
 	public static void fudgeFolkKeepPiglinSocietyBarterAndSafePeril(
 			GameTestHelper helper) {
 		FudgeFolkProbe folk =
@@ -11654,6 +12102,10 @@ public final class FirstBiteGameTests {
 		private void seedRandom(long seed) {
 			random.setSeed(seed);
 		}
+
+		private void setTestTickCount(int ticks) {
+			tickCount = ticks;
+		}
 	}
 
 	private static final class WaferWraithProbe
@@ -11852,6 +12304,101 @@ public final class FirstBiteGameTests {
 							goal.getClass()
 									.getSimpleName()))
 					.count();
+		}
+	}
+
+	private static final class VanillaIceBearProbe
+			extends VanillaIceBear {
+		private net.minecraft.sounds.SoundEvent lastSound;
+
+		private VanillaIceBearProbe(Level level) {
+			super(CakeWorldEntities.VANILLA_ICE_BEAR.get(),
+					level);
+		}
+
+		private int getExperienceValue() {
+			return getExperienceReward(null);
+		}
+
+		private ResourceLocation getLootTableId() {
+			return getLootTable();
+		}
+
+		private net.minecraft.sounds.SoundEvent ambientSound() {
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent hurtSound() {
+			return getHurtSound(DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent deathSound() {
+			return getDeathSound();
+		}
+
+		private float waterSlowDown() {
+			return getWaterSlowDown();
+		}
+
+		private void runWarningSound() {
+			playWarningSound();
+		}
+
+		private void runStepSound() {
+			playStepSound(BlockPos.ZERO,
+					Blocks.SNOW_BLOCK.defaultBlockState());
+		}
+
+		private net.minecraft.sounds.SoundEvent lastSound() {
+			return lastSound;
+		}
+
+		private void seedRandom(long seed) {
+			random.setSeed(seed);
+		}
+
+		private void setTestTickCount(int ticks) {
+			tickCount = ticks;
+		}
+
+		private int countGoalsNamed(String name) {
+			return (int)goalSelector.getAvailableGoals()
+					.stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
+		}
+
+		private int countTargetGoalsNamed(String name) {
+			return (int)targetSelector.getAvailableGoals()
+					.stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
+		}
+
+		private boolean startTargetGoalNamed(String name) {
+			for (WrappedGoal wrapped :
+					targetSelector.getAvailableGoals()) {
+				if (name.equals(wrapped.getGoal()
+						.getClass().getSimpleName())
+						&& wrapped.canUse()) {
+					wrapped.start();
+					return true;
+				}
+			}
+			return false;
+		}
+
+		@Override
+		public void playSound(
+				net.minecraft.sounds.SoundEvent sound,
+				float volume, float pitch) {
+			lastSound = sound;
 		}
 	}
 
