@@ -120,6 +120,10 @@ public final class VanillaRoleAdvancements {
 		award(player, KILL_ALL, "minecraft:elder_guardian");
 	}
 
+	public static void creditKilledGuardianRole(ServerPlayer player) {
+		award(player, KILL_ALL, "minecraft:guardian");
+	}
+
 	public static void creditKilledEndermanRole(ServerPlayer player) {
 		award(player, KILL_ALL, "minecraft:enderman");
 	}
@@ -163,6 +167,9 @@ public final class VanillaRoleAdvancements {
 		}
 		if (type == CakeWorldEntities.GRAND_GUMBALL_GUARDIAN.get()) {
 			return "minecraft:elder_guardian";
+		}
+		if (type == CakeWorldEntities.GUMBALL_GUARDIAN.get()) {
+			return "minecraft:guardian";
 		}
 		if (type == CakeWorldEntities.TAFFY_TALLWALKER.get()) {
 			return "minecraft:enderman";

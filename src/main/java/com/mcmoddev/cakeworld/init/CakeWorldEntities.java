@@ -12,6 +12,7 @@ import com.mcmoddev.cakeworld.entity.DoughDonkey;
 import com.mcmoddev.cakeworld.entity.GrandGumballGuardian;
 import com.mcmoddev.cakeworld.entity.GiantStaleCrumbler;
 import com.mcmoddev.cakeworld.entity.GlowJelly;
+import com.mcmoddev.cakeworld.entity.GumballGuardian;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.MallowFloater;
@@ -58,6 +59,7 @@ import net.minecraft.world.entity.monster.Endermite;
 import net.minecraft.world.entity.monster.Evoker;
 import net.minecraft.world.entity.monster.Ghast;
 import net.minecraft.world.entity.monster.Giant;
+import net.minecraft.world.entity.monster.Guardian;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
@@ -144,6 +146,12 @@ public final class CakeWorldEntities {
 							MobCategory.MONSTER)
 							.sized(1.9975F, 1.9975F)
 							.clientTrackingRange(10));
+	public static final RegistryObject<EntityType<GumballGuardian>>
+			GUMBALL_GUARDIAN = entity("gumball_guardian",
+					EntityType.Builder.of(GumballGuardian::new,
+							MobCategory.MONSTER)
+							.sized(0.85F, 0.85F)
+							.clientTrackingRange(8));
 	public static final RegistryObject<EntityType<TaffyTallwalker>>
 			TAFFY_TALLWALKER = entity("taffy_tallwalker",
 					EntityType.Builder.of(TaffyTallwalker::new,
@@ -264,6 +272,8 @@ public final class CakeWorldEntities {
 				Zombie.createAttributes().build());
 		event.put(GRAND_GUMBALL_GUARDIAN.get(),
 				ElderGuardian.createAttributes().build());
+		event.put(GUMBALL_GUARDIAN.get(),
+				Guardian.createAttributes().build());
 		event.put(TAFFY_TALLWALKER.get(),
 				EnderMan.createAttributes().build());
 		event.put(SUGAR_MITE.get(),
@@ -328,6 +338,10 @@ public final class CakeWorldEntities {
 					SpawnPlacements.Type.IN_WATER,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					SoggyBiscuit::checkSoggyBiscuitSpawnRules);
+			SpawnPlacements.register(GUMBALL_GUARDIAN.get(),
+					SpawnPlacements.Type.IN_WATER,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					Guardian::checkGuardianSpawnRules);
 			SpawnPlacements.register(TAFFY_TALLWALKER.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,

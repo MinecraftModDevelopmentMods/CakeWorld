@@ -23,6 +23,7 @@ import net.minecraft.client.renderer.entity.GhastRenderer;
 import net.minecraft.client.renderer.entity.GiantMobRenderer;
 import net.minecraft.client.renderer.entity.GlowSquidRenderer;
 import net.minecraft.client.renderer.entity.GoatRenderer;
+import net.minecraft.client.renderer.entity.GuardianRenderer;
 import net.minecraft.client.renderer.entity.CowRenderer;
 import net.minecraft.client.renderer.entity.PigRenderer;
 import net.minecraft.client.renderer.entity.SheepRenderer;
@@ -68,6 +69,9 @@ public final class CakeWorldClientEvents {
 		event.registerEntityRenderer(
 				CakeWorldEntities.GRAND_GUMBALL_GUARDIAN.get(),
 				ElderGuardianRenderer::new);
+		event.registerEntityRenderer(
+				CakeWorldEntities.GUMBALL_GUARDIAN.get(),
+				GuardianRenderer::new);
 		event.registerEntityRenderer(
 				CakeWorldEntities.TAFFY_TALLWALKER.get(),
 				EndermanRenderer::new);

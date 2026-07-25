@@ -40,6 +40,7 @@ import com.mcmoddev.cakeworld.entity.DoughDonkey;
 import com.mcmoddev.cakeworld.entity.GrandGumballGuardian;
 import com.mcmoddev.cakeworld.entity.GiantStaleCrumbler;
 import com.mcmoddev.cakeworld.entity.GlowJelly;
+import com.mcmoddev.cakeworld.entity.GumballGuardian;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.MallowFloater;
 import com.mcmoddev.cakeworld.entity.MallowPuffProjectile;
@@ -118,6 +119,7 @@ import net.minecraft.world.entity.monster.Endermite;
 import net.minecraft.world.entity.monster.Evoker;
 import net.minecraft.world.entity.monster.Ghast;
 import net.minecraft.world.entity.monster.Giant;
+import net.minecraft.world.entity.monster.Guardian;
 import net.minecraft.world.entity.monster.Ravager;
 import net.minecraft.world.entity.monster.Vex;
 import net.minecraft.world.entity.projectile.AbstractHurtingProjectile;
@@ -174,6 +176,7 @@ import com.mcmoddev.cakeworld.world.CakeWorldElderGuardianReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldEndermiteReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldEvokerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldGiantReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldGuardianReplacement;
 
 @GameTestHolder(CakeWorld.MODID)
 @PrefixGameTestTemplate(false)
@@ -2802,6 +2805,266 @@ public final class FirstBiteGameTests {
 		requireCriterion(helper, advancementPlayer,
 				"minecraft:adventure/kill_all_mobs",
 				"minecraft:elder_guardian");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void gumballGuardiansSignalPalaceBeamsGentleUntilHard(
+			GameTestHelper helper) {
+		GumballGuardian guardian =
+				CakeWorldEntities.GUMBALL_GUARDIAN.get()
+						.create(helper.getLevel());
+		Pig safeTarget = EntityType.PIG.create(helper.getLevel());
+		require(helper, guardian != null && safeTarget != null,
+				"Could not create Gumball Guardian fixtures");
+		BlockPos anchor = helper.absolutePos(new BlockPos(2, 3, 2));
+		guardian.setPos(anchor.getX(), anchor.getY(), anchor.getZ());
+		safeTarget.setPos(anchor.getX() + 4.0D,
+				anchor.getY(), anchor.getZ());
+		guardian.setNoGravity(true);
+		safeTarget.setNoGravity(true);
+		helper.getLevel().addFreshEntity(guardian);
+		helper.getLevel().addFreshEntity(safeTarget);
+		require(helper,
+				guardian instanceof Guardian
+						&& !ElderGuardian.class
+								.isInstance(guardian)
+						&& guardian.canBreatheUnderwater()
+						&& guardian.getMobType() == MobType.WATER
+						&& guardian.getAttackDuration() == 80
+						&& close(guardian.getDimensions(Pose.STANDING)
+								.width, 0.85D)
+						&& close(guardian.getDimensions(Pose.STANDING)
+								.height, 0.85D)
+						&& close(guardian.getMaxHealth(), 30.0D)
+						&& close(guardian.getAttributeValue(
+								Attributes.ATTACK_DAMAGE), 6.0D)
+						&& close(guardian.getAttributeValue(
+								Attributes.MOVEMENT_SPEED), 0.5D)
+						&& close(guardian.getAttributeValue(
+								Attributes.FOLLOW_RANGE), 16.0D),
+				"Gumball Guardian lost the ordinary Guardian water, size, beam, or attribute contract");
+
+		guardian.setTarget(safeTarget);
+		for (int tick = 0;
+				tick < 30 && !guardian.hasActiveAttackTarget();
+				++tick) {
+			guardian.tick();
+		}
+		require(helper,
+				guardian.hasActiveAttackTarget()
+						&& guardian.getActiveAttackTarget()
+								== safeTarget,
+				"Gumball Guardian did not expose the inherited visible beam target before impact");
+		guardian.setTarget(null);
+		guardian.setNoAi(true);
+
+		Difficulty originalDifficulty =
+				helper.getLevel().getDifficulty();
+		try {
+			for (Difficulty safeDifficulty :
+					new Difficulty[] {
+							Difficulty.EASY,
+							Difficulty.NORMAL}) {
+				helper.getLevel().getServer().setDifficulty(
+						safeDifficulty, true);
+				safeTarget.removeAllEffects();
+				safeTarget.setHealth(10.0F);
+				safeTarget.setSecondsOnFire(5);
+				safeTarget.fallDistance = 8.0F;
+				safeTarget.setDeltaMovement(Vec3.ZERO);
+				safeTarget.invulnerableTime = 0;
+				safeTarget.hurt(DamageSource.indirectMagic(
+						guardian, guardian), 3.0F);
+				require(helper,
+						close(safeTarget.getHealth(), 10.0D)
+								&& !safeTarget.isOnFire()
+								&& safeTarget.fallDistance == 0.0F
+								&& safeTarget.hasEffect(
+										MobEffects.MOVEMENT_SLOWDOWN)
+								&& safeTarget.hasEffect(
+										MobEffects.DIG_SLOWDOWN)
+								&& safeTarget.hasEffect(
+										MobEffects.SLOW_FALLING)
+								&& safeTarget.hasEffect(
+										MobEffects.FIRE_RESISTANCE)
+								&& safeTarget.hasEffect(
+										MobEffects.DAMAGE_RESISTANCE)
+								&& safeTarget.getEffect(
+										MobEffects.DAMAGE_RESISTANCE)
+										.getAmplifier() == 4,
+						safeDifficulty
+								+ " Gumball beam contract failed: health="
+								+ safeTarget.getHealth()
+								+ ", fire=" + safeTarget.isOnFire()
+								+ ", fall=" + safeTarget.fallDistance
+								+ ", slow=" + safeTarget.hasEffect(
+										MobEffects.MOVEMENT_SLOWDOWN)
+								+ ", miningSlow=" + safeTarget.hasEffect(
+										MobEffects.DIG_SLOWDOWN)
+								+ ", slowFall=" + safeTarget.hasEffect(
+										MobEffects.SLOW_FALLING)
+								+ ", fireResist=" + safeTarget.hasEffect(
+										MobEffects.FIRE_RESISTANCE)
+								+ ", resistance=" + safeTarget.hasEffect(
+										MobEffects.DAMAGE_RESISTANCE));
+
+				safeTarget.removeAllEffects();
+				safeTarget.setHealth(10.0F);
+				safeTarget.invulnerableTime = 0;
+				safeTarget.hurt(
+						DamageSource.mobAttack(guardian), 6.0F);
+				require(helper,
+						close(safeTarget.getHealth(), 10.0D)
+								&& safeTarget.hasEffect(
+										MobEffects.MOVEMENT_SLOWDOWN)
+								&& safeTarget.hasEffect(
+										MobEffects.DAMAGE_RESISTANCE),
+						safeDifficulty
+								+ " Gumball beam contact caused health damage or lost its safe impact");
+
+				safeTarget.removeAllEffects();
+				safeTarget.setHealth(10.0F);
+				safeTarget.invulnerableTime = 0;
+				safeTarget.hurt(
+						DamageSource.thorns(guardian), 2.0F);
+				require(helper,
+						close(safeTarget.getHealth(), 10.0D)
+								&& safeTarget.hasEffect(
+										MobEffects.MOVEMENT_SLOWDOWN)
+								&& safeTarget.hasEffect(
+										MobEffects.DAMAGE_RESISTANCE),
+						safeDifficulty
+								+ " Gumball thorns caused health damage or lost their safe impact");
+			}
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			Pig hardTarget =
+					EntityType.PIG.create(helper.getLevel());
+			require(helper, hardTarget != null,
+					"Could not create Hard Gumball target");
+			hardTarget.setPos(anchor.getX() + 5.0D,
+					anchor.getY(), anchor.getZ());
+			hardTarget.setHealth(10.0F);
+			helper.getLevel().addFreshEntity(hardTarget);
+			require(helper,
+					hardTarget.hurt(
+							DamageSource.mobAttack(guardian),
+							6.0F)
+							&& hardTarget.getHealth() < 10.0F,
+					"Hard Gumball Guardian did not retain real beam-contact damage");
+
+			BlockPos lemonadePos = anchor.offset(0, 0, 6);
+			helper.getLevel().setBlock(lemonadePos.below(),
+					CakeWorldFluids.LEMONADE_BLOCK.get()
+							.defaultBlockState(), 3);
+			helper.getLevel().setBlock(lemonadePos,
+					CakeWorldFluids.LEMONADE_BLOCK.get()
+							.defaultBlockState(), 3);
+			helper.getLevel().setBlock(lemonadePos.above(3),
+					CakeWorldBlocks.BISCUIT_STONE.get()
+							.defaultBlockState(), 3);
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.NORMAL, true);
+			require(helper,
+					Guardian.checkGuardianSpawnRules(
+							CakeWorldEntities.GUMBALL_GUARDIAN.get(),
+							helper.getLevel(),
+							MobSpawnType.SPAWNER,
+							lemonadePos,
+							new Random(24L))
+							&& SpawnPlacements.getPlacementType(
+									CakeWorldEntities
+											.GUMBALL_GUARDIAN.get())
+									== SpawnPlacements.Type.IN_WATER,
+					"Gumball Guardian lost the covered tagged-water spawn contract for Lemonade");
+		} finally {
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		Guardian monumentGuardian =
+				EntityType.GUARDIAN.create(helper.getLevel());
+		require(helper, monumentGuardian != null,
+				"Could not create monument Guardian conversion fixture");
+		ResourceLocation fixtureBiome = helper.getLevel()
+				.getBiome(anchor).unwrapKey()
+				.map(key -> key.location()).orElse(null);
+		require(helper, fixtureBiome != null
+						&& CakeWorld.MODID.equals(
+								fixtureBiome.getNamespace()),
+				"Monument Guardian conversion fixture was not in a CakeWorld biome");
+		monumentGuardian.moveTo(anchor.getX(), anchor.getY(),
+				anchor.getZ(), 31.0F, 0.0F);
+		monumentGuardian.setHealth(17.0F);
+		monumentGuardian.setCustomName(
+				new TextComponent("Bubble Sentinel"));
+		monumentGuardian.setPersistenceRequired();
+		GumballGuardian converted =
+				CakeWorldGuardianReplacement
+						.convertIfInCakeWorldBiome(
+								helper.getLevel(),
+								monumentGuardian);
+		require(helper, converted != null
+						&& converted.getType()
+								== CakeWorldEntities
+										.GUMBALL_GUARDIAN.get()
+						&& close(converted.getHealth(), 17.0D)
+						&& converted.hasCustomName()
+						&& converted.getCustomName().getString()
+								.equals("Bubble Sentinel")
+						&& converted.isPersistenceRequired()
+						&& close(converted.getYRot(), 31.0D),
+				"Monument conversion lost Guardian type, health, name, persistence or rotation");
+
+		Biome sodaOcean = helper.getLevel().registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY)
+				.get(CakeWorldBiomes.SODA_OCEAN.getId());
+		require(helper, sodaOcean != null,
+				"Could not inspect Soda Ocean Guardian spawning");
+		boolean openOceanGuardian = false;
+		boolean openOceanGumball = false;
+		for (MobSpawnSettings.SpawnerData spawn :
+				sodaOcean.getMobSettings()
+						.getMobs(MobCategory.MONSTER).unwrap()) {
+			openOceanGuardian |= spawn.type == EntityType.GUARDIAN;
+			openOceanGumball |= spawn.type
+					== CakeWorldEntities.GUMBALL_GUARDIAN.get();
+		}
+		require(helper,
+				!openOceanGuardian && !openOceanGumball,
+				"Structure-only Gumball defenders leaked into normal open-ocean spawning before Soda Palace exists");
+
+		TagKey<EntityType<?>> axolotlHostiles = TagKey.create(
+				Registry.ENTITY_TYPE_REGISTRY,
+				new ResourceLocation("minecraft",
+						"axolotl_always_hostiles"));
+		require(helper,
+				CakeWorldEntities.GUMBALL_GUARDIAN.get()
+						.is(axolotlHostiles),
+				"Gumball Guardian did not preserve Guardian's axolotl-hostile role");
+		require(helper,
+				CakeWorldItems.GUMBALL_GUARDIAN_SPAWN_EGG
+						.isPresent(),
+				"Gumball Guardian has no creative/testing spawn egg");
+		require(helper,
+				guardian.getLootTable().equals(
+						new ResourceLocation(CakeWorld.MODID,
+								"entities/gumball_guardian")),
+				"Gumball Guardian did not resolve its dedicated Guardian-equivalent loot");
+
+		ServerPlayer advancementPlayer = new ServerPlayer(
+				helper.getLevel().getServer(),
+				helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2024"),
+						"CakeWorldGumballGuardianRoleTest"));
+		VanillaRoleAdvancements.creditKilledGuardianRole(
+				advancementPlayer);
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:adventure/kill_all_mobs",
+				"minecraft:guardian");
 		helper.succeed();
 	}
 
