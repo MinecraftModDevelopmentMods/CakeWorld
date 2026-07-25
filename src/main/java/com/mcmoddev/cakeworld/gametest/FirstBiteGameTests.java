@@ -18,6 +18,7 @@ import com.mcmoddev.cakeworld.block.GummyBlock;
 import com.mcmoddev.cakeworld.block.IcingLayerBlock;
 import com.mcmoddev.cakeworld.block.MarshmallowBlock;
 import com.mcmoddev.cakeworld.block.SodaFountainBlock;
+import com.mcmoddev.cakeworld.block.WaferWindmillBlock;
 import com.mcmoddev.cakeworld.cookbook.CookbookEvents;
 import com.mcmoddev.cakeworld.cookbook.CookbookProgress;
 import com.mcmoddev.cakeworld.cookbook.DiscoveryType;
@@ -805,6 +806,73 @@ public final class FirstBiteGameTests {
 						&& player.getOffhandItem().isEmpty()
 						&& lemonadeBottles == 3,
 				"Fountain did not return the bucket and three drinks");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void whimsicalVillageMachineryStaysNonIndustrial(
+			GameTestHelper helper) {
+		BlockPos relativeWindmillPos = new BlockPos(1, 1, 1);
+		BlockPos absoluteWindmillPos =
+				helper.absolutePos(relativeWindmillPos);
+		WaferWindmillBlock windmill =
+				(WaferWindmillBlock) CakeWorldBlocks.WAFER_WINDMILL.get();
+		helper.setBlock(relativeWindmillPos,
+				windmill.defaultBlockState()
+						.setValue(WaferWindmillBlock.FACING,
+								Direction.EAST));
+		BlockPos relativePowerPos = relativeWindmillPos.relative(
+				Direction.WEST);
+		BlockPos absolutePowerPos =
+				helper.absolutePos(relativePowerPos);
+		helper.setBlock(relativePowerPos, Blocks.REDSTONE_BLOCK);
+		windmill.neighborChanged(
+				helper.getBlockState(relativeWindmillPos),
+				helper.getLevel(), absoluteWindmillPos,
+				Blocks.REDSTONE_BLOCK, absolutePowerPos, false);
+		BlockState powered =
+				helper.getBlockState(relativeWindmillPos);
+		require(helper, powered.getValue(WaferWindmillBlock.POWERED)
+						&& powered.getValue(WaferWindmillBlock.FACING)
+								== Direction.EAST
+						&& !windmill.isSignalSource(powered)
+						&& helper.getLevel().getBlockEntity(
+								absoluteWindmillPos) == null,
+				"Wafer Windmill lost its powered ambient-only contract");
+
+		helper.setBlock(relativePowerPos, Blocks.AIR);
+		windmill.neighborChanged(
+				helper.getBlockState(relativeWindmillPos),
+				helper.getLevel(), absoluteWindmillPos,
+				Blocks.AIR, absolutePowerPos, false);
+		require(helper,
+				!helper.getBlockState(relativeWindmillPos)
+						.getValue(WaferWindmillBlock.POWERED),
+				"Wafer Windmill stayed active after power was removed");
+
+		RotatedPillarBlock pipe =
+				(RotatedPillarBlock) CakeWorldBlocks.SYRUP_PIPE.get();
+		BlockState pipeX = pipe.defaultBlockState()
+				.setValue(RotatedPillarBlock.AXIS, Direction.Axis.X);
+		BlockState pipeZ = pipeX.rotate(Rotation.CLOCKWISE_90);
+		BlockPos relativePipePos = new BlockPos(2, 1, 1);
+		helper.setBlock(relativePipePos, pipeX);
+		require(helper,
+				pipeX.getValue(RotatedPillarBlock.AXIS)
+								== Direction.Axis.X
+						&& pipeZ.getValue(RotatedPillarBlock.AXIS)
+								== Direction.Axis.Z
+						&& helper.getLevel().getBlockEntity(
+								helper.absolutePos(relativePipePos)) == null,
+				"Syrup Pipe lost its axis-aware decorative contract");
+		require(helper,
+				helper.getLevel().getRecipeManager().byKey(
+						new ResourceLocation(CakeWorld.MODID,
+								"wafer_windmill")).isPresent()
+						&& helper.getLevel().getRecipeManager().byKey(
+								new ResourceLocation(CakeWorld.MODID,
+										"syrup_pipe")).isPresent(),
+				"Whimsical village machinery is not obtainable");
 		helper.succeed();
 	}
 

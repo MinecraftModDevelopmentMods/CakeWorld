@@ -1,0 +1,34 @@
+{
+  "variants": {
+    "facing=north,powered=false": {
+      "model": "cakeworld:block/wafer_windmill"
+    },
+    "facing=east,powered=false": {
+      "model": "cakeworld:block/wafer_windmill",
+      "y": 90
+    },
+    "facing=south,powered=false": {
+      "model": "cakeworld:block/wafer_windmill",
+      "y": 180
+    },
+    "facing=west,powered=false": {
+      "model": "cakeworld:block/wafer_windmill",
+      "y": 270
+    },
+    "facing=north,powered=true": {
+      "model": "cakeworld:block/wafer_windmill_turning"
+    },
+    "facing=east,powered=true": {
+      "model": "cakeworld:block/wafer_windmill_turning",
+      "y": 90
+    },
+    "facing=south,powered=true": {
+      "model": "cakeworld:block/wafer_windmill_turning",
+      "y": 180
+    },
+    "facing=west,powered=true": {
+      "model": "cakeworld:block/wafer_windmill_turning",
+      "y": 270
+    }
+  }
+}

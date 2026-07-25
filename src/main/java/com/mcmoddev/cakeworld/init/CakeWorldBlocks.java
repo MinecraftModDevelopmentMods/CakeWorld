@@ -15,6 +15,7 @@ import com.mcmoddev.cakeworld.block.IcingLayerBlock;
 import com.mcmoddev.cakeworld.block.MarshmallowBlock;
 import com.mcmoddev.cakeworld.block.MixingBowlBlock;
 import com.mcmoddev.cakeworld.block.SodaFountainBlock;
+import com.mcmoddev.cakeworld.block.WaferWindmillBlock;
 import com.mcmoddev.cakeworld.item.ReusableBlockItem;
 
 import net.minecraft.util.valueproviders.UniformInt;
@@ -205,6 +206,19 @@ public final class CakeWorldBlocks {
 									.requiresCorrectToolForDrops()
 									.strength(2.0F, 6.0F)
 									.sound(SoundType.METAL)));
+	public static final RegistryObject<Block> WAFER_WINDMILL =
+			block("wafer_windmill",
+					() -> new WaferWindmillBlock(
+							BlockBehaviour.Properties.of(Material.WOOD)
+									.strength(1.5F, 3.0F)
+									.sound(SoundType.WOOD)));
+	public static final RegistryObject<Block> SYRUP_PIPE =
+			block("syrup_pipe",
+					() -> new RotatedPillarBlock(
+							BlockBehaviour.Properties.of(Material.METAL)
+									.requiresCorrectToolForDrops()
+									.strength(2.0F, 6.0F)
+									.sound(SoundType.COPPER)));
 
 	private CakeWorldBlocks() {
 	}

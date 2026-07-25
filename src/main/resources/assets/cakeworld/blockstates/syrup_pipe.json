@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "axis=y": {
+      "model": "cakeworld:block/syrup_pipe"
+    },
+    "axis=z": {
+      "model": "cakeworld:block/syrup_pipe",
+      "x": 90
+    },
+    "axis=x": {
+      "model": "cakeworld:block/syrup_pipe",
+      "x": 90,
+      "y": 90
+    }
+  }
+}
