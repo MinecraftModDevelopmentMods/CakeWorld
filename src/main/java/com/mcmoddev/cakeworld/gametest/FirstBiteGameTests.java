@@ -22,6 +22,7 @@ import com.mcmoddev.cakeworld.block.WaferWindmillBlock;
 import com.mcmoddev.cakeworld.cookbook.CookbookEvents;
 import com.mcmoddev.cakeworld.cookbook.CookbookHints;
 import com.mcmoddev.cakeworld.cookbook.CookbookProgress;
+import com.mcmoddev.cakeworld.cookbook.CookbookSummary;
 import com.mcmoddev.cakeworld.cookbook.DiscoveryType;
 import com.mcmoddev.cakeworld.compat.VanillaRoleAdvancements;
 import com.mcmoddev.cakeworld.entity.CandyflossSheep;
@@ -1249,6 +1250,52 @@ public final class FirstBiteGameTests {
 						&& CookbookProgress.snapshot(player)
 								.equals(beforeSneakUse),
 				"Sneak-use hint changed discoveries or failed to consume use");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void cookbookSummaryDerivesStampsAndHonestCompletion(
+			GameTestHelper helper) {
+		ServerPlayer player = FakePlayerFactory.get(helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978cafe-cafe-4bad-babe-1978cafe1981"),
+						"CakeWorldSummaryTest"));
+		CookbookSummary empty = CookbookSummary.from(
+				CookbookProgress.read(CookbookProgress.snapshot(player)));
+		require(helper, empty.totalPages() == 0 && empty.stamps() == 0
+						&& !empty.firstEditionComplete(),
+				"Empty Cookbook received pages, stamps, or completion");
+
+		for (DiscoveryType type : DiscoveryType.values()) {
+			require(helper, CookbookProgress.discover(player, type,
+							new ResourceLocation(CakeWorld.MODID,
+									"summary/" + type.name().toLowerCase())),
+					"Could not add summary page for " + type);
+		}
+		CookbookSummary complete = CookbookSummary.from(
+				CookbookProgress.read(CookbookProgress.snapshot(player)));
+		require(helper, complete.totalPages() == 6
+						&& complete.stamps() == 6
+						&& complete.firstEditionComplete(),
+				"All six discovery methods did not complete First Edition");
+		for (DiscoveryType type : DiscoveryType.values()) {
+			require(helper, complete.pages(type) == 1
+							&& complete.hasStamp(type),
+					type + " has an incorrect page count or stamp");
+		}
+
+		require(helper, CookbookProgress.discover(player,
+						DiscoveryType.VISITING,
+						new ResourceLocation(CakeWorld.MODID,
+								"summary/extra_place")),
+				"Could not add an extra summary page");
+		CookbookSummary expanded = CookbookSummary.from(
+				CookbookProgress.read(CookbookProgress.snapshot(player)));
+		require(helper, expanded.totalPages() == 7
+						&& expanded.pages(DiscoveryType.VISITING) == 2
+						&& expanded.stamps() == 6
+						&& expanded.firstEditionComplete(),
+				"Extra pages incorrectly changed stamp-based completion");
 		helper.succeed();
 	}
 

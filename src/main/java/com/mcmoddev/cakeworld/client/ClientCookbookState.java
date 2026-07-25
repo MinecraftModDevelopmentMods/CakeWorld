@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.mcmoddev.cakeworld.cookbook.CookbookProgress;
+import com.mcmoddev.cakeworld.cookbook.CookbookSummary;
 import com.mcmoddev.cakeworld.cookbook.DiscoveryType;
 
 import net.minecraft.nbt.CompoundTag;
@@ -24,6 +25,10 @@ public final class ClientCookbookState {
 
 	public static Set<ResourceLocation> get(DiscoveryType type) {
 		return discoveries.getOrDefault(type, Collections.emptySet());
+	}
+
+	public static CookbookSummary summary() {
+		return CookbookSummary.from(discoveries);
 	}
 
 	private static Map<DiscoveryType, Set<ResourceLocation>> emptyState() {

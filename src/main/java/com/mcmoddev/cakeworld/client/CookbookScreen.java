@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mcmoddev.cakeworld.cookbook.CookbookSummary;
 import com.mcmoddev.cakeworld.cookbook.DiscoveryType;
 
 import net.minecraft.client.gui.screens.Screen;
@@ -36,6 +37,7 @@ public final class CookbookScreen extends Screen {
 		drawCenteredString(poseStack, font, title, width / 2, top + 9, INK_COLOUR);
 
 		DiscoveryType[] tabs = DiscoveryType.values();
+		CookbookSummary summary = ClientCookbookState.summary();
 		int tabWidth = BOOK_WIDTH / tabs.length;
 		for (int i = 0; i < tabs.length; i++) {
 			int tabLeft = left + i * tabWidth;
@@ -45,6 +47,11 @@ public final class CookbookScreen extends Screen {
 			drawCenteredString(poseStack, font,
 					new TranslatableComponent(tabs[i].translationKey()),
 					tabLeft + tabWidth / 2, top + 30, INK_COLOUR);
+			if (summary.hasStamp(tabs[i])) {
+				fill(poseStack, tabLeft + tabWidth - 8, top + 27,
+						tabLeft + tabWidth - 4, top + 31,
+						0xFFFFC83D);
+			}
 		}
 
 		List<ResourceLocation> pages =
@@ -62,6 +69,18 @@ public final class CookbookScreen extends Screen {
 				drawString(poseStack, font, pageName(pages.get(i)), x, y,
 						INK_COLOUR);
 			}
+		}
+		drawCenteredString(poseStack, font,
+				new TranslatableComponent(
+						"screen.cakeworld.cookbook.summary",
+						summary.totalPages(), summary.stamps(),
+						summary.stampGoal()),
+				width / 2, top + 177, INK_COLOUR);
+		if (summary.firstEditionComplete()) {
+			drawCenteredString(poseStack, font,
+					new TranslatableComponent(
+							"screen.cakeworld.cookbook.first_edition_complete"),
+					width / 2, top + 191, 0xFF9A5A00);
 		}
 		super.render(poseStack, mouseX, mouseY, partialTick);
 	}

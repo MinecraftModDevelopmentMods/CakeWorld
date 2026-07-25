@@ -105,6 +105,8 @@
   "screen.cakeworld.cookbook.tab.landmarks": "Landmarks",
   "screen.cakeworld.cookbook.tab.curiosities": "Curiosities",
   "screen.cakeworld.cookbook.empty": "A delicious mystery is waiting to be discovered...",
+  "screen.cakeworld.cookbook.summary": "%s pages \u2022 %s/%s First Edition stamps",
+  "screen.cakeworld.cookbook.first_edition_complete": "First Edition complete: every kind of discovery tried!",
   "message.cakeworld.cookbook.discovery": "New Cookbook page: %s",
   "tooltip.cakeworld.explorers_cookbook.hint": "Sneak-use for a gentle discovery hint",
   "message.cakeworld.cookbook.hint.place": "Somewhere nearby, an iced meadow is waiting to welcome you.",
