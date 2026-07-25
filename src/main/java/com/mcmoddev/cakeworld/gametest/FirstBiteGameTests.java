@@ -71,6 +71,8 @@ import com.mcmoddev.cakeworld.entity.GingerbreadStomperDamageSafety;
 import com.mcmoddev.cakeworld.entity.GingerbreadStomperGriefSafety;
 import com.mcmoddev.cakeworld.entity.HotFudgeBlob;
 import com.mcmoddev.cakeworld.entity.HotFudgeBlobDamageSafety;
+import com.mcmoddev.cakeworld.entity.IceCreamGolem;
+import com.mcmoddev.cakeworld.entity.IceCreamGolemProjectileSafety;
 import com.mcmoddev.cakeworld.entity.JawbreakerGuardian;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.MallowFloater;
@@ -115,6 +117,7 @@ import com.mcmoddev.cakeworld.world.CakeWorldShulkerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldSilverfishReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldSkeletonReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldSkeletonHorseReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldSnowGolemReplacement;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -191,6 +194,7 @@ import net.minecraft.world.entity.animal.FlyingAnimal;
 import net.minecraft.world.entity.animal.Rabbit;
 import net.minecraft.world.entity.animal.Salmon;
 import net.minecraft.world.entity.animal.Sheep;
+import net.minecraft.world.entity.animal.SnowGolem;
 import net.minecraft.world.entity.animal.Turtle;
 import net.minecraft.world.entity.animal.Wolf;
 import net.minecraft.world.entity.animal.goat.Goat;
@@ -245,6 +249,7 @@ import net.minecraft.world.entity.projectile.LargeFireball;
 import net.minecraft.world.entity.projectile.LlamaSpit;
 import net.minecraft.world.entity.projectile.ShulkerBullet;
 import net.minecraft.world.entity.projectile.SmallFireball;
+import net.minecraft.world.entity.projectile.Snowball;
 import net.minecraft.world.entity.projectile.ThrownTrident;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.npc.Villager;
@@ -296,6 +301,7 @@ import net.minecraft.world.entity.raid.Raid;
 import net.minecraft.world.entity.raid.Raider;
 import net.minecraft.world.entity.vehicle.Boat;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.gametest.GameTestHolder;
@@ -16769,6 +16775,593 @@ public final class FirstBiteGameTests {
 	}
 
 	@GameTest(template = EMPTY, timeoutTicks = 200)
+	public static void iceCreamGolemsKeepConstructionScoopsClimateAndIcingTrail(
+			GameTestHelper helper) {
+		IceCreamGolemProbe golem =
+				new IceCreamGolemProbe(
+						helper.getLevel());
+		require(helper,
+				golem instanceof SnowGolem
+						&& golem.getType()
+								== CakeWorldEntities
+										.ICE_CREAM_GOLEM
+										.get()
+						&& golem.getType().getCategory()
+								== MobCategory.MISC
+						&& close(golem.getMaxHealth(),
+								4.0D)
+						&& close(golem.getAttributeValue(
+								Attributes.MOVEMENT_SPEED),
+								0.2D)
+						&& close(golem.getAttributeValue(
+								Attributes.FOLLOW_RANGE),
+								16.0D)
+						&& golem.getAttribute(
+								Attributes.ATTACK_DAMAGE)
+								== null
+						&& close(golem.getDimensions(
+								Pose.STANDING).width,
+								0.7D)
+						&& close(golem.getDimensions(
+								Pose.STANDING).height,
+								1.9D)
+						&& close(golem.standingEyeHeight(),
+								1.7D)
+						&& golem.getType()
+								.clientTrackingRange() == 8
+						&& golem.getMaxSpawnClusterSize()
+								== 4
+						&& golem.getExperienceValue() == 0
+						&& !golem.despawnsInPeaceful()
+						&& golem.isSensitiveToWater()
+						&& !golem.causeFallDamage(
+								100.0F, 1.0F,
+								DamageSource.FALL)
+						&& !golem.removeWhenFarAway(
+								10000.0D)
+						&& golem
+								.getAmbientSoundInterval()
+								== 120
+						&& golem.getType()
+								.isBlockDangerous(
+										Blocks
+												.POWDER_SNOW
+												.defaultBlockState())
+								== EntityType.SNOW_GOLEM
+										.isBlockDangerous(
+												Blocks
+														.POWDER_SNOW
+														.defaultBlockState()),
+				"Ice-Cream Golem lost exact Snow Golem body, attributes, persistence, climate, fall or powder-snow contract");
+		require(helper,
+				golem.goalPriority(
+						"RangedAttackGoal") == 1
+						&& golem.goalPriority(
+								"WaterAvoidingRandomStrollGoal")
+								== 2
+						&& golem.goalPriority(
+								"LookAtPlayerGoal") == 3
+						&& golem.goalPriority(
+								"RandomLookAroundGoal") == 4
+						&& golem.targetGoalPriority(
+								"NearestAttackableTargetGoal")
+								== 1
+						&& golem.targetGoalCount() == 1,
+				"Ice-Cream Golem lost exact ranged-helper movement or Enemy-target goals");
+		require(helper,
+				golem.hasPumpkin()
+						&& golem.readyForShearing()
+						&& golem.ambientSound()
+								== SoundEvents
+										.SNOW_GOLEM_AMBIENT
+						&& golem.hurtSound()
+								== SoundEvents
+										.SNOW_GOLEM_HURT
+						&& golem.deathSound()
+								== SoundEvents
+										.SNOW_GOLEM_DEATH
+						&& close(golem.getLeashOffset().y,
+								1.275D)
+						&& close(golem.getLeashOffset().z,
+								0.28D),
+				"Ice-Cream Golem lost pumpkin, shearing, sound or leash presentation");
+
+		List<ItemStack> sheared = golem.onSheared(
+				null, new ItemStack(Items.SHEARS),
+				helper.getLevel(),
+				golem.blockPosition(), 0);
+		CompoundTag pumpkinState =
+				new CompoundTag();
+		golem.addAdditionalSaveData(pumpkinState);
+		IceCreamGolemProbe restored =
+				new IceCreamGolemProbe(
+						helper.getLevel());
+		restored.readAdditionalSaveData(
+				pumpkinState);
+		require(helper,
+				sheared.size() == 1
+						&& sheared.get(0)
+								.is(Items.CARVED_PUMPKIN)
+						&& !golem.hasPumpkin()
+						&& !golem.readyForShearing()
+						&& pumpkinState.contains(
+								"Pumpkin")
+						&& !pumpkinState.getBoolean(
+								"Pumpkin")
+						&& !restored.hasPumpkin(),
+				"Ice-Cream Golem lost Forge shearing, carved-pumpkin drop or Pumpkin NBT");
+
+		BlockPos trailCenter = helper.absolutePos(
+				new BlockPos(1, 3, 1));
+		List<BlockPos> trailCells = List.of(
+				trailCenter.offset(-1, 0, -1),
+				trailCenter.offset(0, 0, -1),
+				trailCenter.offset(-1, 0, 0),
+				trailCenter);
+		for (BlockPos trailCell : trailCells) {
+			helper.getLevel().setBlock(
+					trailCell.below(),
+					CakeWorldBlocks.BISCUIT_STONE
+							.get().defaultBlockState(),
+					3);
+			helper.getLevel().setBlock(
+					trailCell,
+					Blocks.AIR.defaultBlockState(),
+					3);
+		}
+		BlockPos preservedSnow = trailCells.get(0);
+		helper.getLevel().setBlock(preservedSnow,
+				Blocks.SNOW.defaultBlockState(), 3);
+		golem.setNoAi(true);
+		golem.setPos(trailCenter.getX(),
+				trailCenter.getY(),
+				trailCenter.getZ());
+		require(helper,
+				helper.getLevel().getGameRules()
+								.getBoolean(GameRules
+										.RULE_MOBGRIEFING)
+						&& ForgeEventFactory
+								.getMobGriefingEvent(
+										helper.getLevel(),
+										golem),
+				"Ice-Cream Golem trail fixture requires the accepted mobGriefing gate");
+		golem.aiStep();
+		long icingCells = trailCells.stream()
+				.filter(pos -> helper.getLevel()
+						.getBlockState(pos)
+						.is(CakeWorldBlocks
+								.ICING_LAYER.get()))
+				.count();
+		require(helper,
+				icingCells == 3
+						&& helper.getLevel()
+								.getBlockState(
+										preservedSnow)
+								.is(Blocks.SNOW)
+						&& trailCells.stream()
+								.noneMatch(pos ->
+										!pos.equals(
+												preservedSnow)
+										&& helper
+												.getLevel()
+												.getBlockState(
+														pos)
+												.is(Blocks
+														.SNOW)),
+				"Ice-Cream Golem did not translate only its three fresh Snow trail cells to Icing");
+		trailCells.forEach(pos ->
+				helper.getLevel().setBlock(pos,
+						Blocks.AIR.defaultBlockState(),
+						3));
+
+		ServerLevel nether = helper.getLevel()
+				.getServer().getLevel(Level.NETHER);
+		require(helper, nether != null,
+				"Could not inspect Ice-Cream Golem hot-biome melting");
+		BlockPos hotPos = null;
+		for (int x = -128; x <= 128
+				&& hotPos == null; x += 16) {
+			for (int z = -128; z <= 128
+					&& hotPos == null; z += 16) {
+				BlockPos candidate =
+						new BlockPos(x, 64, z);
+				if (nether.getBiome(candidate)
+						.value()
+						.shouldSnowGolemBurn(
+								candidate)) {
+					hotPos = candidate;
+				}
+			}
+		}
+		require(helper, hotPos != null,
+				"Could not find a hot CakeWorld Nether biome for Ice-Cream Golem melting");
+		IceCreamGolemProbe melting =
+				new IceCreamGolemProbe(nether);
+		melting.setNoAi(true);
+		melting.setPos(hotPos.getX(),
+				hotPos.getY(), hotPos.getZ());
+		melting.setHealth(4.0F);
+		melting.aiStep();
+		require(helper,
+				close(melting.getHealth(), 3.0D),
+				"Ice-Cream Golem did not retain exact one-point-per-step hot-biome melting");
+
+		BlockPos attackCenter = trailCenter;
+		golem.setPos(attackCenter.getX(),
+				attackCenter.getY(),
+				attackCenter.getZ());
+		golem.clearLastSound();
+		CinnamonSpark cinnamon =
+				CakeWorldEntities.CINNAMON_SPARK.get()
+						.create(helper.getLevel());
+		require(helper, cinnamon != null,
+				"Could not create Ice-Cream Golem Blaze-role target");
+		cinnamon.setPos(attackCenter.getX() + 5.0D,
+				attackCenter.getY(),
+				attackCenter.getZ());
+		golem.performRangedAttack(cinnamon, 1.0F);
+		Snowball fired = helper.getLevel()
+				.getEntitiesOfClass(Snowball.class,
+						new AABB(attackCenter)
+								.inflate(8.0D),
+						projectile -> projectile
+								.getOwner() == golem)
+				.stream().findFirst().orElse(null);
+		require(helper,
+				fired != null
+						&& fired.getType()
+								== EntityType.SNOWBALL
+						&& fired.getDeltaMovement()
+								.length() > 1.3D
+						&& fired.getDeltaMovement()
+								.length() < 1.9D
+						&& golem.lastSound()
+								== SoundEvents
+										.SNOW_GOLEM_SHOOT,
+				"Ice-Cream Golem lost its exact vanilla Snowball, trajectory or firing sound");
+		fired.discard();
+
+		cinnamon.setHealth(20.0F);
+		cinnamon.invulnerableTime = 0;
+		cinnamon.removeAllEffects();
+		SnowballProbe safeScoop =
+				new SnowballProbe(
+						helper.getLevel(), golem);
+		safeScoop.hit(cinnamon);
+		require(helper,
+				close(cinnamon.getHealth(), 20.0D)
+						&& cinnamon.hasEffect(
+								MobEffects
+										.MOVEMENT_SLOWDOWN)
+						&& cinnamon.hasEffect(
+								MobEffects.GLOWING)
+						&& cinnamon.hasEffect(
+								MobEffects.WEAKNESS),
+				"Normal Ice-Cream Golem scoop did not cancel Blaze-family damage and apply visible inconvenience");
+
+		Pig ordinaryOwner =
+				EntityType.PIG.create(helper.getLevel());
+		require(helper, ordinaryOwner != null,
+				"Could not create ordinary Snowball owner");
+		cinnamon.removeAllEffects();
+		cinnamon.setHealth(20.0F);
+		cinnamon.invulnerableTime = 0;
+		SnowballProbe vanillaControl =
+				new SnowballProbe(
+						helper.getLevel(),
+						ordinaryOwner);
+		vanillaControl.hit(cinnamon);
+		require(helper,
+				close(cinnamon.getHealth(), 17.0D),
+				"Vanilla Snowball control no longer proves the exact three-point Blaze-family damage");
+
+		cinnamon.removeAllEffects();
+		LivingAttackEvent hardHit =
+				new LivingAttackEvent(cinnamon,
+						DamageSource.thrown(
+								safeScoop, golem),
+						3.0F);
+		IceCreamGolemProjectileSafety
+				.applyForDifficulty(
+						hardHit, Difficulty.HARD);
+		require(helper,
+				!hardHit.isCanceled()
+						&& close(hardHit.getAmount(),
+								3.0D)
+						&& cinnamon.getActiveEffects()
+								.isEmpty(),
+				"Hard Ice-Cream Golem scoop did not remain an unmodified three-point vanilla Blaze-family hit");
+
+		BlockPos conversionPos = trailCenter;
+		ResourceLocation conversionBiome =
+				helper.getLevel()
+						.getBiome(conversionPos)
+						.unwrapKey()
+						.map(key -> key.location())
+						.orElse(null);
+		require(helper,
+				conversionBiome != null
+						&& CakeWorld.MODID.equals(
+								conversionBiome
+										.getNamespace()),
+				"Ice-Cream Golem fixture is not in local CakeWorld terrain: "
+						+ conversionBiome);
+		SnowGolem literal =
+				EntityType.SNOW_GOLEM.create(
+						helper.getLevel());
+		Boat boat = EntityType.BOAT.create(
+				helper.getLevel());
+		Pig passenger =
+				EntityType.PIG.create(helper.getLevel());
+		Pig leashHolder =
+				EntityType.PIG.create(helper.getLevel());
+		require(helper,
+				literal != null && boat != null
+						&& passenger != null
+						&& leashHolder != null,
+				"Could not create Snow Golem conversion fixtures");
+		literal.setPos(conversionPos.getX(),
+				conversionPos.getY(),
+				conversionPos.getZ());
+		literal.setHealth(3.0F);
+		literal.setPumpkin(false);
+		literal.setCustomName(new TextComponent(
+				"Vanilla Swirl"));
+		literal.setPersistenceRequired();
+		literal.setNoAi(true);
+		literal.setInvulnerable(true);
+		literal.invulnerableTime = 37;
+		boat.setPos(conversionPos.getX(),
+				conversionPos.getY(),
+				conversionPos.getZ());
+		passenger.setPos(conversionPos.getX(),
+				conversionPos.getY(),
+				conversionPos.getZ());
+		leashHolder.setPos(conversionPos.getX() + 1.0D,
+				conversionPos.getY(),
+				conversionPos.getZ());
+		helper.getLevel().addFreshEntity(boat);
+		helper.getLevel().addFreshEntity(passenger);
+		helper.getLevel().addFreshEntity(leashHolder);
+		helper.getLevel().addFreshEntity(literal);
+		literal.startRiding(boat, true);
+		passenger.startRiding(literal, true);
+		literal.moveTo(conversionPos.getX(),
+				conversionPos.getY(),
+				conversionPos.getZ(), 31.0F, 0.0F);
+		IceCreamGolem converted =
+				CakeWorldSnowGolemReplacement
+						.replaceIfInCakeWorldBiome(
+								helper.getLevel(),
+								literal);
+		String conversionState = converted == null
+				? "converted=null, biome="
+						+ helper.getLevel()
+								.getBiome(
+										literal
+												.blockPosition())
+								.unwrapKey()
+								.map(key -> key
+										.location())
+								.orElse(null)
+				: "health=" + converted.getHealth()
+						+ ", pumpkin="
+						+ converted.hasPumpkin()
+						+ ", name="
+						+ converted.getName()
+								.getString()
+						+ ", persistent="
+						+ converted
+								.isPersistenceRequired()
+						+ ", noAi="
+						+ converted.isNoAi()
+						+ ", invulnerable="
+						+ converted.isInvulnerable()
+						+ ", invulnerableTime="
+						+ converted.invulnerableTime
+						+ ", vehicle="
+						+ converted.getVehicle()
+						+ ", passengerVehicle="
+						+ passenger.getVehicle()
+						+ ", passengers="
+						+ converted.getPassengers()
+						+ ", leash="
+						+ converted.getLeashHolder();
+		require(helper,
+				converted != null
+						&& literal.isRemoved()
+						&& converted.getType()
+								== CakeWorldEntities
+										.ICE_CREAM_GOLEM
+										.get()
+						&& close(converted.getHealth(),
+								3.0D)
+						&& !converted.hasPumpkin()
+						&& "Vanilla Swirl".equals(
+								converted.getName()
+										.getString())
+						&& converted
+								.isPersistenceRequired()
+						&& converted.isNoAi()
+						&& converted.isInvulnerable()
+						&& converted.invulnerableTime
+								== 37
+						&& converted.getVehicle()
+								== boat
+						&& passenger.getVehicle()
+								== converted
+						&& converted.getPassengers()
+								.contains(passenger),
+				"Fresh literal Snow Golem conversion lost health, pumpkin, state, invulnerability, vehicle or passenger: "
+						+ conversionState);
+		passenger.discard();
+		converted.discard();
+		boat.discard();
+
+		SnowGolem leashedLiteral =
+				EntityType.SNOW_GOLEM.create(
+						helper.getLevel());
+		require(helper, leashedLiteral != null,
+				"Could not create leashed Snow Golem conversion fixture");
+		leashedLiteral.setPos(conversionPos.getX(),
+				conversionPos.getY(),
+				conversionPos.getZ());
+		helper.getLevel().addFreshEntity(
+				leashedLiteral);
+		leashedLiteral.setLeashedTo(
+				leashHolder, true);
+		IceCreamGolem leashedConverted =
+				CakeWorldSnowGolemReplacement
+						.replaceIfInCakeWorldBiome(
+								helper.getLevel(),
+								leashedLiteral);
+		require(helper,
+				leashedConverted != null
+						&& leashedLiteral.isRemoved()
+						&& leashedConverted
+								.getLeashHolder()
+								== leashHolder,
+				"Fresh literal Snow Golem conversion lost a valid leash relationship");
+		leashedConverted.discard();
+		leashHolder.discard();
+
+		Registry<Biome> biomes = helper.getLevel()
+				.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY);
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS
+						.getId())) {
+			Biome biome = biomes.get(biomeId);
+			require(helper,
+					biome != null
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory
+													.MISC)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType
+															.SNOW_GOLEM
+											|| spawn.type
+													== CakeWorldEntities
+															.ICE_CREAM_GOLEM
+															.get()),
+					"Snow Golem role leaked into ordinary biome spawning in "
+							+ biomeId);
+		}
+		Advancement summonIronGolem =
+				helper.getLevel().getServer()
+						.getAdvancements()
+						.getAdvancement(
+								new ResourceLocation(
+										"minecraft",
+										"adventure/summon_iron_golem"));
+		require(helper,
+				SpawnPlacements.getPlacementType(
+								CakeWorldEntities
+										.ICE_CREAM_GOLEM
+										.get())
+								== SpawnPlacements
+										.getPlacementType(
+												EntityType
+														.SNOW_GOLEM)
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+												.ICE_CREAM_GOLEM
+												.get())
+								== SpawnPlacements
+										.getHeightmapType(
+												EntityType
+														.SNOW_GOLEM)
+						&& golem.getLootTableId()
+								.equals(new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/ice_cream_golem"))
+						&& CakeWorldItems
+								.ICE_CREAM_GOLEM_SPAWN_EGG
+								.isPresent()
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+												.ICE_CREAM_GOLEM
+												.get())
+								== null
+						&& summonIronGolem != null
+						&& summonIronGolem.getCriteria()
+								.size() == 1
+						&& summonIronGolem.getCriteria()
+								.containsKey(
+										"summoned_golem"),
+				"Ice-Cream Golem lost exact dormant placement, loot, egg, no-mimic or no-invented-advancement contract");
+
+		BlockPos buildBottom =
+				conversionPos.above(5);
+		helper.getLevel().setBlock(buildBottom,
+				Blocks.SNOW_BLOCK
+						.defaultBlockState(), 3);
+		helper.getLevel().setBlock(
+				buildBottom.above(),
+				Blocks.SNOW_BLOCK
+						.defaultBlockState(), 3);
+		helper.getLevel().setBlock(
+				buildBottom.above(2),
+				Blocks.CARVED_PUMPKIN
+						.defaultBlockState(), 3);
+		AABB buildArea = new AABB(buildBottom)
+				.inflate(3.0D);
+		require(helper,
+				helper.getLevel()
+								.getEntitiesOfClass(
+										SnowGolem.class,
+										buildArea,
+										entity -> entity
+												.getType()
+												== EntityType
+														.SNOW_GOLEM)
+								.size() == 1
+						&& helper.getLevel()
+								.isEmptyBlock(buildBottom)
+						&& helper.getLevel()
+								.isEmptyBlock(
+										buildBottom
+												.above())
+						&& helper.getLevel()
+								.isEmptyBlock(
+										buildBottom
+												.above(2)),
+				"Vanilla two-Snow-Block and carved-pumpkin construction did not create and consume the literal Snow Golem pattern");
+		helper.runAfterDelay(4, () -> {
+			List<IceCreamGolem> built =
+					helper.getLevel()
+							.getEntitiesOfClass(
+									IceCreamGolem.class,
+									buildArea);
+			require(helper,
+					built.size() == 1
+							&& built.get(0).hasPumpkin()
+							&& helper.getLevel()
+									.getEntitiesOfClass(
+											SnowGolem.class,
+											buildArea,
+											entity -> entity
+													.getType()
+													== EntityType
+															.SNOW_GOLEM)
+									.isEmpty(),
+					"Fresh player-built Snow Golem did not defer-convert to exactly one pumpkin-wearing Ice-Cream Golem");
+			built.forEach(Entity::discard);
+			helper.succeed();
+		});
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 200)
 	public static void fudgeFolkKeepPiglinSocietyBarterAndSafePeril(
 			GameTestHelper helper) {
 		FudgeFolkProbe folk =
@@ -18565,6 +19158,103 @@ public final class FirstBiteGameTests {
 				net.minecraft.sounds.SoundEvent sound,
 				float volume, float pitch) {
 			lastSound = sound;
+		}
+	}
+
+	private static final class IceCreamGolemProbe
+			extends IceCreamGolem {
+		private net.minecraft.sounds.SoundEvent lastSound;
+
+		private IceCreamGolemProbe(Level level) {
+			super(CakeWorldEntities.ICE_CREAM_GOLEM
+					.get(), level);
+		}
+
+		private int getExperienceValue() {
+			return getExperienceReward(null);
+		}
+
+		private float standingEyeHeight() {
+			return getStandingEyeHeight(Pose.STANDING,
+					getDimensions(Pose.STANDING));
+		}
+
+		private int goalPriority(String name) {
+			return goalSelector.getAvailableGoals()
+					.stream()
+					.filter(wrapped -> name.equals(
+							wrapped.getGoal()
+									.getClass()
+									.getSimpleName()))
+					.mapToInt(WrappedGoal::getPriority)
+					.findFirst().orElse(-1);
+		}
+
+		private int targetGoalPriority(String name) {
+			return targetSelector.getAvailableGoals()
+					.stream()
+					.filter(wrapped -> name.equals(
+							wrapped.getGoal()
+									.getClass()
+									.getSimpleName()))
+					.mapToInt(WrappedGoal::getPriority)
+					.findFirst().orElse(-1);
+		}
+
+		private int targetGoalCount() {
+			return targetSelector.getAvailableGoals()
+					.size();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				ambientSound() {
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				hurtSound() {
+			return getHurtSound(DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				deathSound() {
+			return getDeathSound();
+		}
+
+		private ResourceLocation getLootTableId() {
+			return getLootTable();
+		}
+
+		private boolean despawnsInPeaceful() {
+			return shouldDespawnInPeaceful();
+		}
+
+		private void clearLastSound() {
+			lastSound = null;
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				lastSound() {
+			return lastSound;
+		}
+
+		@Override
+		public void playSound(
+				net.minecraft.sounds.SoundEvent sound,
+				float volume, float pitch) {
+			lastSound = sound;
+		}
+	}
+
+	private static final class SnowballProbe
+			extends Snowball {
+		private SnowballProbe(
+				Level level, LivingEntity owner) {
+			super(level, owner);
+		}
+
+		private void hit(Entity target) {
+			onHitEntity(new EntityHitResult(target));
 		}
 	}
 

@@ -28,6 +28,7 @@ import com.mcmoddev.cakeworld.entity.GlowJelly;
 import com.mcmoddev.cakeworld.entity.GummyBunny;
 import com.mcmoddev.cakeworld.entity.GumballGuardian;
 import com.mcmoddev.cakeworld.entity.HotFudgeBlob;
+import com.mcmoddev.cakeworld.entity.IceCreamGolem;
 import com.mcmoddev.cakeworld.entity.JawbreakerGuardian;
 import com.mcmoddev.cakeworld.entity.JellyBlob;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
@@ -83,6 +84,7 @@ import net.minecraft.world.entity.animal.PolarBear;
 import net.minecraft.world.entity.animal.Rabbit;
 import net.minecraft.world.entity.animal.Salmon;
 import net.minecraft.world.entity.animal.Sheep;
+import net.minecraft.world.entity.animal.SnowGolem;
 import net.minecraft.world.entity.animal.AbstractFish;
 import net.minecraft.world.entity.animal.goat.Goat;
 import net.minecraft.world.entity.animal.horse.AbstractChestedHorse;
@@ -390,6 +392,15 @@ public final class CakeWorldEntities {
 							MobCategory.MONSTER)
 							.sized(2.04F, 2.04F)
 							.clientTrackingRange(10));
+	public static final RegistryObject<EntityType<IceCreamGolem>>
+			ICE_CREAM_GOLEM = entity("ice_cream_golem",
+					EntityType.Builder.of(
+							IceCreamGolem::new,
+							MobCategory.MISC)
+							.immuneTo(
+									Blocks.POWDER_SNOW)
+							.sized(0.7F, 1.9F)
+							.clientTrackingRange(8));
 	public static final RegistryObject<EntityType<SugarMite>> SUGAR_MITE =
 			entity("sugar_mite",
 					EntityType.Builder.of(SugarMite::new,
@@ -560,6 +571,8 @@ public final class CakeWorldEntities {
 				SkeletonHorse.createAttributes().build());
 		event.put(JELLY_BLOB.get(),
 				Monster.createMonsterAttributes().build());
+		event.put(ICE_CREAM_GOLEM.get(),
+				SnowGolem.createAttributes().build());
 		event.put(SUGAR_MITE.get(),
 				Endermite.createAttributes().build());
 		event.put(SOUR_SORCERER.get(),
@@ -737,6 +750,11 @@ public final class CakeWorldEntities {
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					JellyBlob
 							::checkJellyBlobSpawnRules);
+			SpawnPlacements.register(
+					ICE_CREAM_GOLEM.get(),
+					SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					Mob::checkMobSpawnRules);
 			SpawnPlacements.register(SUGAR_MITE.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,

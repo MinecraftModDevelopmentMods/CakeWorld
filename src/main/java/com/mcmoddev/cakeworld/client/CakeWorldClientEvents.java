@@ -50,6 +50,7 @@ import net.minecraft.client.renderer.entity.ShulkerRenderer;
 import net.minecraft.client.renderer.entity.SilverfishRenderer;
 import net.minecraft.client.renderer.entity.SkeletonRenderer;
 import net.minecraft.client.renderer.entity.SlimeRenderer;
+import net.minecraft.client.renderer.entity.SnowGolemRenderer;
 import net.minecraft.client.renderer.entity.ZombieRenderer;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.client.renderer.entity.ThrownTridentRenderer;
@@ -174,6 +175,9 @@ public final class CakeWorldClientEvents {
 		event.registerEntityRenderer(
 				CakeWorldEntities.JELLY_BLOB.get(),
 				SlimeRenderer::new);
+		event.registerEntityRenderer(
+				CakeWorldEntities.ICE_CREAM_GOLEM.get(),
+				SnowGolemRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.SUGAR_MITE.get(),
 				EndermiteRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.SOUR_SORCERER.get(),
