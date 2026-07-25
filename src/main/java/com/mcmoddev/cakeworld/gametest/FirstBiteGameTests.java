@@ -1,6 +1,7 @@
 package com.mcmoddev.cakeworld.gametest;
 
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -56,6 +57,9 @@ import com.mcmoddev.cakeworld.entity.FudgeFolk;
 import com.mcmoddev.cakeworld.entity.FizzballFish;
 import com.mcmoddev.cakeworld.entity.FizzballFishDamageSafety;
 import com.mcmoddev.cakeworld.entity.GingerbreadPony;
+import com.mcmoddev.cakeworld.entity.GingerbreadStomper;
+import com.mcmoddev.cakeworld.entity.GingerbreadStomperDamageSafety;
+import com.mcmoddev.cakeworld.entity.GingerbreadStomperGriefSafety;
 import com.mcmoddev.cakeworld.entity.HotFudgeBlob;
 import com.mcmoddev.cakeworld.entity.HotFudgeBlobDamageSafety;
 import com.mcmoddev.cakeworld.entity.JawbreakerGuardian;
@@ -96,6 +100,7 @@ import com.mcmoddev.cakeworld.item.JellylotlBucketItem;
 import com.mcmoddev.cakeworld.world.CakeWorldPiglinReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldPiglinBruteReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldPillagerReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldRavagerReplacement;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -135,6 +140,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.GlowSquid;
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.AgeableMob;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.MobType;
@@ -267,10 +273,13 @@ import net.minecraftforge.common.world.BiomeGenerationSettingsBuilder;
 import net.minecraftforge.common.world.MobSpawnSettingsBuilder;
 import net.minecraftforge.event.ForgeEventFactory;
 import net.minecraftforge.event.entity.EntityMountEvent;
+import net.minecraftforge.event.entity.EntityMobGriefingEvent;
+import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.common.util.FakePlayerFactory;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -12549,6 +12558,757 @@ public final class FirstBiteGameTests {
 	}
 
 	@GameTest(template = EMPTY, timeoutTicks = 200)
+	public static void gingerbreadStompersKeepRaidRoarAndSafeObstacles(
+			GameTestHelper helper) {
+		GingerbreadStomperProbe stomper =
+				new GingerbreadStomperProbe(
+						helper.getLevel());
+		require(helper,
+				stomper instanceof Ravager
+						&& stomper.getType()
+								== CakeWorldEntities
+										.GINGERBREAD_STOMPER
+										.get()
+						&& stomper.getType().getCategory()
+								== MobCategory.MONSTER
+						&& close(stomper.getMaxHealth(),
+								100.0D)
+						&& close(stomper
+								.getAttributeValue(
+										Attributes
+												.MOVEMENT_SPEED),
+								0.3D)
+						&& close(stomper
+								.getAttributeValue(
+										Attributes
+												.KNOCKBACK_RESISTANCE),
+								0.75D)
+						&& close(stomper
+								.getAttributeValue(
+										Attributes
+												.ATTACK_DAMAGE),
+								12.0D)
+						&& close(stomper
+								.getAttributeValue(
+										Attributes
+												.ATTACK_KNOCKBACK),
+								1.5D)
+						&& close(stomper
+								.getAttributeValue(
+										Attributes
+												.FOLLOW_RANGE),
+								32.0D)
+						&& close(stomper.getDimensions(
+								Pose.STANDING).width,
+								1.95D)
+						&& close(stomper.getDimensions(
+								Pose.STANDING).height,
+								2.2D)
+						&& stomper.getType()
+								.clientTrackingRange()
+								== 10
+						&& close(stomper.maxUpStep, 1.0D)
+						&& stomper.getExperienceValue()
+								== 20
+						&& close(stomper
+								.getPassengersRidingOffset(),
+								2.1D)
+						&& stomper.getMaxHeadYRot() == 45
+						&& stomper.getLootTableId()
+								.equals(new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/gingerbread_stomper")),
+				"Gingerbread Stomper lost the exact Ravager body, attributes, tracking, rider offset, XP or loot roles");
+
+		require(helper,
+				stomper.countGoalsNamed("FloatGoal") == 1
+						&& stomper.countGoalsNamed(
+								"RavagerMeleeAttackGoal")
+								== 1
+						&& stomper.countGoalsNamed(
+								"WaterAvoidingRandomStrollGoal")
+								== 1
+						&& stomper.countGoalsNamed(
+								"LookAtPlayerGoal") == 2
+						&& stomper.countTargetGoalsNamed(
+								"HurtByTargetGoal") == 1
+						&& stomper.countTargetGoalsNamed(
+								"NearestAttackableTargetGoal")
+								== 3
+						&& "RavagerNavigation".equals(
+								stomper.getNavigation()
+										.getClass()
+										.getSimpleName())
+						&& !stomper.canBeLeader(),
+				"Gingerbread Stomper lost Ravager movement, melee, look, player, adult-Villager, Golem or no-leader behavior");
+		stomper.runStepSound();
+		require(helper,
+				stomper.ambientSound()
+								== SoundEvents.RAVAGER_AMBIENT
+						&& stomper.hurtSound()
+								== SoundEvents.RAVAGER_HURT
+						&& stomper.deathSound()
+								== SoundEvents.RAVAGER_DEATH
+						&& stomper.getCelebrateSound()
+								== SoundEvents.RAVAGER_CELEBRATE
+						&& stomper.lastSound()
+								== SoundEvents.RAVAGER_STEP,
+				"Gingerbread Stomper lost Ravager ambient, hurt, death, celebration or step cues");
+
+		GingerbreadStomperProbe animation =
+				new GingerbreadStomperProbe(
+						helper.getLevel());
+		CompoundTag animationState =
+				new CompoundTag();
+		animationState.putInt("AttackTick", 7);
+		animationState.putInt("StunTick", 13);
+		animationState.putInt("RoarTick", 17);
+		animation.readAdditionalSaveData(animationState);
+		require(helper,
+				animation.getAttackTick() == 7
+						&& animation.getStunnedTick() == 13
+						&& animation.getRoarTick() == 17,
+				"Gingerbread Stomper did not restore persisted attack, stun and roar animation state");
+		animation.handleEntityEvent((byte)4);
+		require(helper,
+				animation.getAttackTick() == 10
+						&& animation.lastSound()
+								== SoundEvents.RAVAGER_ATTACK,
+				"Gingerbread Stomper lost its visible ten-tick attack cue");
+
+		IronGolem shieldBearer =
+				EntityType.IRON_GOLEM.create(
+						helper.getLevel());
+		require(helper, shieldBearer != null,
+				"Could not create Gingerbread Stomper shield fixture");
+		shieldBearer.setPos(2.0D, 3.0D, 2.0D);
+		stomper.setPos(0.0D, 3.0D, 2.0D);
+		stomper.seedRandom(1978L);
+		for (int attempt = 0;
+				attempt < 32
+						&& stomper.getStunnedTick() == 0;
+				attempt++) {
+			stomper.runBlockedByShield(shieldBearer);
+		}
+		require(helper,
+				stomper.getStunnedTick() == 40
+						&& shieldBearer.hurtMarked
+						&& stomper.lastSound()
+								== SoundEvents.RAVAGER_STUNNED,
+				"Gingerbread Stomper lost the Ravager shield-stun/knockback contract");
+
+		BlockPos anchor = helper.absolutePos(
+				new BlockPos(4, 3, 4));
+		GingerbreadStomperProbe safeRoarer =
+				new GingerbreadStomperProbe(
+						helper.getLevel());
+		Pig safeRoarTarget =
+				EntityType.PIG.create(helper.getLevel());
+		BiscuitBandit safeIllager =
+				CakeWorldEntities.BISCUIT_BANDIT.get()
+						.create(helper.getLevel());
+		require(helper,
+				safeRoarTarget != null
+						&& safeIllager != null,
+				"Could not create Gingerbread Stomper safe-roar fixtures");
+		safeRoarer.setPos(anchor.getX() + 0.5D,
+				anchor.getY(), anchor.getZ() + 0.5D);
+		safeRoarer.setNoAi(true);
+		safeRoarer.setNoGravity(true);
+		safeRoarTarget.setPos(
+				safeRoarer.getX() + 2.0D,
+				safeRoarer.getY(), safeRoarer.getZ());
+		safeRoarTarget.setNoAi(true);
+		safeRoarTarget.setNoGravity(true);
+		safeIllager.setPos(safeRoarer.getX(),
+				safeRoarer.getY(),
+				safeRoarer.getZ() + 2.0D);
+		safeIllager.setNoAi(true);
+		safeIllager.setNoGravity(true);
+		helper.getLevel().addFreshEntity(safeRoarer);
+		helper.getLevel().addFreshEntity(safeRoarTarget);
+		helper.getLevel().addFreshEntity(safeIllager);
+		safeRoarer.handleEntityEvent((byte)39);
+		for (int tick = 0; tick < 50; tick++) {
+			safeRoarer.aiStep();
+		}
+		require(helper,
+				safeRoarer.getRoarTick() == 10
+						&& close(safeRoarTarget
+								.getHealth(),
+								safeRoarTarget
+										.getMaxHealth())
+						&& safeRoarTarget.hasEffect(
+								MobEffects
+										.MOVEMENT_SLOWDOWN)
+						&& safeRoarTarget.hasEffect(
+								MobEffects.SLOW_FALLING)
+						&& safeRoarTarget.hasEffect(
+								MobEffects
+										.FIRE_RESISTANCE)
+						&& safeRoarTarget.getEffect(
+								MobEffects
+										.DAMAGE_RESISTANCE)
+								.getAmplifier() == 4
+						&& safeRoarTarget
+								.getDeltaMovement()
+								.lengthSqr() > 0.01D
+						&& close(safeIllager.getHealth(),
+								safeIllager
+										.getMaxHealth())
+						&& !safeIllager.hasEffect(
+								MobEffects
+										.MOVEMENT_SLOWDOWN)
+						&& safeIllager
+								.getDeltaMovement()
+								.lengthSqr() > 0.01D,
+				"Normal Gingerbread Stomper roar caused health damage, lost its rescue envelope/strong displacement, or treated its Illager rider as prey");
+
+		for (Difficulty difficulty : List.of(
+				Difficulty.PEACEFUL,
+				Difficulty.EASY,
+				Difficulty.NORMAL,
+				Difficulty.HARD)) {
+			LivingHurtEvent policy =
+					new LivingHurtEvent(
+							safeRoarTarget,
+							DamageSource.mobAttack(
+									stomper),
+							12.0F);
+			GingerbreadStomperDamageSafety
+					.applyForDifficulty(
+							policy, difficulty);
+			require(helper,
+					policy.isCanceled()
+							== (difficulty
+									!= Difficulty.HARD),
+					difficulty
+							+ " Gingerbread Stomper hurt policy crossed the Hard-only health-damage boundary");
+
+			EntityMobGriefingEvent grief =
+					new EntityMobGriefingEvent(
+							stomper);
+			GingerbreadStomperGriefSafety
+					.applyForDifficulty(
+							grief, difficulty);
+			require(helper,
+					grief.getResult()
+							== (difficulty
+									== Difficulty.HARD
+											? Event.Result.DEFAULT
+											: Event.Result.DENY),
+					difficulty
+							+ " Gingerbread Stomper grief policy crossed the Hard-only gamerule boundary");
+		}
+
+		Difficulty originalDifficulty =
+				helper.getLevel().getDifficulty();
+		boolean originalMobGriefing =
+				helper.getLevel().getGameRules()
+						.getBoolean(
+								GameRules
+										.RULE_MOBGRIEFING);
+		try {
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.NORMAL, true);
+			GingerbreadStomperProbe safeMelee =
+					new GingerbreadStomperProbe(
+							helper.getLevel());
+			Pig safeMeleeTarget =
+					EntityType.PIG.create(
+							helper.getLevel());
+			require(helper, safeMeleeTarget != null,
+					"Could not create safe Gingerbread Stomper melee target");
+			safeMelee.setPos(anchor.getX() + 8.0D,
+					anchor.getY(), anchor.getZ());
+			safeMeleeTarget.setPos(
+					safeMelee.getX() + 1.5D,
+					safeMelee.getY(),
+					safeMelee.getZ());
+			helper.getLevel().addFreshEntity(
+					safeMelee);
+			helper.getLevel().addFreshEntity(
+					safeMeleeTarget);
+			safeMeleeTarget.setSecondsOnFire(5);
+			safeMeleeTarget.fallDistance = 8.0F;
+			safeMelee.doHurtTarget(
+					safeMeleeTarget);
+			require(helper,
+					close(safeMeleeTarget.getHealth(),
+							safeMeleeTarget
+									.getMaxHealth())
+							&& safeMelee
+									.getAttackTick()
+									== 10
+							&& !safeMeleeTarget
+									.isOnFire()
+							&& close(safeMeleeTarget
+									.fallDistance,
+									0.0D)
+							&& safeMeleeTarget.hasEffect(
+									MobEffects
+											.MOVEMENT_SLOWDOWN)
+							&& safeMeleeTarget.hasEffect(
+									MobEffects
+											.SLOW_FALLING)
+							&& safeMeleeTarget.hasEffect(
+									MobEffects
+											.FIRE_RESISTANCE)
+							&& safeMeleeTarget.getEffect(
+									MobEffects
+											.DAMAGE_RESISTANCE)
+									.getAmplifier() == 4,
+					"Normal Gingerbread Stomper melee caused damage or lost its attack cue and rescue envelope");
+
+			BlockPos safeLeaves = anchor.offset(
+					12, 0, 0);
+			GingerbreadStomperProbe safeObstacle =
+					new GingerbreadStomperProbe(
+							helper.getLevel());
+			safeObstacle.setPos(
+					safeLeaves.getX() + 0.5D,
+					safeLeaves.getY(),
+					safeLeaves.getZ() + 0.5D);
+			safeObstacle.setNoAi(true);
+			safeObstacle.horizontalCollision = true;
+			safeObstacle.setOnGround(true);
+			safeObstacle.setDeltaMovement(
+					Vec3.ZERO);
+			helper.getLevel().setBlock(safeLeaves,
+					Blocks.OAK_LEAVES
+							.defaultBlockState(),
+					3);
+			helper.getLevel().addFreshEntity(
+					safeObstacle);
+			safeObstacle.aiStep();
+			require(helper,
+					helper.getLevel().getBlockState(
+							safeLeaves).is(
+									Blocks.OAK_LEAVES)
+							&& safeObstacle
+									.getDeltaMovement().y
+									> 0.0D,
+					"Normal Gingerbread Stomper destroyed a possession or failed its safe obstacle hop");
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			helper.getLevel().getGameRules()
+					.getRule(GameRules.RULE_MOBGRIEFING)
+					.set(true,
+							helper.getLevel()
+									.getServer());
+			GingerbreadStomperProbe hardMelee =
+					new GingerbreadStomperProbe(
+							helper.getLevel());
+			IronGolem hardMeleeTarget =
+					EntityType.IRON_GOLEM.create(
+							helper.getLevel());
+			require(helper, hardMeleeTarget != null,
+					"Could not create Hard Gingerbread Stomper melee target");
+			hardMelee.setPos(anchor.getX() + 18.0D,
+					anchor.getY(), anchor.getZ());
+			hardMeleeTarget.setPos(
+					hardMelee.getX() + 1.5D,
+					hardMelee.getY(),
+					hardMelee.getZ());
+			helper.getLevel().addFreshEntity(
+					hardMelee);
+			helper.getLevel().addFreshEntity(
+					hardMeleeTarget);
+			hardMelee.doHurtTarget(
+					hardMeleeTarget);
+			require(helper,
+					close(hardMeleeTarget.getHealth(),
+							88.0D),
+					"Hard Gingerbread Stomper melee did not retain exact 12-point damage: "
+							+ hardMeleeTarget
+									.getHealth());
+
+			GingerbreadStomperProbe hardRoarer =
+					new GingerbreadStomperProbe(
+							helper.getLevel());
+			IronGolem hardRoarTarget =
+					EntityType.IRON_GOLEM.create(
+							helper.getLevel());
+			require(helper, hardRoarTarget != null,
+					"Could not create Hard Gingerbread Stomper roar target");
+			hardRoarer.setPos(
+					anchor.getX() + 24.0D,
+					anchor.getY(), anchor.getZ());
+			hardRoarer.setNoAi(true);
+			hardRoarer.setNoGravity(true);
+			hardRoarTarget.setPos(
+					hardRoarer.getX() + 2.0D,
+					hardRoarer.getY(),
+					hardRoarer.getZ());
+			hardRoarTarget.setNoAi(true);
+			hardRoarTarget.setNoGravity(true);
+			helper.getLevel().addFreshEntity(
+					hardRoarer);
+			helper.getLevel().addFreshEntity(
+					hardRoarTarget);
+			hardRoarer.handleEntityEvent((byte)39);
+			for (int tick = 0; tick < 50;
+					tick++) {
+				hardRoarer.aiStep();
+			}
+			require(helper,
+					close(hardRoarTarget.getHealth(),
+							94.0D)
+							&& hardRoarTarget
+									.getDeltaMovement()
+									.lengthSqr()
+									> 0.01D,
+					"Hard Gingerbread Stomper roar did not retain exact six-point damage and strong displacement: "
+							+ hardRoarTarget
+									.getHealth());
+
+			BlockPos hardLeaves = anchor.offset(
+					30, 0, 0);
+			GingerbreadStomperProbe hardObstacle =
+					new GingerbreadStomperProbe(
+							helper.getLevel());
+			hardObstacle.setPos(
+					hardLeaves.getX() + 0.5D,
+					hardLeaves.getY(),
+					hardLeaves.getZ() + 0.5D);
+			hardObstacle.setNoAi(true);
+			hardObstacle.horizontalCollision = true;
+			hardObstacle.setOnGround(true);
+			helper.getLevel().setBlock(hardLeaves,
+					Blocks.OAK_LEAVES
+							.defaultBlockState(),
+					3);
+			helper.getLevel().addFreshEntity(
+					hardObstacle);
+			hardObstacle.aiStep();
+			require(helper,
+					helper.getLevel().getBlockState(
+							hardLeaves).isAir(),
+					"Hard Gingerbread Stomper did not retain mobGriefing-controlled leaf destruction");
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.PEACEFUL, true);
+			GingerbreadStomperProbe peaceful =
+					new GingerbreadStomperProbe(
+							helper.getLevel());
+			peaceful.setPos(anchor.getX() + 36.0D,
+					anchor.getY(), anchor.getZ());
+			helper.getLevel().addFreshEntity(peaceful);
+			peaceful.checkDespawn();
+			require(helper,
+					peaceful.isRemoved()
+							&& peaceful
+									.despawnsInPeaceful(),
+					"Peaceful Gingerbread Stomper did not retain vanilla Monster removal");
+		} finally {
+			helper.getLevel().getGameRules()
+					.getRule(GameRules.RULE_MOBGRIEFING)
+					.set(originalMobGriefing,
+							helper.getLevel()
+									.getServer());
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		SpawnPlacements.Type placementType =
+				SpawnPlacements.getPlacementType(
+						CakeWorldEntities
+								.GINGERBREAD_STOMPER
+								.get());
+		Heightmap.Types heightmapType =
+				SpawnPlacements.getHeightmapType(
+						CakeWorldEntities
+								.GINGERBREAD_STOMPER
+								.get());
+		Registry<Biome> biomes = helper.getLevel()
+				.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY);
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS.getId())) {
+			Biome biome = biomes.get(biomeId);
+			require(helper,
+					biome != null
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory.MONSTER)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType
+															.RAVAGER
+											|| spawn.type
+													== CakeWorldEntities
+															.GINGERBREAD_STOMPER
+															.get()),
+					"Open-biome Ravager/Gingerbread Stomper spawning leaked into "
+							+ biomeId);
+		}
+		require(helper,
+				placementType
+								== SpawnPlacements.Type
+										.NO_RESTRICTIONS
+						&& heightmapType
+								== Heightmap.Types
+										.MOTION_BLOCKING_NO_LEAVES
+						&& CakeWorldItems
+								.GINGERBREAD_STOMPER_SPAWN_EGG
+								.isPresent()
+						&& CakeWorldEntities
+								.GINGERBREAD_STOMPER
+								.get().is(
+										net.minecraft.tags
+												.EntityTypeTags
+												.RAIDERS)
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+												.GINGERBREAD_STOMPER
+												.get())
+								== SoundEvents
+										.PARROT_IMITATE_RAVAGER,
+				"Gingerbread Stomper lost exact placement metadata, Raiders tag, egg or Lollipop Lorikeet mimic role");
+
+		try {
+			Field raidTypeField =
+					Raid.RaiderType.class.getDeclaredField(
+							"entityType");
+			Field wavesField =
+					Raid.RaiderType.class.getDeclaredField(
+							"spawnsPerWaveBeforeBonus");
+			raidTypeField.setAccessible(true);
+			wavesField.setAccessible(true);
+			require(helper,
+					raidTypeField.get(
+							Raid.RaiderType.RAVAGER)
+								== EntityType.RAVAGER
+							&& Arrays.equals(
+									(int[])wavesField.get(
+											Raid.RaiderType
+													.RAVAGER),
+									new int[] {0, 0, 0,
+											1, 0, 1,
+											0, 2}),
+					"Gingerbread Stomper lost the literal vanilla Ravager raid source or exact wave counts");
+		} catch (ReflectiveOperationException exception) {
+			throw new IllegalStateException(
+					"Could not inspect the vanilla Ravager raid source",
+					exception);
+		}
+
+		BlockPos cakeWorldPos =
+				findCakeWorldBiomePosition(
+						helper, anchor, 256);
+		require(helper, cakeWorldPos != null,
+				"Could not locate CakeWorld terrain for literal Ravager conversion");
+		Ravager literalRavager =
+				EntityType.RAVAGER.create(
+						helper.getLevel());
+		Pillager literalRider =
+				EntityType.PILLAGER.create(
+						helper.getLevel());
+		require(helper,
+				literalRavager != null
+						&& literalRider != null,
+				"Could not create literal Ravager raid-mount fixtures");
+		literalRavager.setPos(
+				cakeWorldPos.getX() + 0.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		literalRavager.setNoAi(true);
+		literalRavager.setHealth(83.0F);
+		literalRavager.setCustomName(
+				new TextComponent(
+						"Grand Gingerbread Stomper"));
+		literalRavager.setPersistenceRequired();
+		CompoundTag literalAnimation =
+				new CompoundTag();
+		literalAnimation.putInt("AttackTick", 7);
+		literalAnimation.putInt("StunTick", 13);
+		literalAnimation.putInt("RoarTick", 17);
+		literalRavager.readAdditionalSaveData(
+				literalAnimation);
+		// The animation-only read intentionally exercises Ravager's
+		// persisted counters; restore Mob flags that an absent NBT key
+		// correctly resets to its vanilla default.
+		literalRavager.setNoAi(true);
+		literalRavager.setPersistenceRequired();
+		helper.getLevel().addFreshEntity(
+				literalRavager);
+		literalRider.setPos(
+				literalRavager.getX(),
+				literalRavager.getY(),
+				literalRavager.getZ());
+		literalRider.setNoAi(true);
+		literalRider.setCustomName(
+				new TextComponent(
+						"Stomper Biscuit Rider"));
+		helper.getLevel().addFreshEntity(
+				literalRider);
+		Raid transferRaid = new Raid(197845,
+				helper.getLevel(), cakeWorldPos);
+		transferRaid.joinRaid(5, literalRavager,
+				null, true);
+		transferRaid.joinRaid(5, literalRider,
+				null, true);
+		literalRider.startRiding(
+				literalRavager, true);
+		GingerbreadStomper replacement =
+				CakeWorldRavagerReplacement
+						.replaceIfInCakeWorldBiome(
+								helper.getLevel(),
+								literalRavager);
+		require(helper,
+				literalRavager.isRemoved()
+						&& replacement != null
+						&& replacement.isNoAi()
+						&& replacement
+								.isPersistenceRequired()
+						&& close(replacement.getHealth(),
+								83.0D)
+						&& "Grand Gingerbread Stomper"
+								.equals(replacement
+										.getName()
+										.getString())
+						&& replacement
+								.getAttackTick() == 7
+						&& replacement
+								.getStunnedTick() == 13
+						&& replacement
+								.getRoarTick() == 17
+						&& replacement
+								.getCurrentRaid()
+								== transferRaid
+						&& replacement.getWave() == 5
+						&& literalRider.getVehicle()
+								== replacement
+						&& replacement.getPassengers()
+								.contains(
+										literalRider)
+						&& transferRaid
+								.getTotalRaidersAlive()
+								== 2,
+				"Fresh literal Ravager conversion lost NBT, animation, raid, wave or rider state: oldRemoved="
+						+ literalRavager.isRemoved()
+						+ ", replacement="
+						+ replacement
+						+ ", noAi="
+						+ (replacement != null
+								&& replacement.isNoAi())
+						+ ", persistence="
+						+ (replacement != null
+								&& replacement
+										.isPersistenceRequired())
+						+ ", health="
+						+ (replacement == null ? -1.0F
+								: replacement
+										.getHealth())
+						+ ", name="
+						+ (replacement == null ? "<null>"
+								: replacement.getName()
+										.getString())
+						+ ", animation="
+						+ (replacement == null ? "<null>"
+								: replacement
+										.getAttackTick()
+										+ "/"
+										+ replacement
+												.getStunnedTick()
+										+ "/"
+										+ replacement
+												.getRoarTick())
+						+ ", raid="
+						+ (replacement == null ? "<null>"
+								: replacement
+										.getCurrentRaid())
+						+ ", wave="
+						+ (replacement == null ? -1
+								: replacement
+										.getWave())
+						+ ", riderVehicle="
+						+ literalRider.getVehicle()
+						+ ", passenger="
+						+ (replacement != null
+								&& replacement
+										.getPassengers()
+										.contains(
+												literalRider))
+						+ ", raidAlive="
+						+ transferRaid
+								.getTotalRaidersAlive());
+		BiscuitBandit riderReplacement =
+				CakeWorldPillagerReplacement
+						.replaceIfInCakeWorldBiome(
+								helper.getLevel(),
+								literalRider);
+		require(helper,
+				literalRider.isRemoved()
+						&& riderReplacement != null
+						&& riderReplacement
+								.getCurrentRaid()
+								== transferRaid
+						&& riderReplacement
+								.getWave() == 5
+						&& riderReplacement
+								.getVehicle()
+								== replacement
+						&& replacement.getPassengers()
+								.contains(
+										riderReplacement)
+						&& transferRaid
+								.getTotalRaidersAlive()
+								== 2
+						&& "Stomper Biscuit Rider"
+								.equals(riderReplacement
+										.getName()
+										.getString()),
+				"Mounted raid conversion lost the Biscuit rider's raid, wave, mount or NBT state");
+
+		ServerPlayer advancementPlayer =
+				new ServerPlayer(
+						helper.getLevel()
+								.getServer(),
+						helper.getLevel(),
+						new GameProfile(
+								UUID.fromString(
+										"1978feed-feed-4bad-babe-1978feed2045"),
+								"CakeWorldStomperRoleTest"));
+		GingerbreadStomper roleVictim =
+				CakeWorldEntities.GINGERBREAD_STOMPER
+						.get().create(
+								helper.getLevel());
+		require(helper, roleVictim != null,
+				"Could not create Gingerbread Stomper advancement fixture");
+		VanillaRoleAdvancements.onDeath(
+				new LivingDeathEvent(roleVictim,
+						DamageSource.playerAttack(
+								advancementPlayer)));
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:adventure/kill_all_mobs",
+				"minecraft:ravager");
+
+		safeRoarer.discard();
+		safeRoarTarget.discard();
+		safeIllager.discard();
+		shieldBearer.discard();
+		replacement.discard();
+		riderReplacement.discard();
+		roleVictim.discard();
+		helper.getLevel().setBlock(
+				anchor.offset(12, 0, 0),
+				Blocks.AIR.defaultBlockState(), 3);
+		helper.getLevel().setBlock(
+				anchor.offset(30, 0, 0),
+				Blocks.AIR.defaultBlockState(), 3);
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 200)
 	public static void fudgeFolkKeepPiglinSocietyBarterAndSafePeril(
 			GameTestHelper helper) {
 		FudgeFolkProbe folk =
@@ -13559,6 +14319,89 @@ public final class FirstBiteGameTests {
 				}
 			}
 			return false;
+		}
+
+		@Override
+		public void playSound(
+				net.minecraft.sounds.SoundEvent sound,
+				float volume, float pitch) {
+			lastSound = sound;
+		}
+	}
+
+	private static final class GingerbreadStomperProbe
+			extends GingerbreadStomper {
+		private net.minecraft.sounds.SoundEvent lastSound;
+
+		private GingerbreadStomperProbe(Level level) {
+			super(CakeWorldEntities
+					.GINGERBREAD_STOMPER.get(),
+					level);
+		}
+
+		private int getExperienceValue() {
+			return getExperienceReward(null);
+		}
+
+		private ResourceLocation getLootTableId() {
+			return getLootTable();
+		}
+
+		private net.minecraft.sounds.SoundEvent ambientSound() {
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent hurtSound() {
+			return getHurtSound(
+					DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent deathSound() {
+			return getDeathSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent lastSound() {
+			return lastSound;
+		}
+
+		private void runStepSound() {
+			playStepSound(BlockPos.ZERO,
+					CakeWorldBlocks.GINGERBREAD_BRICKS
+							.get().defaultBlockState());
+		}
+
+		private void runBlockedByShield(
+				LivingEntity blocker) {
+			blockedByShield(blocker);
+		}
+
+		private boolean despawnsInPeaceful() {
+			return shouldDespawnInPeaceful();
+		}
+
+		private void seedRandom(long seed) {
+			random.setSeed(seed);
+		}
+
+		private int countGoalsNamed(String name) {
+			return (int)goalSelector
+					.getAvailableGoals().stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
+		}
+
+		private int countTargetGoalsNamed(
+				String name) {
+			return (int)targetSelector
+					.getAvailableGoals().stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
 		}
 
 		@Override

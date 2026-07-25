@@ -342,6 +342,10 @@ public final class VanillaRoleAdvancements {
 		if (type == CakeWorldEntities.BISCUIT_BANDIT.get()) {
 			return "minecraft:pillager";
 		}
+		if (type
+				== CakeWorldEntities.GINGERBREAD_STOMPER.get()) {
+			return "minecraft:ravager";
+		}
 		return null;
 	}
 
