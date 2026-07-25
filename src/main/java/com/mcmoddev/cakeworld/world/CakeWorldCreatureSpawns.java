@@ -58,6 +58,8 @@ public final class CakeWorldCreatureSpawns {
 		if ("soda_ocean".equals(biome.getPath())) {
 			replace(event, MobCategory.AXOLOTLS, EntityType.AXOLOTL,
 					CakeWorldEntities.JELLYLOTL, 6, 1, 3);
+			replace(event, MobCategory.WATER_AMBIENT, EntityType.COD,
+					CakeWorldEntities.SODA_COD, 15, 3, 6);
 		}
 		if ("fudge_wastes".equals(biome.getPath())) {
 			replace(event, MobCategory.MONSTER, EntityType.BLAZE,

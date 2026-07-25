@@ -17,6 +17,8 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemNameBlockItem;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.MobBucketItem;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraftforge.common.ForgeSpawnEggItem;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
@@ -129,6 +131,14 @@ public final class CakeWorldItems {
 					() -> new JellylotlBucketItem(new Item.Properties()
 							.tab(CreativeModeTab.TAB_MISC)
 							.stacksTo(1)));
+	public static final RegistryObject<Item> SODA_COD_BUCKET =
+			ITEMS.register("soda_cod_bucket",
+					() -> new MobBucketItem(CakeWorldEntities.SODA_COD,
+							CakeWorldFluids.LEMONADE,
+							() -> SoundEvents.BUCKET_EMPTY_FISH,
+							new Item.Properties()
+									.tab(CreativeModeTab.TAB_MISC)
+									.stacksTo(1)));
 	public static final RegistryObject<Item> JELLYLOTL_SPAWN_EGG =
 			spawnEgg("jellylotl_spawn_egg", CakeWorldEntities.JELLYLOTL,
 					0xF29AB2, 0x8AD9E8);
@@ -146,6 +156,10 @@ public final class CakeWorldItems {
 			spawnEgg("deep_liquorice_weaver_spawn_egg",
 					CakeWorldEntities.DEEP_LIQUORICE_WEAVER,
 					0x24152F, 0x8A4B9F);
+	public static final RegistryObject<Item> SODA_COD_SPAWN_EGG =
+			spawnEgg("soda_cod_spawn_egg",
+					CakeWorldEntities.SODA_COD,
+					0xF6D66D, 0xF7A8D8);
 	public static final RegistryObject<Item> CINNAMON_SPARK_SPAWN_EGG =
 			spawnEgg("cinnamon_spark_spawn_egg",
 					CakeWorldEntities.CINNAMON_SPARK,

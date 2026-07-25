@@ -37,6 +37,7 @@ import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.CustardCat;
 import com.mcmoddev.cakeworld.entity.DeepLiquoriceWeaver;
 import com.mcmoddev.cakeworld.entity.MallowChick;
+import com.mcmoddev.cakeworld.entity.SodaCod;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
 import com.mcmoddev.cakeworld.entity.SugarBee;
 import com.mcmoddev.cakeworld.entity.TrufflePig;
@@ -59,6 +60,7 @@ import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
@@ -72,12 +74,14 @@ import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.animal.Cat;
 import net.minecraft.world.entity.animal.Cod;
+import net.minecraft.world.entity.animal.WaterAnimal;
 import net.minecraft.world.entity.animal.axolotl.Axolotl;
 import net.minecraft.world.entity.projectile.SmallFireball;
 import net.minecraft.world.entity.player.Player;
@@ -87,6 +91,7 @@ import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemNameBlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.MobBucketItem;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.item.crafting.ShapelessRecipe;
@@ -1931,6 +1936,75 @@ public final class FirstBiteGameTests {
 		requireCriterion(helper, advancementPlayer,
 				"minecraft:adventure/kill_all_mobs",
 				"minecraft:blaze");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void sodaCodSchoolAndReturnFromLemonadeBuckets(
+			GameTestHelper helper) {
+		SodaCod leader = CakeWorldEntities.SODA_COD.get()
+				.create(helper.getLevel());
+		SodaCod follower = CakeWorldEntities.SODA_COD.get()
+				.create(helper.getLevel());
+		require(helper, leader != null && follower != null,
+				"Could not create Soda Cod schooling fixtures");
+		follower.startFollowing(leader);
+		require(helper, follower.isFollower()
+						&& follower.inRangeOfLeader()
+						&& leader.getMaxSchoolSize() > 1,
+				"Soda Cod lost the inherited schooling role");
+
+		BlockPos horizontalAnchor =
+				helper.absolutePos(new BlockPos(3, 3, 3));
+		BlockPos lemonadePos = new BlockPos(horizontalAnchor.getX(),
+				helper.getLevel().getSeaLevel() - 5,
+				horizontalAnchor.getZ());
+		for (int y = -1; y <= 1; y++) {
+			helper.getLevel().setBlock(lemonadePos.offset(0, y, 0),
+					CakeWorldFluids.LEMONADE_BLOCK.get()
+							.defaultBlockState(), 3);
+		}
+		boolean vanillaRule =
+				WaterAnimal.checkSurfaceWaterAnimalSpawnRules(
+						CakeWorldEntities.SODA_COD.get(),
+						helper.getLevel(), MobSpawnType.NATURAL,
+						lemonadePos, new Random(1978L));
+		boolean sodaRule = SodaCod.checkSodaCodSpawnRules(
+				CakeWorldEntities.SODA_COD.get(), helper.getLevel(),
+				MobSpawnType.NATURAL, lemonadePos,
+				new Random(1978L));
+		require(helper, !vanillaRule && sodaRule,
+				"Soda Cod did not replace vanilla's hard-coded water-block spawn check with a Lemonade-compatible water-tag check");
+
+		leader.setCustomName(new TextComponent("Fizz"));
+		ItemStack bucket = leader.getBucketItemStack();
+		leader.saveToBucketTag(bucket);
+		require(helper,
+				bucket.is(CakeWorldItems.SODA_COD_BUCKET.get())
+						&& bucket.hasCustomHoverName(),
+				"Soda Cod did not capture into its dedicated named bucket");
+		((MobBucketItem) bucket.getItem()).checkExtraContent(null,
+				helper.getLevel(), bucket, lemonadePos);
+		java.util.List<SodaCod> released =
+				helper.getLevel().getEntitiesOfClass(SodaCod.class,
+						new AABB(lemonadePos).inflate(2.0D));
+		require(helper, released.size() == 1
+						&& released.get(0).fromBucket()
+						&& released.get(0).hasCustomName()
+						&& "Fizz".equals(released.get(0)
+								.getCustomName().getString()),
+				"Soda Cod bucket released the wrong entity or lost bucket/name data");
+
+		Biome sodaOcean = helper.getLevel().registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY)
+				.get(CakeWorldBiomes.SODA_OCEAN.getId());
+		require(helper, sodaOcean != null,
+				"Could not inspect Soda Ocean Soda Cod spawning");
+		requireSpawnReplacement(helper, sodaOcean, EntityType.COD,
+				CakeWorldEntities.SODA_COD.get(),
+				MobCategory.WATER_AMBIENT);
+		require(helper, CakeWorldItems.SODA_COD_SPAWN_EGG.isPresent(),
+				"Soda Cod has no creative/testing spawn egg");
 		helper.succeed();
 	}
 

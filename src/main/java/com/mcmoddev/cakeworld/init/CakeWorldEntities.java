@@ -10,6 +10,7 @@ import com.mcmoddev.cakeworld.entity.CustardCat;
 import com.mcmoddev.cakeworld.entity.DeepLiquoriceWeaver;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.MallowChick;
+import com.mcmoddev.cakeworld.entity.SodaCod;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
 import com.mcmoddev.cakeworld.entity.SugarBee;
 import com.mcmoddev.cakeworld.entity.TrufflePig;
@@ -23,6 +24,7 @@ import net.minecraft.world.entity.animal.axolotl.Axolotl;
 import net.minecraft.world.entity.ambient.Bat;
 import net.minecraft.world.entity.animal.Chicken;
 import net.minecraft.world.entity.animal.Cat;
+import net.minecraft.world.entity.animal.Cod;
 import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.animal.Sheep;
@@ -75,6 +77,12 @@ public final class CakeWorldEntities {
 							MobCategory.MONSTER)
 							.sized(0.7F, 0.5F)
 							.clientTrackingRange(8));
+	public static final RegistryObject<EntityType<SodaCod>> SODA_COD =
+			entity("soda_cod",
+					EntityType.Builder.of(SodaCod::new,
+							MobCategory.WATER_AMBIENT)
+							.sized(0.5F, 0.3F)
+							.clientTrackingRange(4));
 	public static final RegistryObject<EntityType<CinnamonSpark>> CINNAMON_SPARK =
 			entity("cinnamon_spark",
 					EntityType.Builder.of(CinnamonSpark::new,
@@ -121,6 +129,7 @@ public final class CakeWorldEntities {
 		event.put(CUSTARD_CAT.get(), Cat.createAttributes().build());
 		event.put(DEEP_LIQUORICE_WEAVER.get(),
 				CaveSpider.createCaveSpider().build());
+		event.put(SODA_COD.get(), Cod.createMobAttributes().build());
 		event.put(CINNAMON_SPARK.get(),
 				Blaze.createAttributes().build());
 		event.put(COCOA_COW.get(), Cow.createAttributes().build());
@@ -152,6 +161,10 @@ public final class CakeWorldEntities {
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					Monster::checkMonsterSpawnRules);
+			SpawnPlacements.register(SODA_COD.get(),
+					SpawnPlacements.Type.IN_WATER,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					SodaCod::checkSodaCodSpawnRules);
 			SpawnPlacements.register(CINNAMON_SPARK.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
