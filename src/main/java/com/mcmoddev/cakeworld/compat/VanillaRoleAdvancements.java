@@ -8,6 +8,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.projectile.LargeFireball;
+import net.minecraft.world.entity.vehicle.Boat;
+import net.minecraftforge.event.entity.EntityMountEvent;
 import net.minecraftforge.event.entity.living.BabyEntitySpawnEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -21,6 +23,9 @@ public final class VanillaRoleAdvancements {
 			new ResourceLocation("minecraft", "adventure/kill_all_mobs");
 	private static final ResourceLocation RETURN_TO_SENDER =
 			new ResourceLocation("minecraft", "nether/return_to_sender");
+	private static final ResourceLocation RIDE_WITH_GOAT =
+			new ResourceLocation("minecraft",
+					"husbandry/ride_a_boat_with_a_goat");
 	private VanillaRoleAdvancements() {
 	}
 
@@ -49,6 +54,19 @@ public final class VanillaRoleAdvancements {
 		}
 	}
 
+	@SubscribeEvent
+	public static void onMount(EntityMountEvent event) {
+		if (event.isMounting()
+				&& event.getEntityMounting()
+						instanceof ServerPlayer player
+				&& event.getEntityBeingMounted() instanceof Boat boat
+				&& boat.getPassengers().stream().anyMatch(passenger ->
+						passenger.getType()
+								== CakeWorldEntities.NOUGAT_GOAT.get())) {
+			creditRodeBoatWithGoatRole(player);
+		}
+	}
+
 	public static void creditBredRole(ServerPlayer player, EntityType<?> childType) {
 		String criterion = null;
 		if (childType == CakeWorldEntities.SUGAR_BEE.get()) {
@@ -69,6 +87,8 @@ public final class VanillaRoleAdvancements {
 			criterion = "minecraft:donkey";
 		} else if (childType == CakeWorldEntities.PEPPERMINT_FOX.get()) {
 			criterion = "minecraft:fox";
+		} else if (childType == CakeWorldEntities.NOUGAT_GOAT.get()) {
+			criterion = "minecraft:goat";
 		}
 		if (criterion != null) {
 			award(player, BRED_ALL, criterion);
@@ -118,6 +138,11 @@ public final class VanillaRoleAdvancements {
 
 	public static void creditReturnToSenderRole(ServerPlayer player) {
 		award(player, RETURN_TO_SENDER, "killed_ghast");
+	}
+
+	public static void creditRodeBoatWithGoatRole(ServerPlayer player) {
+		award(player, RIDE_WITH_GOAT,
+				"ride_a_boat_with_a_goat");
 	}
 
 	private static String killedCriterion(EntityType<?> type) {

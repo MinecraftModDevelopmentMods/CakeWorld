@@ -16,6 +16,7 @@ import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.MallowFloater;
 import com.mcmoddev.cakeworld.entity.MallowPuffProjectile;
+import com.mcmoddev.cakeworld.entity.NougatGoat;
 import com.mcmoddev.cakeworld.entity.PeppermintFox;
 import com.mcmoddev.cakeworld.entity.PopRockPopper;
 import com.mcmoddev.cakeworld.entity.SodaCod;
@@ -45,6 +46,7 @@ import net.minecraft.world.entity.animal.Fox;
 import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.animal.Sheep;
+import net.minecraft.world.entity.animal.goat.Goat;
 import net.minecraft.world.entity.animal.horse.AbstractChestedHorse;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.monster.Blaze;
@@ -195,6 +197,12 @@ public final class CakeWorldEntities {
 							MobCategory.UNDERGROUND_WATER_CREATURE)
 							.sized(0.8F, 0.8F)
 							.clientTrackingRange(10));
+	public static final RegistryObject<EntityType<NougatGoat>> NOUGAT_GOAT =
+			entity("nougat_goat",
+					EntityType.Builder.of(NougatGoat::new,
+							MobCategory.CREATURE)
+							.sized(0.9F, 1.3F)
+							.clientTrackingRange(10));
 	public static final RegistryObject<EntityType<PopRockPopper>>
 			POP_ROCK_POPPER = entity("pop_rock_popper",
 					EntityType.Builder.of(PopRockPopper::new,
@@ -270,6 +278,8 @@ public final class CakeWorldEntities {
 				Giant.createAttributes().build());
 		event.put(GLOW_JELLY.get(),
 				GlowSquid.createAttributes().build());
+		event.put(NOUGAT_GOAT.get(),
+				Goat.createAttributes().build());
 		event.put(POP_ROCK_POPPER.get(), Creeper.createAttributes().build());
 		event.put(CINNAMON_SPARK.get(),
 				Blaze.createAttributes().build());
@@ -338,6 +348,10 @@ public final class CakeWorldEntities {
 					SpawnPlacements.Type.IN_WATER,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					GlowJelly::checkGlowJellySpawnRules);
+			SpawnPlacements.register(NOUGAT_GOAT.get(),
+					SpawnPlacements.Type.NO_RESTRICTIONS,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					NougatGoat::checkNougatGoatSpawnRules);
 			SpawnPlacements.register(POP_ROCK_POPPER.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,

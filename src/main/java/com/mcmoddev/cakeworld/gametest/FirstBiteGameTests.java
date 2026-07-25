@@ -43,6 +43,7 @@ import com.mcmoddev.cakeworld.entity.GlowJelly;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.MallowFloater;
 import com.mcmoddev.cakeworld.entity.MallowPuffProjectile;
+import com.mcmoddev.cakeworld.entity.NougatGoat;
 import com.mcmoddev.cakeworld.entity.PeppermintFox;
 import com.mcmoddev.cakeworld.entity.PopRockPopper;
 import com.mcmoddev.cakeworld.entity.SodaCod;
@@ -96,7 +97,9 @@ import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.MobType;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.SpawnPlacements;
@@ -104,6 +107,7 @@ import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.animal.Cat;
 import net.minecraft.world.entity.animal.Cod;
 import net.minecraft.world.entity.animal.Fox;
+import net.minecraft.world.entity.animal.goat.Goat;
 import net.minecraft.world.entity.animal.WaterAnimal;
 import net.minecraft.world.entity.animal.axolotl.Axolotl;
 import net.minecraft.world.entity.animal.horse.Horse;
@@ -139,6 +143,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.NaturalSpawner;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FallingBlock;
 import net.minecraft.world.level.block.Rotation;
@@ -150,12 +155,14 @@ import net.minecraft.world.level.biome.MobSpawnSettings;
 import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.minecraft.world.entity.raid.Raid;
+import net.minecraft.world.entity.vehicle.Boat;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import net.minecraftforge.event.ForgeEventFactory;
+import net.minecraftforge.event.entity.EntityMountEvent;
 import net.minecraftforge.common.util.FakePlayerFactory;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
@@ -4043,6 +4050,228 @@ public final class FirstBiteGameTests {
 						&& !killAll.getCriteria().containsKey(
 								"minecraft:glow_squid"),
 				"Vanilla unexpectedly added a Glow Squid kill criterion; reassess compatibility before inventing a bridge");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void nougatGoatsKeepMountainRamsMilkAndFamilyRoles(
+			GameTestHelper helper) {
+		NougatGoat goat = CakeWorldEntities.NOUGAT_GOAT.get()
+				.create(helper.getLevel());
+		NougatGoat partner = CakeWorldEntities.NOUGAT_GOAT.get()
+				.create(helper.getLevel());
+		Pig target = EntityType.PIG.create(helper.getLevel());
+		require(helper, goat != null && partner != null && target != null,
+				"Could not create Nougat Goat fixtures");
+		BlockPos anchor = helper.absolutePos(new BlockPos(2, 3, 2));
+		goat.setNoAi(true);
+		partner.setNoAi(true);
+		goat.setPos(anchor.getX(), anchor.getY(), anchor.getZ());
+		partner.setPos(anchor.getX() - 2.0D,
+				anchor.getY(), anchor.getZ());
+		target.setPos(anchor.getX() + 2.0D,
+				anchor.getY(), anchor.getZ());
+		helper.getLevel().addFreshEntity(goat);
+		helper.getLevel().addFreshEntity(partner);
+		helper.getLevel().addFreshEntity(target);
+		require(helper,
+				goat instanceof Goat
+						&& close(goat.getAttributeValue(
+								Attributes.MAX_HEALTH), 10.0D)
+						&& close(goat.getAttributeValue(
+								Attributes.MOVEMENT_SPEED), 0.2D)
+						&& close(goat.getAttributeValue(
+								Attributes.ATTACK_DAMAGE), 2.0D)
+						&& close(goat.getDimensions(Pose.LONG_JUMPING)
+								.width, 0.63D)
+						&& close(goat.getDimensions(Pose.LONG_JUMPING)
+								.height, 0.91D),
+				"Nougat Goat lost Goat health, movement, ram strength, or long-jump dimensions");
+
+		goat.handleEntityEvent((byte)58);
+		goat.aiStep();
+		require(helper, goat.getRammingXHeadRot() > 0.0F,
+				"Nougat Goat did not retain the visible horned head-lowering ram cue");
+		goat.handleEntityEvent((byte)59);
+		goat.getBrain().setMemory(MemoryModuleType.RAM_TARGET,
+				target.position());
+		require(helper, goat.getBrain().hasMemoryValue(
+						MemoryModuleType.RAM_TARGET),
+				"Nougat Goat brain lost its ram-target memory");
+		goat.getBrain().eraseMemory(MemoryModuleType.RAM_TARGET);
+
+		goat.setInLove(null);
+		partner.setInLove(null);
+		partner.setScreamingGoat(true);
+		require(helper, goat.canMate(partner)
+						&& !goat.canAttack(partner),
+				"Nougat Goats could not mate or would ram their own custom type");
+		NougatGoat child = goat.getBreedOffspring(
+				helper.getLevel(), partner);
+		require(helper,
+				child != null
+						&& child.getType()
+								== CakeWorldEntities.NOUGAT_GOAT.get()
+						&& child.isScreamingGoat()
+						&& child.getBrain().hasMemoryValue(
+								MemoryModuleType
+										.LONG_JUMP_COOLDOWN_TICKS)
+						&& child.getBrain().hasMemoryValue(
+								MemoryModuleType.RAM_COOLDOWN_TICKS),
+				"Nougat Goat offspring lost its custom type, screaming inheritance, or exact inherited cooldown roles");
+		require(helper,
+				goat.isFood(new ItemStack(Items.WHEAT)),
+				"Nougat Goat lost the vanilla wheat breeding role");
+
+		float preFallHealth = goat.getHealth();
+		goat.causeFallDamage(12.0F, 1.0F, DamageSource.FALL);
+		require(helper, close(goat.getHealth(), preFallHealth),
+				"Nougat Goat lost the inherited ten-block fall-damage reduction");
+
+		Player milker = helper.makeMockPlayer();
+		milker.getAbilities().instabuild = false;
+		milker.setItemInHand(InteractionHand.MAIN_HAND,
+				new ItemStack(Items.BUCKET));
+		InteractionResult milked = goat.mobInteract(
+				milker, InteractionHand.MAIN_HAND);
+		require(helper, milked.consumesAction()
+						&& milker.getMainHandItem()
+								.is(Items.MILK_BUCKET),
+				"Nougat Goat lost its adult milk-bucket role");
+
+		Difficulty originalDifficulty = helper.getLevel().getDifficulty();
+		try {
+			for (Difficulty safeDifficulty :
+					new Difficulty[] {Difficulty.EASY, Difficulty.NORMAL}) {
+				helper.getLevel().getServer().setDifficulty(
+						safeDifficulty, true);
+				target.removeAllEffects();
+				target.setHealth(10.0F);
+				target.invulnerableTime = 0;
+				target.setSecondsOnFire(5);
+				target.fallDistance = 12.0F;
+				target.setDeltaMovement(Vec3.ZERO);
+				target.hurt(DamageSource.mobAttack(goat)
+								.setNoAggro(),
+						(float) goat.getAttributeValue(
+								Attributes.ATTACK_DAMAGE));
+				require(helper,
+						close(target.getHealth(), 10.0D)
+								&& !target.isOnFire()
+								&& target.fallDistance == 0.0F
+								&& target.hasEffect(
+										MobEffects.MOVEMENT_SLOWDOWN)
+								&& target.hasEffect(
+										MobEffects.SLOW_FALLING)
+								&& target.hasEffect(
+										MobEffects.FIRE_RESISTANCE)
+								&& target.getEffect(
+										MobEffects.DAMAGE_RESISTANCE)
+										.getAmplifier() == 4
+								&& target.getDeltaMovement().x > 0.0D
+								&& target.getDeltaMovement().y > 0.0D,
+						safeDifficulty
+								+ " Nougat Goat ram caused damage or lacked its cushioned bounce/rescue effects");
+			}
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			target.removeAllEffects();
+			target.setHealth(10.0F);
+			target.invulnerableTime = 0;
+			target.hurt(DamageSource.mobAttack(goat).setNoAggro(),
+					(float) goat.getAttributeValue(
+							Attributes.ATTACK_DAMAGE));
+			require(helper, target.getHealth() < 10.0F,
+					"Hard Nougat Goat did not retain real ram damage");
+		} finally {
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		BlockPos icing = helper.absolutePos(new BlockPos(6, 2, 6));
+		helper.getLevel().setBlock(icing.below(),
+				CakeWorldBlocks.BISCUIT_STONE.get()
+						.defaultBlockState(), 3);
+		helper.getLevel().setBlock(icing,
+				CakeWorldBlocks.ICING_LAYER.get()
+						.defaultBlockState(), 3);
+		helper.getLevel().setBlock(icing.above(),
+				Blocks.AIR.defaultBlockState(), 3);
+		helper.getLevel().setBlock(icing.above(2),
+				Blocks.AIR.defaultBlockState(), 3);
+		helper.getLevel().setBlock(icing.offset(2, 1, 0),
+				Blocks.GLOWSTONE.defaultBlockState(), 3);
+		BlockPos spawnPos = icing.above();
+		boolean vanillaRule = Goat.checkGoatSpawnRules(
+				CakeWorldEntities.NOUGAT_GOAT.get(),
+				helper.getLevel(), MobSpawnType.NATURAL,
+				spawnPos, new Random(1978L));
+		boolean vanillaBody = SpawnPlacements.Type.ON_GROUND.canSpawnAt(
+				helper.getLevel(), spawnPos,
+				CakeWorldEntities.NOUGAT_GOAT.get());
+		boolean nougatRule = NougatGoat.checkNougatGoatSpawnRules(
+				CakeWorldEntities.NOUGAT_GOAT.get(),
+				helper.getLevel(), MobSpawnType.NATURAL,
+				spawnPos, new Random(1978L));
+		require(helper,
+				CakeWorldBlocks.ICING_LAYER.get()
+						.defaultBlockState()
+						.is(BlockTags.GOATS_SPAWNABLE_ON)
+						&& vanillaRule
+						&& !vanillaBody
+						&& nougatRule
+						&& SpawnPlacements.getPlacementType(
+								CakeWorldEntities.NOUGAT_GOAT.get())
+								== SpawnPlacements.Type
+										.NO_RESTRICTIONS
+						&& NaturalSpawner.isValidEmptySpawnBlock(
+								helper.getLevel(), spawnPos,
+								helper.getLevel().getBlockState(
+										spawnPos),
+								helper.getLevel().getFluidState(
+										spawnPos),
+								CakeWorldEntities.NOUGAT_GOAT.get()),
+				"Nougat Goat did not adapt thin edible icing into a safe, bright Goat spawn surface");
+
+		Biome marshmallowPeaks = helper.getLevel().registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY)
+				.get(CakeWorldBiomes.MARSHMALLOW_PEAKS.getId());
+		require(helper, marshmallowPeaks != null,
+				"Could not inspect Marshmallow Peaks Nougat Goat spawning");
+		requireSpawnReplacement(helper, marshmallowPeaks,
+				EntityType.GOAT, CakeWorldEntities.NOUGAT_GOAT.get(),
+				MobCategory.CREATURE);
+		require(helper, CakeWorldItems.NOUGAT_GOAT_SPAWN_EGG.isPresent(),
+				"Nougat Goat has no creative/testing spawn egg");
+		require(helper, goat.getLootTable().equals(
+						new ResourceLocation(CakeWorld.MODID,
+								"entities/nougat_goat")),
+				"Nougat Goat did not resolve its dedicated empty Goat loot table");
+
+		ServerPlayer advancementPlayer = new ServerPlayer(
+				helper.getLevel().getServer(), helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2023"),
+						"CakeWorldNougatGoatRoleTest"));
+		VanillaRoleAdvancements.creditBredRole(
+				advancementPlayer,
+				CakeWorldEntities.NOUGAT_GOAT.get());
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:husbandry/bred_all_animals",
+				"minecraft:goat");
+		Boat boat = EntityType.BOAT.create(helper.getLevel());
+		require(helper, boat != null,
+				"Could not create Nougat Goat boat fixture");
+		boat.setPos(anchor.getX() - 4.0D,
+				anchor.getY(), anchor.getZ());
+		helper.getLevel().addFreshEntity(boat);
+		require(helper, goat.startRiding(boat, true),
+				"Nougat Goat could not retain the boat-passenger role");
+		VanillaRoleAdvancements.onMount(new EntityMountEvent(
+				advancementPlayer, boat, helper.getLevel(), true));
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:husbandry/ride_a_boat_with_a_goat",
+				"ride_a_boat_with_a_goat");
 		helper.succeed();
 	}
 

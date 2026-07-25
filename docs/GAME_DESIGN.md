@@ -308,6 +308,11 @@ document explicitly says otherwise.
 | MOB-072 | `minecraft:zombie_villager` | Crumbled Gingerbread Folk | Curable settlement inhabitant preserving recovery gameplay. |
 | MOB-073 | `minecraft:zombified_piglin` | Stale Fudge Folk | Neutral group-anger and cross-dimension conversion role. |
 
+Target-version note for MOB-023: Java 1.18.2's Goat horn contract is the
+visible adult model only. Horn items, horn drops, and horn loss were added
+after this target version, so CakeWorld does not invent a false vanilla
+compatibility contract by backporting them.
+
 Projectiles, vehicles, decorative entities, experience, items, the player, and
 other non-mob entity types retain vanilla identity unless a later feature
 specification gives them a clear CakeWorld purpose.

@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "cakeworld:icing",
+    "cakeworld:icing_layer",
+    "cakeworld:biscuit_stone",
+    "cakeworld:marshmallow"
+  ]
+}

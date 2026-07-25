@@ -201,6 +201,10 @@ public final class CakeWorldItems {
 			spawnEgg("glow_jelly_spawn_egg",
 					CakeWorldEntities.GLOW_JELLY,
 					0x124E78, 0x86F7E8);
+	public static final RegistryObject<Item> NOUGAT_GOAT_SPAWN_EGG =
+			spawnEgg("nougat_goat_spawn_egg",
+					CakeWorldEntities.NOUGAT_GOAT,
+					0xE8D2A2, 0x8A5C3A);
 	public static final RegistryObject<Item> POP_ROCK_POPPER_SPAWN_EGG =
 			spawnEgg("pop_rock_popper_spawn_egg",
 					CakeWorldEntities.POP_ROCK_POPPER,

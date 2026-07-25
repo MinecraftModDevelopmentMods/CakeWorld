@@ -22,6 +22,7 @@ import net.minecraft.client.renderer.entity.FoxRenderer;
 import net.minecraft.client.renderer.entity.GhastRenderer;
 import net.minecraft.client.renderer.entity.GiantMobRenderer;
 import net.minecraft.client.renderer.entity.GlowSquidRenderer;
+import net.minecraft.client.renderer.entity.GoatRenderer;
 import net.minecraft.client.renderer.entity.CowRenderer;
 import net.minecraft.client.renderer.entity.PigRenderer;
 import net.minecraft.client.renderer.entity.SheepRenderer;
@@ -88,6 +89,8 @@ public final class CakeWorldClientEvents {
 				context -> new GlowSquidRenderer(context,
 						new SquidModel<>(context.bakeLayer(
 								ModelLayers.GLOW_SQUID))));
+		event.registerEntityRenderer(CakeWorldEntities.NOUGAT_GOAT.get(),
+				GoatRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.POP_ROCK_POPPER.get(),
 				CreeperRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.CINNAMON_SPARK.get(),
