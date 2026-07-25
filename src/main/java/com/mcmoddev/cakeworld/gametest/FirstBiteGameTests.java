@@ -20,6 +20,7 @@ import com.mcmoddev.cakeworld.block.MarshmallowBlock;
 import com.mcmoddev.cakeworld.block.SodaFountainBlock;
 import com.mcmoddev.cakeworld.block.WaferWindmillBlock;
 import com.mcmoddev.cakeworld.cookbook.CookbookEvents;
+import com.mcmoddev.cakeworld.cookbook.CookbookHints;
 import com.mcmoddev.cakeworld.cookbook.CookbookProgress;
 import com.mcmoddev.cakeworld.cookbook.DiscoveryType;
 import com.mcmoddev.cakeworld.compat.VanillaRoleAdvancements;
@@ -1209,6 +1210,45 @@ public final class FirstBiteGameTests {
 					new ResourceLocation(CakeWorld.MODID, recipe)).isPresent(),
 					"Recipe did not load: " + recipe);
 		}
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void cookbookHintsAreOptionalPersonalAndReadOnly(
+			GameTestHelper helper) {
+		ServerPlayer player = FakePlayerFactory.get(helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978cafe-cafe-4bad-babe-1978cafe1980"),
+						"CakeWorldHintTest"));
+		CompoundTag untouched =
+				CookbookProgress.snapshot(player).copy();
+		var first = CookbookHints.nextHint(player);
+		require(helper, first.isPresent()
+						&& CookbookProgress.snapshot(player)
+								.equals(untouched),
+				"Selecting a hint wrote quest-like progress state");
+
+		CookbookHints.Hint firstHint = first.orElseThrow();
+		require(helper, CookbookProgress.discover(player,
+						firstHint.type(), firstHint.target()),
+				"Could not record the hinted discovery");
+		var next = CookbookHints.nextHint(player);
+		require(helper, next.isPresent()
+						&& !next.orElseThrow().target()
+								.equals(firstHint.target()),
+				"Hint repeated a page the player already discovered");
+
+		CompoundTag beforeSneakUse =
+				CookbookProgress.snapshot(player).copy();
+		player.setShiftKeyDown(true);
+		player.setItemInHand(InteractionHand.MAIN_HAND,
+				new ItemStack(CakeWorldItems.EXPLORERS_COOKBOOK.get()));
+		var used = CakeWorldItems.EXPLORERS_COOKBOOK.get().use(
+				helper.getLevel(), player, InteractionHand.MAIN_HAND);
+		require(helper, used.getResult().consumesAction()
+						&& CookbookProgress.snapshot(player)
+								.equals(beforeSneakUse),
+				"Sneak-use hint changed discoveries or failed to consume use");
 		helper.succeed();
 	}
 
