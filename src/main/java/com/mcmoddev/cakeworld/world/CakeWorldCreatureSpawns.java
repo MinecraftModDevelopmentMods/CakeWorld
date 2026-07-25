@@ -38,6 +38,8 @@ public final class CakeWorldCreatureSpawns {
 		replace(event, MobCategory.AMBIENT, EntityType.BAT,
 				CakeWorldEntities.BONBON_BAT, 10, 4, 8);
 		if ("candy_plains".equals(biome.getPath())) {
+			replace(event, MobCategory.CREATURE, EntityType.BEE,
+					CakeWorldEntities.SUGAR_BEE, 8, 1, 3);
 			replace(event, MobCategory.CREATURE, EntityType.COW,
 					CakeWorldEntities.COCOA_COW, 8, 2, 4);
 			replace(event, MobCategory.CREATURE, EntityType.PIG,
@@ -46,6 +48,8 @@ public final class CakeWorldCreatureSpawns {
 					CakeWorldEntities.CANDYFLOSS_SHEEP, 12, 2, 4);
 		}
 		if ("cookie_forest".equals(biome.getPath())) {
+			replace(event, MobCategory.CREATURE, EntityType.BEE,
+					CakeWorldEntities.SUGAR_BEE, 6, 1, 2);
 			replace(event, MobCategory.CREATURE, EntityType.CHICKEN,
 					CakeWorldEntities.MALLOW_CHICK, 10, 2, 4);
 		}

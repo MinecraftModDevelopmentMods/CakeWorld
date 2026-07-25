@@ -7,12 +7,14 @@ import com.mcmoddev.cakeworld.entity.CocoaCow;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
+import com.mcmoddev.cakeworld.entity.SugarBee;
 import com.mcmoddev.cakeworld.entity.TrufflePig;
 
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.entity.animal.Bee;
 import net.minecraft.world.entity.animal.axolotl.Axolotl;
 import net.minecraft.world.entity.ambient.Bat;
 import net.minecraft.world.entity.animal.Chicken;
@@ -48,6 +50,12 @@ public final class CakeWorldEntities {
 							MobCategory.AMBIENT)
 							.sized(0.5F, 0.9F)
 							.clientTrackingRange(5));
+	public static final RegistryObject<EntityType<SugarBee>> SUGAR_BEE =
+			entity("sugar_bee",
+					EntityType.Builder.of(SugarBee::new,
+							MobCategory.CREATURE)
+							.sized(0.7F, 0.6F)
+							.clientTrackingRange(8));
 	public static final RegistryObject<EntityType<MallowChick>> MALLOW_CHICK =
 			entity("mallow_chick", EntityType.Builder.of(MallowChick::new, MobCategory.CREATURE)
 					.sized(0.4F, 0.7F).clientTrackingRange(10));
@@ -75,6 +83,7 @@ public final class CakeWorldEntities {
 	private static void createAttributes(EntityAttributeCreationEvent event) {
 		event.put(JELLYLOTL.get(), Axolotl.createAttributes().build());
 		event.put(BONBON_BAT.get(), Bat.createAttributes().build());
+		event.put(SUGAR_BEE.get(), Bee.createAttributes().build());
 		event.put(COCOA_COW.get(), Cow.createAttributes().build());
 		event.put(MALLOW_CHICK.get(), Chicken.createAttributes().build());
 		event.put(TRUFFLE_PIG.get(), Pig.createAttributes().build());
@@ -92,6 +101,10 @@ public final class CakeWorldEntities {
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					BonbonBat::checkBonbonBatSpawnRules);
+			SpawnPlacements.register(SUGAR_BEE.get(),
+					SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					Animal::checkAnimalSpawnRules);
 			SpawnPlacements.register(COCOA_COW.get(), SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					Animal::checkAnimalSpawnRules);

@@ -34,6 +34,7 @@ import com.mcmoddev.cakeworld.entity.CocoaCow;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
+import com.mcmoddev.cakeworld.entity.SugarBee;
 import com.mcmoddev.cakeworld.entity.TrufflePig;
 import com.mcmoddev.cakeworld.effect.FizzyFeetEffect;
 import com.mcmoddev.cakeworld.init.CakeWorldBiomes;
@@ -56,6 +57,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionHand;
@@ -1729,6 +1731,101 @@ public final class FirstBiteGameTests {
 		}
 		require(helper, CakeWorldItems.BONBON_BAT_SPAWN_EGG.isPresent(),
 				"Bonbon Bat has no creative/testing spawn egg");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void sugarBeePollinatesWithoutNormalStingDamage(
+			GameTestHelper helper) {
+		SugarBee bee =
+				CakeWorldEntities.SUGAR_BEE.get().create(helper.getLevel());
+		require(helper, bee != null
+						&& bee.getBreedOffspring(helper.getLevel(), bee)
+								instanceof SugarBee,
+				"Sugar Bees did not breed their own entity type");
+		require(helper, bee.isFood(new ItemStack(
+						CakeWorldItems.SPRINKLE_SEEDS.get()))
+						&& new ItemStack(
+								CakeWorldItems.SPRINKLE_SEEDS.get())
+								.is(ItemTags.FLOWERS)
+						&& CakeWorldBlocks.CANDY_SPROUT.get()
+								.defaultBlockState().is(BlockTags.FLOWERS),
+				"Candy Sprouts and Sprinkle Seeds lost their pollinator flower contracts");
+
+		BlockPos flower = helper.absolutePos(new BlockPos(2, 2, 2));
+		bee.setSavedFlowerPos(flower);
+		CompoundTag saved = new CompoundTag();
+		bee.addAdditionalSaveData(saved);
+		SugarBee restored =
+				CakeWorldEntities.SUGAR_BEE.get().create(helper.getLevel());
+		require(helper, restored != null, "Could not restore Sugar Bee");
+		restored.readAdditionalSaveData(saved);
+		require(helper, restored.hasSavedFlowerPos()
+						&& flower.equals(restored.getSavedFlowerPos()),
+				"Sugar Bee lost its pollination target through save/load");
+
+		Pig target = EntityType.PIG.create(helper.getLevel());
+		require(helper, target != null,
+				"Could not create Sugar Bee sting target");
+		Difficulty originalDifficulty = helper.getLevel().getDifficulty();
+		try {
+			for (Difficulty safeDifficulty :
+					new Difficulty[] {Difficulty.EASY, Difficulty.NORMAL}) {
+				target.removeAllEffects();
+				target.setHealth(10.0F);
+				helper.getLevel().getServer().setDifficulty(
+						safeDifficulty, true);
+				require(helper, bee.doHurtTarget(target)
+								&& Math.abs(target.getHealth() - 10.0F)
+										< 0.001F
+								&& target.hasEffect(
+										net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN)
+								&& target.hasEffect(
+										net.minecraft.world.effect.MobEffects.GLOWING)
+								&& !target.hasEffect(
+										net.minecraft.world.effect.MobEffects.POISON)
+								&& !bee.hasStung(),
+						safeDifficulty
+								+ " Sugar Bee caused sting damage/poison or lost its visible pollen response");
+			}
+			target.removeAllEffects();
+			target.setHealth(10.0F);
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			require(helper, bee.doHurtTarget(target)
+							&& target.getHealth() < 10.0F
+							&& bee.hasStung(),
+					"Hard Sugar Bee did not restore the real sting");
+		} finally {
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		for (ResourceLocation biomeId : new ResourceLocation[] {
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId()}) {
+			Biome loaded = helper.getLevel().registryAccess()
+					.registryOrThrow(Registry.BIOME_REGISTRY)
+					.get(biomeId);
+			require(helper, loaded != null,
+					"Could not inspect Sugar Bee biome");
+			requireSpawnReplacement(helper, loaded, EntityType.BEE,
+					CakeWorldEntities.SUGAR_BEE.get(),
+					MobCategory.CREATURE);
+		}
+
+		ServerPlayer advancementPlayer = new ServerPlayer(
+				helper.getLevel().getServer(), helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2003"),
+						"CakeWorldSugarBeeRoleTest"));
+		VanillaRoleAdvancements.creditBredRole(advancementPlayer,
+				CakeWorldEntities.SUGAR_BEE.get());
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:husbandry/bred_all_animals",
+				"minecraft:bee");
+		require(helper, CakeWorldItems.SUGAR_BEE_SPAWN_EGG.isPresent(),
+				"Sugar Bee has no creative/testing spawn egg");
 		helper.succeed();
 	}
 

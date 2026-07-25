@@ -135,6 +135,9 @@ public final class CakeWorldItems {
 	public static final RegistryObject<Item> BONBON_BAT_SPAWN_EGG =
 			spawnEgg("bonbon_bat_spawn_egg", CakeWorldEntities.BONBON_BAT,
 					0x6B3C30, 0xF2B5C8);
+	public static final RegistryObject<Item> SUGAR_BEE_SPAWN_EGG =
+			spawnEgg("sugar_bee_spawn_egg", CakeWorldEntities.SUGAR_BEE,
+					0xFFF0A8, 0xF29AB2);
 	public static final RegistryObject<Item> COCOA_COW_SPAWN_EGG =
 			spawnEgg("cocoa_cow_spawn_egg", CakeWorldEntities.COCOA_COW,
 					0x5A2E1D, 0xE7C28E);

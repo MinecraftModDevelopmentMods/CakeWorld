@@ -6,6 +6,7 @@ import com.mcmoddev.cakeworld.init.CakeWorldEntities;
 import net.minecraft.client.renderer.entity.ChickenRenderer;
 import net.minecraft.client.renderer.entity.AxolotlRenderer;
 import net.minecraft.client.renderer.entity.BatRenderer;
+import net.minecraft.client.renderer.entity.BeeRenderer;
 import net.minecraft.client.renderer.entity.CowRenderer;
 import net.minecraft.client.renderer.entity.PigRenderer;
 import net.minecraft.client.renderer.entity.SheepRenderer;
@@ -27,6 +28,8 @@ public final class CakeWorldClientEvents {
 				AxolotlRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.BONBON_BAT.get(),
 				BatRenderer::new);
+		event.registerEntityRenderer(CakeWorldEntities.SUGAR_BEE.get(),
+				BeeRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.COCOA_COW.get(), CowRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.MALLOW_CHICK.get(),
 				ChickenRenderer::new);

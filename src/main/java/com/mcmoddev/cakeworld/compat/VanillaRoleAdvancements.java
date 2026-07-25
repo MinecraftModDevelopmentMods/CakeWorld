@@ -40,7 +40,9 @@ public final class VanillaRoleAdvancements {
 
 	public static void creditBredRole(ServerPlayer player, EntityType<?> childType) {
 		String criterion = null;
-		if (childType == CakeWorldEntities.JELLYLOTL.get()) {
+		if (childType == CakeWorldEntities.SUGAR_BEE.get()) {
+			criterion = "minecraft:bee";
+		} else if (childType == CakeWorldEntities.JELLYLOTL.get()) {
 			criterion = "minecraft:axolotl";
 		} else if (childType == CakeWorldEntities.COCOA_COW.get()) {
 			criterion = "minecraft:cow";
