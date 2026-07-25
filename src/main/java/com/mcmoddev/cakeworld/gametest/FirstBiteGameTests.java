@@ -10,7 +10,9 @@ import com.mcmoddev.cakeworld.CakeWorld;
 import com.mcmoddev.cakeworld.block.BiscuitCrumbsBlock;
 import com.mcmoddev.cakeworld.block.CakeOvenBlock;
 import com.mcmoddev.cakeworld.block.ChocolateSpongeBlock;
+import com.mcmoddev.cakeworld.block.CookbookKioskBlock;
 import com.mcmoddev.cakeworld.block.IcingLayerBlock;
+import com.mcmoddev.cakeworld.cookbook.CookbookEvents;
 import com.mcmoddev.cakeworld.cookbook.CookbookProgress;
 import com.mcmoddev.cakeworld.cookbook.DiscoveryType;
 import com.mcmoddev.cakeworld.compat.VanillaRoleAdvancements;
@@ -39,6 +41,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.animal.Pig;
@@ -66,6 +69,10 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import net.minecraftforge.common.util.FakePlayerFactory;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.world.BlockEvent;
 import com.mcmoddev.cakeworld.world.StarterPicnicFeature;
 
 @GameTestHolder(CakeWorld.MODID)
@@ -470,6 +477,86 @@ public final class FirstBiteGameTests {
 					new ResourceLocation(CakeWorld.MODID, recipe)).isPresent(),
 					"Recipe did not load: " + recipe);
 		}
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void cookbookEventHooksUnlockAllSixDiscoveryPaths(
+			GameTestHelper helper) {
+		ServerPlayer player = FakePlayerFactory.get(helper.getLevel(),
+				new GameProfile(
+						UUID.fromString(
+								"1978cafe-cafe-4bad-babe-1978cafe1979"),
+						"CakeWorldEventHookTest"));
+		BlockPos relativePos = new BlockPos(1, 1, 1);
+		BlockPos absolutePos = helper.absolutePos(relativePos);
+		player.setPos(absolutePos.getX() + 0.5D,
+				absolutePos.getY(), absolutePos.getZ() + 0.5D);
+		player.tickCount = 40;
+
+		ResourceLocation visitedBiome = player.level
+				.getBiome(player.blockPosition()).unwrapKey().orElseThrow()
+				.location();
+		require(helper, CakeWorld.MODID.equals(visitedBiome.getNamespace()),
+				"Event-hook fixture is not inside a CakeWorld biome");
+		CookbookEvents.onPlayerTick(new TickEvent.PlayerTickEvent(
+				TickEvent.Phase.END, player));
+		CookbookEvents.onFinishFood(
+				new LivingEntityUseItemEvent.Finish(player,
+						new ItemStack(CakeWorldItems.WARM_SPONGE_CAKE.get()),
+						0, ItemStack.EMPTY));
+		CookbookEvents.onCraft(new PlayerEvent.ItemCraftedEvent(player,
+				new ItemStack(CakeWorldItems.SPONGE_BATTER.get()),
+				new SimpleContainer(0)));
+		CookbookEvents.onBreak(new BlockEvent.BreakEvent(helper.getLevel(),
+				absolutePos,
+				CakeWorldBlocks.CHOCOLATE_SPONGE.get()
+						.defaultBlockState(),
+				player));
+		CocoaCow cow =
+				CakeWorldEntities.COCOA_COW.get().create(helper.getLevel());
+		require(helper, cow != null,
+				"Could not create the meeting-discovery fixture");
+		CookbookEvents.onTrack(
+				new PlayerEvent.StartTracking(player, cow));
+
+		CookbookKioskBlock kiosk =
+				(CookbookKioskBlock) CakeWorldBlocks.COOKBOOK_KIOSK.get();
+		helper.setBlock(relativePos, kiosk.defaultBlockState());
+		kiosk.use(kiosk.defaultBlockState(), helper.getLevel(),
+				absolutePos, player, InteractionHand.MAIN_HAND,
+				new BlockHitResult(Vec3.atCenterOf(absolutePos),
+						Direction.UP, absolutePos, false));
+
+		Map<DiscoveryType, Set<ResourceLocation>> discoveries =
+				CookbookProgress.read(CookbookProgress.snapshot(player));
+		require(helper, discoveries.get(DiscoveryType.VISITING)
+						.contains(visitedBiome),
+				"Visiting hook did not record the current CakeWorld biome"
+						+ " tick=" + player.tickCount
+						+ " pos=" + player.blockPosition()
+						+ " biome=" + visitedBiome
+						+ " visits="
+						+ discoveries.get(DiscoveryType.VISITING));
+		require(helper, discoveries.get(DiscoveryType.TASTING).contains(
+						new ResourceLocation(CakeWorld.MODID,
+								"warm_sponge_cake")),
+				"Tasting hook did not record the eaten CakeWorld food");
+		require(helper, discoveries.get(DiscoveryType.CRAFTING).contains(
+						new ResourceLocation(CakeWorld.MODID,
+								"sponge_batter")),
+				"Crafting hook did not record the crafted CakeWorld item");
+		require(helper, discoveries.get(DiscoveryType.MINING).contains(
+						new ResourceLocation(CakeWorld.MODID,
+								"chocolate_sponge")),
+				"Mining hook did not record the broken CakeWorld block");
+		require(helper, discoveries.get(DiscoveryType.MEETING).contains(
+						new ResourceLocation(CakeWorld.MODID, "cocoa_cow")),
+				"Meeting hook did not record the tracked CakeWorld entity");
+		require(helper, discoveries.get(DiscoveryType.FINDING).contains(
+						new ResourceLocation(CakeWorld.MODID,
+								"cookbook_kiosk")),
+				"Finding hook did not record the used landmark");
 		helper.succeed();
 	}
 
