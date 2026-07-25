@@ -39,9 +39,15 @@ public class BiscuitBandit extends Pillager {
 				Villager.class,
 				getBoundingBox().inflate(VILLAGER_ALERT_RANGE),
 				villager -> villager.isAlive()
-						&& villager.distanceToSqr(this)
-								<= VILLAGER_ALERT_RANGE_SQUARED)
+						&& isWithinVillagerAlertRange(
+								villager))
 				.forEach(this::alertVisibleVillager);
+	}
+
+	protected boolean isWithinVillagerAlertRange(
+			LivingEntity entity) {
+		return entity.distanceToSqr(this)
+				<= VILLAGER_ALERT_RANGE_SQUARED;
 	}
 
 	private void alertVisibleVillager(Villager villager) {

@@ -10715,7 +10715,20 @@ public final class FirstBiteGameTests {
 				EntityType.VILLAGER.create(helper.getLevel());
 		require(helper, villager != null,
 				"Could not create Biscuit Bandit Villager-awareness fixture");
-		villager.setPos(bandit.getX() + 10.0D,
+		villager.setPos(bandit.getX() + 15.0D,
+				bandit.getY(), bandit.getZ());
+		boolean inclusiveBoundary =
+				bandit.checksVillagerAlertRange(
+						villager);
+		villager.setPos(bandit.getX() + 15.01D,
+				bandit.getY(), bandit.getZ());
+		require(helper,
+				inclusiveBoundary
+						&& !bandit
+								.checksVillagerAlertRange(
+										villager),
+				"Biscuit Bandit lost its exact inclusive 15-block Villager alert boundary");
+		villager.setPos(bandit.getX(),
 				bandit.getY(), bandit.getZ());
 		villager.setNoAi(true);
 		helper.getLevel().addFreshEntity(villager);
@@ -18066,6 +18079,12 @@ public final class FirstBiteGameTests {
 
 		private void runVillagerHostileRepair() {
 			repairVillagerHostileAwareness();
+		}
+
+		private boolean checksVillagerAlertRange(
+				LivingEntity entity) {
+			return super.isWithinVillagerAlertRange(
+					entity);
 		}
 
 		private int countGoalsNamed(String name) {
