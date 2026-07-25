@@ -41,6 +41,7 @@ import com.mcmoddev.cakeworld.entity.GrandGumballGuardian;
 import com.mcmoddev.cakeworld.entity.GiantStaleCrumbler;
 import com.mcmoddev.cakeworld.entity.GlowJelly;
 import com.mcmoddev.cakeworld.entity.GumballGuardian;
+import com.mcmoddev.cakeworld.entity.FudgeBoar;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.MallowFloater;
 import com.mcmoddev.cakeworld.entity.MallowPuffProjectile;
@@ -101,6 +102,9 @@ import net.minecraft.world.entity.MobType;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.ai.sensing.HoglinSpecificSensor;
+import net.minecraft.world.entity.ai.sensing.NearestLivingEntitySensor;
+import net.minecraft.world.entity.ai.sensing.PiglinSpecificSensor;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.SpawnPlacements;
@@ -122,6 +126,9 @@ import net.minecraft.world.entity.monster.Giant;
 import net.minecraft.world.entity.monster.Guardian;
 import net.minecraft.world.entity.monster.Ravager;
 import net.minecraft.world.entity.monster.Vex;
+import net.minecraft.world.entity.monster.Zoglin;
+import net.minecraft.world.entity.monster.hoglin.Hoglin;
+import net.minecraft.world.entity.monster.piglin.Piglin;
 import net.minecraft.world.entity.projectile.AbstractHurtingProjectile;
 import net.minecraft.world.entity.projectile.EvokerFangs;
 import net.minecraft.world.entity.projectile.LargeFireball;
@@ -4535,6 +4542,298 @@ public final class FirstBiteGameTests {
 		requireCriterion(helper, advancementPlayer,
 				"minecraft:husbandry/ride_a_boat_with_a_goat",
 				"ride_a_boat_with_a_goat");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void fudgeBoarsKeepHuntsBreedingThrowsAndZoglinTransition(
+			GameTestHelper helper) {
+		FudgeBoar boar = CakeWorldEntities.FUDGE_BOAR.get()
+				.create(helper.getLevel());
+		FudgeBoar partner = CakeWorldEntities.FUDGE_BOAR.get()
+				.create(helper.getLevel());
+		Pig safeTarget = EntityType.PIG.create(helper.getLevel());
+		require(helper,
+				boar != null && partner != null && safeTarget != null,
+				"Could not create Fudge Boar fixtures");
+		BlockPos anchor = helper.absolutePos(new BlockPos(2, 3, 2));
+		boar.setPos(anchor.getX(), anchor.getY(), anchor.getZ());
+		partner.setPos(anchor.getX() - 2.0D,
+				anchor.getY(), anchor.getZ());
+		safeTarget.setPos(anchor.getX() + 2.0D,
+				anchor.getY(), anchor.getZ());
+		boar.setImmuneToZombification(true);
+		partner.setImmuneToZombification(true);
+		boar.setNoAi(true);
+		partner.setNoAi(true);
+		helper.getLevel().addFreshEntity(boar);
+		helper.getLevel().addFreshEntity(partner);
+		helper.getLevel().addFreshEntity(safeTarget);
+		require(helper,
+				boar instanceof Hoglin
+						&& close(boar.getMaxHealth(), 40.0D)
+						&& close(boar.getAttributeValue(
+								Attributes.MOVEMENT_SPEED), 0.3D)
+						&& close(boar.getAttributeValue(
+								Attributes.KNOCKBACK_RESISTANCE),
+								0.6D)
+						&& close(boar.getAttributeValue(
+								Attributes.ATTACK_KNOCKBACK),
+								1.0D)
+						&& close(boar.getAttributeValue(
+								Attributes.ATTACK_DAMAGE), 6.0D)
+						&& close(boar.getDimensions(Pose.STANDING)
+								.width, 1.3964844D)
+						&& close(boar.getDimensions(Pose.STANDING)
+								.height, 1.4D),
+				"Fudge Boar lost the Hoglin health, movement, resistance, charge, or size contract");
+		require(helper,
+				boar.canBeHunted()
+						&& boar.isFood(new ItemStack(
+								Items.CRIMSON_FUNGUS)),
+				"Adult Fudge Boar lost its Piglin-hunt or crimson-fungus breeding role");
+
+		boar.setInLove(null);
+		partner.setInLove(null);
+		require(helper, boar.canMate(partner),
+				"Fudge Boars could not recognize their own custom family");
+		FudgeBoar child = boar.getBreedOffspring(
+				helper.getLevel(), partner);
+		require(helper,
+				child != null
+						&& child.getType()
+								== CakeWorldEntities.FUDGE_BOAR.get()
+						&& child.isPersistenceRequired(),
+				"Fudge Boar mating produced the hard-coded vanilla Hoglin type or lost offspring persistence");
+		partner.setBaby(true);
+		require(helper, !partner.canBeHunted(),
+				"Baby Fudge Boar incorrectly remained huntable");
+		boar.resetLove();
+		boar.getBrain().setMemory(
+				MemoryModuleType.PACIFIED, true);
+		require(helper, !boar.canFallInLove(),
+				"Fudge Boar ignored inherited Hoglin pacification");
+		boar.getBrain().eraseMemory(MemoryModuleType.PACIFIED);
+
+		Difficulty originalDifficulty =
+				helper.getLevel().getDifficulty();
+		try {
+			for (Difficulty safeDifficulty :
+					new Difficulty[] {
+							Difficulty.EASY,
+							Difficulty.NORMAL}) {
+				helper.getLevel().getServer().setDifficulty(
+						safeDifficulty, true);
+				safeTarget.removeAllEffects();
+				safeTarget.setHealth(10.0F);
+				safeTarget.setSecondsOnFire(5);
+				safeTarget.fallDistance = 12.0F;
+				safeTarget.setDeltaMovement(Vec3.ZERO);
+				safeTarget.invulnerableTime = 0;
+				require(helper, boar.doHurtTarget(safeTarget),
+						safeDifficulty
+								+ " Fudge Boar did not complete its protected charge");
+				Vec3 protectedThrow =
+						safeTarget.getDeltaMovement();
+				require(helper,
+						close(safeTarget.getHealth(), 10.0D)
+								&& boar
+										.getAttackAnimationRemainingTicks()
+										== 10
+								&& !safeTarget.isOnFire()
+								&& safeTarget.fallDistance == 0.0F
+								&& safeTarget.hasEffect(
+										MobEffects.MOVEMENT_SLOWDOWN)
+								&& safeTarget.hasEffect(
+										MobEffects.SLOW_FALLING)
+								&& safeTarget.hasEffect(
+										MobEffects.FIRE_RESISTANCE)
+								&& safeTarget.getEffect(
+										MobEffects.DAMAGE_RESISTANCE)
+										.getAmplifier() == 4
+								&& protectedThrow
+										.multiply(1.0D, 0.0D, 1.0D)
+										.lengthSqr() > 0.0D,
+						safeDifficulty
+								+ " Fudge Boar charge caused health damage or lost its telegraph, throw, or rescue effects");
+			}
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			Pig hardTarget =
+					EntityType.PIG.create(helper.getLevel());
+			require(helper, hardTarget != null,
+					"Could not create Hard Fudge Boar target");
+			hardTarget.setPos(anchor.getX() + 3.0D,
+					anchor.getY(), anchor.getZ());
+			hardTarget.setHealth(10.0F);
+			hardTarget.setDeltaMovement(Vec3.ZERO);
+			helper.getLevel().addFreshEntity(hardTarget);
+			require(helper,
+					boar.doHurtTarget(hardTarget)
+							&& hardTarget.getHealth() < 10.0F
+							&& hardTarget.getDeltaMovement()
+									.multiply(1.0D, 0.0D, 1.0D)
+									.lengthSqr() > 0.0D,
+					"Hard Fudge Boar did not retain real Hoglin damage and knockback");
+		} finally {
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		Piglin piglin =
+				EntityType.PIGLIN.create(helper.getLevel());
+		require(helper, piglin != null,
+				"Could not create Piglin hunt-sensor fixture");
+		piglin.setPos(anchor.getX() + 1.0D,
+				anchor.getY(), anchor.getZ());
+		piglin.setNoAi(true);
+		helper.getLevel().addFreshEntity(piglin);
+		NearestLivingEntitySensor nearestSensor =
+				new NearestLivingEntitySensor();
+		PiglinSpecificSensor piglinSensor =
+				new PiglinSpecificSensor();
+		for (int scan = 0; scan < 21; ++scan) {
+			nearestSensor.tick(helper.getLevel(), piglin);
+		}
+		for (int scan = 0; scan < 21; ++scan) {
+			piglinSensor.tick(helper.getLevel(), piglin);
+		}
+		require(helper,
+				piglin.getBrain().getMemory(
+						MemoryModuleType
+								.NEAREST_VISIBLE_HUNTABLE_HOGLIN)
+						.orElse(null) == boar,
+				"Piglin hunt sensor did not classify the Fudge Boar subclass as a huntable Hoglin");
+
+		BlockPos repellent = anchor.offset(0, 0, 3);
+		helper.getLevel().setBlock(repellent.below(),
+				Blocks.WARPED_NYLIUM.defaultBlockState(), 3);
+		helper.getLevel().setBlock(repellent,
+				Blocks.WARPED_FUNGUS.defaultBlockState(), 3);
+		HoglinSpecificSensor hoglinSensor =
+				new HoglinSpecificSensor();
+		for (int scan = 0; scan < 21; ++scan) {
+			hoglinSensor.tick(helper.getLevel(), boar);
+		}
+		require(helper,
+				boar.getBrain().getMemory(
+						MemoryModuleType.NEAREST_REPELLENT)
+						.orElse(null).equals(repellent),
+				"Fudge Boar lost the inherited Hoglin-repellent sensor");
+
+		BlockPos spawnPos = anchor.offset(5, 0, 5);
+		helper.getLevel().setBlock(spawnPos.below(),
+				CakeWorldBlocks.FUDGE_ROCK.get()
+						.defaultBlockState(), 3);
+		helper.getLevel().setBlock(spawnPos,
+				Blocks.AIR.defaultBlockState(), 3);
+		helper.getLevel().setBlock(spawnPos.above(),
+				Blocks.AIR.defaultBlockState(), 3);
+		require(helper,
+				FudgeBoar.checkFudgeBoarSpawnRules(
+						CakeWorldEntities.FUDGE_BOAR.get(),
+						helper.getLevel(), MobSpawnType.NATURAL,
+						spawnPos, new Random(1978L))
+						&& SpawnPlacements.getPlacementType(
+								CakeWorldEntities.FUDGE_BOAR.get())
+								== SpawnPlacements.Type.ON_GROUND
+						&& SpawnPlacements.Type.ON_GROUND
+								.canSpawnAt(helper.getLevel(),
+										spawnPos,
+										CakeWorldEntities
+												.FUDGE_BOAR.get()),
+				"Fudge Boar lost its exact Hoglin ground-spawn contract on Fudge Rock");
+		helper.getLevel().setBlock(spawnPos.below(),
+				Blocks.NETHER_WART_BLOCK.defaultBlockState(), 3);
+		require(helper,
+				!FudgeBoar.checkFudgeBoarSpawnRules(
+						CakeWorldEntities.FUDGE_BOAR.get(),
+						helper.getLevel(), MobSpawnType.NATURAL,
+						spawnPos, new Random(1978L)),
+				"Fudge Boar spawned on vanilla Hoglin-excluded Nether Wart Block");
+		Biome fudgeWastes = helper.getLevel().registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY)
+				.get(CakeWorldBiomes.FUDGE_WASTES.getId());
+		require(helper, fudgeWastes != null,
+				"Could not inspect Fudge Wastes Fudge Boar spawning");
+		requireSpawnReplacement(helper, fudgeWastes,
+				EntityType.HOGLIN,
+				CakeWorldEntities.FUDGE_BOAR.get(),
+				MobCategory.MONSTER);
+
+		CompoundTag saved = new CompoundTag();
+		saved.putBoolean("IsImmuneToZombification", true);
+		saved.putInt("TimeInOverworld", 123);
+		saved.putBoolean("CannotBeHunted", true);
+		FudgeBoar restored = CakeWorldEntities.FUDGE_BOAR.get()
+				.create(helper.getLevel());
+		require(helper, restored != null,
+				"Could not create restored Fudge Boar fixture");
+		restored.readAdditionalSaveData(saved);
+		CompoundTag roundTrip = new CompoundTag();
+		restored.addAdditionalSaveData(roundTrip);
+		require(helper,
+				roundTrip.getBoolean(
+						"IsImmuneToZombification")
+						&& roundTrip.getInt(
+								"TimeInOverworld") == 123
+						&& roundTrip.getBoolean(
+								"CannotBeHunted")
+						&& !restored.canBeHunted()
+						&& !restored.isConverting(),
+				"Fudge Boar did not preserve immunity, conversion time, or huntability across NBT");
+
+		FudgeBoar converting =
+				CakeWorldEntities.FUDGE_BOAR.get()
+						.create(helper.getLevel());
+		require(helper, converting != null,
+				"Could not create Fudge Boar conversion fixture");
+		CompoundTag conversion = new CompoundTag();
+		conversion.putInt("TimeInOverworld", 300);
+		converting.readAdditionalSaveData(conversion);
+		BlockPos conversionPos = anchor.offset(0, 0, 6);
+		converting.setPos(conversionPos.getX(),
+				conversionPos.getY(), conversionPos.getZ());
+		helper.getLevel().addFreshEntity(converting);
+		require(helper, converting.isConverting(),
+				"Unprotected Overworld Fudge Boar did not enter the inherited zombification countdown");
+		converting.tick();
+		Zoglin converted = helper.getLevel()
+				.getEntitiesOfClass(Zoglin.class,
+						new AABB(conversionPos).inflate(2.0D))
+				.stream().findFirst().orElse(null);
+		require(helper,
+				converting.isRemoved()
+						&& converted != null
+						&& converted.getType() == EntityType.ZOGLIN
+						&& converted.hasEffect(
+								MobEffects.CONFUSION),
+				"Fudge Boar did not preserve the documented transitional conversion to vanilla Zoglin");
+
+		require(helper,
+				CakeWorldItems.FUDGE_BOAR_SPAWN_EGG.isPresent()
+						&& boar.getLootTable().equals(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/fudge_boar")),
+				"Fudge Boar lost its spawn egg or dedicated Hoglin-equivalent loot table");
+		ServerPlayer advancementPlayer = new ServerPlayer(
+				helper.getLevel().getServer(), helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2025"),
+						"CakeWorldFudgeBoarRoleTest"));
+		VanillaRoleAdvancements.creditBredRole(
+				advancementPlayer,
+				CakeWorldEntities.FUDGE_BOAR.get());
+		VanillaRoleAdvancements.creditKilledHoglinRole(
+				advancementPlayer);
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:husbandry/bred_all_animals",
+				"minecraft:hoglin");
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:adventure/kill_all_mobs",
+				"minecraft:hoglin");
 		helper.succeed();
 	}
 

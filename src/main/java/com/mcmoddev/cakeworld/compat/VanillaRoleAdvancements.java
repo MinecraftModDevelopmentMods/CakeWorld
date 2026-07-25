@@ -89,6 +89,8 @@ public final class VanillaRoleAdvancements {
 			criterion = "minecraft:fox";
 		} else if (childType == CakeWorldEntities.NOUGAT_GOAT.get()) {
 			criterion = "minecraft:goat";
+		} else if (childType == CakeWorldEntities.FUDGE_BOAR.get()) {
+			criterion = "minecraft:hoglin";
 		}
 		if (criterion != null) {
 			award(player, BRED_ALL, criterion);
@@ -122,6 +124,10 @@ public final class VanillaRoleAdvancements {
 
 	public static void creditKilledGuardianRole(ServerPlayer player) {
 		award(player, KILL_ALL, "minecraft:guardian");
+	}
+
+	public static void creditKilledHoglinRole(ServerPlayer player) {
+		award(player, KILL_ALL, "minecraft:hoglin");
 	}
 
 	public static void creditKilledEndermanRole(ServerPlayer player) {
@@ -170,6 +176,9 @@ public final class VanillaRoleAdvancements {
 		}
 		if (type == CakeWorldEntities.GUMBALL_GUARDIAN.get()) {
 			return "minecraft:guardian";
+		}
+		if (type == CakeWorldEntities.FUDGE_BOAR.get()) {
+			return "minecraft:hoglin";
 		}
 		if (type == CakeWorldEntities.TAFFY_TALLWALKER.get()) {
 			return "minecraft:enderman";

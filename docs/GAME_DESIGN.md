@@ -258,7 +258,7 @@ document explicitly says otherwise.
 | MOB-022 | `minecraft:glow_squid` | Glow-Jelly | Luminous aquatic ambience and glowing-ink compatibility role. |
 | MOB-023 | `minecraft:goat` | Nougat Goat | Mountain animal preserving ramming and horn roles. |
 | MOB-024 | `minecraft:guardian` | Gumball Guardian | Soda Palace defender with clearly signalled beam behaviour. |
-| MOB-025 | `minecraft:hoglin` | Fudge Boar | Nether food and knockback role. |
+| MOB-025 | `minecraft:hoglin` | Fudge Boar | Huntable Nether food animal retaining Hoglin breeding, repellent and knockback roles; protected throws below Hard and real charges on Hard. |
 | MOB-026 | `minecraft:horse` | Gingerbread Pony | Primary rideable mount. |
 | MOB-027 | `minecraft:husk` | Dried Crumbler | Sherbet-desert variant of the Crumbler. |
 | MOB-028 | `minecraft:illusioner` | Mirage Confectioner | Command-only compatibility caster; not added to normal spawning unless given a future structure. |
@@ -312,6 +312,15 @@ Target-version note for MOB-023: Java 1.18.2's Goat horn contract is the
 visible adult model only. Horn items, horn drops, and horn loss were added
 after this target version, so CakeWorld does not invent a false vanilla
 compatibility contract by backporting them.
+
+Target-version note for MOB-025: vanilla 1.18.2 Piglin and Hoglin sensors
+recognize the Fudge Boar subclass, and CakeWorld repairs the hard-coded
+same-family mating type locally. A few later Piglin hunt bookkeeping branches
+still compare the literal vanilla Hoglin type; the main Piglin hunt-target
+sensor is preserved and verified without copying vanilla Piglin AI. Until
+MOB-069 is implemented, an unprotected Fudge Boar that completes its
+Overworld conversion becomes a vanilla Zoglin. Both seams must remain visible
+in the evidence ledger and be revisited with Fudge Folk and Stale Fudge Boar.
 
 Projectiles, vehicles, decorative entities, experience, items, the player, and
 other non-mob entity types retain vanilla identity unless a later feature

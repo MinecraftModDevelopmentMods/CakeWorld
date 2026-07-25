@@ -9,6 +9,7 @@ import com.mcmoddev.cakeworld.entity.CocoaCow;
 import com.mcmoddev.cakeworld.entity.CustardCat;
 import com.mcmoddev.cakeworld.entity.DeepLiquoriceWeaver;
 import com.mcmoddev.cakeworld.entity.DoughDonkey;
+import com.mcmoddev.cakeworld.entity.FudgeBoar;
 import com.mcmoddev.cakeworld.entity.GrandGumballGuardian;
 import com.mcmoddev.cakeworld.entity.GiantStaleCrumbler;
 import com.mcmoddev.cakeworld.entity.GlowJelly;
@@ -61,6 +62,7 @@ import net.minecraft.world.entity.monster.Ghast;
 import net.minecraft.world.entity.monster.Giant;
 import net.minecraft.world.entity.monster.Guardian;
 import net.minecraft.world.entity.monster.Zombie;
+import net.minecraft.world.entity.monster.hoglin.Hoglin;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -151,6 +153,12 @@ public final class CakeWorldEntities {
 					EntityType.Builder.of(GumballGuardian::new,
 							MobCategory.MONSTER)
 							.sized(0.85F, 0.85F)
+							.clientTrackingRange(8));
+	public static final RegistryObject<EntityType<FudgeBoar>> FUDGE_BOAR =
+			entity("fudge_boar",
+					EntityType.Builder.of(FudgeBoar::new,
+							MobCategory.MONSTER)
+							.sized(1.3964844F, 1.4F)
 							.clientTrackingRange(8));
 	public static final RegistryObject<EntityType<TaffyTallwalker>>
 			TAFFY_TALLWALKER = entity("taffy_tallwalker",
@@ -274,6 +282,8 @@ public final class CakeWorldEntities {
 				ElderGuardian.createAttributes().build());
 		event.put(GUMBALL_GUARDIAN.get(),
 				Guardian.createAttributes().build());
+		event.put(FUDGE_BOAR.get(),
+				Hoglin.createAttributes().build());
 		event.put(TAFFY_TALLWALKER.get(),
 				EnderMan.createAttributes().build());
 		event.put(SUGAR_MITE.get(),
@@ -342,6 +352,10 @@ public final class CakeWorldEntities {
 					SpawnPlacements.Type.IN_WATER,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					Guardian::checkGuardianSpawnRules);
+			SpawnPlacements.register(FUDGE_BOAR.get(),
+					SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					FudgeBoar::checkFudgeBoarSpawnRules);
 			SpawnPlacements.register(TAFFY_TALLWALKER.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,

@@ -85,6 +85,8 @@ public final class CakeWorldCreatureSpawns {
 					CakeWorldEntities.CINNAMON_SPARK, 10, 1, 3);
 			replace(event, MobCategory.MONSTER, EntityType.GHAST,
 					CakeWorldEntities.MALLOW_FLOATER, 50, 4, 4);
+			replace(event, MobCategory.MONSTER, EntityType.HOGLIN,
+					CakeWorldEntities.FUDGE_BOAR, 9, 3, 4);
 		}
 	}
 
