@@ -31,6 +31,8 @@ import com.mcmoddev.cakeworld.compat.VanillaRoleAdvancements;
 import com.mcmoddev.cakeworld.entity.CandyflossSheep;
 import com.mcmoddev.cakeworld.entity.BonbonBat;
 import com.mcmoddev.cakeworld.entity.CocoaCow;
+import com.mcmoddev.cakeworld.entity.CinnamonPuffProjectile;
+import com.mcmoddev.cakeworld.entity.CinnamonSpark;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
@@ -72,6 +74,7 @@ import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.animal.Cod;
 import net.minecraft.world.entity.animal.axolotl.Axolotl;
+import net.minecraft.world.entity.projectile.SmallFireball;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
@@ -1826,6 +1829,102 @@ public final class FirstBiteGameTests {
 				"minecraft:bee");
 		require(helper, CakeWorldItems.SUGAR_BEE_SPAWN_EGG.isPresent(),
 				"Sugar Bee has no creative/testing spawn egg");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void cinnamonSparkUsesSafePuffsUntilHard(
+			GameTestHelper helper) {
+		CinnamonSpark spark =
+				CakeWorldEntities.CINNAMON_SPARK.get()
+						.create(helper.getLevel());
+		Pig target = EntityType.PIG.create(helper.getLevel());
+		require(helper, spark != null && target != null,
+				"Could not create Cinnamon Spark attack fixtures");
+		BlockPos centre = helper.absolutePos(new BlockPos(3, 3, 3));
+		spark.setPos(centre.getX(), centre.getY(), centre.getZ());
+		target.setPos(centre.getX() + 3.0D, centre.getY(),
+				centre.getZ());
+		helper.getLevel().addFreshEntity(spark);
+		helper.getLevel().addFreshEntity(target);
+		AABB attackArea = new AABB(centre).inflate(12.0D);
+
+		Difficulty originalDifficulty = helper.getLevel().getDifficulty();
+		try {
+			for (Difficulty safeDifficulty :
+					new Difficulty[] {Difficulty.EASY, Difficulty.NORMAL}) {
+				target.removeAllEffects();
+				target.setHealth(10.0F);
+				target.setSecondsOnFire(5);
+				target.fallDistance = 12.0F;
+				target.setDeltaMovement(Vec3.ZERO);
+				helper.getLevel().getServer().setDifficulty(
+						safeDifficulty, true);
+				spark.performRangedAttack(target, 1.0F);
+				java.util.List<CinnamonPuffProjectile> puffs =
+						helper.getLevel().getEntitiesOfClass(
+								CinnamonPuffProjectile.class,
+								attackArea);
+				require(helper, !puffs.isEmpty(),
+						safeDifficulty
+								+ " Cinnamon Spark did not launch a safe puff");
+				CinnamonPuffProjectile puff =
+						puffs.get(puffs.size() - 1);
+				puff.applyHarmlessPuff(target);
+				require(helper,
+						Math.abs(target.getHealth() - 10.0F) < 0.001F
+								&& !target.isOnFire()
+								&& target.fallDistance == 0.0F
+								&& target.hasEffect(
+										net.minecraft.world.effect.MobEffects.SLOW_FALLING)
+								&& target.hasEffect(
+										net.minecraft.world.effect.MobEffects.FIRE_RESISTANCE)
+								&& target.getDeltaMovement().y > 0.0D,
+						safeDifficulty
+								+ " Cinnamon Puff caused damage or lacked rescue/knockback behavior");
+				puff.discard();
+			}
+
+			target.removeAllEffects();
+			target.setHealth(10.0F);
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			spark.performRangedAttack(target, 1.0F);
+			java.util.List<SmallFireball> fireballs =
+					helper.getLevel().getEntitiesOfClass(
+							SmallFireball.class, attackArea);
+			require(helper, !fireballs.isEmpty(),
+					"Hard Cinnamon Spark did not launch a real fireball");
+			require(helper, spark.doHurtTarget(target)
+							&& target.getHealth() < 10.0F,
+					"Hard Cinnamon Spark melee did not restore real damage");
+			fireballs.forEach(fireball -> fireball.discard());
+		} finally {
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		Biome fudgeWastes = helper.getLevel().registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY)
+				.get(CakeWorldBiomes.FUDGE_WASTES.getId());
+		require(helper, fudgeWastes != null,
+				"Could not inspect Fudge Wastes Cinnamon Spark spawning");
+		requireSpawnReplacement(helper, fudgeWastes, EntityType.BLAZE,
+				CakeWorldEntities.CINNAMON_SPARK.get(),
+				MobCategory.MONSTER);
+		require(helper, CakeWorldItems.CINNAMON_SPARK_SPAWN_EGG.isPresent(),
+				"Cinnamon Spark has no creative/testing spawn egg");
+
+		ServerPlayer advancementPlayer = new ServerPlayer(
+				helper.getLevel().getServer(), helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2004"),
+						"CakeWorldCinnamonSparkRoleTest"));
+		VanillaRoleAdvancements.creditKilledBlazeRole(
+				advancementPlayer);
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:adventure/kill_all_mobs",
+				"minecraft:blaze");
 		helper.succeed();
 	}
 

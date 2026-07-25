@@ -28,15 +28,17 @@ public final class CakeWorldCreatureSpawns {
 	@SubscribeEvent
 	public static void onBiomeLoading(BiomeLoadingEvent event) {
 		ResourceLocation biome = event.getName();
-		if (biome == null || !CakeWorld.MODID.equals(biome.getNamespace())
-				|| !OVERWORLD_BIOMES.contains(biome.getPath())) {
+		if (biome == null
+				|| !CakeWorld.MODID.equals(biome.getNamespace())) {
 			return;
 		}
 
-		replace(event, MobCategory.MONSTER, EntityType.ZOMBIE,
-				CakeWorldEntities.STALE_CRUMBLER, 95, 4, 4);
-		replace(event, MobCategory.AMBIENT, EntityType.BAT,
-				CakeWorldEntities.BONBON_BAT, 10, 4, 8);
+		if (OVERWORLD_BIOMES.contains(biome.getPath())) {
+			replace(event, MobCategory.MONSTER, EntityType.ZOMBIE,
+					CakeWorldEntities.STALE_CRUMBLER, 95, 4, 4);
+			replace(event, MobCategory.AMBIENT, EntityType.BAT,
+					CakeWorldEntities.BONBON_BAT, 10, 4, 8);
+		}
 		if ("candy_plains".equals(biome.getPath())) {
 			replace(event, MobCategory.CREATURE, EntityType.BEE,
 					CakeWorldEntities.SUGAR_BEE, 8, 1, 3);
@@ -56,6 +58,10 @@ public final class CakeWorldCreatureSpawns {
 		if ("soda_ocean".equals(biome.getPath())) {
 			replace(event, MobCategory.AXOLOTLS, EntityType.AXOLOTL,
 					CakeWorldEntities.JELLYLOTL, 6, 1, 3);
+		}
+		if ("fudge_wastes".equals(biome.getPath())) {
+			replace(event, MobCategory.MONSTER, EntityType.BLAZE,
+					CakeWorldEntities.CINNAMON_SPARK, 10, 1, 3);
 		}
 	}
 

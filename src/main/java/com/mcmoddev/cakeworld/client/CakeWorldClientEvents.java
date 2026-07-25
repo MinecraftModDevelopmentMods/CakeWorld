@@ -7,10 +7,12 @@ import net.minecraft.client.renderer.entity.ChickenRenderer;
 import net.minecraft.client.renderer.entity.AxolotlRenderer;
 import net.minecraft.client.renderer.entity.BatRenderer;
 import net.minecraft.client.renderer.entity.BeeRenderer;
+import net.minecraft.client.renderer.entity.BlazeRenderer;
 import net.minecraft.client.renderer.entity.CowRenderer;
 import net.minecraft.client.renderer.entity.PigRenderer;
 import net.minecraft.client.renderer.entity.SheepRenderer;
 import net.minecraft.client.renderer.entity.ZombieRenderer;
+import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -30,6 +32,10 @@ public final class CakeWorldClientEvents {
 				BatRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.SUGAR_BEE.get(),
 				BeeRenderer::new);
+		event.registerEntityRenderer(CakeWorldEntities.CINNAMON_SPARK.get(),
+				BlazeRenderer::new);
+		event.registerEntityRenderer(CakeWorldEntities.CINNAMON_PUFF.get(),
+				ThrownItemRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.COCOA_COW.get(), CowRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.MALLOW_CHICK.get(),
 				ChickenRenderer::new);

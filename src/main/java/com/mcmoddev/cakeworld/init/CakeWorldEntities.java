@@ -3,6 +3,8 @@ package com.mcmoddev.cakeworld.init;
 import com.mcmoddev.cakeworld.CakeWorld;
 import com.mcmoddev.cakeworld.entity.BonbonBat;
 import com.mcmoddev.cakeworld.entity.CandyflossSheep;
+import com.mcmoddev.cakeworld.entity.CinnamonPuffProjectile;
+import com.mcmoddev.cakeworld.entity.CinnamonSpark;
 import com.mcmoddev.cakeworld.entity.CocoaCow;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.MallowChick;
@@ -22,6 +24,7 @@ import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.animal.Sheep;
 import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.monster.Blaze;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
@@ -56,6 +59,21 @@ public final class CakeWorldEntities {
 							MobCategory.CREATURE)
 							.sized(0.7F, 0.6F)
 							.clientTrackingRange(8));
+	public static final RegistryObject<EntityType<CinnamonSpark>> CINNAMON_SPARK =
+			entity("cinnamon_spark",
+					EntityType.Builder.of(CinnamonSpark::new,
+							MobCategory.MONSTER)
+							.fireImmune()
+							.sized(0.6F, 1.8F)
+							.clientTrackingRange(8));
+	public static final RegistryObject<EntityType<CinnamonPuffProjectile>>
+			CINNAMON_PUFF = entity("cinnamon_puff",
+					EntityType.Builder.<CinnamonPuffProjectile>of(
+							CinnamonPuffProjectile::new,
+							MobCategory.MISC)
+							.sized(0.25F, 0.25F)
+							.clientTrackingRange(4)
+							.updateInterval(10));
 	public static final RegistryObject<EntityType<MallowChick>> MALLOW_CHICK =
 			entity("mallow_chick", EntityType.Builder.of(MallowChick::new, MobCategory.CREATURE)
 					.sized(0.4F, 0.7F).clientTrackingRange(10));
@@ -84,6 +102,8 @@ public final class CakeWorldEntities {
 		event.put(JELLYLOTL.get(), Axolotl.createAttributes().build());
 		event.put(BONBON_BAT.get(), Bat.createAttributes().build());
 		event.put(SUGAR_BEE.get(), Bee.createAttributes().build());
+		event.put(CINNAMON_SPARK.get(),
+				Blaze.createAttributes().build());
 		event.put(COCOA_COW.get(), Cow.createAttributes().build());
 		event.put(MALLOW_CHICK.get(), Chicken.createAttributes().build());
 		event.put(TRUFFLE_PIG.get(), Pig.createAttributes().build());
@@ -105,6 +125,10 @@ public final class CakeWorldEntities {
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					Animal::checkAnimalSpawnRules);
+			SpawnPlacements.register(CINNAMON_SPARK.get(),
+					SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					Monster::checkAnyLightMonsterSpawnRules);
 			SpawnPlacements.register(COCOA_COW.get(), SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					Animal::checkAnimalSpawnRules);

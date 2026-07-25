@@ -31,10 +31,12 @@ public final class VanillaRoleAdvancements {
 
 	@SubscribeEvent
 	public static void onDeath(LivingDeathEvent event) {
-		if (event.getSource().getEntity() instanceof ServerPlayer player
-				&& event.getEntityLiving().getType()
-						== CakeWorldEntities.STALE_CRUMBLER.get()) {
-			award(player, KILL_ALL, "minecraft:zombie");
+		if (event.getSource().getEntity() instanceof ServerPlayer player) {
+			String criterion = killedCriterion(
+					event.getEntityLiving().getType());
+			if (criterion != null) {
+				award(player, KILL_ALL, criterion);
+			}
 		}
 	}
 
@@ -60,6 +62,20 @@ public final class VanillaRoleAdvancements {
 
 	public static void creditKilledZombieRole(ServerPlayer player) {
 		award(player, KILL_ALL, "minecraft:zombie");
+	}
+
+	public static void creditKilledBlazeRole(ServerPlayer player) {
+		award(player, KILL_ALL, "minecraft:blaze");
+	}
+
+	private static String killedCriterion(EntityType<?> type) {
+		if (type == CakeWorldEntities.STALE_CRUMBLER.get()) {
+			return "minecraft:zombie";
+		}
+		if (type == CakeWorldEntities.CINNAMON_SPARK.get()) {
+			return "minecraft:blaze";
+		}
+		return null;
 	}
 
 	private static void award(ServerPlayer player, ResourceLocation advancementId,
