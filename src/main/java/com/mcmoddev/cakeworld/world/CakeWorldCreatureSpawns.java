@@ -35,6 +35,8 @@ public final class CakeWorldCreatureSpawns {
 
 		replace(event, MobCategory.MONSTER, EntityType.ZOMBIE,
 				CakeWorldEntities.STALE_CRUMBLER, 95, 4, 4);
+		replace(event, MobCategory.AMBIENT, EntityType.BAT,
+				CakeWorldEntities.BONBON_BAT, 10, 4, 8);
 		if ("candy_plains".equals(biome.getPath())) {
 			replace(event, MobCategory.CREATURE, EntityType.COW,
 					CakeWorldEntities.COCOA_COW, 8, 2, 4);

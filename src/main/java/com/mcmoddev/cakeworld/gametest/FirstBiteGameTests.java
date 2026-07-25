@@ -29,6 +29,7 @@ import com.mcmoddev.cakeworld.cookbook.DiscoveryType;
 import com.mcmoddev.cakeworld.cookbook.SharedCookbookLibrary;
 import com.mcmoddev.cakeworld.compat.VanillaRoleAdvancements;
 import com.mcmoddev.cakeworld.entity.CandyflossSheep;
+import com.mcmoddev.cakeworld.entity.BonbonBat;
 import com.mcmoddev.cakeworld.entity.CocoaCow;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.MallowChick;
@@ -1686,6 +1687,48 @@ public final class FirstBiteGameTests {
 		requireCriterion(helper, advancementPlayer,
 				"minecraft:husbandry/bred_all_animals",
 				"minecraft:axolotl");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void bonbonBatIsHarmlessPersistentCakeWorldAmbience(
+			GameTestHelper helper) {
+		BonbonBat bat =
+				CakeWorldEntities.BONBON_BAT.get().create(helper.getLevel());
+		require(helper, bat != null
+						&& bat.getType().getCategory()
+								== MobCategory.AMBIENT
+						&& bat.getAttribute(Attributes.ATTACK_DAMAGE) == null
+						&& !bat.isPushable()
+						&& !bat.causeFallDamage(100.0F, 1.0F,
+								net.minecraft.world.damagesource.DamageSource.FALL),
+				"Bonbon Bat gained a damage, collision, or fall-hazard role");
+		bat.setResting(true);
+		CompoundTag saved = new CompoundTag();
+		bat.addAdditionalSaveData(saved);
+		BonbonBat restored =
+				CakeWorldEntities.BONBON_BAT.get().create(helper.getLevel());
+		require(helper, restored != null, "Could not restore Bonbon Bat");
+		restored.readAdditionalSaveData(saved);
+		require(helper, restored.isResting(),
+				"Bonbon Bat lost vanilla roost state through save/load");
+
+		for (ResourceLocation biomeId : new ResourceLocation[] {
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId()}) {
+			Biome loaded = helper.getLevel().registryAccess()
+					.registryOrThrow(Registry.BIOME_REGISTRY)
+					.get(biomeId);
+			require(helper, loaded != null,
+					"Could not inspect CakeWorld Bonbon Bat biome");
+			requireSpawnReplacement(helper, loaded, EntityType.BAT,
+					CakeWorldEntities.BONBON_BAT.get(),
+					MobCategory.AMBIENT);
+		}
+		require(helper, CakeWorldItems.BONBON_BAT_SPAWN_EGG.isPresent(),
+				"Bonbon Bat has no creative/testing spawn egg");
 		helper.succeed();
 	}
 
