@@ -34,6 +34,7 @@ import com.mcmoddev.cakeworld.compat.VanillaRoleAdvancements;
 import com.mcmoddev.cakeworld.entity.BiscuitBandit;
 import com.mcmoddev.cakeworld.entity.CandyflossSheep;
 import com.mcmoddev.cakeworld.entity.CandyflossSheepGrazeGoal;
+import com.mcmoddev.cakeworld.entity.CandyCaneArcher;
 import com.mcmoddev.cakeworld.entity.BonbonBat;
 import com.mcmoddev.cakeworld.entity.ChocolatePanda;
 import com.mcmoddev.cakeworld.entity.CocoaCow;
@@ -109,6 +110,7 @@ import com.mcmoddev.cakeworld.world.CakeWorldPillagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldRavagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldShulkerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldSilverfishReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldSkeletonReplacement;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -196,6 +198,8 @@ import net.minecraft.world.entity.animal.horse.Mule;
 import net.minecraft.world.entity.animal.horse.TraderLlama;
 import net.minecraft.world.entity.animal.horse.Variant;
 import net.minecraft.world.entity.monster.Drowned;
+import net.minecraft.world.entity.monster.AbstractSkeleton;
+import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.ElderGuardian;
 import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.entity.monster.Endermite;
@@ -214,6 +218,9 @@ import net.minecraft.world.entity.monster.Phantom;
 import net.minecraft.world.entity.monster.Ravager;
 import net.minecraft.world.entity.monster.Shulker;
 import net.minecraft.world.entity.monster.Silverfish;
+import net.minecraft.world.entity.monster.Skeleton;
+import net.minecraft.world.entity.monster.Spider;
+import net.minecraft.world.entity.monster.Stray;
 import net.minecraft.world.entity.monster.Vex;
 import net.minecraft.world.entity.monster.ZombifiedPiglin;
 import net.minecraft.world.entity.monster.Zoglin;
@@ -15217,6 +15224,596 @@ public final class FirstBiteGameTests {
 		helper.succeed();
 	}
 
+	@GameTest(template = EMPTY, timeoutTicks = 240)
+	public static void candyCaneArchersKeepSkeletonBowsAndSafeStickyShots(
+			GameTestHelper helper) {
+		CandyCaneArcherProbe archer =
+				new CandyCaneArcherProbe(
+						helper.getLevel());
+		require(helper,
+				archer instanceof Skeleton
+						&& archer
+								instanceof AbstractSkeleton
+						&& archer.getType()
+								== CakeWorldEntities
+										.CANDY_CANE_ARCHER
+										.get()
+						&& archer.getType().getCategory()
+								== MobCategory.MONSTER
+						&& close(archer.getMaxHealth(),
+								20.0D)
+						&& close(archer.getAttributeValue(
+								Attributes
+										.MOVEMENT_SPEED),
+								0.25D)
+						&& close(archer.getAttributeValue(
+								Attributes.ATTACK_DAMAGE),
+								2.0D)
+						&& close(archer.getAttributeValue(
+								Attributes
+										.FOLLOW_RANGE),
+								16.0D)
+						&& close(archer.getDimensions(
+								Pose.STANDING).width,
+								0.6D)
+						&& close(archer.getDimensions(
+								Pose.STANDING).height,
+								1.99D)
+						&& archer.getType()
+								.clientTrackingRange() == 8
+						&& archer.getExperienceValue() == 5
+						&& archer.getMobType()
+								== MobType.UNDEAD
+						&& close(archer.getMyRidingOffset(),
+								-0.6D)
+						&& close(archer
+								.standingEyeHeight(),
+								1.74D)
+						&& !archer.canFreeze(),
+				"Candy-Cane Archer lost its genuine Skeleton body, attributes, undead or freeze role");
+		require(helper,
+				archer.ambientSound()
+								== SoundEvents
+										.SKELETON_AMBIENT
+						&& archer.hurtSound()
+								== SoundEvents
+										.SKELETON_HURT
+						&& archer.deathSound()
+								== SoundEvents
+										.SKELETON_DEATH
+						&& archer.stepSound()
+								== SoundEvents
+										.SKELETON_STEP
+						&& archer.goalPriority(
+								"RestrictSunGoal") == 2
+						&& archer.goalPriority(
+								"FleeSunGoal") == 3
+						&& archer.goalPriority(
+								"AvoidEntityGoal") == 3
+						&& archer.goalPriority(
+								"WaterAvoidingRandomStrollGoal")
+								== 5
+						&& archer.goalPriority(
+								"LookAtPlayerGoal") == 6
+						&& archer.goalPriority(
+								"RandomLookAroundGoal") == 6
+						&& archer.targetGoalPriority(
+								"HurtByTargetGoal") == 1
+						&& archer.targetGoalPriority(
+								"NearestAttackableTargetGoal")
+								== 2
+						&& archer
+								.countTargetGoalsAtPriority(3)
+								== 2,
+				"Candy-Cane Archer lost exact Skeleton sounds, sun/wolf movement or target priorities");
+
+		BlockPos center =
+				helper.absolutePos(new BlockPos(1, 1, 1));
+		archer.moveTo(center.getX() + 0.5D,
+				center.getY(),
+				center.getZ() + 0.5D);
+		archer.equipDefault(
+				helper.getLevel()
+						.getCurrentDifficultyAt(center));
+		require(helper,
+				archer.getMainHandItem().is(Items.BOW)
+						&& archer.canFireBow()
+						&& archer.goalPriority(
+								"RangedBowAttackGoal")
+								== 4
+						&& archer
+								.countGoalsAssignableTo(
+										net.minecraft
+												.world
+												.entity
+												.ai
+												.goal
+												.MeleeAttackGoal
+												.class)
+								== 0,
+				"Candy-Cane Archer lost default Bow equipment or ranged-goal selection");
+
+		archer.setItemSlot(EquipmentSlot.MAINHAND,
+				new ItemStack(Items.IRON_SWORD));
+		require(helper,
+				archer.countGoalsAssignableTo(
+								net.minecraft.world.entity
+										.ai.goal
+										.MeleeAttackGoal
+										.class)
+								== 1
+						&& archer.goalPriorityAssignableTo(
+								net.minecraft.world.entity
+										.ai.goal
+										.MeleeAttackGoal
+										.class)
+								== 4
+						&& archer.goalPriority(
+								"RangedBowAttackGoal")
+								== -1,
+				"Candy-Cane Archer no longer switches to inherited melee AI without a Bow");
+		archer.setItemSlot(EquipmentSlot.MAINHAND,
+				new ItemStack(Items.BOW));
+
+		archer.forceSunBurn(true);
+		archer.setItemSlot(EquipmentSlot.HEAD,
+				ItemStack.EMPTY);
+		archer.clearFire();
+		archer.aiStep();
+		require(helper, archer.isOnFire(),
+				"Candy-Cane Archer lost Skeleton sunlight burning");
+		archer.clearFire();
+		archer.setItemSlot(EquipmentSlot.HEAD,
+				new ItemStack(Items.IRON_HELMET));
+		archer.aiStep();
+		require(helper,
+				!archer.isOnFire()
+						&& !archer.getItemBySlot(
+								EquipmentSlot.HEAD)
+								.isEmpty(),
+				"Candy-Cane Archer helmet no longer shields sunlight");
+		archer.forceSunBurn(false);
+
+		Difficulty originalDifficulty =
+				helper.getLevel().getDifficulty();
+		CandyCaneArcher converted = null;
+		Spider vehicle = null;
+		Stray convertedStray = null;
+		try {
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.NORMAL, true);
+			archer.reassessWeaponGoal();
+			require(helper,
+					archer.bowAttackInterval() == 40,
+					"Normal Candy-Cane Archer lost the exact 40-tick Skeleton bow interval");
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			archer.reassessWeaponGoal();
+			require(helper,
+					archer.bowAttackInterval() == 20,
+					"Hard Candy-Cane Archer lost the exact 20-tick Skeleton bow interval");
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.NORMAL, true);
+			archer.reassessWeaponGoal();
+			helper.getLevel().addFreshEntity(archer);
+			Pig aimingTarget =
+					EntityType.PIG.create(
+							helper.getLevel());
+			require(helper, aimingTarget != null,
+					"Could not create Candy-Cane Archer aiming target");
+			aimingTarget.moveTo(center.getX() + 8.5D,
+					center.getY(),
+					center.getZ() + 0.5D);
+			archer.clearLastSound();
+			archer.performRangedAttack(
+					aimingTarget, 1.0F);
+			AbstractArrow fired = helper.getLevel()
+					.getEntitiesOfClass(
+							AbstractArrow.class,
+							new AABB(center)
+									.inflate(16.0D),
+							arrow -> arrow.getOwner()
+									== archer)
+					.stream().findFirst().orElse(null);
+			require(helper,
+					fired instanceof Arrow
+							&& fired.getOwner() == archer
+							&& archer.lastSound()
+									== SoundEvents
+											.SKELETON_SHOOT
+							&& fired.getDeltaMovement()
+									.length() > 1.0D,
+					"Candy-Cane Archer did not fire the inherited aimed Arrow with Skeleton cue");
+
+			Pig safeTarget =
+					EntityType.PIG.create(
+							helper.getLevel());
+			require(helper, safeTarget != null,
+					"Could not create sticky-shot target");
+			safeTarget.moveTo(center.getX() + 4.5D,
+					center.getY(),
+					center.getZ() + 0.5D);
+			safeTarget.setHealth(10.0F);
+			safeTarget.setSecondsOnFire(5);
+			safeTarget.fallDistance = 20.0F;
+			boolean safeHit = safeTarget.hurt(
+					DamageSource.arrow(
+							(AbstractArrow)fired,
+							archer),
+					4.0F);
+			require(helper,
+					!safeHit
+							&& close(safeTarget
+									.getHealth(),
+									10.0D)
+							&& !safeTarget.isOnFire()
+							&& close(safeTarget
+									.fallDistance,
+									0.0D)
+							&& safeTarget.hasEffect(
+									MobEffects
+											.MOVEMENT_SLOWDOWN)
+							&& safeTarget.getEffect(
+									MobEffects
+											.MOVEMENT_SLOWDOWN)
+									.getAmplifier() == 1
+							&& safeTarget.hasEffect(
+									MobEffects.GLOWING)
+							&& safeTarget.hasEffect(
+									MobEffects
+											.SLOW_FALLING)
+							&& safeTarget.hasEffect(
+									MobEffects
+											.FIRE_RESISTANCE)
+							&& safeTarget.hasEffect(
+									MobEffects
+											.DAMAGE_RESISTANCE)
+							&& safeTarget
+									.getDeltaMovement().y > 0.0D,
+					"Normal Candy-Cane Arrow caused health damage or lacked sticky rescue");
+
+			CandyCaneArcherProbe melee =
+					new CandyCaneArcherProbe(
+							helper.getLevel());
+			melee.moveTo(center.getX() - 2.5D,
+					center.getY(),
+					center.getZ() + 0.5D);
+			Pig safeMelee =
+					EntityType.PIG.create(
+							helper.getLevel());
+			require(helper, safeMelee != null,
+					"Could not create safe melee target");
+			safeMelee.setHealth(10.0F);
+			require(helper,
+					melee.doHurtTarget(safeMelee)
+							&& close(safeMelee
+									.getHealth(),
+									10.0D)
+							&& safeMelee.hasEffect(
+									MobEffects
+											.MOVEMENT_SLOWDOWN),
+					"Normal Bow-less Candy-Cane Archer bypassed the no-damage contract");
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			Pig hardArrowTarget =
+					EntityType.PIG.create(
+							helper.getLevel());
+			require(helper, hardArrowTarget != null,
+					"Could not create Hard arrow target");
+			hardArrowTarget.setHealth(10.0F);
+			hardArrowTarget.invulnerableTime = 0;
+			require(helper,
+					hardArrowTarget.hurt(
+							DamageSource.arrow(
+									(AbstractArrow)fired,
+									archer),
+							4.0F)
+							&& close(hardArrowTarget
+									.getHealth(),
+									6.0D),
+					"Hard Candy-Cane Arrow no longer permits exact incoming damage");
+			Pig hardMeleeTarget =
+					EntityType.PIG.create(
+							helper.getLevel());
+			require(helper, hardMeleeTarget != null,
+					"Could not create Hard melee target");
+			hardMeleeTarget.setHealth(10.0F);
+			hardMeleeTarget.invulnerableTime = 0;
+			require(helper,
+					melee.doHurtTarget(
+							hardMeleeTarget)
+							&& close(hardMeleeTarget
+									.getHealth(),
+									8.0D),
+					"Hard Bow-less Candy-Cane Archer lost the exact two-point Skeleton melee attack");
+
+			BlockPos cakeWorldPos =
+					findCakeWorldBiomePosition(
+							helper, center, 256);
+			require(helper, cakeWorldPos != null,
+					"Could not locate CakeWorld terrain for literal Skeleton conversion");
+			Skeleton literal =
+					EntityType.SKELETON.create(
+							helper.getLevel());
+			vehicle = EntityType.SPIDER.create(
+					helper.getLevel());
+			require(helper,
+					literal != null && vehicle != null,
+					"Could not create literal Skeleton jockey fixture");
+			literal.moveTo(
+					cakeWorldPos.getX() + 0.5D,
+					cakeWorldPos.getY() + 2.0D,
+					cakeWorldPos.getZ() + 0.5D);
+			vehicle.moveTo(literal.getX(),
+					literal.getY(), literal.getZ());
+			literal.setHealth(13.0F);
+			literal.setCustomName(
+					new TextComponent(
+							"Striped Sharpshooter"));
+			literal.setPersistenceRequired();
+			literal.setNoAi(true);
+			literal.setItemSlot(
+					EquipmentSlot.MAINHAND,
+					new ItemStack(Items.BOW));
+			literal.setItemSlot(
+					EquipmentSlot.HEAD,
+					new ItemStack(
+							Items.GOLDEN_HELMET));
+			helper.getLevel()
+					.addFreshEntity(vehicle);
+			helper.getLevel()
+					.addFreshEntity(literal);
+			literal.startRiding(vehicle, true);
+			converted = CakeWorldSkeletonReplacement
+					.replaceIfInCakeWorldBiome(
+							helper.getLevel(),
+							literal);
+			require(helper,
+					converted != null
+							&& converted.getType()
+									== CakeWorldEntities
+											.CANDY_CANE_ARCHER
+											.get()
+							&& close(converted.getHealth(),
+									13.0D)
+							&& converted.hasCustomName()
+							&& "Striped Sharpshooter"
+									.equals(converted
+											.getCustomName()
+											.getString())
+							&& converted
+									.isPersistenceRequired()
+							&& converted.isNoAi()
+							&& converted
+									.getMainHandItem()
+									.is(Items.BOW)
+							&& converted.getItemBySlot(
+									EquipmentSlot.HEAD)
+									.is(Items
+											.GOLDEN_HELMET)
+							&& converted.getVehicle()
+									== vehicle
+							&& vehicle.getPassengers()
+									.contains(converted)
+							&& literal.isRemoved(),
+					"Fresh spawner/jockey/trap conversion lost Archer state, equipment or mount");
+
+			CandyCaneArcherProbe freezing =
+					new CandyCaneArcherProbe(
+							helper.getLevel());
+			freezing.moveTo(center.getX() + 0.5D,
+					center.getY(),
+					center.getZ() + 3.5D);
+			freezing.startFreezeConversionFromNbt(0);
+			require(helper,
+					freezing.isFreezeConverting()
+							&& freezing.isShaking(),
+					"Candy-Cane Archer lost Skeleton freeze-conversion NBT or shaking");
+			helper.getLevel()
+					.addFreshEntity(freezing);
+			freezing.tick();
+			convertedStray = helper.getLevel()
+					.getEntitiesOfClass(
+							Stray.class,
+							freezing.getBoundingBox()
+									.inflate(2.0D),
+							stray -> stray.getType()
+									== EntityType.STRAY)
+					.stream().findFirst().orElse(null);
+			require(helper,
+					freezing.isRemoved()
+							&& convertedStray != null,
+					"Candy-Cane Archer lost vanilla Stray conversion pending MOB-056 Frosted Archer");
+
+			Creeper charged =
+					EntityType.CREEPER.create(
+							helper.getLevel());
+			require(helper, charged != null,
+					"Could not create charged Creeper fixture");
+			CompoundTag chargedTag =
+					new CompoundTag();
+			chargedTag.putBoolean("powered", true);
+			charged.readAdditionalSaveData(
+					chargedTag);
+			archer.emitCustomDeathLoot(
+					DamageSource.mobAttack(charged));
+			ItemEntity skull = helper.getLevel()
+					.getEntitiesOfClass(
+							ItemEntity.class,
+							archer.getBoundingBox()
+									.inflate(2.0D),
+							item -> item.getItem()
+									.is(Items
+											.SKELETON_SKULL))
+					.stream().findFirst().orElse(null);
+			require(helper,
+					skull != null
+							&& !charged
+									.canDropMobsSkull(),
+					"Candy-Cane Archer lost the charged-Creeper Skeleton Skull role");
+			skull.discard();
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.PEACEFUL, true);
+			CandyCaneArcherProbe peaceful =
+					new CandyCaneArcherProbe(
+							helper.getLevel());
+			peaceful.moveTo(center.getX() + 0.5D,
+					center.getY(),
+					center.getZ() + 0.5D);
+			helper.getLevel()
+					.addFreshEntity(peaceful);
+			peaceful.checkDespawn();
+			require(helper,
+					peaceful.isRemoved()
+							&& peaceful
+									.despawnsInPeaceful(),
+					"Peaceful Candy-Cane Archer lost vanilla Monster removal");
+		} finally {
+			if (!archer.isRemoved()) {
+				archer.discard();
+			}
+			if (converted != null) {
+				converted.discard();
+			}
+			if (vehicle != null
+					&& !vehicle.isRemoved()) {
+				vehicle.discard();
+			}
+			if (convertedStray != null
+					&& !convertedStray.isRemoved()) {
+				convertedStray.discard();
+			}
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		Registry<Biome> biomes = helper.getLevel()
+				.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY);
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS.getId())) {
+			Biome biome = biomes.get(biomeId);
+			require(helper,
+					biome != null
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory
+													.MONSTER)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType
+															.SKELETON),
+					"Literal Skeleton leaked into CakeWorld spawning in "
+							+ biomeId);
+			if (biomeId.equals(
+							CakeWorldBiomes
+									.CANDY_PLAINS.getId())
+					|| biomeId.equals(
+							CakeWorldBiomes
+									.COOKIE_FOREST.getId())
+					|| biomeId.equals(
+							CakeWorldBiomes
+									.MARSHMALLOW_PEAKS
+									.getId())
+					|| biomeId.equals(
+							CakeWorldBiomes
+									.SODA_OCEAN.getId())) {
+				List<MobSpawnSettings.SpawnerData>
+						archerSpawns = biome
+								.getMobSettings()
+								.getMobs(
+										MobCategory
+												.MONSTER)
+								.unwrap().stream()
+								.filter(spawn ->
+										spawn.type
+												== CakeWorldEntities
+														.CANDY_CANE_ARCHER
+														.get())
+								.toList();
+				require(helper,
+						archerSpawns.size() == 1,
+						"Expected one inherited Candy-Cane Archer profile in "
+								+ biomeId + ": "
+								+ archerSpawns);
+			}
+		}
+
+		TagKey<EntityType<?>> skeletons =
+				TagKey.create(
+						Registry.ENTITY_TYPE_REGISTRY,
+						new ResourceLocation(
+								"minecraft",
+								"skeletons"));
+		require(helper,
+				SpawnPlacements.getPlacementType(
+								CakeWorldEntities
+										.CANDY_CANE_ARCHER
+										.get())
+								== SpawnPlacements.Type
+										.ON_GROUND
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+												.CANDY_CANE_ARCHER
+												.get())
+								== Heightmap.Types
+										.MOTION_BLOCKING_NO_LEAVES
+						&& CakeWorldEntities
+								.CANDY_CANE_ARCHER
+								.get().is(skeletons)
+						&& CakeWorldItems
+								.CANDY_CANE_ARCHER_SPAWN_EGG
+								.isPresent()
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+												.CANDY_CANE_ARCHER
+												.get())
+								== SoundEvents
+										.PARROT_IMITATE_SKELETON
+						&& archer.getLootTable().equals(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/candy_cane_archer")),
+				"Candy-Cane Archer lost placement, Skeleton-tag music-disc, egg, mimic or exact loot route");
+
+		ServerPlayer advancementPlayer = new ServerPlayer(
+				helper.getLevel().getServer(),
+				helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2050"),
+						"CakeWorldCandyArcherRoleTest"));
+		advancementPlayer.setPos(center.getX() - 60.0D,
+				center.getY(), center.getZ());
+		archer.setPos(center.getX(),
+				center.getY(), center.getZ());
+		Arrow playerArrow = new Arrow(
+				helper.getLevel(),
+				advancementPlayer);
+		VanillaRoleAdvancements.onDeath(
+				new LivingDeathEvent(archer,
+						DamageSource.arrow(
+								playerArrow,
+								advancementPlayer)));
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:adventure/kill_all_mobs",
+				"minecraft:skeleton");
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:adventure/sniper_duel",
+				"killed_skeleton");
+		helper.succeed();
+	}
+
 	@GameTest(template = EMPTY, timeoutTicks = 200)
 	public static void fudgeFolkKeepPiglinSocietyBarterAndSafePeril(
 			GameTestHelper helper) {
@@ -16662,6 +17259,177 @@ public final class FirstBiteGameTests {
 
 		private boolean despawnsInPeaceful() {
 			return shouldDespawnInPeaceful();
+		}
+
+		@Override
+		public void playSound(
+				net.minecraft.sounds.SoundEvent sound,
+				float volume, float pitch) {
+			lastSound = sound;
+		}
+	}
+
+	private static final class CandyCaneArcherProbe
+			extends CandyCaneArcher {
+		private net.minecraft.sounds.SoundEvent lastSound;
+		private boolean forceSunBurn;
+
+		private CandyCaneArcherProbe(Level level) {
+			super(CakeWorldEntities.CANDY_CANE_ARCHER.get(),
+					level);
+		}
+
+		private int getExperienceValue() {
+			return getExperienceReward(null);
+		}
+
+		private float standingEyeHeight() {
+			return getStandingEyeHeight(Pose.STANDING,
+					getDimensions(Pose.STANDING));
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				ambientSound() {
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent hurtSound() {
+			return getHurtSound(DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent deathSound() {
+			return getDeathSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent stepSound() {
+			lastSound = null;
+			playStepSound(BlockPos.ZERO,
+					CakeWorldBlocks.BISCUIT_STONE.get()
+							.defaultBlockState());
+			return lastSound;
+		}
+
+		private int goalPriority(String name) {
+			return goalSelector.getAvailableGoals()
+					.stream()
+					.filter(wrapped -> name.equals(
+							wrapped.getGoal()
+									.getClass()
+									.getSimpleName()))
+					.mapToInt(WrappedGoal::getPriority)
+					.findFirst().orElse(-1);
+		}
+
+		private int targetGoalPriority(String name) {
+			return targetSelector.getAvailableGoals()
+					.stream()
+					.filter(wrapped -> name.equals(
+							wrapped.getGoal()
+									.getClass()
+									.getSimpleName()))
+					.mapToInt(WrappedGoal::getPriority)
+					.findFirst().orElse(-1);
+		}
+
+		private int countTargetGoalsAtPriority(int priority) {
+			return (int)targetSelector.getAvailableGoals()
+					.stream()
+					.filter(wrapped ->
+							wrapped.getPriority()
+									== priority)
+					.count();
+		}
+
+		private int countGoalsAssignableTo(
+				Class<?> goalClass) {
+			return (int)goalSelector.getAvailableGoals()
+					.stream()
+					.filter(wrapped -> goalClass
+							.isInstance(
+									wrapped.getGoal()))
+					.count();
+		}
+
+		private int goalPriorityAssignableTo(
+				Class<?> goalClass) {
+			return goalSelector.getAvailableGoals()
+					.stream()
+					.filter(wrapped -> goalClass
+							.isInstance(
+									wrapped.getGoal()))
+					.mapToInt(WrappedGoal::getPriority)
+					.findFirst().orElse(-1);
+		}
+
+		private void equipDefault(
+				net.minecraft.world.DifficultyInstance
+						difficulty) {
+			populateDefaultEquipmentSlots(difficulty);
+		}
+
+		private boolean canFireBow() {
+			return Items.BOW
+							instanceof net.minecraft.world.item
+									.ProjectileWeaponItem weapon
+					&& canFireProjectileWeapon(weapon);
+		}
+
+		private int bowAttackInterval() {
+			for (WrappedGoal wrapped :
+					goalSelector.getAvailableGoals()) {
+				if ("RangedBowAttackGoal".equals(
+						wrapped.getGoal().getClass()
+								.getSimpleName())) {
+					try {
+						Field field = wrapped.getGoal()
+								.getClass()
+								.getDeclaredField(
+										"attackIntervalMin");
+						field.setAccessible(true);
+						return field.getInt(
+								wrapped.getGoal());
+					} catch (ReflectiveOperationException
+							exception) {
+						throw new IllegalStateException(
+								"Could not inspect Skeleton bow interval",
+								exception);
+					}
+				}
+			}
+			return -1;
+		}
+
+		private void emitCustomDeathLoot(
+				DamageSource source) {
+			dropCustomDeathLoot(source, 0, true);
+		}
+
+		private void startFreezeConversionFromNbt(
+				int ticks) {
+			CompoundTag tag = new CompoundTag();
+			tag.putInt("StrayConversionTime", ticks);
+			readAdditionalSaveData(tag);
+		}
+
+		private void forceSunBurn(boolean force) {
+			forceSunBurn = force;
+		}
+
+		private void clearLastSound() {
+			lastSound = null;
+		}
+
+		private net.minecraft.sounds.SoundEvent lastSound() {
+			return lastSound;
+		}
+
+		private boolean despawnsInPeaceful() {
+			return shouldDespawnInPeaceful();
+		}
+
+		@Override
+		protected boolean isSunBurnTick() {
+			return forceSunBurn || super.isSunBurnTick();
 		}
 
 		@Override

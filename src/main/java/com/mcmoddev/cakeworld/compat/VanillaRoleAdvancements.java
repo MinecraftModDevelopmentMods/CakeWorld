@@ -34,6 +34,9 @@ public final class VanillaRoleAdvancements {
 	private static final ResourceLocation WHOS_THE_PILLAGER_NOW =
 			new ResourceLocation("minecraft",
 					"adventure/whos_the_pillager_now");
+	private static final ResourceLocation SNIPER_DUEL =
+			new ResourceLocation("minecraft",
+					"adventure/sniper_duel");
 	private static final String PHANTOM_ROLE_CROSSBOW_KILLS =
 			"CakeWorldPhantomRoleCrossbowKills";
 	private static final ResourceLocation RIDE_WITH_GOAT =
@@ -79,6 +82,13 @@ public final class VanillaRoleAdvancements {
 					&& event.getSource().getDirectEntity()
 							instanceof AbstractArrow arrow) {
 				creditWhosPillagerNowRole(player, arrow);
+			}
+			if (event.getEntityLiving().getType()
+							== CakeWorldEntities.CANDY_CANE_ARCHER.get()
+					&& event.getSource().getDirectEntity()
+							instanceof AbstractArrow arrow) {
+				creditSniperDuelRole(player, arrow,
+						event.getEntityLiving());
 			}
 		}
 	}
@@ -273,6 +283,18 @@ public final class VanillaRoleAdvancements {
 		}
 	}
 
+	public static void creditSniperDuelRole(
+			ServerPlayer player, AbstractArrow arrow,
+			net.minecraft.world.entity.LivingEntity victim) {
+		double x = player.getX() - victim.getX();
+		double z = player.getZ() - victim.getZ();
+		if (arrow.getOwner() == player
+				&& x * x + z * z >= 2500.0D) {
+			award(player, SNIPER_DUEL,
+					"killed_skeleton");
+		}
+	}
+
 	public static void creditReturnToSenderRole(ServerPlayer player) {
 		award(player, RETURN_TO_SENDER, "killed_ghast");
 	}
@@ -336,6 +358,10 @@ public final class VanillaRoleAdvancements {
 		}
 		if (type == CakeWorldEntities.CRUMB_MITE.get()) {
 			return "minecraft:silverfish";
+		}
+		if (type
+				== CakeWorldEntities.CANDY_CANE_ARCHER.get()) {
+			return "minecraft:skeleton";
 		}
 		if (type == CakeWorldEntities.SUGAR_MITE.get()) {
 			return "minecraft:endermite";

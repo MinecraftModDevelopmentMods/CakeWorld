@@ -38,6 +38,9 @@ public final class CakeWorldCreatureSpawns {
 		replaceExisting(event, MobCategory.CREATURE,
 				EntityType.SHEEP,
 				CakeWorldEntities.CANDYFLOSS_SHEEP);
+		replaceExisting(event, MobCategory.MONSTER,
+				EntityType.SKELETON,
+				CakeWorldEntities.CANDY_CANE_ARCHER);
 
 		if (OVERWORLD_BIOMES.contains(biome.getPath())) {
 			replace(event, MobCategory.MONSTER, EntityType.ZOMBIE,

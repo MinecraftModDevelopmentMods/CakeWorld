@@ -48,6 +48,7 @@ import net.minecraft.client.renderer.entity.PigRenderer;
 import net.minecraft.client.renderer.entity.SheepRenderer;
 import net.minecraft.client.renderer.entity.ShulkerRenderer;
 import net.minecraft.client.renderer.entity.SilverfishRenderer;
+import net.minecraft.client.renderer.entity.SkeletonRenderer;
 import net.minecraft.client.renderer.entity.ZombieRenderer;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.client.renderer.entity.ThrownTridentRenderer;
@@ -162,6 +163,9 @@ public final class CakeWorldClientEvents {
 		event.registerEntityRenderer(
 				CakeWorldEntities.CRUMB_MITE.get(),
 				SilverfishRenderer::new);
+		event.registerEntityRenderer(
+				CakeWorldEntities.CANDY_CANE_ARCHER.get(),
+				SkeletonRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.SUGAR_MITE.get(),
 				EndermiteRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.SOUR_SORCERER.get(),

@@ -3,6 +3,7 @@ package com.mcmoddev.cakeworld.init;
 import com.mcmoddev.cakeworld.CakeWorld;
 import com.mcmoddev.cakeworld.entity.BiscuitBandit;
 import com.mcmoddev.cakeworld.entity.BonbonBat;
+import com.mcmoddev.cakeworld.entity.CandyCaneArcher;
 import com.mcmoddev.cakeworld.entity.CandyflossSheep;
 import com.mcmoddev.cakeworld.entity.CinnamonPuffProjectile;
 import com.mcmoddev.cakeworld.entity.CinnamonSpark;
@@ -103,6 +104,7 @@ import net.minecraft.world.entity.monster.Pillager;
 import net.minecraft.world.entity.monster.Ravager;
 import net.minecraft.world.entity.monster.Shulker;
 import net.minecraft.world.entity.monster.Silverfish;
+import net.minecraft.world.entity.monster.Skeleton;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.monster.hoglin.Hoglin;
 import net.minecraft.world.entity.monster.piglin.Piglin;
@@ -363,6 +365,13 @@ public final class CakeWorldEntities {
 							MobCategory.MONSTER)
 							.sized(0.4F, 0.3F)
 							.clientTrackingRange(8));
+	public static final RegistryObject<EntityType<CandyCaneArcher>>
+			CANDY_CANE_ARCHER = entity("candy_cane_archer",
+					EntityType.Builder.of(
+							CandyCaneArcher::new,
+							MobCategory.MONSTER)
+							.sized(0.6F, 1.99F)
+							.clientTrackingRange(8));
 	public static final RegistryObject<EntityType<SugarMite>> SUGAR_MITE =
 			entity("sugar_mite",
 					EntityType.Builder.of(SugarMite::new,
@@ -527,6 +536,8 @@ public final class CakeWorldEntities {
 				Shulker.createAttributes().build());
 		event.put(CRUMB_MITE.get(),
 				Silverfish.createAttributes().build());
+		event.put(CANDY_CANE_ARCHER.get(),
+				Skeleton.createAttributes().build());
 		event.put(SUGAR_MITE.get(),
 				Endermite.createAttributes().build());
 		event.put(SOUR_SORCERER.get(),
@@ -686,6 +697,12 @@ public final class CakeWorldEntities {
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					CrumbMite::checkCrumbMiteSpawnRules);
+			SpawnPlacements.register(
+					CANDY_CANE_ARCHER.get(),
+					SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					CandyCaneArcher
+							::checkCandyCaneArcherSpawnRules);
 			SpawnPlacements.register(SUGAR_MITE.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
