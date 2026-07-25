@@ -13,6 +13,7 @@ import com.mcmoddev.cakeworld.block.CandyCookerBlock;
 import com.mcmoddev.cakeworld.block.CandySproutBlock;
 import com.mcmoddev.cakeworld.block.ChocolateSpongeBlock;
 import com.mcmoddev.cakeworld.block.CookbookKioskBlock;
+import com.mcmoddev.cakeworld.block.CookbookLibraryBlock;
 import com.mcmoddev.cakeworld.block.CoolingRackBlock;
 import com.mcmoddev.cakeworld.block.GummyBlock;
 import com.mcmoddev.cakeworld.block.IcingLayerBlock;
@@ -24,6 +25,7 @@ import com.mcmoddev.cakeworld.cookbook.CookbookHints;
 import com.mcmoddev.cakeworld.cookbook.CookbookProgress;
 import com.mcmoddev.cakeworld.cookbook.CookbookSummary;
 import com.mcmoddev.cakeworld.cookbook.DiscoveryType;
+import com.mcmoddev.cakeworld.cookbook.SharedCookbookLibrary;
 import com.mcmoddev.cakeworld.compat.VanillaRoleAdvancements;
 import com.mcmoddev.cakeworld.entity.CandyflossSheep;
 import com.mcmoddev.cakeworld.entity.CocoaCow;
@@ -1296,6 +1298,69 @@ public final class FirstBiteGameTests {
 						&& expanded.stamps() == 6
 						&& expanded.firstEditionComplete(),
 				"Extra pages incorrectly changed stamp-based completion");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void sharedLibraryPublishesLoreWithoutGrantingProgress(
+			GameTestHelper helper) {
+		ServerPlayer contributor = FakePlayerFactory.get(helper.getLevel(),
+				new GameProfile(UUID.randomUUID(),
+						"CakeWorldLibraryContributor"));
+		ServerPlayer reader = FakePlayerFactory.get(helper.getLevel(),
+				new GameProfile(UUID.randomUUID(),
+						"CakeWorldLibraryReader"));
+		ResourceLocation privateDiscovery = new ResourceLocation(
+				CakeWorld.MODID,
+				"gametest/shared_" + UUID.randomUUID());
+		require(helper, CookbookProgress.discover(contributor,
+						DiscoveryType.FINDING, privateDiscovery),
+				"Contributor could not discover publishable lore");
+		CompoundTag readerBefore =
+				CookbookProgress.snapshot(reader).copy();
+
+		BlockPos relativeLibraryPos = new BlockPos(1, 1, 1);
+		BlockPos absoluteLibraryPos =
+				helper.absolutePos(relativeLibraryPos);
+		CookbookLibraryBlock libraryBlock =
+				(CookbookLibraryBlock) CakeWorldBlocks.COOKBOOK_LIBRARY.get();
+		helper.setBlock(relativeLibraryPos,
+				libraryBlock.defaultBlockState());
+		BlockHitResult hit = new BlockHitResult(
+				Vec3.atCenterOf(absoluteLibraryPos), Direction.UP,
+				absoluteLibraryPos, false);
+		contributor.setShiftKeyDown(true);
+		InteractionResult published = libraryBlock.use(
+				libraryBlock.defaultBlockState(), helper.getLevel(),
+				absoluteLibraryPos, contributor,
+				InteractionHand.MAIN_HAND, hit);
+		SharedCookbookLibrary shared =
+				SharedCookbookLibrary.get(helper.getLevel());
+		require(helper, published.consumesAction()
+						&& shared.contains(DiscoveryType.FINDING,
+								privateDiscovery)
+						&& shared.pageCount() > 0,
+				"Library did not publish contributor-owned lore");
+		SharedCookbookLibrary restored = SharedCookbookLibrary.load(
+				shared.save(new CompoundTag()));
+		require(helper, restored.contains(DiscoveryType.FINDING,
+						privateDiscovery)
+						&& restored.pageCount() == shared.pageCount(),
+				"Shared lore did not survive a save/load round trip");
+
+		reader.setShiftKeyDown(false);
+		InteractionResult read = libraryBlock.use(
+				libraryBlock.defaultBlockState(), helper.getLevel(),
+				absoluteLibraryPos, reader,
+				InteractionHand.MAIN_HAND, hit);
+		require(helper, read.consumesAction()
+						&& CookbookProgress.snapshot(reader)
+								.equals(readerBefore),
+				"Reading shared lore granted personal progression");
+		require(helper, helper.getLevel().getRecipeManager().byKey(
+						new ResourceLocation(CakeWorld.MODID,
+								"cookbook_library")).isPresent(),
+				"Community Cookbook Library is not obtainable");
 		helper.succeed();
 	}
 

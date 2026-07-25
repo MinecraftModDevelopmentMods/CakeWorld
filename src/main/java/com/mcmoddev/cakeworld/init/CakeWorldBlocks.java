@@ -9,6 +9,7 @@ import com.mcmoddev.cakeworld.block.CandyCookerBlock;
 import com.mcmoddev.cakeworld.block.CandySproutBlock;
 import com.mcmoddev.cakeworld.block.ChocolateSpongeBlock;
 import com.mcmoddev.cakeworld.block.CookbookKioskBlock;
+import com.mcmoddev.cakeworld.block.CookbookLibraryBlock;
 import com.mcmoddev.cakeworld.block.CoolingRackBlock;
 import com.mcmoddev.cakeworld.block.GummyBlock;
 import com.mcmoddev.cakeworld.block.IcingLayerBlock;
@@ -178,6 +179,12 @@ public final class CakeWorldBlocks {
 	public static final RegistryObject<Block> COOKBOOK_KIOSK = block("cookbook_kiosk",
 			() -> new CookbookKioskBlock(BlockBehaviour.Properties.of(Material.WOOD)
 					.strength(2.0F).sound(SoundType.WOOD)));
+	public static final RegistryObject<Block> COOKBOOK_LIBRARY =
+			block("cookbook_library",
+					() -> new CookbookLibraryBlock(
+							BlockBehaviour.Properties.of(Material.WOOD)
+									.strength(2.0F)
+									.sound(SoundType.WOOD)));
 	public static final RegistryObject<Block> MIXING_BOWL = reusableBlock("mixing_bowl",
 			() -> new MixingBowlBlock(BlockBehaviour.Properties.of(Material.WOOD)
 					.strength(1.0F).sound(SoundType.WOOD).noOcclusion()));
