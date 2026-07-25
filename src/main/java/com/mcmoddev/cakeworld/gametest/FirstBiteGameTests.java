@@ -12,6 +12,7 @@ import com.mcmoddev.cakeworld.block.CakeOvenBlock;
 import com.mcmoddev.cakeworld.block.CandySproutBlock;
 import com.mcmoddev.cakeworld.block.ChocolateSpongeBlock;
 import com.mcmoddev.cakeworld.block.CookbookKioskBlock;
+import com.mcmoddev.cakeworld.block.CoolingRackBlock;
 import com.mcmoddev.cakeworld.block.GummyBlock;
 import com.mcmoddev.cakeworld.block.IcingLayerBlock;
 import com.mcmoddev.cakeworld.block.MarshmallowBlock;
@@ -65,6 +66,7 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.item.crafting.ShapelessRecipe;
 import net.minecraft.world.item.crafting.SmeltingRecipe;
+import net.minecraft.world.item.crafting.StonecutterRecipe;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.level.LightLayer;
@@ -580,6 +582,56 @@ public final class FirstBiteGameTests {
 						&& baking.assemble(ovenInput).is(
 								CakeWorldItems.SIMPLE_BISCUIT.get()),
 				"Rolled dough is not compatible with the standard food-only oven");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void coolingRackUsesTaggedRecipesAndReturnsContainers(
+			GameTestHelper helper) {
+		var recipes = helper.getLevel().getRecipeManager();
+		var coolingRecipe = recipes.byKey(new ResourceLocation(
+				CakeWorld.MODID, "fudge_squares_from_cooling"));
+		require(helper, coolingRecipe.orElse(null) instanceof StonecutterRecipe
+						&& recipes.byKey(new ResourceLocation(CakeWorld.MODID,
+								"cooling_rack")).isPresent(),
+				"Cooling Rack is missing its block or standard recipe");
+		ItemStack hotFudge = new ItemStack(
+				CakeWorldFluids.HOT_FUDGE_BUCKET.get());
+		require(helper, hotFudge.is(CoolingRackBlock.INPUTS)
+						&& hotFudge.hasContainerItem()
+						&& hotFudge.getContainerItem().is(Items.BUCKET),
+				"Hot Fudge Bucket lost its tagged container-return contract");
+
+		BlockPos relativeRackPos = new BlockPos(1, 1, 1);
+		BlockPos absoluteRackPos = helper.absolutePos(relativeRackPos);
+		CoolingRackBlock rack =
+				(CoolingRackBlock) CakeWorldBlocks.COOLING_RACK.get();
+		helper.setBlock(relativeRackPos, rack.defaultBlockState());
+		Player player = helper.makeMockPlayer();
+		player.getAbilities().instabuild = false;
+		player.setItemInHand(InteractionHand.MAIN_HAND, hotFudge);
+		BlockHitResult hit = new BlockHitResult(
+				Vec3.atCenterOf(absoluteRackPos), Direction.UP,
+				absoluteRackPos, false);
+		InteractionResult cooled = rack.use(rack.defaultBlockState(),
+				helper.getLevel(), absoluteRackPos, player,
+				InteractionHand.MAIN_HAND, hit);
+		int fudgeSquares = player.getInventory().items.stream()
+				.filter(stack -> stack.is(CakeWorldItems.FUDGE_SQUARE.get()))
+				.mapToInt(ItemStack::getCount).sum();
+		require(helper, cooled.consumesAction()
+						&& player.getMainHandItem().is(Items.BUCKET)
+						&& fudgeSquares == 8,
+				"Cooling did not produce eight Fudge Squares and return the bucket");
+
+		player.setItemInHand(InteractionHand.MAIN_HAND,
+				new ItemStack(Items.SUGAR));
+		InteractionResult rejected = rack.use(rack.defaultBlockState(),
+				helper.getLevel(), absoluteRackPos, player,
+				InteractionHand.MAIN_HAND, hit);
+		require(helper, rejected == InteractionResult.PASS
+						&& player.getMainHandItem().is(Items.SUGAR),
+				"Cooling Rack consumed an untagged unrelated input");
 		helper.succeed();
 	}
 

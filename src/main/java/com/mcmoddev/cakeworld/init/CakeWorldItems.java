@@ -87,6 +87,8 @@ public final class CakeWorldItems {
 											CakeWorldEffects.FIZZY_FEET.get(),
 											200), 1.0F)
 									.build())));
+	public static final RegistryObject<Item> FUDGE_SQUARE =
+			food("fudge_square", 5, 0.5F);
 	public static final RegistryObject<Item> SPRINKLE_SEEDS =
 			ITEMS.register("sprinkle_seeds",
 					() -> new ItemNameBlockItem(

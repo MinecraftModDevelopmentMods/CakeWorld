@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:stonecutting",
+  "ingredient": {
+    "item": "cakeworld:hot_fudge_bucket"
+  },
+  "result": "cakeworld:fudge_square",
+  "count": 8
+}

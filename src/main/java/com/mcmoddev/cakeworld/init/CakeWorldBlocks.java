@@ -8,6 +8,7 @@ import com.mcmoddev.cakeworld.block.CakeOvenBlock;
 import com.mcmoddev.cakeworld.block.CandySproutBlock;
 import com.mcmoddev.cakeworld.block.ChocolateSpongeBlock;
 import com.mcmoddev.cakeworld.block.CookbookKioskBlock;
+import com.mcmoddev.cakeworld.block.CoolingRackBlock;
 import com.mcmoddev.cakeworld.block.GummyBlock;
 import com.mcmoddev.cakeworld.block.IcingLayerBlock;
 import com.mcmoddev.cakeworld.block.MarshmallowBlock;
@@ -181,6 +182,13 @@ public final class CakeWorldBlocks {
 			() -> new CakeOvenBlock(BlockBehaviour.Properties.of(Material.STONE)
 					.requiresCorrectToolForDrops().strength(3.0F, 6.0F)
 					.sound(SoundType.STONE)));
+	public static final RegistryObject<Block> COOLING_RACK =
+			block("cooling_rack",
+					() -> new CoolingRackBlock(
+							BlockBehaviour.Properties.of(Material.METAL)
+									.strength(1.0F)
+									.sound(SoundType.METAL)
+									.noOcclusion()));
 
 	private CakeWorldBlocks() {
 	}
