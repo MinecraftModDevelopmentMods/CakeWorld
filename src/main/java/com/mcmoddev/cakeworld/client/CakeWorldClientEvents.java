@@ -41,6 +41,7 @@ import net.minecraft.client.renderer.entity.PolarBearRenderer;
 import net.minecraft.client.renderer.entity.PufferfishRenderer;
 import net.minecraft.client.renderer.entity.RabbitRenderer;
 import net.minecraft.client.renderer.entity.RavagerRenderer;
+import net.minecraft.client.renderer.entity.SalmonRenderer;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.client.renderer.entity.CowRenderer;
 import net.minecraft.client.renderer.entity.PigRenderer;
@@ -88,6 +89,9 @@ public final class CakeWorldClientEvents {
 				CaveSpiderRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.SODA_COD.get(),
 				CodRenderer::new);
+		event.registerEntityRenderer(
+				CakeWorldEntities.SHERBET_SALMON.get(),
+				SalmonRenderer::new);
 		event.registerEntityRenderer(
 				CakeWorldEntities.FIZZBALL_FISH.get(),
 				PufferfishRenderer::new);

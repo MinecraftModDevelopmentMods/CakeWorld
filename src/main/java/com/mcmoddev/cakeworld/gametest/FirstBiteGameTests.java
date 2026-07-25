@@ -79,6 +79,7 @@ import com.mcmoddev.cakeworld.entity.SodaDolphin;
 import com.mcmoddev.cakeworld.entity.SoggyBiscuit;
 import com.mcmoddev.cakeworld.entity.SoggyTridentProjectile;
 import com.mcmoddev.cakeworld.entity.SherbetOcelot;
+import com.mcmoddev.cakeworld.entity.SherbetSalmon;
 import com.mcmoddev.cakeworld.entity.SourSorcerer;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
 import com.mcmoddev.cakeworld.entity.SugarBee;
@@ -174,6 +175,7 @@ import net.minecraft.world.entity.animal.PolarBear;
 import net.minecraft.world.entity.animal.Pufferfish;
 import net.minecraft.world.entity.animal.FlyingAnimal;
 import net.minecraft.world.entity.animal.Rabbit;
+import net.minecraft.world.entity.animal.Salmon;
 import net.minecraft.world.entity.animal.Turtle;
 import net.minecraft.world.entity.animal.Wolf;
 import net.minecraft.world.entity.animal.goat.Goat;
@@ -13309,6 +13311,466 @@ public final class FirstBiteGameTests {
 	}
 
 	@GameTest(template = EMPTY, timeoutTicks = 200)
+	public static void sherbetSalmonKeepSchoolsBucketsAndCoolWater(
+			GameTestHelper helper) {
+		SherbetSalmonProbe leader =
+				new SherbetSalmonProbe(
+						helper.getLevel());
+		SherbetSalmonProbe restored =
+				new SherbetSalmonProbe(
+						helper.getLevel());
+		int experience = leader.getExperienceValue();
+		require(helper,
+				leader instanceof Salmon
+						&& leader.getType()
+								== CakeWorldEntities
+										.SHERBET_SALMON
+										.get()
+						&& leader.getType().getCategory()
+								== MobCategory.WATER_AMBIENT
+						&& close(leader.getMaxHealth(), 3.0D)
+						&& close(leader.getDimensions(
+								Pose.STANDING).width,
+								0.7D)
+						&& close(leader.getDimensions(
+								Pose.STANDING).height,
+								0.4D)
+						&& leader.getType()
+								.clientTrackingRange() == 4
+						&& leader.getMaxSchoolSize() == 5
+						&& leader
+								.getMaxSpawnClusterSize() == 5
+						&& experience >= 1
+						&& experience <= 3
+						&& leader.getLootTableId().equals(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/sherbet_salmon")),
+				"Sherbet Salmon lost the exact Salmon body, school/cluster, tracking, XP or loot roles");
+		require(helper,
+				leader.countGoalsNamed("PanicGoal") == 1
+						&& leader.countGoalsNamed(
+								"AvoidEntityGoal") == 1
+						&& leader.countGoalsNamed(
+								"FishSwimGoal") == 1
+						&& leader.countGoalsNamed(
+								"FollowFlockLeaderGoal")
+								== 1
+						&& "WaterBoundPathNavigation"
+								.equals(leader.getNavigation()
+										.getClass()
+										.getSimpleName())
+						&& leader.canBreatheUnderwater()
+						&& leader.getMobType()
+								== MobType.WATER
+						&& !leader.isPushedByFluid()
+						&& !leader.canBeLeashedRole()
+						&& leader.getAmbientSoundInterval()
+								== 120,
+				"Sherbet Salmon lost panic, avoidance, random/follower swimming, water navigation, air or no-leash roles");
+		require(helper,
+				leader.ambientSound()
+								== SoundEvents.SALMON_AMBIENT
+						&& leader.hurtSound()
+								== SoundEvents.SALMON_HURT
+						&& leader.deathSound()
+								== SoundEvents.SALMON_DEATH
+						&& leader.flopSound()
+								== SoundEvents.SALMON_FLOP
+						&& leader.swimSound()
+								== SoundEvents.FISH_SWIM
+						&& leader.getPickupSound()
+								== SoundEvents.BUCKET_FILL_FISH,
+				"Sherbet Salmon lost exact ambient, hurt, death, flop, swim or pickup sounds");
+
+		SherbetSalmonProbe followerOne =
+				new SherbetSalmonProbe(helper.getLevel());
+		SherbetSalmonProbe followerTwo =
+				new SherbetSalmonProbe(helper.getLevel());
+		SherbetSalmonProbe followerThree =
+				new SherbetSalmonProbe(helper.getLevel());
+		SherbetSalmonProbe followerFour =
+				new SherbetSalmonProbe(helper.getLevel());
+		SherbetSalmonProbe overflow =
+				new SherbetSalmonProbe(helper.getLevel());
+		leader.setPos(0.0D, 3.0D, 0.0D);
+		followerOne.setPos(1.0D, 3.0D, 0.0D);
+		followerTwo.setPos(2.0D, 3.0D, 0.0D);
+		followerThree.setPos(3.0D, 3.0D, 0.0D);
+		followerFour.setPos(4.0D, 3.0D, 0.0D);
+		overflow.setPos(5.0D, 3.0D, 0.0D);
+		leader.addFollowers(java.util.stream.Stream.of(
+				followerOne, followerTwo,
+				followerThree, followerFour, overflow));
+		require(helper,
+				followerOne.isFollower()
+						&& followerTwo.isFollower()
+						&& followerThree.isFollower()
+						&& followerFour.isFollower()
+						&& !overflow.isFollower()
+						&& followerOne.inRangeOfLeader()
+						&& !followerOne
+								.canRandomSwimRole()
+						&& leader.canRandomSwimRole()
+						&& !leader.canBeFollowed(),
+				"Sherbet Salmon lost exact five-fish school capacity, following range or leader-only random swimming");
+		followerOne.stopFollowing();
+		require(helper,
+				!followerOne.isFollower()
+						&& leader.canBeFollowed(),
+				"Sherbet Salmon did not reopen a school place after a follower left");
+		followerOne.startFollowing(leader);
+
+		leader.setFromBucket(true);
+		leader.setCustomName(
+				new TextComponent("Raspberry Ripple"));
+		CompoundTag saved =
+				leader.saveWithoutId(new CompoundTag());
+		restored.load(saved);
+		require(helper,
+				restored.fromBucket()
+						&& restored
+								.requiresCustomPersistence()
+						&& !restored.removeWhenFarAway(
+								4096.0D)
+						&& restored.hasCustomName()
+						&& "Raspberry Ripple".equals(
+								restored.getName()
+										.getString()),
+				"Sherbet Salmon lost from-bucket persistence or custom name across NBT");
+
+		BlockPos anchor = helper.absolutePos(
+				new BlockPos(3, 3, 3));
+		BlockPos flopPos = new BlockPos(anchor.getX(),
+				helper.getLevel().getMaxBuildHeight() - 2,
+				anchor.getZ());
+		helper.getLevel().setBlock(flopPos,
+				Blocks.AIR.defaultBlockState(), 3);
+		SherbetSalmonProbe flopping =
+				new SherbetSalmonProbe(helper.getLevel());
+		flopping.setPos(flopPos.getX() + 0.5D,
+				flopPos.getY(), flopPos.getZ() + 0.5D);
+		flopping.setOnGround(true);
+		flopping.verticalCollision = true;
+		flopping.setDeltaMovement(Vec3.ZERO);
+		flopping.aiStep();
+		require(helper,
+				flopping.getDeltaMovement().y > 0.3D
+						&& flopping.lastSound()
+								== SoundEvents.SALMON_FLOP,
+				"Sherbet Salmon lost its inherited land flop and cue"
+						+ " (motion="
+						+ flopping.getDeltaMovement()
+						+ ", sound="
+						+ flopping.lastSound() + ")");
+
+		BlockPos lemonadePos =
+				new BlockPos(anchor.getX() + 8,
+						helper.getLevel()
+								.getSeaLevel() - 5,
+						anchor.getZ());
+		for (int y = -1; y <= 1; y++) {
+			helper.getLevel().setBlock(
+					lemonadePos.offset(0, y, 0),
+					CakeWorldFluids.LEMONADE_BLOCK.get()
+							.defaultBlockState(), 3);
+		}
+		boolean vanillaRule =
+				WaterAnimal
+						.checkSurfaceWaterAnimalSpawnRules(
+								CakeWorldEntities
+										.SHERBET_SALMON
+										.get(),
+								helper.getLevel(),
+								MobSpawnType.NATURAL,
+								lemonadePos,
+								new Random(1978L));
+		boolean sherbetRule =
+				SherbetSalmon
+						.checkSherbetSalmonSpawnRules(
+								CakeWorldEntities
+										.SHERBET_SALMON
+										.get(),
+								helper.getLevel(),
+								MobSpawnType.NATURAL,
+								lemonadePos,
+								new Random(1978L));
+		require(helper,
+				!vanillaRule
+						&& sherbetRule
+						&& SpawnPlacements
+								.checkSpawnRules(
+										CakeWorldEntities
+												.SHERBET_SALMON
+												.get(),
+										helper.getLevel(),
+										MobSpawnType.NATURAL,
+										lemonadePos,
+										new Random(1979L))
+						&& SpawnPlacements
+								.getPlacementType(
+										CakeWorldEntities
+												.SHERBET_SALMON
+												.get())
+								== SpawnPlacements.Type
+										.IN_WATER
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+												.SHERBET_SALMON
+												.get())
+								== Heightmap.Types
+										.MOTION_BLOCKING_NO_LEAVES,
+				"Sherbet Salmon lost Lemonade-compatible surface spawning or exact placement metadata");
+
+		SherbetSalmon captureFish =
+				CakeWorldEntities.SHERBET_SALMON.get()
+						.create(helper.getLevel());
+		require(helper, captureFish != null,
+				"Could not create Sherbet Salmon bucket fixture");
+		captureFish.setCustomName(
+				new TextComponent("Lemon Swirl"));
+		captureFish.setPos(
+				lemonadePos.getX() + 0.5D,
+				lemonadePos.getY(),
+				lemonadePos.getZ() + 0.5D);
+		helper.getLevel().addFreshEntity(captureFish);
+		ServerPlayer bucketPlayer = new ServerPlayer(
+				helper.getLevel().getServer(),
+				helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2046"),
+						"CakeWorldSherbetSalmonBucketTest"));
+		bucketPlayer.setItemInHand(
+				InteractionHand.MAIN_HAND,
+				new ItemStack(Items.WATER_BUCKET));
+		InteractionResult captureResult =
+				bucketPlayer.interactOn(captureFish,
+						InteractionHand.MAIN_HAND);
+		ItemStack bucket = bucketPlayer.getItemInHand(
+				InteractionHand.MAIN_HAND);
+		require(helper,
+				captureResult.consumesAction()
+						&& bucket.is(
+								CakeWorldItems
+										.SHERBET_SALMON_BUCKET
+										.get())
+						&& bucket.hasCustomHoverName()
+						&& captureFish.isRemoved(),
+				"Sherbet Salmon did not capture into its dedicated named Lemonade bucket");
+		AABB releaseArea =
+				new AABB(lemonadePos).inflate(2.0D);
+		helper.getLevel().getEntitiesOfClass(
+				SherbetSalmon.class, releaseArea)
+				.forEach(SherbetSalmon::discard);
+		((MobBucketItem)bucket.getItem())
+				.checkExtraContent(null,
+						helper.getLevel(), bucket,
+						lemonadePos);
+		List<SherbetSalmon> released =
+				helper.getLevel().getEntitiesOfClass(
+						SherbetSalmon.class,
+						releaseArea);
+		require(helper,
+				released.size() == 1
+						&& released.get(0).fromBucket()
+						&& released.get(0).hasCustomName()
+						&& "Lemon Swirl".equals(
+								released.get(0)
+										.getName()
+										.getString()),
+				"Sherbet Salmon bucket released the wrong entity or lost from-bucket/name data");
+		requireCriterion(helper, bucketPlayer,
+				"minecraft:husbandry/tactical_fishing",
+				"salmon_bucket");
+
+		SodaCod cod =
+				CakeWorldEntities.SODA_COD.get()
+						.create(helper.getLevel());
+		require(helper, cod != null,
+				"Could not create Soda Cod bucket-role maintenance fixture");
+		cod.setPos(lemonadePos.getX() + 0.5D,
+				lemonadePos.getY(),
+				lemonadePos.getZ() + 1.5D);
+		helper.getLevel().addFreshEntity(cod);
+		ServerPlayer codPlayer = new ServerPlayer(
+				helper.getLevel().getServer(),
+				helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2008"),
+						"CakeWorldSodaCodBucketRoleTest"));
+		codPlayer.setItemInHand(
+				InteractionHand.MAIN_HAND,
+				new ItemStack(Items.WATER_BUCKET));
+		require(helper,
+				codPlayer.interactOn(cod,
+						InteractionHand.MAIN_HAND)
+								.consumesAction()
+						&& codPlayer.getItemInHand(
+								InteractionHand.MAIN_HAND)
+								.is(CakeWorldItems
+										.SODA_COD_BUCKET
+										.get()),
+				"Soda Cod bucket-role maintenance did not traverse the real capture path");
+		requireCriterion(helper, codPlayer,
+				"minecraft:husbandry/tactical_fishing",
+				"cod_bucket");
+
+		Registry<Biome> biomes = helper.getLevel()
+				.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY);
+		Biome sodaOcean = biomes.get(
+				CakeWorldBiomes.SODA_OCEAN.getId());
+		require(helper, sodaOcean != null,
+				"Could not inspect Soda Ocean Sherbet Salmon spawning");
+		MobSpawnSettings.SpawnerData sodaSpawn =
+				sodaOcean.getMobSettings()
+						.getMobs(
+								MobCategory.WATER_AMBIENT)
+						.unwrap().stream()
+						.filter(spawn -> spawn.type
+								== CakeWorldEntities
+										.SHERBET_SALMON
+										.get())
+						.findFirst().orElse(null);
+		require(helper,
+				sodaSpawn != null
+						&& sodaSpawn.getWeight()
+								.asInt() == 15
+						&& sodaSpawn.minCount == 1
+						&& sodaSpawn.maxCount == 5
+						&& sodaOcean.getMobSettings()
+								.getMobs(
+										MobCategory
+												.WATER_AMBIENT)
+								.unwrap().stream()
+								.noneMatch(spawn ->
+										spawn.type
+												== EntityType
+														.SALMON),
+				"Soda Ocean lost the exact cold-ocean 15/1-5 Sherbet Salmon population or leaked literal Salmon");
+
+		MobSpawnSettingsBuilder futureTundraSpawns =
+				new MobSpawnSettingsBuilder(
+						MobSpawnSettings.EMPTY);
+		BiomeLoadingEvent futureTundra =
+				new BiomeLoadingEvent(
+						new ResourceLocation(CakeWorld.MODID,
+								"ice_cream_tundra"),
+						null, null, null,
+						new BiomeGenerationSettingsBuilder(
+								BiomeGenerationSettings.EMPTY),
+						futureTundraSpawns);
+		CakeWorldCreatureSpawns
+				.onBiomeLoading(futureTundra);
+		MobSpawnSettings.SpawnerData futureSpawn =
+				futureTundraSpawns
+						.getSpawner(
+								MobCategory.WATER_AMBIENT)
+						.stream()
+						.filter(spawn -> spawn.type
+								== CakeWorldEntities
+										.SHERBET_SALMON
+										.get())
+						.findFirst().orElse(null);
+		require(helper,
+				futureSpawn != null
+						&& futureSpawn.getWeight()
+								.asInt() == 15
+						&& futureSpawn.minCount == 1
+						&& futureSpawn.maxCount == 5
+						&& futureTundraSpawns
+								.getSpawner(
+										MobCategory
+												.WATER_AMBIENT)
+								.stream().noneMatch(
+										spawn -> spawn.type
+												== EntityType
+														.SALMON),
+				"Future Ice-Cream Tundra lost its exact frozen-lake Sherbet Salmon profile");
+
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS.getId())) {
+			Biome biome = biomes.get(biomeId);
+			require(helper,
+					biome != null
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory
+													.WATER_AMBIENT)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType
+															.SALMON
+											|| spawn.type
+													== CakeWorldEntities
+															.SHERBET_SALMON
+															.get()),
+					"Non-water/cold current biome leaked Salmon spawning: "
+							+ biomeId);
+		}
+
+		TagKey<EntityType<?>> axolotlPrey =
+				TagKey.create(Registry.ENTITY_TYPE_REGISTRY,
+						new ResourceLocation("minecraft",
+								"axolotl_hunt_targets"));
+		Advancement killAll = helper.getLevel()
+				.getServer().getAdvancements()
+				.getAdvancement(new ResourceLocation(
+						"minecraft",
+						"adventure/kill_all_mobs"));
+		Advancement bredAll = helper.getLevel()
+				.getServer().getAdvancements()
+				.getAdvancement(new ResourceLocation(
+						"minecraft",
+						"husbandry/bred_all_animals"));
+		require(helper,
+				CakeWorldEntities.SHERBET_SALMON.get()
+								.is(axolotlPrey)
+						&& CakeWorldEntities.SODA_COD.get()
+								.is(axolotlPrey)
+						&& CakeWorldEntities.FIZZBALL_FISH
+								.get().is(axolotlPrey)
+						&& CakeWorldEntities.GLOW_JELLY.get()
+								.is(axolotlPrey)
+						&& CakeWorldItems
+								.SHERBET_SALMON_SPAWN_EGG
+								.isPresent()
+						&& killAll != null
+						&& bredAll != null
+						&& !killAll.getCriteria()
+								.containsKey(
+										"minecraft:salmon")
+						&& !bredAll.getCriteria()
+								.containsKey(
+										"minecraft:salmon")
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+												.SHERBET_SALMON
+												.get())
+								== null,
+				"Sherbet Salmon lost Axolotl-prey/egg roles, dropped an existing CakeWorld prey role, or fabricated combat, breeding or mimic progression");
+
+		released.forEach(SherbetSalmon::discard);
+		helper.getLevel().setBlock(
+				lemonadePos.below(),
+				Blocks.AIR.defaultBlockState(), 3);
+		helper.getLevel().setBlock(
+				lemonadePos,
+				Blocks.AIR.defaultBlockState(), 3);
+		helper.getLevel().setBlock(
+				lemonadePos.above(),
+				Blocks.AIR.defaultBlockState(), 3);
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 200)
 	public static void fudgeFolkKeepPiglinSocietyBarterAndSafePeril(
 			GameTestHelper helper) {
 		FudgeFolkProbe folk =
@@ -14396,6 +14858,74 @@ public final class FirstBiteGameTests {
 		private int countTargetGoalsNamed(
 				String name) {
 			return (int)targetSelector
+					.getAvailableGoals().stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
+		}
+
+		@Override
+		public void playSound(
+				net.minecraft.sounds.SoundEvent sound,
+				float volume, float pitch) {
+			lastSound = sound;
+		}
+	}
+
+	private static final class SherbetSalmonProbe
+			extends SherbetSalmon {
+		private net.minecraft.sounds.SoundEvent lastSound;
+
+		private SherbetSalmonProbe(Level level) {
+			super(CakeWorldEntities
+					.SHERBET_SALMON.get(), level);
+		}
+
+		private int getExperienceValue() {
+			return getExperienceReward(null);
+		}
+
+		private ResourceLocation getLootTableId() {
+			return getLootTable();
+		}
+
+		private net.minecraft.sounds.SoundEvent ambientSound() {
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent hurtSound() {
+			return getHurtSound(
+					DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent deathSound() {
+			return getDeathSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent flopSound() {
+			return getFlopSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent swimSound() {
+			return getSwimSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent lastSound() {
+			return lastSound;
+		}
+
+		private boolean canRandomSwimRole() {
+			return canRandomSwim();
+		}
+
+		private boolean canBeLeashedRole() {
+			return canBeLeashed(null);
+		}
+
+		private int countGoalsNamed(String name) {
+			return (int)goalSelector
 					.getAvailableGoals().stream()
 					.map(WrappedGoal::getGoal)
 					.filter(goal -> name.equals(

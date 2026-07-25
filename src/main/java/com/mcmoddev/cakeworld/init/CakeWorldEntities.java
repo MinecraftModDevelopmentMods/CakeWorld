@@ -43,6 +43,7 @@ import com.mcmoddev.cakeworld.entity.SodaDolphin;
 import com.mcmoddev.cakeworld.entity.SoggyBiscuit;
 import com.mcmoddev.cakeworld.entity.SoggyTridentProjectile;
 import com.mcmoddev.cakeworld.entity.SherbetOcelot;
+import com.mcmoddev.cakeworld.entity.SherbetSalmon;
 import com.mcmoddev.cakeworld.entity.SourSorcerer;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
 import com.mcmoddev.cakeworld.entity.SugarBee;
@@ -75,6 +76,7 @@ import net.minecraft.world.entity.animal.Parrot;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.animal.PolarBear;
 import net.minecraft.world.entity.animal.Rabbit;
+import net.minecraft.world.entity.animal.Salmon;
 import net.minecraft.world.entity.animal.Sheep;
 import net.minecraft.world.entity.animal.AbstractFish;
 import net.minecraft.world.entity.animal.goat.Goat;
@@ -182,6 +184,13 @@ public final class CakeWorldEntities {
 					EntityType.Builder.of(SodaCod::new,
 							MobCategory.WATER_AMBIENT)
 							.sized(0.5F, 0.3F)
+							.clientTrackingRange(4));
+	public static final RegistryObject<EntityType<SherbetSalmon>>
+			SHERBET_SALMON = entity("sherbet_salmon",
+					EntityType.Builder.of(
+							SherbetSalmon::new,
+							MobCategory.WATER_AMBIENT)
+							.sized(0.7F, 0.4F)
 							.clientTrackingRange(4));
 	public static final RegistryObject<EntityType<FizzballFish>>
 			FIZZBALL_FISH = entity("fizzball_fish",
@@ -450,6 +459,8 @@ public final class CakeWorldEntities {
 		event.put(DEEP_LIQUORICE_WEAVER.get(),
 				CaveSpider.createCaveSpider().build());
 		event.put(SODA_COD.get(), Cod.createMobAttributes().build());
+		event.put(SHERBET_SALMON.get(),
+				Salmon.createAttributes().build());
 		event.put(FIZZBALL_FISH.get(),
 				AbstractFish.createAttributes().build());
 		event.put(SODA_DOLPHIN.get(), Dolphin.createAttributes().build());
@@ -563,6 +574,11 @@ public final class CakeWorldEntities {
 					SpawnPlacements.Type.IN_WATER,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					SodaCod::checkSodaCodSpawnRules);
+			SpawnPlacements.register(SHERBET_SALMON.get(),
+					SpawnPlacements.Type.IN_WATER,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					SherbetSalmon
+							::checkSherbetSalmonSpawnRules);
 			SpawnPlacements.register(FIZZBALL_FISH.get(),
 					SpawnPlacements.Type.IN_WATER,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,

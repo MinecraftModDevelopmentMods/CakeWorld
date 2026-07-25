@@ -120,6 +120,10 @@ public final class CakeWorldCreatureSpawns {
 					EntityType.POLAR_BEAR,
 					CakeWorldEntities.VANILLA_ICE_BEAR,
 					1, 1, 2);
+			replace(event, MobCategory.WATER_AMBIENT,
+					EntityType.SALMON,
+					CakeWorldEntities.SHERBET_SALMON,
+					15, 1, 5);
 		}
 		if ("candyfloss_cloudbanks".equals(
 				biome.getPath())) {
@@ -135,6 +139,10 @@ public final class CakeWorldCreatureSpawns {
 					CakeWorldEntities.JELLYLOTL, 6, 1, 3);
 			replace(event, MobCategory.WATER_AMBIENT, EntityType.COD,
 					CakeWorldEntities.SODA_COD, 15, 3, 6);
+			replace(event, MobCategory.WATER_AMBIENT,
+					EntityType.SALMON,
+					CakeWorldEntities.SHERBET_SALMON,
+					15, 1, 5);
 			replace(event, MobCategory.WATER_AMBIENT,
 					EntityType.PUFFERFISH,
 					CakeWorldEntities.FIZZBALL_FISH, 5, 1, 3);

@@ -141,6 +141,15 @@ public final class CakeWorldItems {
 							new Item.Properties()
 									.tab(CreativeModeTab.TAB_MISC)
 									.stacksTo(1)));
+	public static final RegistryObject<Item> SHERBET_SALMON_BUCKET =
+			ITEMS.register("sherbet_salmon_bucket",
+					() -> new MobBucketItem(
+							CakeWorldEntities.SHERBET_SALMON,
+							CakeWorldFluids.LEMONADE,
+							() -> SoundEvents.BUCKET_EMPTY_FISH,
+							new Item.Properties()
+									.tab(CreativeModeTab.TAB_MISC)
+									.stacksTo(1)));
 	public static final RegistryObject<Item> FIZZBALL_FISH_BUCKET =
 			ITEMS.register("fizzball_fish_bucket",
 					() -> new MobBucketItem(
@@ -187,6 +196,11 @@ public final class CakeWorldItems {
 			spawnEgg("soda_cod_spawn_egg",
 					CakeWorldEntities.SODA_COD,
 					0xF6D66D, 0xF7A8D8);
+	public static final RegistryObject<Item>
+			SHERBET_SALMON_SPAWN_EGG =
+			spawnEgg("sherbet_salmon_spawn_egg",
+					CakeWorldEntities.SHERBET_SALMON,
+					0xF57BC5, 0xF7E36D);
 	public static final RegistryObject<Item> FIZZBALL_FISH_SPAWN_EGG =
 			spawnEgg("fizzball_fish_spawn_egg",
 					CakeWorldEntities.FIZZBALL_FISH,
