@@ -1,12 +1,14 @@
 package com.mcmoddev.cakeworld.entity;
 
 import com.mcmoddev.cakeworld.init.CakeWorldEntities;
+import com.mcmoddev.cakeworld.init.CakeWorldFluids;
 import com.mcmoddev.cakeworld.init.CakeWorldItems;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.Difficulty;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.AgeableMob;
@@ -14,6 +16,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.animal.axolotl.Axolotl;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
@@ -67,5 +70,18 @@ public final class Jellylotl extends Axolotl {
 	@Override
 	public ItemStack getBucketItemStack() {
 		return new ItemStack(CakeWorldItems.JELLYLOTL_BUCKET.get());
+	}
+
+	@Override
+	protected void usePlayerItem(Player player,
+			InteractionHand hand, ItemStack stack) {
+		if (stack.is(CakeWorldItems
+				.JELLYBEAN_FISH_BUCKET.get())) {
+			player.setItemInHand(hand,
+					new ItemStack(CakeWorldFluids
+							.LEMONADE_BUCKET.get()));
+			return;
+		}
+		super.usePlayerItem(player, hand, stack);
 	}
 }

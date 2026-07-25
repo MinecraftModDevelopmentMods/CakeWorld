@@ -33,6 +33,7 @@ import com.mcmoddev.cakeworld.entity.HotFudgeBlob;
 import com.mcmoddev.cakeworld.entity.IceCreamGolem;
 import com.mcmoddev.cakeworld.entity.JawbreakerGuardian;
 import com.mcmoddev.cakeworld.entity.JellyBlob;
+import com.mcmoddev.cakeworld.entity.JellybeanFish;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.LiquoriceSquid;
 import com.mcmoddev.cakeworld.entity.LiquoriceWeaver;
@@ -216,6 +217,12 @@ public final class CakeWorldEntities {
 					EntityType.Builder.of(FizzballFish::new,
 							MobCategory.WATER_AMBIENT)
 							.sized(0.7F, 0.7F)
+							.clientTrackingRange(4));
+	public static final RegistryObject<EntityType<JellybeanFish>>
+			JELLYBEAN_FISH = entity("jellybean_fish",
+					EntityType.Builder.of(JellybeanFish::new,
+							MobCategory.WATER_AMBIENT)
+							.sized(0.5F, 0.4F)
 							.clientTrackingRange(4));
 	public static final RegistryObject<EntityType<SodaDolphin>> SODA_DOLPHIN =
 			entity("soda_dolphin",
@@ -567,6 +574,8 @@ public final class CakeWorldEntities {
 				Salmon.createAttributes().build());
 		event.put(FIZZBALL_FISH.get(),
 				AbstractFish.createAttributes().build());
+		event.put(JELLYBEAN_FISH.get(),
+				AbstractFish.createAttributes().build());
 		event.put(SODA_DOLPHIN.get(), Dolphin.createAttributes().build());
 		event.put(DOUGH_DONKEY.get(),
 				AbstractChestedHorse.createBaseChestedHorseAttributes()
@@ -709,6 +718,10 @@ public final class CakeWorldEntities {
 					SpawnPlacements.Type.IN_WATER,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					FizzballFish::checkFizzballFishSpawnRules);
+			SpawnPlacements.register(JELLYBEAN_FISH.get(),
+					SpawnPlacements.Type.IN_WATER,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					JellybeanFish::checkJellybeanFishSpawnRules);
 			SpawnPlacements.register(SODA_DOLPHIN.get(),
 					SpawnPlacements.Type.IN_WATER,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,

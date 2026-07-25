@@ -47,6 +47,7 @@ import com.mcmoddev.cakeworld.entity.CinnamonPuffProjectile;
 import com.mcmoddev.cakeworld.entity.CinnamonSpark;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.JellyBlob;
+import com.mcmoddev.cakeworld.entity.JellybeanFish;
 import com.mcmoddev.cakeworld.entity.JellyBlobDamageSafety;
 import com.mcmoddev.cakeworld.entity.LollipopLorikeet;
 import com.mcmoddev.cakeworld.entity.LiquoriceSquid;
@@ -129,6 +130,7 @@ import com.mcmoddev.cakeworld.world.CakeWorldSquidReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldStrayReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldStriderReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldTraderLlamaReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldTropicalFishReplacement;
 import com.mcmoddev.cakeworld.world.FudgeSkaterRideCompatibility;
 
 import net.minecraft.core.BlockPos;
@@ -214,6 +216,7 @@ import net.minecraft.world.entity.animal.Sheep;
 import net.minecraft.world.entity.animal.SnowGolem;
 import net.minecraft.world.entity.animal.Squid;
 import net.minecraft.world.entity.animal.Turtle;
+import net.minecraft.world.entity.animal.TropicalFish;
 import net.minecraft.world.entity.animal.Wolf;
 import net.minecraft.world.entity.animal.goat.Goat;
 import net.minecraft.world.entity.animal.WaterAnimal;
@@ -282,6 +285,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.MobBucketItem;
 import net.minecraft.world.item.SuspiciousStewItem;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.context.UseOnContext;
@@ -21081,6 +21085,744 @@ public final class FirstBiteGameTests {
 		helper.succeed();
 	}
 
+	@GameTest(template = EMPTY, timeoutTicks = 300)
+	public static void jellybeanFishKeepEveryVariantSchoolAndBucketRole(
+			GameTestHelper helper) {
+		JellybeanFishProbe fish =
+				new JellybeanFishProbe(helper.getLevel());
+		fish.seedRandom(1978L);
+		int experience = fish.getExperienceValue();
+		require(helper,
+				fish instanceof TropicalFish
+						&& fish.getType()
+								== CakeWorldEntities
+										.JELLYBEAN_FISH
+										.get()
+						&& fish.getType().getCategory()
+								== MobCategory.WATER_AMBIENT
+						&& close(fish.getMaxHealth(), 3.0D)
+						&& close(fish.getDimensions(
+								Pose.STANDING).width,
+								0.5D)
+						&& close(fish.getDimensions(
+								Pose.STANDING).height,
+								0.4D)
+						&& fish.getType()
+								.clientTrackingRange() == 4
+						&& fish.getMaxSchoolSize() == 8
+						&& fish.getMaxSpawnClusterSize() == 8
+						&& experience >= 1
+						&& experience <= 3
+						&& fish.getLootTableId().equals(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/jellybean_fish")),
+				"Jellybean Fish lost the exact Tropical Fish type, body, school, XP or loot roles");
+		require(helper,
+				fish.countGoalsNamed("PanicGoal") == 1
+						&& fish.countGoalsNamed(
+								"AvoidEntityGoal") == 1
+						&& fish.countGoalsNamed(
+								"FishSwimGoal") == 1
+						&& fish.countGoalsNamed(
+								"FollowFlockLeaderGoal")
+								== 1
+						&& fish.countTargetGoals() == 0
+						&& "WaterBoundPathNavigation"
+								.equals(fish.getNavigation()
+										.getClass()
+										.getSimpleName())
+						&& fish.canBreatheUnderwater()
+						&& fish.getMobType()
+								== MobType.WATER
+						&& !fish.isPushedByFluid()
+						&& !fish.canBeLeashedRole()
+						&& fish.getAmbientSoundInterval()
+								== 120,
+				"Jellybean Fish lost panic, avoidance, school/random swimming, passive targets or water roles");
+		require(helper,
+				fish.ambientSound()
+								== SoundEvents
+										.TROPICAL_FISH_AMBIENT
+						&& fish.hurtSound()
+								== SoundEvents
+										.TROPICAL_FISH_HURT
+						&& fish.deathSound()
+								== SoundEvents
+										.TROPICAL_FISH_DEATH
+						&& fish.flopSound()
+								== SoundEvents
+										.TROPICAL_FISH_FLOP
+						&& fish.swimSound()
+								== SoundEvents.FISH_SWIM
+						&& fish.getPickupSound()
+								== SoundEvents
+										.BUCKET_FILL_FISH,
+				"Jellybean Fish lost exact Tropical Fish ambient, hurt, death, flop, swim or pickup sounds");
+
+		Set<Integer> packedVariants =
+				new java.util.HashSet<>();
+		Set<String> patternNames =
+				new java.util.HashSet<>();
+		Set<DyeColor> generatedColours =
+				new java.util.HashSet<>();
+		for (int base = 0; base < 2; ++base) {
+			for (int pattern = 0;
+					pattern < 6; ++pattern) {
+				for (int baseColour = 0;
+						baseColour < 15;
+						++baseColour) {
+					for (int patternColour = 0;
+							patternColour < 15;
+							++patternColour) {
+						int packed = base
+								| pattern << 8
+								| baseColour << 16
+								| patternColour
+										<< 24;
+						fish.setVariant(packed);
+						packedVariants.add(
+								fish.getVariant());
+						patternNames.add(
+								TropicalFish
+										.getFishTypeName(
+												packed));
+						generatedColours.add(
+								TropicalFish
+										.getBaseColor(
+												packed));
+						generatedColours.add(
+								TropicalFish
+										.getPatternColor(
+												packed));
+						require(helper,
+								fish.getVariant()
+										== packed
+										&& fish.getBaseVariant()
+												== base
+										&& TropicalFish
+												.getBaseColor(
+														packed)
+												.getId()
+												== baseColour
+										&& TropicalFish
+												.getPatternColor(
+														packed)
+												.getId()
+												== patternColour
+										&& fish.getBaseTextureLocation()
+												.getPath()
+												.equals(
+														"textures/entity/fish/tropical_"
+																+ (base == 0
+																		? "a"
+																		: "b")
+																+ ".png")
+										&& fish.getPatternTextureLocation()
+												.getPath()
+												.equals(
+														"textures/entity/fish/tropical_"
+																+ (base == 0
+																		? "a"
+																		: "b")
+																+ "_pattern_"
+																+ (pattern
+																		+ 1)
+																+ ".png"),
+								"Jellybean Fish changed packed variant "
+										+ Integer.toUnsignedString(
+												packed));
+					}
+				}
+			}
+		}
+		require(helper,
+				packedVariants.size() == 2700
+						&& patternNames.size() == 12
+						&& generatedColours.size() == 15
+						&& !generatedColours
+								.contains(DyeColor.BLACK)
+						&& TropicalFish.COMMON_VARIANTS.length
+								== 22
+						&& Arrays.stream(
+								TropicalFish
+										.COMMON_VARIANTS)
+								.boxed().distinct().count()
+								== 22,
+				"Jellybean Fish lost the exact 2,700 generated variants, twelve patterns, fifteen generated colours or twenty-two common forms");
+
+		BlockPos localPos = helper.absolutePos(
+				new BlockPos(3, 3, 3));
+		DifficultyInstance localDifficulty =
+				helper.getLevel().getCurrentDifficultyAt(
+						localPos);
+		JellybeanFishProbe commonLeader =
+				new JellybeanFishProbe(
+						helper.getLevel());
+		commonLeader.seedRandom(12L);
+		SpawnGroupData schoolData =
+				commonLeader.finalizeSpawn(
+						helper.getLevel(),
+						localDifficulty,
+						MobSpawnType.NATURAL,
+						null, null);
+		JellybeanFishProbe commonFollower =
+				new JellybeanFishProbe(
+						helper.getLevel());
+		commonFollower.finalizeSpawn(
+				helper.getLevel(), localDifficulty,
+				MobSpawnType.NATURAL,
+				schoolData, null);
+		require(helper,
+				"TropicalFishGroupData".equals(
+						schoolData.getClass()
+								.getSimpleName())
+						&& commonLeader.getVariant()
+								== TropicalFish
+										.COMMON_VARIANTS[0]
+						&& commonFollower.getVariant()
+								== commonLeader.getVariant()
+						&& commonFollower.isFollower()
+						&& commonLeader.hasFollowers()
+						&& !commonLeader
+								.isMaxGroupSizeReached(2),
+				"Common Jellybean Fish did not form a same-variant school");
+		commonFollower.stopFollowing();
+		require(helper,
+				!commonFollower.isFollower()
+						&& !commonLeader.hasFollowers(),
+				"Jellybean Fish did not leave its school cleanly");
+
+		JellybeanFishProbe rare =
+				new JellybeanFishProbe(
+						helper.getLevel());
+		rare.seedRandom(5L);
+		rare.finalizeSpawn(helper.getLevel(),
+				localDifficulty, MobSpawnType.NATURAL,
+				null, null);
+		require(helper,
+				rare.getVariant()
+								== (0 | 5 << 8
+										| 2 << 16
+										| 6 << 24)
+						&& rare.isMaxGroupSizeReached(1),
+				"Rare solitary Jellybean Fish lost the exact free-variant branch");
+
+		int savedVariant =
+				1 | 4 << 8 | 7 << 16 | 12 << 24;
+		fish.setVariant(savedVariant);
+		fish.setFromBucket(true);
+		CompoundTag entityState = new CompoundTag();
+		fish.addAdditionalSaveData(entityState);
+		JellybeanFishProbe restored =
+				new JellybeanFishProbe(
+						helper.getLevel());
+		restored.readAdditionalSaveData(entityState);
+		require(helper,
+				entityState.getInt("Variant")
+								== savedVariant
+						&& entityState.getBoolean(
+								"FromBucket")
+						&& restored.getVariant()
+								== savedVariant
+						&& restored.fromBucket(),
+				"Jellybean Fish lost Variant or FromBucket entity NBT");
+
+		int seaLevel = helper.getLevel().getSeaLevel();
+		BlockPos lemonadePos = new BlockPos(
+				localPos.getX() + 8,
+				seaLevel - 5, localPos.getZ());
+		for (int y = -1; y <= 1; ++y) {
+			helper.getLevel().setBlock(
+					lemonadePos.offset(0, y, 0),
+					CakeWorldFluids.LEMONADE_BLOCK
+							.get().defaultBlockState(),
+					3);
+		}
+		require(helper,
+				!TropicalFish
+						.checkTropicalFishSpawnRules(
+								EntityType
+										.TROPICAL_FISH,
+								helper.getLevel(),
+								MobSpawnType.NATURAL,
+								lemonadePos,
+								new Random(1978L))
+						&& JellybeanFish
+								.checkJellybeanFishSpawnRules(
+										CakeWorldEntities
+												.JELLYBEAN_FISH
+												.get(),
+										helper.getLevel(),
+										MobSpawnType
+												.NATURAL,
+										lemonadePos,
+										new Random(
+												1978L))
+						&& SpawnPlacements
+								.checkSpawnRules(
+										CakeWorldEntities
+												.JELLYBEAN_FISH
+												.get(),
+										helper.getLevel(),
+										MobSpawnType
+												.NATURAL,
+										lemonadePos,
+										new Random(
+												1979L))
+						&& SpawnPlacements
+								.getPlacementType(
+										CakeWorldEntities
+												.JELLYBEAN_FISH
+												.get())
+								== SpawnPlacements.Type
+										.IN_WATER
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+												.JELLYBEAN_FISH
+												.get())
+								== Heightmap.Types
+										.MOTION_BLOCKING_NO_LEAVES,
+				"Jellybean Fish lost Lemonade-compatible surface spawning or exact placement metadata");
+
+		JellybeanFish captureFish =
+				CakeWorldEntities.JELLYBEAN_FISH.get()
+						.create(helper.getLevel());
+		require(helper, captureFish != null,
+				"Could not create Jellybean Fish bucket fixture");
+		captureFish.setVariant(
+				TropicalFish.COMMON_VARIANTS[6]);
+		captureFish.setCustomName(
+				new TextComponent("Raspberry Drop"));
+		captureFish.setPos(
+				lemonadePos.getX() + 0.5D,
+				lemonadePos.getY(),
+				lemonadePos.getZ() + 0.5D);
+		helper.getLevel().addFreshEntity(captureFish);
+		ServerPlayer bucketPlayer = new ServerPlayer(
+				helper.getLevel().getServer(),
+				helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2059"),
+						"CakeWorldJellybeanBucketTest"));
+		bucketPlayer.setItemInHand(
+				InteractionHand.MAIN_HAND,
+				new ItemStack(Items.WATER_BUCKET));
+		InteractionResult captureResult =
+				bucketPlayer.interactOn(captureFish,
+						InteractionHand.MAIN_HAND);
+		ItemStack bucket = bucketPlayer.getItemInHand(
+				InteractionHand.MAIN_HAND);
+		require(helper,
+				captureResult.consumesAction()
+						&& bucket.is(CakeWorldItems
+								.JELLYBEAN_FISH_BUCKET
+								.get())
+						&& bucket.hasCustomHoverName()
+						&& bucket.getOrCreateTag().getInt(
+								TropicalFish
+										.BUCKET_VARIANT_TAG)
+								== TropicalFish
+										.COMMON_VARIANTS[6]
+						&& captureFish.isRemoved(),
+				"Jellybean Fish did not capture its name and packed common variant");
+		List<net.minecraft.network.chat.Component>
+				commonTooltip =
+						new java.util.ArrayList<>();
+		bucket.getItem().appendHoverText(
+				bucket, null, commonTooltip,
+				TooltipFlag.Default.NORMAL);
+		require(helper,
+				commonTooltip.size() == 1
+						&& commonTooltip.get(0)
+								instanceof TranslatableComponent
+										commonName
+						&& commonName.getKey().equals(
+								TropicalFish
+										.getPredefinedName(
+												6)),
+				"Jellybean Fish common bucket lost its predefined-name tooltip");
+
+		ItemStack uncommonBucket = new ItemStack(
+				CakeWorldItems.JELLYBEAN_FISH_BUCKET
+						.get());
+		uncommonBucket.getOrCreateTag().putInt(
+				TropicalFish.BUCKET_VARIANT_TAG,
+				savedVariant);
+		List<net.minecraft.network.chat.Component>
+				uncommonTooltip =
+						new java.util.ArrayList<>();
+		uncommonBucket.getItem().appendHoverText(
+				uncommonBucket, null, uncommonTooltip,
+				TooltipFlag.Default.NORMAL);
+		require(helper,
+				Arrays.stream(
+						TropicalFish.COMMON_VARIANTS)
+						.noneMatch(value ->
+								value == savedVariant)
+						&& uncommonTooltip.size() == 2
+						&& uncommonTooltip.get(0)
+								instanceof TranslatableComponent
+										typeName
+						&& typeName.getKey().equals(
+								TropicalFish
+										.getFishTypeName(
+												savedVariant))
+						&& uncommonTooltip.get(1)
+								instanceof TranslatableComponent
+										baseColourName
+						&& baseColourName.getKey().equals(
+								"color.minecraft."
+										+ TropicalFish
+												.getBaseColor(
+														savedVariant)),
+				"Jellybean Fish uncommon bucket lost type and colour tooltip semantics");
+
+		AABB releaseArea =
+				new AABB(lemonadePos).inflate(2.0D);
+		((MobBucketItem)bucket.getItem())
+				.checkExtraContent(null,
+						helper.getLevel(), bucket,
+						lemonadePos);
+		List<JellybeanFish> released =
+				helper.getLevel().getEntitiesOfClass(
+						JellybeanFish.class,
+						releaseArea);
+		require(helper,
+				released.size() == 1
+						&& released.get(0).fromBucket()
+						&& released.get(0).getVariant()
+								== TropicalFish
+										.COMMON_VARIANTS[6]
+						&& "Raspberry Drop".equals(
+								released.get(0).getName()
+										.getString()),
+				"Jellybean Fish bucket released the wrong entity or lost variant/from-bucket/name data");
+		requireCriterion(helper, bucketPlayer,
+				"minecraft:husbandry/tactical_fishing",
+				"tropical_fish_bucket");
+
+		BlockPos cakeWorldPos =
+				findCakeWorldBiomePosition(helper,
+						localPos.offset(20, 0, 0),
+						256);
+		require(helper, cakeWorldPos != null,
+				"Could not locate CakeWorld terrain for literal Tropical Fish conversion");
+		TropicalFish literal = EntityType.TROPICAL_FISH
+				.create(helper.getLevel());
+		Boat vehicle = EntityType.BOAT.create(
+				helper.getLevel());
+		Pig passenger = EntityType.PIG.create(
+				helper.getLevel());
+		require(helper,
+				literal != null && vehicle != null
+						&& passenger != null,
+				"Could not create literal Tropical Fish state fixtures");
+		literal.setPos(cakeWorldPos.getX() + 0.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		literal.setVariant(savedVariant);
+		literal.setFromBucket(true);
+		literal.setHealth(2.0F);
+		literal.setAirSupply(177);
+		literal.setCustomName(
+				new TextComponent("Buried Sweet"));
+		literal.setPersistenceRequired();
+		literal.setNoAi(true);
+		literal.setInvulnerable(true);
+		literal.invulnerableTime = 19;
+		vehicle.setPos(literal.getX(),
+				literal.getY(), literal.getZ());
+		passenger.setPos(literal.getX(),
+				literal.getY(), literal.getZ());
+		helper.getLevel().addFreshEntity(vehicle);
+		helper.getLevel().addFreshEntity(passenger);
+		helper.getLevel().addFreshEntity(literal);
+		literal.startRiding(vehicle, true);
+		passenger.startRiding(literal, true);
+		JellybeanFish converted =
+				CakeWorldTropicalFishReplacement
+						.replaceIfInCakeWorldBiome(
+								helper.getLevel(),
+								literal);
+		require(helper,
+				converted != null
+						&& literal.isRemoved()
+						&& converted.getVariant()
+								== savedVariant
+						&& converted.fromBucket()
+						&& close(converted.getHealth(),
+								2.0D)
+						&& converted.getAirSupply()
+								== 177
+						&& "Buried Sweet".equals(
+								converted.getName()
+										.getString())
+						&& converted
+								.isPersistenceRequired()
+						&& converted.isNoAi()
+						&& converted.isInvulnerable()
+						&& converted.invulnerableTime
+								== 19
+						&& converted.getVehicle()
+								== vehicle
+						&& passenger.getVehicle()
+								== converted,
+				"Fresh literal Tropical Fish conversion lost variant, bucket, health, air, name, state, vehicle or passenger");
+		JellybeanFish exactTypeGuard =
+				CakeWorldEntities.JELLYBEAN_FISH.get()
+						.create(helper.getLevel());
+		require(helper,
+				exactTypeGuard != null
+						&& CakeWorldTropicalFishReplacement
+								.replaceIfInCakeWorldBiome(
+										helper.getLevel(),
+										exactTypeGuard)
+								== null
+						&& !exactTypeGuard.isRemoved(),
+				"Tropical Fish source conversion touched a non-literal entity type");
+		exactTypeGuard.discard();
+		passenger.discard();
+		converted.discard();
+		vehicle.discard();
+
+		TropicalFish eventLiteral =
+				EntityType.TROPICAL_FISH.create(
+						helper.getLevel());
+		require(helper, eventLiteral != null,
+				"Could not create deferred Tropical Fish source fixture");
+		eventLiteral.setPos(
+				cakeWorldPos.getX() + 0.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		eventLiteral.setVariant(savedVariant);
+		eventLiteral.setFromBucket(true);
+		eventLiteral.setNoAi(true);
+		eventLiteral.setCustomName(
+				new TextComponent(
+						"Deferred Jellybean"));
+		helper.getLevel().addFreshEntity(
+				eventLiteral);
+
+		Registry<Biome> biomes = helper.getLevel()
+				.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY);
+		Biome sodaOcean = biomes.get(
+				CakeWorldBiomes.SODA_OCEAN.getId());
+		require(helper, sodaOcean != null,
+				"Could not inspect Jellybean Fish Soda Ocean ecology");
+		List<MobSpawnSettings.SpawnerData>
+				sodaProfiles = sodaOcean.getMobSettings()
+						.getMobs(
+								MobCategory.WATER_AMBIENT)
+						.unwrap().stream()
+						.filter(spawn ->
+								spawn.type
+										== EntityType
+												.TROPICAL_FISH
+								|| spawn.type
+										== CakeWorldEntities
+												.JELLYBEAN_FISH
+												.get())
+						.toList();
+		require(helper,
+				sodaProfiles.size() == 1
+						&& sodaProfiles.get(0).type
+								== CakeWorldEntities
+										.JELLYBEAN_FISH
+										.get()
+						&& sodaProfiles.get(0)
+								.getWeight().asInt() == 25
+						&& sodaProfiles.get(0).minCount
+								== 8
+						&& sodaProfiles.get(0).maxCount
+								== 8,
+				"Soda Ocean lost the exact warm-ocean 25/8-8 Jellybean Fish school: "
+						+ sodaProfiles);
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS
+						.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS
+						.getId())) {
+			Biome biome = biomes.get(biomeId);
+			require(helper,
+					biome != null
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory
+													.WATER_AMBIENT)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType
+															.TROPICAL_FISH
+											|| spawn.type
+													== CakeWorldEntities
+															.JELLYBEAN_FISH
+															.get()),
+					"Non-ocean current biome leaked Tropical/Jellybean Fish spawning: "
+							+ biomeId);
+		}
+
+		TagKey<EntityType<?>> axolotlPrey =
+				TagKey.create(
+						Registry.ENTITY_TYPE_REGISTRY,
+						new ResourceLocation("minecraft",
+								"axolotl_hunt_targets"));
+		TagKey<Item> axolotlFood = TagKey.create(
+				Registry.ITEM_REGISTRY,
+				new ResourceLocation("minecraft",
+						"axolotl_tempt_items"));
+		Advancement killAll = helper.getLevel()
+				.getServer().getAdvancements()
+				.getAdvancement(new ResourceLocation(
+						"minecraft",
+						"adventure/kill_all_mobs"));
+		Advancement bredAll = helper.getLevel()
+				.getServer().getAdvancements()
+				.getAdvancement(new ResourceLocation(
+						"minecraft",
+						"husbandry/bred_all_animals"));
+		require(helper,
+				CakeWorldEntities.JELLYBEAN_FISH
+								.get().is(axolotlPrey)
+						&& CakeWorldItems
+								.JELLYBEAN_FISH_BUCKET
+								.isPresent()
+						&& new ItemStack(CakeWorldItems
+								.JELLYBEAN_FISH_BUCKET
+								.get()).is(axolotlFood)
+						&& CakeWorldItems
+								.JELLYBEAN_FISH_SPAWN_EGG
+								.isPresent()
+						&& killAll != null
+						&& bredAll != null
+						&& !killAll.getCriteria()
+								.containsKey(
+										"minecraft:tropical_fish")
+						&& !bredAll.getCriteria()
+								.containsKey(
+										"minecraft:tropical_fish")
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+												.JELLYBEAN_FISH
+												.get())
+								== null,
+				"Jellybean Fish lost Axolotl prey/food or egg roles, or invented combat, breeding or mimic progress");
+
+		Jellylotl jellylotl =
+				CakeWorldEntities.JELLYLOTL.get()
+						.create(helper.getLevel());
+		require(helper, jellylotl != null,
+				"Could not create Jellylotl food-role fixture");
+		jellylotl.setPos(localPos.getX() + 12.0D,
+				localPos.getY(), localPos.getZ());
+		helper.getLevel().addFreshEntity(jellylotl);
+		ServerPlayer jellylotlPlayer = new ServerPlayer(
+				helper.getLevel().getServer(),
+				helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2060"),
+						"CakeWorldJellylotlFoodTest"));
+		jellylotlPlayer.setItemInHand(
+				InteractionHand.MAIN_HAND,
+				new ItemStack(CakeWorldItems
+						.JELLYBEAN_FISH_BUCKET.get()));
+		require(helper,
+				jellylotl.isFood(jellylotlPlayer
+						.getMainHandItem())
+						&& jellylotlPlayer.interactOn(
+								jellylotl,
+								InteractionHand.MAIN_HAND)
+								.consumesAction()
+						&& jellylotl.isInLove()
+						&& jellylotlPlayer
+								.getMainHandItem()
+								.is(CakeWorldFluids
+										.LEMONADE_BUCKET
+										.get()),
+				"Jellylotl did not consume the Jellybean role and retain its Lemonade");
+
+		Axolotl vanillaAxolotl =
+				EntityType.AXOLOTL.create(
+						helper.getLevel());
+		require(helper, vanillaAxolotl != null,
+				"Could not create vanilla Axolotl compatibility fixture");
+		vanillaAxolotl.setPos(
+				localPos.getX() + 14.0D,
+				localPos.getY(), localPos.getZ());
+		helper.getLevel().addFreshEntity(
+				vanillaAxolotl);
+		ServerPlayer vanillaPlayer = new ServerPlayer(
+				helper.getLevel().getServer(),
+				helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2061"),
+						"CakeWorldVanillaAxolotlFoodTest"));
+		vanillaPlayer.setItemInHand(
+				InteractionHand.MAIN_HAND,
+				new ItemStack(CakeWorldItems
+						.JELLYBEAN_FISH_BUCKET.get()));
+		InteractionResult vanillaFeeding =
+				vanillaPlayer.interactOn(
+						vanillaAxolotl,
+						InteractionHand.MAIN_HAND);
+		require(helper,
+				vanillaFeeding.consumesAction()
+						&& vanillaAxolotl.isInLove(),
+				"Vanilla Axolotl rejected the tagged Jellybean Fish bucket");
+
+		released.forEach(JellybeanFish::discard);
+		for (int y = -1; y <= 1; ++y) {
+			helper.getLevel().setBlock(
+					lemonadePos.offset(0, y, 0),
+					Blocks.AIR.defaultBlockState(), 3);
+		}
+		helper.runAfterDelay(3, () -> {
+			require(helper,
+					vanillaPlayer.getMainHandItem()
+							.is(CakeWorldFluids
+									.LEMONADE_BUCKET
+									.get()),
+					"Vanilla Axolotl consumed the custom filled bucket without the Lemonade remainder");
+			List<JellybeanFish> deferred =
+					helper.getLevel()
+							.getEntitiesOfClass(
+									JellybeanFish.class,
+									new AABB(
+											cakeWorldPos)
+													.inflate(
+															2.0D),
+									candidate ->
+											"Deferred Jellybean"
+													.equals(
+															candidate
+																	.getName()
+																	.getString()));
+			require(helper,
+					eventLiteral.isRemoved()
+							&& deferred.size() == 1
+							&& deferred.get(0)
+									.getVariant()
+									== savedVariant
+							&& deferred.get(0)
+									.fromBucket()
+							&& deferred.get(0)
+									.isNoAi(),
+					"Fresh literal EntityJoin source did not defer-convert with variant, bucket and AI state");
+			deferred.forEach(
+					JellybeanFish::discard);
+			jellylotl.discard();
+			vanillaAxolotl.discard();
+			helper.succeed();
+		});
+	}
+
 	private static final class LollipopLorikeetProbe
 			extends LollipopLorikeet {
 		private LollipopLorikeetProbe(Level level) {
@@ -21503,6 +22245,71 @@ public final class FirstBiteGameTests {
 				blowOutSoundCount++;
 			}
 		}
+	}
+
+	private static final class JellybeanFishProbe
+			extends JellybeanFish {
+		private JellybeanFishProbe(Level level) {
+			super(CakeWorldEntities.JELLYBEAN_FISH.get(),
+					level);
+		}
+
+		private int getExperienceValue() {
+			return getExperienceReward(null);
+		}
+
+		private ResourceLocation getLootTableId() {
+			return getLootTable();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				ambientSound() {
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				hurtSound() {
+			return getHurtSound(DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				deathSound() {
+			return getDeathSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				flopSound() {
+			return getFlopSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				swimSound() {
+			return getSwimSound();
+		}
+
+		private boolean canBeLeashedRole() {
+			return canBeLeashed(null);
+		}
+
+		private int countGoalsNamed(String name) {
+			return (int)goalSelector
+					.getAvailableGoals().stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
+		}
+
+		private int countTargetGoals() {
+			return targetSelector
+					.getAvailableGoals().size();
+		}
+
+		private void seedRandom(long seed) {
+			random.setSeed(seed);
+		}
+
 	}
 
 	private static final class GummyBunnyProbe

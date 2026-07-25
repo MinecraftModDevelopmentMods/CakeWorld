@@ -343,6 +343,12 @@ public final class VanillaRoleAdvancements {
 		award(player, TACTICAL_FISHING, "salmon_bucket");
 	}
 
+	public static void creditTropicalFishBucketRole(
+			ServerPlayer player) {
+		award(player, TACTICAL_FISHING,
+				"tropical_fish_bucket");
+	}
+
 	private static String killedCriterion(EntityType<?> type) {
 		if (type == CakeWorldEntities.STALE_CRUMBLER.get()) {
 			return "minecraft:zombie";

@@ -4,6 +4,7 @@ import java.util.function.Supplier;
 
 import com.mcmoddev.cakeworld.CakeWorld;
 import com.mcmoddev.cakeworld.item.ExplorersCookbookItem;
+import com.mcmoddev.cakeworld.item.JellybeanFishBucketItem;
 import com.mcmoddev.cakeworld.item.JellylotlBucketItem;
 import com.mcmoddev.cakeworld.item.LemonadeBottleItem;
 import com.mcmoddev.cakeworld.item.ReusableKitchenToolItem;
@@ -159,6 +160,12 @@ public final class CakeWorldItems {
 							new Item.Properties()
 									.tab(CreativeModeTab.TAB_MISC)
 									.stacksTo(1)));
+	public static final RegistryObject<Item> JELLYBEAN_FISH_BUCKET =
+			ITEMS.register("jellybean_fish_bucket",
+					() -> new JellybeanFishBucketItem(
+							new Item.Properties()
+									.tab(CreativeModeTab.TAB_MISC)
+									.stacksTo(1)));
 	public static final RegistryObject<Item> JELLYLOTL_SPAWN_EGG =
 			spawnEgg("jellylotl_spawn_egg", CakeWorldEntities.JELLYLOTL,
 					0xF29AB2, 0x8AD9E8);
@@ -205,6 +212,10 @@ public final class CakeWorldItems {
 			spawnEgg("fizzball_fish_spawn_egg",
 					CakeWorldEntities.FIZZBALL_FISH,
 					0xF6D34A, 0x6ACBE8);
+	public static final RegistryObject<Item> JELLYBEAN_FISH_SPAWN_EGG =
+			spawnEgg("jellybean_fish_spawn_egg",
+					CakeWorldEntities.JELLYBEAN_FISH,
+					0xF06FB2, 0x67DCE5);
 	public static final RegistryObject<Item> SODA_DOLPHIN_SPAWN_EGG =
 			spawnEgg("soda_dolphin_spawn_egg",
 					CakeWorldEntities.SODA_DOLPHIN,
