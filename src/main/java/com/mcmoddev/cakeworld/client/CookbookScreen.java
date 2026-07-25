@@ -3,18 +3,21 @@ package com.mcmoddev.cakeworld.client;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.lwjgl.glfw.GLFW;
+
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mcmoddev.cakeworld.cookbook.CookbookLayout;
 import com.mcmoddev.cakeworld.cookbook.CookbookSummary;
 import com.mcmoddev.cakeworld.cookbook.DiscoveryType;
 
+import net.minecraft.client.gui.narration.NarratedElementType;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 
 public final class CookbookScreen extends Screen {
-	private static final int BOOK_WIDTH = 390;
-	private static final int BOOK_HEIGHT = 210;
-	private static final int TAB_HEIGHT = 18;
 	private static final int PAGE_COLOUR = 0xFFF7DCA4;
 	private static final int INK_COLOUR = 0xFF4B2A18;
 	private static final int TAB_COLOUR = 0xFFE9B96E;
@@ -29,44 +32,67 @@ public final class CookbookScreen extends Screen {
 	@Override
 	public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
 		renderBackground(poseStack);
-		int left = (width - BOOK_WIDTH) / 2;
-		int top = (height - BOOK_HEIGHT) / 2;
-		fill(poseStack, left, top, left + BOOK_WIDTH, top + BOOK_HEIGHT, PAGE_COLOUR);
-		fill(poseStack, left + BOOK_WIDTH / 2 - 1, top + 8,
-				left + BOOK_WIDTH / 2 + 1, top + BOOK_HEIGHT - 8, 0x55351D10);
-		drawCenteredString(poseStack, font, title, width / 2, top + 9, INK_COLOUR);
+		CookbookLayout layout = layout();
+		fill(poseStack, layout.left(), layout.top(),
+				layout.left() + layout.width(),
+				layout.top() + layout.height(), PAGE_COLOUR);
+		fill(poseStack, layout.left() + layout.width() / 2 - 1,
+				layout.top() + 8,
+				layout.left() + layout.width() / 2 + 1,
+				layout.top() + layout.height() - 8, 0x55351D10);
+		drawCenteredString(poseStack, font, title, width / 2,
+				layout.top() + 9, INK_COLOUR);
 
 		DiscoveryType[] tabs = DiscoveryType.values();
 		CookbookSummary summary = ClientCookbookState.summary();
-		int tabWidth = BOOK_WIDTH / tabs.length;
 		for (int i = 0; i < tabs.length; i++) {
-			int tabLeft = left + i * tabWidth;
-			fill(poseStack, tabLeft, top + 25, tabLeft + tabWidth - 1,
-					top + 25 + TAB_HEIGHT,
+			int tabLeft = layout.tabLeft(i);
+			int tabRight = layout.tabRight(i);
+			int tabTop = layout.tabTop(i);
+			fill(poseStack, tabLeft, tabTop, tabRight - 1,
+					tabTop + CookbookLayout.TAB_HEIGHT,
 					tabs[i] == selected ? ACTIVE_TAB_COLOUR : TAB_COLOUR);
 			drawCenteredString(poseStack, font,
 					new TranslatableComponent(tabs[i].translationKey()),
-					tabLeft + tabWidth / 2, top + 30, INK_COLOUR);
+					(tabLeft + tabRight) / 2, tabTop + 5, INK_COLOUR);
 			if (summary.hasStamp(tabs[i])) {
-				fill(poseStack, tabLeft + tabWidth - 8, top + 27,
-						tabLeft + tabWidth - 4, top + 31,
-						0xFFFFC83D);
+				drawString(poseStack, font, "+", tabRight - 8,
+						tabTop + 5, INK_COLOUR);
+			}
+			if (tabs[i] == selected) {
+				fill(poseStack, tabLeft + 2,
+						tabTop + CookbookLayout.TAB_HEIGHT - 2,
+						tabRight - 3,
+						tabTop + CookbookLayout.TAB_HEIGHT,
+						INK_COLOUR);
 			}
 		}
 
 		List<ResourceLocation> pages =
 				new ArrayList<>(ClientCookbookState.get(selected));
+		drawCenteredString(poseStack, font,
+				new TranslatableComponent(
+						"screen.cakeworld.cookbook.selected_tab",
+						new TranslatableComponent(selected.translationKey()),
+						pages.size()),
+				width / 2, layout.headingTop(), INK_COLOUR);
 		if (pages.isEmpty()) {
 			drawCenteredString(poseStack, font,
 					new TranslatableComponent("screen.cakeworld.cookbook.empty"),
-					width / 2, top + 79, 0xFF7A5735);
+					width / 2, layout.pageTop() + 8, 0xFF7A5735);
 		} else {
-			for (int i = 0; i < Math.min(pages.size(), 12); i++) {
-				int column = i / 6;
-				int row = i % 6;
-				int x = left + 14 + column * (BOOK_WIDTH / 2);
-				int y = top + 55 + row * 19;
-				drawString(poseStack, font, pageName(pages.get(i)), x, y,
+			int rows = layout.pageRows();
+			int capacity = layout.visiblePageCapacity();
+			for (int i = 0; i < Math.min(pages.size(), capacity); i++) {
+				int column = i / rows;
+				int row = i % rows;
+				int columnWidth = layout.width() / layout.pageColumns();
+				int x = layout.left() + 14 + column * columnWidth;
+				int y = layout.pageTop() + row * 19;
+				drawString(poseStack, font,
+						fitPageName(pageName(pages.get(i)),
+								columnWidth - 24),
+						x, y,
 						INK_COLOUR);
 			}
 		}
@@ -75,34 +101,114 @@ public final class CookbookScreen extends Screen {
 						"screen.cakeworld.cookbook.summary",
 						summary.totalPages(), summary.stamps(),
 						summary.stampGoal()),
-				width / 2, top + 177, INK_COLOUR);
+				width / 2, layout.footerTop(), INK_COLOUR);
 		if (summary.firstEditionComplete()) {
 			drawCenteredString(poseStack, font,
 					new TranslatableComponent(
 							"screen.cakeworld.cookbook.first_edition_complete"),
-					width / 2, top + 191, 0xFF9A5A00);
+					width / 2, layout.footerTop() + 14, 0xFF9A5A00);
+		} else {
+			drawCenteredString(poseStack, font,
+					new TranslatableComponent(
+							"screen.cakeworld.cookbook.controls"),
+					width / 2, layout.footerTop() + 14, 0xFF7A5735);
 		}
 		super.render(poseStack, mouseX, mouseY, partialTick);
 	}
 
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
-		int left = (width - BOOK_WIDTH) / 2;
-		int top = (height - BOOK_HEIGHT) / 2;
-		if (mouseY >= top + 25 && mouseY < top + 25 + TAB_HEIGHT
-				&& mouseX >= left && mouseX < left + BOOK_WIDTH) {
-			int tabWidth = BOOK_WIDTH / DiscoveryType.values().length;
-			int index = Math.min(DiscoveryType.values().length - 1,
-					(int) (mouseX - left) / tabWidth);
-			selected = DiscoveryType.values()[index];
+		int index = layout().tabIndexAt(mouseX, mouseY,
+				DiscoveryType.values().length);
+		if (index >= 0) {
+			select(DiscoveryType.values()[index]);
 			return true;
 		}
 		return super.mouseClicked(mouseX, mouseY, button);
 	}
 
 	@Override
+	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+		if (keyCode == GLFW.GLFW_KEY_LEFT || keyCode == GLFW.GLFW_KEY_A) {
+			cycle(-1);
+			return true;
+		}
+		if (keyCode == GLFW.GLFW_KEY_RIGHT || keyCode == GLFW.GLFW_KEY_D) {
+			cycle(1);
+			return true;
+		}
+		if (keyCode == GLFW.GLFW_KEY_HOME) {
+			select(DiscoveryType.values()[0]);
+			return true;
+		}
+		if (keyCode == GLFW.GLFW_KEY_END) {
+			select(DiscoveryType.values()[
+					DiscoveryType.values().length - 1]);
+			return true;
+		}
+		if (keyCode >= GLFW.GLFW_KEY_1
+				&& keyCode < GLFW.GLFW_KEY_1
+						+ DiscoveryType.values().length) {
+			select(DiscoveryType.values()[
+					keyCode - GLFW.GLFW_KEY_1]);
+			return true;
+		}
+		return super.keyPressed(keyCode, scanCode, modifiers);
+	}
+
+	@Override
+	public Component getNarrationMessage() {
+		CookbookSummary summary = ClientCookbookState.summary();
+		return new TranslatableComponent(
+				"screen.cakeworld.cookbook.narration",
+				title,
+				new TranslatableComponent(selected.translationKey()),
+				ClientCookbookState.get(selected).size(),
+				summary.totalPages(), summary.stamps(),
+				summary.stampGoal());
+	}
+
+	@Override
+	protected void updateNarrationState(
+			NarrationElementOutput narrationOutput) {
+		narrationOutput.add(NarratedElementType.TITLE,
+				getNarrationMessage());
+		narrationOutput.add(NarratedElementType.USAGE,
+				new TranslatableComponent(
+						"screen.cakeworld.cookbook.narration.usage"));
+	}
+
+	@Override
 	public boolean isPauseScreen() {
 		return false;
+	}
+
+	private CookbookLayout layout() {
+		return CookbookLayout.calculate(width, height,
+				DiscoveryType.values().length);
+	}
+
+	private void cycle(int direction) {
+		DiscoveryType[] tabs = DiscoveryType.values();
+		int next = Math.floorMod(selected.ordinal() + direction,
+				tabs.length);
+		select(tabs[next]);
+	}
+
+	private void select(DiscoveryType tab) {
+		if (selected != tab) {
+			selected = tab;
+			triggerImmediateNarration(true);
+		}
+	}
+
+	private String fitPageName(String name, int maximumWidth) {
+		if (font.width(name) <= maximumWidth) {
+			return name;
+		}
+		String suffix = "...";
+		return font.plainSubstrByWidth(name,
+				Math.max(0, maximumWidth - font.width(suffix))) + suffix;
 	}
 
 	private static String pageName(ResourceLocation id) {

@@ -375,6 +375,14 @@ because all of its registry objects exist.
 - Interfaces support Minecraft GUI scale and do not rely on tiny decorative
   text.
 - Sticky and displacement effects must always leave a recoverable route.
+
+The `BOOK-008` prototype keeps the Cookbook presentation static, reflows its
+tabs and visible page list to the scaled viewport, and supports mouse, arrow,
+A/D, Home/End, and number-key navigation. The selected tab has a shape marker
+as well as a colour change, earned stamps use a `+` glyph rather than colour
+alone, and narrator text reports the active category and progress. Discovery
+sounds use a dedicated subtitle. Human checks at multiple GUI scales, with
+Minecraft Narrator and subtitles enabled, remain an acceptance requirement.
 - Food and creature names avoid implying that real toxic materials such as
   mercury are safe to eat. Metal-bearing compatibility ores are confectionery
   geology, not nibbleable food.

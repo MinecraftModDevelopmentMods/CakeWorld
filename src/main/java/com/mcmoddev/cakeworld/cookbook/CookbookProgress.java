@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.mcmoddev.cakeworld.init.CakeWorldItems;
+import com.mcmoddev.cakeworld.init.CakeWorldSounds;
 import com.mcmoddev.cakeworld.network.CakeWorldNetwork;
 
 import net.minecraft.nbt.CompoundTag;
@@ -14,6 +15,7 @@ import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.network.chat.TranslatableComponent;
@@ -44,6 +46,8 @@ public final class CookbookProgress {
 		player.displayClientMessage(new TranslatableComponent(
 				"message.cakeworld.cookbook.discovery", value), true);
 		if (player.connection != null) {
+			player.playNotifySound(CakeWorldSounds.COOKBOOK_DISCOVERY.get(),
+					SoundSource.PLAYERS, 0.65F, 1.1F);
 			CakeWorldNetwork.sync(player);
 		}
 		return true;

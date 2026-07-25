@@ -6,6 +6,7 @@ import com.mcmoddev.cakeworld.init.CakeWorldEffects;
 import com.mcmoddev.cakeworld.init.CakeWorldEntities;
 import com.mcmoddev.cakeworld.init.CakeWorldFluids;
 import com.mcmoddev.cakeworld.init.CakeWorldItems;
+import com.mcmoddev.cakeworld.init.CakeWorldSounds;
 import com.mcmoddev.cakeworld.network.CakeWorldNetwork;
 
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -22,6 +23,7 @@ public final class CakeWorld {
 		CakeWorldFluids.register(modBus);
 		CakeWorldEntities.register(modBus);
 		CakeWorldEffects.register(modBus);
+		CakeWorldSounds.register(modBus);
 		CakeWorldItems.register(modBus);
 		CakeWorldBiomes.register(modBus);
 		modBus.addListener(CakeWorldBiomes::commonSetup);

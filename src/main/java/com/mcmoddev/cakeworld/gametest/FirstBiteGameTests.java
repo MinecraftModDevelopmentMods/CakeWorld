@@ -22,6 +22,7 @@ import com.mcmoddev.cakeworld.block.SodaFountainBlock;
 import com.mcmoddev.cakeworld.block.WaferWindmillBlock;
 import com.mcmoddev.cakeworld.cookbook.CookbookEvents;
 import com.mcmoddev.cakeworld.cookbook.CookbookHints;
+import com.mcmoddev.cakeworld.cookbook.CookbookLayout;
 import com.mcmoddev.cakeworld.cookbook.CookbookProgress;
 import com.mcmoddev.cakeworld.cookbook.CookbookSummary;
 import com.mcmoddev.cakeworld.cookbook.DiscoveryType;
@@ -39,6 +40,7 @@ import com.mcmoddev.cakeworld.init.CakeWorldEffects;
 import com.mcmoddev.cakeworld.init.CakeWorldEntities;
 import com.mcmoddev.cakeworld.init.CakeWorldFluids;
 import com.mcmoddev.cakeworld.init.CakeWorldItems;
+import com.mcmoddev.cakeworld.init.CakeWorldSounds;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -1298,6 +1300,48 @@ public final class FirstBiteGameTests {
 						&& expanded.stamps() == 6
 						&& expanded.firstEditionComplete(),
 				"Extra pages incorrectly changed stamp-based completion");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void cookbookAccessibilityLayoutScalesAndSoundIsRegistered(
+			GameTestHelper helper) {
+		int tabs = DiscoveryType.values().length;
+		CookbookLayout standard =
+				CookbookLayout.calculate(854, 480, tabs);
+		require(helper, standard.width() == CookbookLayout.MAX_WIDTH
+						&& standard.height() == CookbookLayout.MAX_HEIGHT
+						&& standard.tabColumns() == 6
+						&& standard.tabRows() == 1,
+				"Standard Cookbook layout lost its readable six-tab form");
+
+		CookbookLayout compact =
+				CookbookLayout.calculate(320, 180, tabs);
+		require(helper, compact.left() >= 0 && compact.top() >= 0
+						&& compact.left() + compact.width() <= 320
+						&& compact.top() + compact.height() <= 180
+						&& compact.tabColumns() == 3
+						&& compact.tabRows() == 2
+						&& compact.visiblePageCapacity() > 0,
+				"Compact Cookbook layout escaped the scaled viewport");
+		for (int index = 0; index < tabs; index++) {
+			int hitX = (compact.tabLeft(index)
+					+ compact.tabRight(index)) / 2;
+			int hitY = compact.tabTop(index)
+					+ CookbookLayout.TAB_HEIGHT / 2;
+			require(helper, compact.tabIndexAt(hitX, hitY, tabs)
+							== index,
+					"Compact tab hit target did not map to tab " + index);
+		}
+		require(helper, compact.tabIndexAt(0, 0, tabs) == -1,
+				"Outside click was incorrectly treated as a Cookbook tab");
+
+		ResourceLocation soundId = new ResourceLocation(
+				CakeWorld.MODID, "cookbook_discovery");
+		require(helper, CakeWorldSounds.COOKBOOK_DISCOVERY.isPresent()
+						&& Registry.SOUND_EVENT.get(soundId)
+								== CakeWorldSounds.COOKBOOK_DISCOVERY.get(),
+				"Subtitled Cookbook discovery sound is not registered");
 		helper.succeed();
 	}
 

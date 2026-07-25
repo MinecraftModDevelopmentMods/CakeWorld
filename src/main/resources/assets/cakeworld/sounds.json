@@ -1,0 +1,11 @@
+{
+  "cookbook_discovery": {
+    "subtitle": "subtitles.cakeworld.cookbook.discovery",
+    "sounds": [
+      {
+        "name": "minecraft:item.book.page_turn",
+        "type": "event"
+      }
+    ]
+  }
+}
