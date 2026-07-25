@@ -35,6 +35,9 @@ public final class CakeWorldCreatureSpawns {
 
 		replace(event, MobCategory.MONSTER, EntityType.ENDERMAN,
 				CakeWorldEntities.TAFFY_TALLWALKER, 10, 1, 4);
+		replaceExisting(event, MobCategory.CREATURE,
+				EntityType.SHEEP,
+				CakeWorldEntities.CANDYFLOSS_SHEEP);
 
 		if (OVERWORLD_BIOMES.contains(biome.getPath())) {
 			replace(event, MobCategory.MONSTER, EntityType.ZOMBIE,
@@ -51,8 +54,6 @@ public final class CakeWorldCreatureSpawns {
 					CakeWorldEntities.COCOA_COW, 8, 2, 4);
 			replace(event, MobCategory.CREATURE, EntityType.PIG,
 					CakeWorldEntities.TRUFFLE_PIG, 8, 2, 4);
-			replace(event, MobCategory.CREATURE, EntityType.SHEEP,
-					CakeWorldEntities.CANDYFLOSS_SHEEP, 12, 2, 4);
 			replace(event, MobCategory.CREATURE, EntityType.DONKEY,
 					CakeWorldEntities.DOUGH_DONKEY, 1, 1, 3);
 			replace(event, MobCategory.CREATURE, EntityType.HORSE,
@@ -64,6 +65,10 @@ public final class CakeWorldCreatureSpawns {
 				biome.getPath())) {
 			replace(event, MobCategory.CREATURE, EntityType.RABBIT,
 					CakeWorldEntities.GUMMY_BUNNY, 2, 2, 6);
+			replace(event, MobCategory.CREATURE,
+					EntityType.SHEEP,
+					CakeWorldEntities.CANDYFLOSS_SHEEP,
+					12, 4, 4);
 		}
 		if ("cupcake_gardens".equals(biome.getPath())) {
 			replace(event, MobCategory.CREATURE,
@@ -187,6 +192,28 @@ public final class CakeWorldCreatureSpawns {
 			replacements.add(new MobSpawnSettings.SpawnerData(cakeWorld.get(),
 					fallbackWeight, fallbackMinimum, fallbackMaximum));
 		}
+		spawns.addAll(replacements);
+	}
+
+	private static <T extends Mob> void replaceExisting(
+			BiomeLoadingEvent event, MobCategory category,
+			EntityType<?> vanilla,
+			Supplier<EntityType<T>> cakeWorld) {
+		List<MobSpawnSettings.SpawnerData> spawns =
+				event.getSpawns().getSpawner(category);
+		List<MobSpawnSettings.SpawnerData> replacements =
+				new ArrayList<>();
+		for (MobSpawnSettings.SpawnerData spawn : spawns) {
+			if (spawn.type == vanilla) {
+				replacements.add(
+						new MobSpawnSettings.SpawnerData(
+								cakeWorld.get(),
+								spawn.getWeight(),
+								spawn.minCount,
+								spawn.maxCount));
+			}
+		}
+		spawns.removeIf(spawn -> spawn.type == vanilla);
 		spawns.addAll(replacements);
 	}
 }

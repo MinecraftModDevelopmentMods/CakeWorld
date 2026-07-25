@@ -33,6 +33,7 @@ import com.mcmoddev.cakeworld.cookbook.SharedCookbookLibrary;
 import com.mcmoddev.cakeworld.compat.VanillaRoleAdvancements;
 import com.mcmoddev.cakeworld.entity.BiscuitBandit;
 import com.mcmoddev.cakeworld.entity.CandyflossSheep;
+import com.mcmoddev.cakeworld.entity.CandyflossSheepGrazeGoal;
 import com.mcmoddev.cakeworld.entity.BonbonBat;
 import com.mcmoddev.cakeworld.entity.ChocolatePanda;
 import com.mcmoddev.cakeworld.entity.CocoaCow;
@@ -176,6 +177,7 @@ import net.minecraft.world.entity.animal.Pufferfish;
 import net.minecraft.world.entity.animal.FlyingAnimal;
 import net.minecraft.world.entity.animal.Rabbit;
 import net.minecraft.world.entity.animal.Salmon;
+import net.minecraft.world.entity.animal.Sheep;
 import net.minecraft.world.entity.animal.Turtle;
 import net.minecraft.world.entity.animal.Wolf;
 import net.minecraft.world.entity.animal.goat.Goat;
@@ -5194,7 +5196,10 @@ public final class FirstBiteGameTests {
 								== Markings.WHITE_FIELD,
 				"Gingerbread Pony lost owner, tame, saddle, armour, variant, or markings across NBT");
 
-		BlockPos icing = anchor.offset(5, 0, 5);
+		BlockPos icing = new BlockPos(
+				anchor.getX() + 5,
+				helper.getLevel().getMaxBuildHeight() - 3,
+				anchor.getZ() + 5);
 		helper.getLevel().setBlock(icing.below(),
 				CakeWorldBlocks.CHOCOLATE_SPONGE.get()
 						.defaultBlockState(), 3);
@@ -5205,9 +5210,6 @@ public final class FirstBiteGameTests {
 				Blocks.AIR.defaultBlockState(), 3);
 		helper.getLevel().setBlock(icing.above(2),
 				Blocks.AIR.defaultBlockState(), 3);
-		helper.getLevel().setBlock(
-				icing.offset(2, 1, 0),
-				Blocks.GLOWSTONE.defaultBlockState(), 3);
 		BlockPos spawnPos = icing.above();
 		boolean vanillaRule = Animal.checkAnimalSpawnRules(
 				CakeWorldEntities.GINGERBREAD_PONY.get(),
@@ -13771,6 +13773,504 @@ public final class FirstBiteGameTests {
 	}
 
 	@GameTest(template = EMPTY, timeoutTicks = 200)
+	public static void candyflossSheepKeepDyesFleeceAndEdibleGrazing(
+			GameTestHelper helper) {
+		CandyflossSheepProbe sheep =
+				new CandyflossSheepProbe(helper.getLevel());
+		int experience = sheep.getExperienceValue();
+		require(helper,
+				sheep instanceof Sheep
+						&& sheep.getType()
+								== CakeWorldEntities
+										.CANDYFLOSS_SHEEP
+										.get()
+						&& sheep.getType().getCategory()
+								== MobCategory.CREATURE
+						&& close(sheep.getMaxHealth(), 8.0D)
+						&& close(sheep.getAttributeValue(
+								Attributes.MOVEMENT_SPEED),
+								0.23D)
+						&& sheep.getAttribute(
+								Attributes.ATTACK_DAMAGE)
+								== null
+						&& close(sheep.getDimensions(
+								Pose.STANDING).width,
+								0.9D)
+						&& close(sheep.getDimensions(
+								Pose.STANDING).height,
+								1.3D)
+						&& close(sheep.standingEyeHeight(),
+								1.235D)
+						&& sheep.getType()
+								.clientTrackingRange() == 10
+						&& sheep
+								.getMaxSpawnClusterSize() == 4
+						&& experience >= 1
+						&& experience <= 3
+						&& sheep.isFood(
+								new ItemStack(Items.WHEAT))
+						&& sheep.canBeLeashedRole(),
+				"Candyfloss Sheep lost the exact passive Sheep body, movement, eye height, cluster, XP, Wheat or leash roles");
+		require(helper,
+				sheep.countGoalsNamed("FloatGoal") == 1
+						&& sheep.goalPriority(
+								"FloatGoal") == 0
+						&& sheep.countGoalsNamed(
+								"PanicGoal") == 1
+						&& sheep.goalPriority(
+								"PanicGoal") == 1
+						&& sheep.countGoalsNamed(
+								"BreedGoal") == 1
+						&& sheep.goalPriority(
+								"BreedGoal") == 2
+						&& sheep.countGoalsNamed(
+								"TemptGoal") == 1
+						&& sheep.goalPriority(
+								"TemptGoal") == 3
+						&& sheep.countGoalsNamed(
+								"FollowParentGoal") == 1
+						&& sheep.goalPriority(
+								"FollowParentGoal") == 4
+						&& sheep.countGoalsNamed(
+								"EatBlockGoal") == 1
+						&& sheep.goalPriority(
+								"EatBlockGoal") == 5
+						&& sheep.countGoalsNamed(
+								"CandyflossSheepGrazeGoal")
+								== 1
+						&& sheep.goalPriority(
+								"CandyflossSheepGrazeGoal")
+								== 5
+						&& sheep.countGoalsNamed(
+								"WaterAvoidingRandomStrollGoal")
+								== 1
+						&& sheep.goalPriority(
+								"WaterAvoidingRandomStrollGoal")
+								== 6
+						&& sheep.countGoalsNamed(
+								"LookAtPlayerGoal") == 1
+						&& sheep.goalPriority(
+								"LookAtPlayerGoal") == 7
+						&& sheep.countGoalsNamed(
+								"RandomLookAroundGoal")
+								== 1
+						&& sheep.goalPriority(
+								"RandomLookAroundGoal")
+								== 8
+						&& sheep.countTargetGoals() == 0,
+				"Candyfloss Sheep lost the exact vanilla goal order, gained combat targeting, or lost edible grazing");
+		require(helper,
+				sheep.ambientSound()
+								== SoundEvents.SHEEP_AMBIENT
+						&& sheep.hurtSound()
+								== SoundEvents.SHEEP_HURT
+						&& sheep.deathSound()
+								== SoundEvents.SHEEP_DEATH
+						&& sheep.stepSound()
+								== SoundEvents.SHEEP_STEP,
+				"Candyfloss Sheep lost exact ambient, hurt, death or step sounds");
+
+		CandyflossSheep dyeSheep =
+				CakeWorldEntities.CANDYFLOSS_SHEEP.get()
+						.create(helper.getLevel());
+		require(helper, dyeSheep != null,
+				"Could not create Candyfloss Sheep dye fixture");
+		dyeSheep.setColor(DyeColor.WHITE);
+		ItemStack magentaDye =
+				new ItemStack(Items.MAGENTA_DYE, 2);
+		InteractionResult dyeResult =
+				Items.MAGENTA_DYE.interactLivingEntity(
+						magentaDye,
+						helper.makeMockPlayer(),
+						dyeSheep,
+						InteractionHand.MAIN_HAND);
+		require(helper,
+				dyeResult.consumesAction()
+						&& dyeSheep.getColor()
+								== DyeColor.MAGENTA
+						&& magentaDye.getCount() == 1,
+				"Candyfloss Sheep did not inherit live dye interaction");
+		dyeSheep.setSheared(true);
+		ItemStack blueDye =
+				new ItemStack(Items.BLUE_DYE);
+		require(helper,
+				Items.BLUE_DYE.interactLivingEntity(
+						blueDye,
+						helper.makeMockPlayer(),
+						dyeSheep,
+						InteractionHand.MAIN_HAND)
+								== InteractionResult.PASS
+						&& dyeSheep.getColor()
+								== DyeColor.MAGENTA
+						&& blueDye.getCount() == 1,
+				"Sheared Candyfloss Sheep incorrectly accepted dye");
+
+		dyeSheep.setCustomName(
+				new TextComponent("Cherry Cloud"));
+		CompoundTag dyedState =
+				dyeSheep.saveWithoutId(
+						new CompoundTag());
+		CandyflossSheep restored =
+				CakeWorldEntities.CANDYFLOSS_SHEEP.get()
+						.create(helper.getLevel());
+		require(helper, restored != null,
+				"Could not create Candyfloss Sheep NBT fixture");
+		restored.load(dyedState);
+		require(helper,
+				restored.getColor() == DyeColor.MAGENTA
+						&& restored.isSheared()
+						&& restored.hasCustomName()
+						&& "Cherry Cloud".equals(
+								restored.getName()
+										.getString()),
+				"Candyfloss Sheep lost colour, sheared state or name across NBT");
+
+		CandyflossSheep red =
+				CakeWorldEntities.CANDYFLOSS_SHEEP.get()
+						.create(helper.getLevel());
+		CandyflossSheep yellow =
+				CakeWorldEntities.CANDYFLOSS_SHEEP.get()
+						.create(helper.getLevel());
+		require(helper, red != null && yellow != null,
+				"Could not create Candyfloss Sheep breeding fixtures");
+		red.setColor(DyeColor.RED);
+		yellow.setColor(DyeColor.YELLOW);
+		Sheep orangeChild = red.getBreedOffspring(
+				helper.getLevel(), yellow);
+		require(helper,
+				orangeChild instanceof CandyflossSheep
+						&& orangeChild.getType()
+								== CakeWorldEntities
+										.CANDYFLOSS_SHEEP
+										.get()
+						&& orangeChild.getColor()
+								== DyeColor.ORANGE,
+				"Candyfloss Sheep did not preserve vanilla dye-recipe offspring mixing on its own entity type");
+		require(helper,
+				Sheep.getRandomSheepColor(
+						new FixedRandom(0))
+								== DyeColor.BLACK
+						&& Sheep.getRandomSheepColor(
+								new FixedRandom(5))
+								== DyeColor.GRAY
+						&& Sheep.getRandomSheepColor(
+								new FixedRandom(10))
+								== DyeColor.LIGHT_GRAY
+						&& Sheep.getRandomSheepColor(
+								new FixedRandom(15))
+								== DyeColor.BROWN
+						&& Sheep.getRandomSheepColor(
+								new FixedRandom(19))
+								== DyeColor.WHITE
+						&& Sheep.getRandomSheepColor(
+								new SequenceRandom(18, 0))
+								== DyeColor.PINK,
+				"Candyfloss Sheep lost the exact black/gray/light-gray/brown/white/rare-pink natural colour branches");
+
+		CandyflossSheep shearSheep =
+				CakeWorldEntities.CANDYFLOSS_SHEEP.get()
+						.create(helper.getLevel());
+		require(helper, shearSheep != null,
+				"Could not create Candyfloss Sheep shearing fixture");
+		shearSheep.setColor(DyeColor.CYAN);
+		shearSheep.setAge(0);
+		shearSheep.setSheared(false);
+		BlockPos shearPos = helper.absolutePos(
+				new BlockPos(4, 3, 4));
+		require(helper,
+				shearSheep.readyForShearing()
+						&& shearSheep.isShearable(
+								new ItemStack(Items.SHEARS),
+								helper.getLevel(),
+								shearPos),
+				"Adult Candyfloss Sheep did not expose vanilla and Forge shearing readiness");
+		List<ItemStack> fleece =
+				shearSheep.onSheared(
+						helper.makeMockPlayer(),
+						new ItemStack(Items.SHEARS),
+						helper.getLevel(),
+						shearPos, 0);
+		require(helper,
+				shearSheep.isSheared()
+						&& fleece.size() >= 1
+						&& fleece.size() <= 3
+						&& fleece.stream().allMatch(
+								stack -> stack.is(
+										Items.CYAN_WOOL)
+										&& stack
+												.getCount()
+												== 1),
+				"Candyfloss Sheep did not return exact 1-3 colour-matched compatible wool");
+		shearSheep.setAge(-24000);
+		require(helper,
+				!shearSheep.readyForShearing(),
+				"Baby Candyfloss Sheep incorrectly became shearable");
+		shearSheep.ate();
+		require(helper,
+				!shearSheep.isSheared()
+						&& shearSheep.getAge() == -22800,
+				"Candyfloss Sheep did not regrow fleece and advance a baby by the exact 60 seconds");
+
+		sheep.setColor(DyeColor.PINK);
+		sheep.setSheared(false);
+		require(helper,
+				sheep.getDefaultLootTable().equals(
+						BuiltInLootTables.SHEEP_PINK),
+				"Unsheared Candyfloss Sheep lost colour-matched wool death loot");
+		sheep.setSheared(true);
+		require(helper,
+				sheep.getDefaultLootTable().equals(
+						new ResourceLocation(
+								CakeWorld.MODID,
+								"entities/candyfloss_sheep")),
+				"Candyfloss Sheep lost colour-wool death loot or its sheared Mutton table");
+
+		BlockPos grazingSurface = new BlockPos(
+				shearPos.getX() + 5,
+				helper.getLevel().getMaxBuildHeight() - 3,
+				shearPos.getZ());
+		helper.getLevel().setBlock(grazingSurface,
+				CakeWorldBlocks.CHOCOLATE_SPONGE.get()
+						.defaultBlockState(), 3);
+		helper.getLevel().setBlock(grazingSurface.above(),
+				Blocks.AIR.defaultBlockState(), 3);
+		CandyflossSheepProbe grazing =
+				new CandyflossSheepProbe(helper.getLevel());
+		grazing.setPos(grazingSurface.getX() + 0.5D,
+				grazingSurface.getY() + 1.0D,
+				grazingSurface.getZ() + 0.5D);
+		grazing.setAge(-24000);
+		grazing.setSheared(true);
+		grazing.seedRandom(2047L);
+		CandyflossSheepGrazeGoal graze =
+				new CandyflossSheepGrazeGoal(grazing);
+		boolean canGraze = false;
+		for (int attempt = 0;
+				attempt < 10000 && !canGraze;
+				attempt++) {
+			canGraze = graze.canUse();
+		}
+		require(helper,
+				canGraze
+						&& helper.getLevel()
+								.getBlockState(
+										grazingSurface)
+								.is(CandyflossSheepGrazeGoal
+										.GRAZING_SURFACES),
+				"Edible grazing surface or vanilla-cadence goal never became available");
+		graze.start();
+		require(helper,
+				graze.getEatAnimationTick() > 0,
+				"Edible grazing did not start the Sheep eating animation");
+		while (graze.canContinueToUse()) {
+			graze.tick();
+		}
+		require(helper,
+				!grazing.isSheared()
+						&& grazing.getAge() == -22800
+						&& helper.getLevel()
+								.getBlockState(
+										grazingSurface)
+								.is(CakeWorldBlocks
+										.CHOCOLATE_SPONGE
+										.get()),
+				"Edible grazing did not regrow fleece/grow the lamb or consumed the welcoming terrain");
+
+		BlockPos spawnSurface =
+				grazingSurface.offset(3, 0, 0);
+		BlockPos spawnPos = spawnSurface.above();
+		helper.getLevel().setBlock(spawnSurface,
+				CakeWorldBlocks.CHOCOLATE_SPONGE.get()
+						.defaultBlockState(), 3);
+		helper.getLevel().setBlock(spawnPos,
+				Blocks.AIR.defaultBlockState(), 3);
+		require(helper,
+				helper.getLevel()
+								.getBlockState(spawnSurface)
+								.is(BlockTags
+										.ANIMALS_SPAWNABLE_ON)
+						&& Animal.checkAnimalSpawnRules(
+								CakeWorldEntities
+										.CANDYFLOSS_SHEEP
+										.get(),
+								helper.getLevel(),
+								MobSpawnType.NATURAL,
+								spawnPos,
+								new Random(2047L))
+						&& SpawnPlacements.checkSpawnRules(
+								CakeWorldEntities
+										.CANDYFLOSS_SHEEP
+										.get(),
+								helper.getLevel(),
+								MobSpawnType.NATURAL,
+								spawnPos,
+								new Random(2048L))
+						&& SpawnPlacements.getPlacementType(
+								CakeWorldEntities
+										.CANDYFLOSS_SHEEP
+										.get())
+								== SpawnPlacements.Type
+										.ON_GROUND
+						&& SpawnPlacements.getHeightmapType(
+								CakeWorldEntities
+										.CANDYFLOSS_SHEEP
+										.get())
+								== Heightmap.Types
+										.MOTION_BLOCKING_NO_LEAVES,
+				"Candyfloss Sheep lost edible-surface spawning or exact placement metadata");
+
+		Registry<Biome> biomes = helper.getLevel()
+				.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY);
+		Biome candyPlains = biomes.get(
+				CakeWorldBiomes.CANDY_PLAINS.getId());
+		require(helper, candyPlains != null,
+				"Could not inspect Candy Plains Candyfloss Sheep spawning");
+		MobSpawnSettings.SpawnerData candySpawn =
+				candyPlains.getMobSettings()
+						.getMobs(MobCategory.CREATURE)
+						.unwrap().stream()
+						.filter(spawn -> spawn.type
+								== CakeWorldEntities
+										.CANDYFLOSS_SHEEP
+										.get())
+						.findFirst().orElse(null);
+		require(helper,
+				candySpawn != null
+						&& candySpawn.getWeight()
+								.asInt() == 12
+						&& candySpawn.minCount == 4
+						&& candySpawn.maxCount == 4,
+				"Candy Plains lost the exact Plains 12/4-4 Candyfloss Sheep flock");
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS.getId())) {
+			Biome biome = biomes.get(biomeId);
+			require(helper,
+					biome != null
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory.CREATURE)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType
+															.SHEEP),
+					"Current CakeWorld biome leaked literal Sheep: "
+							+ biomeId);
+		}
+
+		MobSpawnSettingsBuilder futureMeadowSpawns =
+				new MobSpawnSettingsBuilder(
+						MobSpawnSettings.EMPTY);
+		BiomeLoadingEvent futureMeadow =
+				new BiomeLoadingEvent(
+						new ResourceLocation(CakeWorld.MODID,
+								"chocolate_sponge_meadows"),
+						null, null, null,
+						new BiomeGenerationSettingsBuilder(
+								BiomeGenerationSettings.EMPTY),
+						futureMeadowSpawns);
+		CakeWorldCreatureSpawns
+				.onBiomeLoading(futureMeadow);
+		MobSpawnSettings.SpawnerData futureSpawn =
+				futureMeadowSpawns
+						.getSpawner(MobCategory.CREATURE)
+						.stream()
+						.filter(spawn -> spawn.type
+								== CakeWorldEntities
+										.CANDYFLOSS_SHEEP
+										.get())
+						.findFirst().orElse(null);
+		require(helper,
+				futureSpawn != null
+						&& futureSpawn.getWeight()
+								.asInt() == 12
+						&& futureSpawn.minCount == 4
+						&& futureSpawn.maxCount == 4
+						&& futureMeadowSpawns
+								.getSpawner(
+										MobCategory.CREATURE)
+								.stream().noneMatch(
+										spawn -> spawn.type
+												== EntityType
+														.SHEEP),
+				"Future Chocolate Sponge Meadows lost its exact 12/4-4 flock");
+
+		MobSpawnSettingsBuilder thirdPartySpawns =
+				new MobSpawnSettingsBuilder(
+						MobSpawnSettings.EMPTY);
+		thirdPartySpawns.getSpawner(
+				MobCategory.CREATURE).add(
+						new MobSpawnSettings.SpawnerData(
+								EntityType.SHEEP,
+								12, 4, 4));
+		BiomeLoadingEvent thirdPartyBiome =
+				new BiomeLoadingEvent(
+						new ResourceLocation("examplemod",
+								"pasture"),
+						null, null, null,
+						new BiomeGenerationSettingsBuilder(
+								BiomeGenerationSettings.EMPTY),
+						thirdPartySpawns);
+		CakeWorldCreatureSpawns
+				.onBiomeLoading(thirdPartyBiome);
+		require(helper,
+				thirdPartySpawns
+								.getSpawner(
+										MobCategory.CREATURE)
+								.stream().anyMatch(
+										spawn -> spawn.type
+												== EntityType
+														.SHEEP)
+						&& thirdPartySpawns
+								.getSpawner(
+										MobCategory.CREATURE)
+								.stream().noneMatch(
+										spawn -> spawn.type
+												== CakeWorldEntities
+														.CANDYFLOSS_SHEEP
+														.get()),
+				"CakeWorld rewrote an unknown third-party biome's Sheep role");
+
+		ServerPlayer advancementPlayer =
+				new ServerPlayer(
+						helper.getLevel().getServer(),
+						helper.getLevel(),
+						new GameProfile(UUID.fromString(
+								"1978feed-feed-4bad-babe-1978feed2047"),
+								"CakeWorldCandyflossSheepRoleTest"));
+		VanillaRoleAdvancements.creditBredRole(
+				advancementPlayer,
+				CakeWorldEntities.CANDYFLOSS_SHEEP.get());
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:husbandry/bred_all_animals",
+				"minecraft:sheep");
+		require(helper,
+				CakeWorldItems
+								.CANDYFLOSS_SHEEP_SPAWN_EGG
+								.isPresent()
+						&& CakeWorldEntities
+								.CANDYFLOSS_SHEEP.get()
+								.is(TagKey.create(
+										Registry.ENTITY_TYPE_REGISTRY,
+										new ResourceLocation(
+												CakeWorld.MODID,
+												"cakeworld_mobs"))),
+				"Candyfloss Sheep lost its spawn egg or CakeWorld entity tag");
+
+		helper.getLevel().setBlock(grazingSurface,
+				Blocks.AIR.defaultBlockState(), 3);
+		helper.getLevel().setBlock(spawnSurface,
+				Blocks.AIR.defaultBlockState(), 3);
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 200)
 	public static void fudgeFolkKeepPiglinSocietyBarterAndSafePeril(
 			GameTestHelper helper) {
 		FudgeFolkProbe folk =
@@ -14939,6 +15439,117 @@ public final class FirstBiteGameTests {
 				net.minecraft.sounds.SoundEvent sound,
 				float volume, float pitch) {
 			lastSound = sound;
+		}
+	}
+
+	private static final class CandyflossSheepProbe
+			extends CandyflossSheep {
+		private net.minecraft.sounds.SoundEvent lastSound;
+
+		private CandyflossSheepProbe(Level level) {
+			super(CakeWorldEntities
+					.CANDYFLOSS_SHEEP.get(), level);
+		}
+
+		private int getExperienceValue() {
+			return getExperienceReward(null);
+		}
+
+		private float standingEyeHeight() {
+			return getStandingEyeHeight(Pose.STANDING,
+					getDimensions(Pose.STANDING));
+		}
+
+		private boolean canBeLeashedRole() {
+			return canBeLeashed(null);
+		}
+
+		private net.minecraft.sounds.SoundEvent ambientSound() {
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent hurtSound() {
+			return getHurtSound(DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent deathSound() {
+			return getDeathSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent stepSound() {
+			lastSound = null;
+			playStepSound(BlockPos.ZERO,
+					Blocks.GRASS_BLOCK
+							.defaultBlockState());
+			return lastSound;
+		}
+
+		private int countGoalsNamed(String name) {
+			return (int)goalSelector
+					.getAvailableGoals().stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
+		}
+
+		private int goalPriority(String name) {
+			return goalSelector.getAvailableGoals()
+					.stream()
+					.filter(wrapped -> name.equals(
+							wrapped.getGoal()
+									.getClass()
+									.getSimpleName()))
+					.mapToInt(WrappedGoal::getPriority)
+					.findFirst().orElse(-1);
+		}
+
+		private int countTargetGoals() {
+			return targetSelector.getAvailableGoals().size();
+		}
+
+		private void seedRandom(long seed) {
+			random.setSeed(seed);
+		}
+
+		@Override
+		public void playSound(
+				net.minecraft.sounds.SoundEvent sound,
+				float volume, float pitch) {
+			lastSound = sound;
+		}
+	}
+
+	private static final class FixedRandom extends Random {
+		private static final long serialVersionUID = 1L;
+		private final int value;
+
+		private FixedRandom(int value) {
+			this.value = value;
+		}
+
+		@Override
+		public int nextInt(int bound) {
+			return Math.min(value, bound - 1);
+		}
+	}
+
+	private static final class SequenceRandom extends Random {
+		private static final long serialVersionUID = 1L;
+		private final int[] values;
+		private int index;
+
+		private SequenceRandom(int... values) {
+			this.values = values;
+		}
+
+		@Override
+		public int nextInt(int bound) {
+			int value = values[Math.min(index,
+					values.length - 1)];
+			index++;
+			return Math.min(value, bound - 1);
 		}
 	}
 
