@@ -12,6 +12,7 @@ import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.BowlFoodItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemNameBlockItem;
 import net.minecraft.world.item.Items;
 import net.minecraftforge.common.ForgeSpawnEggItem;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -41,6 +42,14 @@ public final class CakeWorldItems {
 							.tab(CreativeModeTab.TAB_MISC)));
 	public static final RegistryObject<Item> WARM_SPONGE_CAKE =
 			food("warm_sponge_cake", 6, 0.7F);
+	public static final RegistryObject<Item> BOILED_SWEET =
+			food("boiled_sweet", 2, 0.2F);
+	public static final RegistryObject<Item> SPRINKLE_SEEDS =
+			ITEMS.register("sprinkle_seeds",
+					() -> new ItemNameBlockItem(
+							CakeWorldBlocks.CANDY_SPROUT.get(),
+							new Item.Properties()
+									.tab(CreativeModeTab.TAB_MISC)));
 	public static final RegistryObject<Item> FROSTING_MORTAR =
 			ITEMS.register("frosting_mortar",
 					() -> new Item(new Item.Properties()

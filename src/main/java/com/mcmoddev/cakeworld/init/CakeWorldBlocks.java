@@ -5,6 +5,7 @@ import java.util.function.Supplier;
 import com.mcmoddev.cakeworld.CakeWorld;
 import com.mcmoddev.cakeworld.block.BiscuitCrumbsBlock;
 import com.mcmoddev.cakeworld.block.CakeOvenBlock;
+import com.mcmoddev.cakeworld.block.CandySproutBlock;
 import com.mcmoddev.cakeworld.block.ChocolateSpongeBlock;
 import com.mcmoddev.cakeworld.block.CookbookKioskBlock;
 import com.mcmoddev.cakeworld.block.GummyBlock;
@@ -72,6 +73,12 @@ public final class CakeWorldBlocks {
 			BlockBehaviour.Properties.of(Material.WOOD)
 					.strength(0.2F, 0.2F)
 					.sound(SoundType.BAMBOO));
+	public static final RegistryObject<Block> CANDY_SPROUT =
+			BLOCKS.register("candy_sprout",
+					() -> new CandySproutBlock(
+							BlockBehaviour.Properties.of(Material.PLANT)
+									.noCollission().randomTicks().instabreak()
+									.sound(SoundType.CROP)));
 	public static final RegistryObject<Block> CANDY_CANE_PILLAR =
 			block("candy_cane_pillar",
 					() -> new RotatedPillarBlock(

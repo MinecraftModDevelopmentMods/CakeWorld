@@ -9,6 +9,7 @@ import com.mojang.authlib.GameProfile;
 import com.mcmoddev.cakeworld.CakeWorld;
 import com.mcmoddev.cakeworld.block.BiscuitCrumbsBlock;
 import com.mcmoddev.cakeworld.block.CakeOvenBlock;
+import com.mcmoddev.cakeworld.block.CandySproutBlock;
 import com.mcmoddev.cakeworld.block.ChocolateSpongeBlock;
 import com.mcmoddev.cakeworld.block.CookbookKioskBlock;
 import com.mcmoddev.cakeworld.block.GummyBlock;
@@ -46,11 +47,13 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemNameBlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.context.UseOnContext;
@@ -71,6 +74,7 @@ import net.minecraft.world.level.biome.MobSpawnSettings;
 import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
@@ -353,6 +357,43 @@ public final class FirstBiteGameTests {
 						&& result.is(CakeWorldBlocks.WAFER_BLOCK.get().asItem())
 						&& result.getCount() == 8,
 				"Wafer Block recipe is not a high-yield bridge supply");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void candySproutsCanBePickedWithoutDestroyingThePlant(
+			GameTestHelper helper) {
+		CandySproutBlock sprout =
+				(CandySproutBlock) CakeWorldBlocks.CANDY_SPROUT.get();
+		BlockPos relativePos = new BlockPos(1, 1, 1);
+		BlockPos absolutePos = helper.absolutePos(relativePos);
+		helper.setBlock(new BlockPos(1, 0, 1), Blocks.FARMLAND);
+		helper.setBlock(relativePos,
+				sprout.getStateForAge(sprout.getMaxAge()));
+		Player player = helper.makeMockPlayer();
+		BlockHitResult hit = new BlockHitResult(
+				Vec3.atCenterOf(absolutePos), Direction.UP,
+				absolutePos, false);
+		InteractionResult picked = sprout.use(
+				helper.getBlockState(relativePos), helper.getLevel(),
+				absolutePos, player, InteractionHand.MAIN_HAND, hit);
+
+		int sweets = helper.getLevel().getEntitiesOfClass(
+				ItemEntity.class, new AABB(absolutePos).inflate(1.0D),
+				entity -> entity.getItem().is(
+						CakeWorldItems.BOILED_SWEET.get()))
+				.stream().mapToInt(entity -> entity.getItem().getCount()).sum();
+		require(helper, picked.consumesAction()
+						&& helper.getBlockState(relativePos).is(
+								CakeWorldBlocks.CANDY_SPROUT.get())
+						&& helper.getBlockState(relativePos).getValue(
+								BlockStateProperties.AGE_7)
+								== CandySproutBlock.PICKED_AGE
+						&& sweets >= 2 && sweets <= 3,
+				"Picking a ripe Candy Sprout did not leave regrowth and sweets");
+		require(helper, new ItemStack(CakeWorldItems.SPRINKLE_SEEDS.get())
+						.getItem() instanceof ItemNameBlockItem,
+				"Sprinkle Seeds are not plantable as the Candy Sprout crop");
 		helper.succeed();
 	}
 
