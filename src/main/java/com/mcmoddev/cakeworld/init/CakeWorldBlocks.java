@@ -8,6 +8,7 @@ import com.mcmoddev.cakeworld.block.CakeOvenBlock;
 import com.mcmoddev.cakeworld.block.ChocolateSpongeBlock;
 import com.mcmoddev.cakeworld.block.CookbookKioskBlock;
 import com.mcmoddev.cakeworld.block.IcingLayerBlock;
+import com.mcmoddev.cakeworld.block.MarshmallowBlock;
 import com.mcmoddev.cakeworld.block.MixingBowlBlock;
 import com.mcmoddev.cakeworld.item.ReusableBlockItem;
 
@@ -55,6 +56,9 @@ public final class CakeWorldBlocks {
 	public static final RegistryObject<Block> FROZEN_LEMONADE = block("frozen_lemonade",
 			BlockBehaviour.Properties.of(Material.ICE_SOLID).friction(0.96F)
 					.strength(0.5F).sound(SoundType.GLASS).noOcclusion());
+	public static final RegistryObject<Block> MARSHMALLOW = block("marshmallow",
+			() -> new MarshmallowBlock(BlockBehaviour.Properties.of(Material.WOOL)
+					.strength(0.4F).sound(SoundType.WOOL)));
 	public static final RegistryObject<Block> FUDGE_ROCK = block("fudge_rock",
 			BlockBehaviour.Properties.of(Material.STONE).requiresCorrectToolForDrops()
 					.strength(2.0F, 6.0F).sound(SoundType.NETHERRACK));

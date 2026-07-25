@@ -12,6 +12,7 @@ import com.mcmoddev.cakeworld.block.CakeOvenBlock;
 import com.mcmoddev.cakeworld.block.ChocolateSpongeBlock;
 import com.mcmoddev.cakeworld.block.CookbookKioskBlock;
 import com.mcmoddev.cakeworld.block.IcingLayerBlock;
+import com.mcmoddev.cakeworld.block.MarshmallowBlock;
 import com.mcmoddev.cakeworld.cookbook.CookbookEvents;
 import com.mcmoddev.cakeworld.cookbook.CookbookProgress;
 import com.mcmoddev.cakeworld.cookbook.DiscoveryType;
@@ -188,6 +189,44 @@ public final class FirstBiteGameTests {
 		require(helper, lemonadeMomentum > 0.0D
 						&& lemonadeMomentum < initialMovement.x,
 				"Frozen lemonade stopped movement or removed natural deceleration");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void marshmallowCancelsFallsAndCapsItsGentleBounce(
+			GameTestHelper helper) {
+		MarshmallowBlock marshmallow =
+				(MarshmallowBlock) CakeWorldBlocks.MARSHMALLOW.get();
+		BlockState state = marshmallow.defaultBlockState();
+		BlockPos testPos = helper.absolutePos(new BlockPos(1, 1, 1));
+		Pig tester = helper.spawnWithNoFreeWill(
+				EntityType.PIG, 1.5F, 1.0F, 1.5F);
+		tester.setHealth(10.0F);
+		marshmallow.fallOn(helper.getLevel(), state, testPos,
+				tester, 30.0F);
+		require(helper, Math.abs(tester.getHealth() - 10.0F) < 0.001F,
+				"Marshmallow allowed health damage from a long fall");
+
+		Vec3 falling = new Vec3(0.3D, -4.0D, -0.2D);
+		tester.setDeltaMovement(falling);
+		marshmallow.updateEntityAfterFallOn(helper.getLevel(), tester);
+		Vec3 rebound = tester.getDeltaMovement();
+		require(helper, close(rebound.x, falling.x)
+						&& close(rebound.z, falling.z)
+						&& close(rebound.y,
+								MarshmallowBlock.MAXIMUM_BOUNCE),
+				"Marshmallow lost steering or exceeded its gentle-bounce cap");
+
+		Player crouching = helper.makeMockPlayer();
+		crouching.setShiftKeyDown(true);
+		crouching.setDeltaMovement(0.2D, -1.0D, 0.1D);
+		marshmallow.updateEntityAfterFallOn(helper.getLevel(), crouching);
+		require(helper, close(crouching.getDeltaMovement().y, 0.0D),
+				"Crouching did not suppress the marshmallow bounce");
+		require(helper, helper.getLevel().getRecipeManager().byKey(
+						new ResourceLocation(CakeWorld.MODID, "marshmallow"))
+						.isPresent(),
+				"Marshmallow is not obtainable through its starter recipe");
 		helper.succeed();
 	}
 
