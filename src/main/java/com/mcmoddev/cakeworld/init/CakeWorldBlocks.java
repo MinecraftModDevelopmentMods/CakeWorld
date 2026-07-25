@@ -20,6 +20,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.GlassBlock;
 import net.minecraft.world.level.block.OreBlock;
 import net.minecraft.world.level.block.RedStoneOreBlock;
+import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.Material;
@@ -59,6 +60,12 @@ public final class CakeWorldBlocks {
 	public static final RegistryObject<Block> MARSHMALLOW = block("marshmallow",
 			() -> new MarshmallowBlock(BlockBehaviour.Properties.of(Material.WOOL)
 					.strength(0.4F).sound(SoundType.WOOL)));
+	public static final RegistryObject<Block> CANDY_CANE_PILLAR =
+			block("candy_cane_pillar",
+					() -> new RotatedPillarBlock(
+							BlockBehaviour.Properties.of(Material.WOOD)
+									.strength(1.5F)
+									.sound(SoundType.BAMBOO)));
 	public static final RegistryObject<Block> FUDGE_ROCK = block("fudge_rock",
 			BlockBehaviour.Properties.of(Material.STONE).requiresCorrectToolForDrops()
 					.strength(2.0F, 6.0F).sound(SoundType.NETHERRACK));

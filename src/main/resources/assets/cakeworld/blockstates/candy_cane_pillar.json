@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "axis=y": {
+      "model": "cakeworld:block/candy_cane_pillar"
+    },
+    "axis=z": {
+      "model": "cakeworld:block/candy_cane_pillar",
+      "x": 90
+    },
+    "axis=x": {
+      "model": "cakeworld:block/candy_cane_pillar",
+      "x": 90,
+      "y": 90
+    }
+  }
+}

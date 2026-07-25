@@ -59,6 +59,8 @@ import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FallingBlock;
+import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.biome.Biome;
@@ -227,6 +229,32 @@ public final class FirstBiteGameTests {
 						new ResourceLocation(CakeWorld.MODID, "marshmallow"))
 						.isPresent(),
 				"Marshmallow is not obtainable through its starter recipe");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void candyCanePillarsKeepAllThreeStructuralAxes(
+			GameTestHelper helper) {
+		RotatedPillarBlock pillar =
+				(RotatedPillarBlock) CakeWorldBlocks.CANDY_CANE_PILLAR.get();
+		BlockState vertical = pillar.defaultBlockState();
+		BlockState eastWest = vertical.setValue(
+				RotatedPillarBlock.AXIS, Direction.Axis.X);
+		BlockState northSouth = eastWest.rotate(
+				helper.getLevel(), helper.absolutePos(new BlockPos(1, 1, 1)),
+				Rotation.CLOCKWISE_90);
+		require(helper, vertical.getValue(RotatedPillarBlock.AXIS)
+						== Direction.Axis.Y,
+				"Candy-Cane Pillar does not default to a vertical axis");
+		require(helper, eastWest.getValue(RotatedPillarBlock.AXIS)
+						== Direction.Axis.X
+						&& northSouth.getValue(RotatedPillarBlock.AXIS)
+								== Direction.Axis.Z,
+				"Candy-Cane Pillar did not rotate between horizontal axes");
+		require(helper, helper.getLevel().getRecipeManager().byKey(
+						new ResourceLocation(CakeWorld.MODID,
+								"candy_cane_pillar")).isPresent(),
+				"Candy-Cane Pillar is not obtainable through its recipe");
 		helper.succeed();
 	}
 
