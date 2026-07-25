@@ -39,6 +39,7 @@ import com.mcmoddev.cakeworld.entity.DeepLiquoriceWeaver;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.PopRockPopper;
 import com.mcmoddev.cakeworld.entity.SodaCod;
+import com.mcmoddev.cakeworld.entity.SodaDolphin;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
 import com.mcmoddev.cakeworld.entity.SugarBee;
 import com.mcmoddev.cakeworld.entity.TrufflePig;
@@ -2159,6 +2160,142 @@ public final class FirstBiteGameTests {
 		requireCriterion(helper, advancementPlayer,
 				"minecraft:adventure/kill_all_mobs",
 				"minecraft:creeper");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void sodaDolphinsGuideSafelyThroughLemonadeUntilHard(
+			GameTestHelper helper) {
+		SodaDolphin dolphin = CakeWorldEntities.SODA_DOLPHIN.get()
+				.create(helper.getLevel());
+		SodaDolphin loaded = CakeWorldEntities.SODA_DOLPHIN.get()
+				.create(helper.getLevel());
+		Pig target = EntityType.PIG.create(helper.getLevel());
+		require(helper, dolphin != null && loaded != null
+						&& target != null,
+				"Could not create Soda Dolphin fixtures");
+
+		Player feeder = helper.makeMockPlayer();
+		feeder.setItemInHand(InteractionHand.MAIN_HAND,
+				new ItemStack(Items.COD, 2));
+		InteractionResult feedResult = dolphin.interact(
+				feeder, InteractionHand.MAIN_HAND);
+		require(helper,
+				feedResult.consumesAction()
+						&& dolphin.gotFish()
+						&& feeder.getItemInHand(
+								InteractionHand.MAIN_HAND)
+								.getCount() == 1,
+				"Soda Dolphin did not retain the fish-fed treasure-guide trigger");
+
+		BlockPos treasure = new BlockPos(1978, 42, -2011);
+		dolphin.setTreasurePos(treasure);
+		dolphin.setMoisntessLevel(1234);
+		CompoundTag saved = new CompoundTag();
+		dolphin.addAdditionalSaveData(saved);
+		loaded.readAdditionalSaveData(saved);
+		require(helper,
+				loaded.gotFish()
+						&& loaded.getTreasurePos().equals(treasure)
+						&& loaded.getMoistnessLevel() == 1234
+						&& loaded.getMaxAirSupply() == 4800
+						&& !loaded.canBreatheUnderwater()
+						&& loaded.canBeLeashed(feeder)
+						&& Math.abs(loaded.getAttributeValue(
+								Attributes.MOVEMENT_SPEED) - 1.2D)
+								< 0.001D,
+				"Soda Dolphin lost guide, moisture, air, leash or swimming-speed state");
+
+		BlockPos horizontalAnchor =
+				helper.absolutePos(new BlockPos(3, 3, 3));
+		BlockPos lemonadePos = new BlockPos(horizontalAnchor.getX(),
+				helper.getLevel().getSeaLevel() - 5,
+				horizontalAnchor.getZ());
+		for (int y = -1; y <= 1; y++) {
+			helper.getLevel().setBlock(lemonadePos.offset(0, y, 0),
+					CakeWorldFluids.LEMONADE_BLOCK.get()
+							.defaultBlockState(), 3);
+		}
+		boolean vanillaRule =
+				WaterAnimal.checkSurfaceWaterAnimalSpawnRules(
+						CakeWorldEntities.SODA_DOLPHIN.get(),
+						helper.getLevel(), MobSpawnType.NATURAL,
+						lemonadePos, new Random(1978L));
+		boolean sodaRule = SodaDolphin.checkSodaDolphinSpawnRules(
+				CakeWorldEntities.SODA_DOLPHIN.get(),
+				helper.getLevel(), MobSpawnType.NATURAL,
+				lemonadePos, new Random(1978L));
+		require(helper, !vanillaRule && sodaRule,
+				"Soda Dolphin did not replace vanilla's literal-water-block spawn check with a Lemonade-compatible water-tag check");
+
+		dolphin.setPos(horizontalAnchor.getX(),
+				horizontalAnchor.getY(), horizontalAnchor.getZ());
+		target.setPos(horizontalAnchor.getX() + 2.0D,
+				horizontalAnchor.getY(), horizontalAnchor.getZ());
+		Difficulty originalDifficulty = helper.getLevel().getDifficulty();
+		try {
+			for (Difficulty safeDifficulty :
+					new Difficulty[] {Difficulty.EASY, Difficulty.NORMAL}) {
+				helper.getLevel().getServer().setDifficulty(
+						safeDifficulty, true);
+				target.removeAllEffects();
+				target.setHealth(10.0F);
+				target.setSecondsOnFire(5);
+				target.fallDistance = 12.0F;
+				target.setDeltaMovement(Vec3.ZERO);
+				require(helper,
+						dolphin.doHurtTarget(target)
+								&& Math.abs(target.getHealth() - 10.0F)
+										< 0.001F
+								&& !target.isOnFire()
+								&& target.fallDistance == 0.0F
+								&& target.hasEffect(
+										MobEffects.DOLPHINS_GRACE)
+								&& target.hasEffect(
+										MobEffects.SLOW_FALLING)
+								&& target.hasEffect(
+										MobEffects.FIRE_RESISTANCE)
+								&& target.hasEffect(
+										MobEffects.DAMAGE_RESISTANCE)
+								&& target.getEffect(
+										MobEffects.DAMAGE_RESISTANCE)
+										.getAmplifier() == 4
+								&& target.getDeltaMovement().x > 0.0D
+								&& target.getDeltaMovement().y > 0.0D,
+						safeDifficulty
+								+ " Soda Dolphin bump caused damage or lacked bubble rescue/swim effects");
+			}
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			target.removeAllEffects();
+			target.setHealth(10.0F);
+			require(helper,
+					dolphin.doHurtTarget(target)
+							&& target.getHealth() < 10.0F,
+					"Hard Soda Dolphin did not retain real retaliatory damage");
+		} finally {
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		Biome sodaOcean = helper.getLevel().registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY)
+				.get(CakeWorldBiomes.SODA_OCEAN.getId());
+		require(helper, sodaOcean != null,
+				"Could not inspect Soda Ocean Soda Dolphin spawning");
+		requireSpawnReplacement(helper, sodaOcean, EntityType.DOLPHIN,
+				CakeWorldEntities.SODA_DOLPHIN.get(),
+				MobCategory.WATER_CREATURE);
+		require(helper, CakeWorldItems.SODA_DOLPHIN_SPAWN_EGG.isPresent(),
+				"Soda Dolphin has no creative/testing spawn egg");
+		Advancement killAll = helper.getLevel().getServer()
+				.getAdvancements().getAdvancement(new ResourceLocation(
+						"minecraft", "adventure/kill_all_mobs"));
+		require(helper, killAll != null
+						&& !killAll.getCriteria().containsKey(
+								"minecraft:dolphin"),
+				"Vanilla unexpectedly added a Dolphin kill criterion; reassess compatibility before inventing a bridge");
 		helper.succeed();
 	}
 

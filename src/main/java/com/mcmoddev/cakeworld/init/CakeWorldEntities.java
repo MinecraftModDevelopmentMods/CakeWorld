@@ -12,6 +12,7 @@ import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.PopRockPopper;
 import com.mcmoddev.cakeworld.entity.SodaCod;
+import com.mcmoddev.cakeworld.entity.SodaDolphin;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
 import com.mcmoddev.cakeworld.entity.SugarBee;
 import com.mcmoddev.cakeworld.entity.TrufflePig;
@@ -26,6 +27,7 @@ import net.minecraft.world.entity.ambient.Bat;
 import net.minecraft.world.entity.animal.Chicken;
 import net.minecraft.world.entity.animal.Cat;
 import net.minecraft.world.entity.animal.Cod;
+import net.minecraft.world.entity.animal.Dolphin;
 import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.animal.Sheep;
@@ -85,6 +87,12 @@ public final class CakeWorldEntities {
 							MobCategory.WATER_AMBIENT)
 							.sized(0.5F, 0.3F)
 							.clientTrackingRange(4));
+	public static final RegistryObject<EntityType<SodaDolphin>> SODA_DOLPHIN =
+			entity("soda_dolphin",
+					EntityType.Builder.of(SodaDolphin::new,
+							MobCategory.WATER_CREATURE)
+							.sized(0.9F, 0.6F)
+							.clientTrackingRange(10));
 	public static final RegistryObject<EntityType<PopRockPopper>>
 			POP_ROCK_POPPER = entity("pop_rock_popper",
 					EntityType.Builder.of(PopRockPopper::new,
@@ -138,6 +146,7 @@ public final class CakeWorldEntities {
 		event.put(DEEP_LIQUORICE_WEAVER.get(),
 				CaveSpider.createCaveSpider().build());
 		event.put(SODA_COD.get(), Cod.createMobAttributes().build());
+		event.put(SODA_DOLPHIN.get(), Dolphin.createAttributes().build());
 		event.put(POP_ROCK_POPPER.get(), Creeper.createAttributes().build());
 		event.put(CINNAMON_SPARK.get(),
 				Blaze.createAttributes().build());
@@ -174,6 +183,10 @@ public final class CakeWorldEntities {
 					SpawnPlacements.Type.IN_WATER,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					SodaCod::checkSodaCodSpawnRules);
+			SpawnPlacements.register(SODA_DOLPHIN.get(),
+					SpawnPlacements.Type.IN_WATER,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					SodaDolphin::checkSodaDolphinSpawnRules);
 			SpawnPlacements.register(POP_ROCK_POPPER.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
