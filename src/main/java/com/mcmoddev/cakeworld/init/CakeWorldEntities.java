@@ -3,6 +3,7 @@ package com.mcmoddev.cakeworld.init;
 import com.mcmoddev.cakeworld.CakeWorld;
 import com.mcmoddev.cakeworld.entity.BiscuitBandit;
 import com.mcmoddev.cakeworld.entity.BonbonBat;
+import com.mcmoddev.cakeworld.entity.BrittleBiscuitSteed;
 import com.mcmoddev.cakeworld.entity.CandyCaneArcher;
 import com.mcmoddev.cakeworld.entity.CandyflossSheep;
 import com.mcmoddev.cakeworld.entity.CinnamonPuffProjectile;
@@ -86,6 +87,7 @@ import net.minecraft.world.entity.animal.goat.Goat;
 import net.minecraft.world.entity.animal.horse.AbstractChestedHorse;
 import net.minecraft.world.entity.animal.horse.AbstractHorse;
 import net.minecraft.world.entity.animal.horse.Llama;
+import net.minecraft.world.entity.animal.horse.SkeletonHorse;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.monster.Blaze;
 import net.minecraft.world.entity.monster.CaveSpider;
@@ -372,6 +374,15 @@ public final class CakeWorldEntities {
 							MobCategory.MONSTER)
 							.sized(0.6F, 1.99F)
 							.clientTrackingRange(8));
+	public static final RegistryObject<
+			EntityType<BrittleBiscuitSteed>>
+			BRITTLE_BISCUIT_STEED =
+			entity("brittle_biscuit_steed",
+					EntityType.Builder.of(
+							BrittleBiscuitSteed::new,
+							MobCategory.CREATURE)
+							.sized(1.3964844F, 1.6F)
+							.clientTrackingRange(10));
 	public static final RegistryObject<EntityType<SugarMite>> SUGAR_MITE =
 			entity("sugar_mite",
 					EntityType.Builder.of(SugarMite::new,
@@ -538,6 +549,8 @@ public final class CakeWorldEntities {
 				Silverfish.createAttributes().build());
 		event.put(CANDY_CANE_ARCHER.get(),
 				Skeleton.createAttributes().build());
+		event.put(BRITTLE_BISCUIT_STEED.get(),
+				SkeletonHorse.createAttributes().build());
 		event.put(SUGAR_MITE.get(),
 				Endermite.createAttributes().build());
 		event.put(SOUR_SORCERER.get(),
@@ -703,6 +716,12 @@ public final class CakeWorldEntities {
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					CandyCaneArcher
 							::checkCandyCaneArcherSpawnRules);
+			SpawnPlacements.register(
+					BRITTLE_BISCUIT_STEED.get(),
+					SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					BrittleBiscuitSteed
+							::checkBrittleBiscuitSteedSpawnRules);
 			SpawnPlacements.register(SUGAR_MITE.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,

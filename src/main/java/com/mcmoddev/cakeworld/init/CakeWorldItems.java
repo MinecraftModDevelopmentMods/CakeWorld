@@ -292,6 +292,11 @@ public final class CakeWorldItems {
 			spawnEgg("candy_cane_archer_spawn_egg",
 					CakeWorldEntities.CANDY_CANE_ARCHER,
 					0xFFF4E5, 0xC8202F);
+	public static final RegistryObject<Item>
+			BRITTLE_BISCUIT_STEED_SPAWN_EGG =
+			spawnEgg("brittle_biscuit_steed_spawn_egg",
+					CakeWorldEntities.BRITTLE_BISCUIT_STEED,
+					0xD9B57A, 0xF5E0B7);
 	public static final RegistryObject<Item> SUGAR_MITE_SPAWN_EGG =
 			spawnEgg("sugar_mite_spawn_egg",
 					CakeWorldEntities.SUGAR_MITE,

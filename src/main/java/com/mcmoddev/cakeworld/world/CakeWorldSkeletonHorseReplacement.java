@@ -1,7 +1,9 @@
 package com.mcmoddev.cakeworld.world;
 
+import java.util.List;
+
 import com.mcmoddev.cakeworld.CakeWorld;
-import com.mcmoddev.cakeworld.entity.CandyCaneArcher;
+import com.mcmoddev.cakeworld.entity.BrittleBiscuitSteed;
 import com.mcmoddev.cakeworld.init.CakeWorldEntities;
 
 import net.minecraft.nbt.CompoundTag;
@@ -10,29 +12,29 @@ import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.monster.Skeleton;
+import net.minecraft.world.entity.animal.horse.SkeletonHorse;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 /**
- * Converts fresh literal Skeletons from spawners, spider jockeys and
- * skeleton-horse traps inside CakeWorld biomes. Loaded and outside-CakeWorld
- * entities remain untouched.
+ * Converts fresh literal Skeleton Horses created by vanilla thunder and the
+ * inherited Skeleton Trap goal inside CakeWorld biomes. Loaded entities,
+ * outside biomes and unknown third-party mounts remain untouched.
  */
 @Mod.EventBusSubscriber(modid = CakeWorld.MODID,
 		bus = Mod.EventBusSubscriber.Bus.FORGE)
-public final class CakeWorldSkeletonReplacement {
-	private CakeWorldSkeletonReplacement() {
+public final class CakeWorldSkeletonHorseReplacement {
+	private CakeWorldSkeletonHorseReplacement() {
 	}
 
 	@SubscribeEvent
 	public static void onEntityJoin(EntityJoinWorldEvent event) {
 		if (event.loadedFromDisk()
 				|| event.getEntity().getType()
-						!= EntityType.SKELETON
+						!= EntityType.SKELETON_HORSE
 				|| !(event.getEntity()
-						instanceof Skeleton skeleton)
+						instanceof SkeletonHorse horse)
 				|| !(event.getWorld()
 						instanceof ServerLevel level)) {
 			return;
@@ -41,17 +43,19 @@ public final class CakeWorldSkeletonReplacement {
 		level.getServer().tell(new TickTask(
 				level.getServer().getTickCount() + 1,
 				() -> {
-					if (!skeleton.isRemoved()) {
+					if (!horse.isRemoved()) {
 						replaceIfInCakeWorldBiome(
-								level, skeleton);
+								level, horse);
 					}
 				}));
 	}
 
-	public static CandyCaneArcher replaceIfInCakeWorldBiome(
-			ServerLevel level, Skeleton skeleton) {
+	public static BrittleBiscuitSteed
+			replaceIfInCakeWorldBiome(
+					ServerLevel level,
+					SkeletonHorse horse) {
 		ResourceLocation biome = level.getBiome(
-				skeleton.blockPosition()).unwrapKey()
+				horse.blockPosition()).unwrapKey()
 				.map(key -> key.location()).orElse(null);
 		if (biome == null
 				|| !CakeWorld.MODID.equals(
@@ -59,28 +63,35 @@ public final class CakeWorldSkeletonReplacement {
 			return null;
 		}
 
-		CandyCaneArcher replacement =
-				CakeWorldEntities.CANDY_CANE_ARCHER.get()
-						.create(level);
+		BrittleBiscuitSteed replacement =
+				CakeWorldEntities.BRITTLE_BISCUIT_STEED
+						.get().create(level);
 		if (replacement == null) {
 			return null;
 		}
-		CompoundTag saved = skeleton.saveWithoutId(
+		CompoundTag saved = horse.saveWithoutId(
 				new CompoundTag());
 		saved.remove("UUID");
 		replacement.load(saved);
 		replacement.invulnerableTime =
-				skeleton.invulnerableTime;
+				horse.invulnerableTime;
 		if (!level.addFreshEntity(replacement)) {
 			replacement.discard();
 			return null;
 		}
 
-		Entity vehicle = skeleton.getVehicle();
-		skeleton.discard();
-		if (vehicle != null && !vehicle.isRemoved()) {
+		Entity vehicle = horse.getVehicle();
+		List<Entity> passengers =
+				List.copyOf(horse.getPassengers());
+		if (vehicle != null) {
+			horse.stopRiding();
 			replacement.startRiding(vehicle, true);
 		}
+		for (Entity passenger : passengers) {
+			passenger.stopRiding();
+			passenger.startRiding(replacement, true);
+		}
+		horse.discard();
 		return replacement;
 	}
 }

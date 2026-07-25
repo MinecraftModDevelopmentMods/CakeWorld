@@ -166,6 +166,10 @@ public final class CakeWorldClientEvents {
 		event.registerEntityRenderer(
 				CakeWorldEntities.CANDY_CANE_ARCHER.get(),
 				SkeletonRenderer::new);
+		event.registerEntityRenderer(
+				CakeWorldEntities.BRITTLE_BISCUIT_STEED
+						.get(),
+				BrittleBiscuitSteedRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.SUGAR_MITE.get(),
 				EndermiteRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.SOUR_SORCERER.get(),

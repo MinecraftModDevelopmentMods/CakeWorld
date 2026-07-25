@@ -32,6 +32,7 @@ import com.mcmoddev.cakeworld.cookbook.DiscoveryType;
 import com.mcmoddev.cakeworld.cookbook.SharedCookbookLibrary;
 import com.mcmoddev.cakeworld.compat.VanillaRoleAdvancements;
 import com.mcmoddev.cakeworld.entity.BiscuitBandit;
+import com.mcmoddev.cakeworld.entity.BrittleBiscuitSteed;
 import com.mcmoddev.cakeworld.entity.CandyflossSheep;
 import com.mcmoddev.cakeworld.entity.CandyflossSheepGrazeGoal;
 import com.mcmoddev.cakeworld.entity.CandyCaneArcher;
@@ -111,6 +112,7 @@ import com.mcmoddev.cakeworld.world.CakeWorldRavagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldShulkerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldSilverfishReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldSkeletonReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldSkeletonHorseReplacement;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -130,6 +132,7 @@ import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -195,6 +198,8 @@ import net.minecraft.world.entity.animal.horse.Horse;
 import net.minecraft.world.entity.animal.horse.Llama;
 import net.minecraft.world.entity.animal.horse.Markings;
 import net.minecraft.world.entity.animal.horse.Mule;
+import net.minecraft.world.entity.animal.horse.SkeletonHorse;
+import net.minecraft.world.entity.animal.horse.SkeletonTrapGoal;
 import net.minecraft.world.entity.animal.horse.TraderLlama;
 import net.minecraft.world.entity.animal.horse.Variant;
 import net.minecraft.world.entity.monster.Drowned;
@@ -15814,6 +15819,493 @@ public final class FirstBiteGameTests {
 		helper.succeed();
 	}
 
+	@GameTest(template = EMPTY, timeoutTicks = 300)
+	public static void brittleBiscuitSteedsKeepTheCompleteSkeletonTrap(
+			GameTestHelper helper) {
+		BrittleBiscuitSteedProbe steed =
+				new BrittleBiscuitSteedProbe(
+						helper.getLevel());
+		require(helper,
+				steed instanceof SkeletonHorse
+						&& steed.getType()
+								== CakeWorldEntities
+										.BRITTLE_BISCUIT_STEED
+										.get()
+						&& steed.getType().getCategory()
+								== MobCategory.CREATURE
+						&& close(steed.getMaxHealth(),
+								15.0D)
+						&& close(steed.getAttributeValue(
+								Attributes.MOVEMENT_SPEED),
+								0.2D)
+						&& close(steed.getAttributeValue(
+								Attributes.JUMP_STRENGTH),
+								0.7D)
+						&& steed.getAttribute(
+								Attributes.ATTACK_DAMAGE)
+								== null
+						&& close(steed.getDimensions(
+								Pose.STANDING).width,
+								1.3964844D)
+						&& close(steed.getDimensions(
+								Pose.STANDING).height,
+								1.6D)
+						&& steed.getType()
+								.clientTrackingRange() == 10
+						&& steed.getMaxSpawnClusterSize()
+								== 6
+						&& steed.getMobType()
+								== MobType.UNDEAD
+						&& steed.getMaxTemper() == 100,
+				"Brittle Biscuit Steed lost the exact Skeleton Horse body, attributes, size, tracking, group, undead or temper contract");
+		steed.seedRandom(1978L);
+		int experience = steed.getExperienceValue();
+		require(helper,
+				experience >= 1 && experience <= 3
+						&& steed.goalPriority(
+								"PanicGoal") == 1
+						&& steed.goalPriority(
+								"RunAroundLikeCrazyGoal")
+								== 1
+						&& steed.goalPriority(
+								"BreedGoal") == 2
+						&& steed.goalPriority(
+								"FollowParentGoal") == 4
+						&& steed.goalPriority(
+								"WaterAvoidingRandomStrollGoal")
+								== 6
+						&& steed.goalPriority(
+								"LookAtPlayerGoal") == 7
+						&& steed.goalPriority(
+								"RandomLookAroundGoal")
+								== 8
+						&& steed.goalPriority(
+								"FloatGoal") == -1
+						&& steed.goalPriority(
+								"TemptGoal") == -1
+						&& steed.targetGoalCount() == 0,
+				"Brittle Biscuit Steed lost exact Skeleton Horse experience, dry-land goals or no-target role");
+		require(helper,
+				steed.ambientSound()
+								== SoundEvents
+										.SKELETON_HORSE_AMBIENT
+						&& steed.hurtSound()
+								== SoundEvents
+										.SKELETON_HORSE_HURT
+						&& steed.deathSound()
+								== SoundEvents
+										.SKELETON_HORSE_DEATH
+						&& steed.swimSound()
+								== SoundEvents
+										.SKELETON_HORSE_SWIM
+						&& steed.rideableUnderWater()
+						&& close(steed.waterSlowDown(),
+								0.96D),
+				"Brittle Biscuit Steed lost exact Skeleton Horse sounds or underwater-riding contract");
+
+		BrittleBiscuitSteed mate =
+				CakeWorldEntities.BRITTLE_BISCUIT_STEED
+						.get().create(helper.getLevel());
+		require(helper, mate != null,
+				"Could not create Brittle Biscuit Steed mate fixture");
+		steed.setTamed(true);
+		mate.setTamed(true);
+		steed.setInLove(null);
+		mate.setInLove(null);
+		AgeableMob commandOffspring =
+				steed.getBreedOffspring(
+						helper.getLevel(), mate);
+		require(helper,
+				!steed.canMate(mate)
+						&& commandOffspring
+								instanceof BrittleBiscuitSteed
+						&& commandOffspring.getType()
+								== CakeWorldEntities
+										.BRITTLE_BISCUIT_STEED
+										.get()
+						&& !steed.canWearArmor()
+						&& !steed.isArmor(new ItemStack(
+								Items.DIAMOND_HORSE_ARMOR))
+						&& !steed.getSlot(401).set(
+								new ItemStack(Items
+										.DIAMOND_HORSE_ARMOR)),
+				"Brittle Biscuit Steed lost vanilla sterility/no-armour or custom command-offspring identity");
+
+		Player untamedRider = helper.makeMockPlayer();
+		untamedRider.setItemInHand(
+				InteractionHand.MAIN_HAND,
+				ItemStack.EMPTY);
+		steed.setTamed(false);
+		require(helper,
+				steed.mobInteract(untamedRider,
+						InteractionHand.MAIN_HAND)
+								== InteractionResult.PASS
+						&& untamedRider.getVehicle()
+								== null,
+				"Untamed Brittle Biscuit Steed no longer refuses ordinary riding");
+		steed.setTamed(true);
+		require(helper,
+				steed.getSlot(400).set(
+						new ItemStack(Items.SADDLE))
+						&& steed.isSaddled(),
+				"Tamed Brittle Biscuit Steed could not equip the exact saddle slot");
+		InteractionResult rideResult = steed.mobInteract(
+				untamedRider, InteractionHand.MAIN_HAND);
+		require(helper,
+				rideResult.consumesAction()
+						&& untamedRider.getVehicle()
+								== steed
+						&& steed.hasPassenger(
+								untamedRider)
+						&& steed.canBeControlledByRider()
+						&& steed.canJump(),
+				"Tamed, saddled Brittle Biscuit Steed lost inherited player riding and jumping");
+		untamedRider.stopRiding();
+
+		BrittleBiscuitSteedProbe expiring =
+				new BrittleBiscuitSteedProbe(
+						helper.getLevel());
+		CompoundTag expiringState =
+				new CompoundTag();
+		expiringState.putBoolean("SkeletonTrap", true);
+		expiringState.putInt(
+				"SkeletonTrapTime", 18000);
+		expiring.readAdditionalSaveData(
+				expiringState);
+		require(helper,
+				expiring.isTrap()
+						&& expiring.goalPriority(
+								"SkeletonTrapGoal")
+								== 1,
+				"Skeleton Trap NBT did not install the inherited priority-one trigger");
+		expiring.aiStep();
+		require(helper, expiring.isRemoved(),
+				"Brittle Biscuit Steed no longer expires after the exact 18,000 trap ticks");
+
+		BlockPos center =
+				helper.absolutePos(new BlockPos(2, 3, 2));
+		BlockPos cakeWorldPos =
+				findCakeWorldBiomePosition(
+						helper, center, 256);
+		require(helper, cakeWorldPos != null,
+				"Could not locate CakeWorld terrain for Skeleton Horse conversion");
+
+		SkeletonHorse literal =
+				EntityType.SKELETON_HORSE.create(
+						helper.getLevel());
+		Boat boat = EntityType.BOAT.create(
+				helper.getLevel());
+		CandyCaneArcher passenger =
+				CakeWorldEntities.CANDY_CANE_ARCHER
+						.get().create(helper.getLevel());
+		require(helper,
+				literal != null && boat != null
+						&& passenger != null,
+				"Could not create literal Skeleton Horse conversion fixtures");
+		literal.moveTo(
+				cakeWorldPos.getX() + 0.5D,
+				cakeWorldPos.getY() + 2.0D,
+				cakeWorldPos.getZ() + 0.5D);
+		boat.moveTo(literal.getX(), literal.getY(),
+				literal.getZ());
+		passenger.moveTo(literal.getX(),
+				literal.getY(), literal.getZ());
+		CompoundTag literalTrapState =
+				new CompoundTag();
+		literalTrapState.putBoolean(
+				"SkeletonTrap", true);
+		literalTrapState.putInt(
+				"SkeletonTrapTime", 123);
+		literal.readAdditionalSaveData(
+				literalTrapState);
+		literal.setTamed(true);
+		literal.getSlot(400).set(
+				new ItemStack(Items.SADDLE));
+		literal.setHealth(9.0F);
+		literal.setCustomName(
+				new TextComponent("Crumbly Charger"));
+		literal.setPersistenceRequired();
+		literal.invulnerableTime = 41;
+		passenger.invulnerableTime = 39;
+		helper.getLevel().addFreshEntity(boat);
+		helper.getLevel().addFreshEntity(literal);
+		helper.getLevel().addFreshEntity(passenger);
+		literal.startRiding(boat, true);
+		passenger.startRiding(literal, true);
+		BrittleBiscuitSteed converted =
+				CakeWorldSkeletonHorseReplacement
+						.replaceIfInCakeWorldBiome(
+								helper.getLevel(),
+								literal);
+		CompoundTag convertedState =
+				new CompoundTag();
+		if (converted != null) {
+			converted.addAdditionalSaveData(
+					convertedState);
+		}
+		require(helper,
+				converted != null
+						&& converted.getType()
+								== CakeWorldEntities
+										.BRITTLE_BISCUIT_STEED
+										.get()
+						&& close(converted.getHealth(),
+								9.0D)
+						&& "Crumbly Charger".equals(
+								converted.getName()
+										.getString())
+						&& converted
+								.isPersistenceRequired()
+						&& converted.isTamed()
+						&& converted.isSaddled()
+						&& converted.isTrap()
+						&& convertedState.getInt(
+								"SkeletonTrapTime")
+								== 123
+						&& converted.invulnerableTime
+								== 41
+						&& converted.getVehicle() == boat
+						&& boat.getPassengers()
+								.contains(converted)
+						&& passenger.getVehicle()
+								== converted
+						&& converted.getPassengers()
+								.contains(passenger)
+						&& passenger.invulnerableTime
+								== 39
+						&& literal.isRemoved(),
+				"Fresh literal Skeleton Horse conversion lost trap timer, tame/saddle, state, invulnerability, vehicle or rider");
+		passenger.discard();
+		converted.discard();
+		boat.discard();
+
+		Registry<Biome> biomes = helper.getLevel()
+				.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY);
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS.getId())) {
+			Biome biome = biomes.get(biomeId);
+			require(helper,
+					biome != null
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory
+													.CREATURE)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType
+															.SKELETON_HORSE
+											|| spawn.type
+													== CakeWorldEntities
+															.BRITTLE_BISCUIT_STEED
+															.get()),
+					"Skeleton Horse role leaked into ordinary biome spawning in "
+							+ biomeId);
+		}
+
+		Advancement monstersHunted = helper.getLevel()
+				.getServer().getAdvancements()
+				.getAdvancement(new ResourceLocation(
+						"minecraft",
+						"adventure/kill_all_mobs"));
+		Advancement bredAll = helper.getLevel()
+				.getServer().getAdvancements()
+				.getAdvancement(new ResourceLocation(
+						"minecraft",
+						"husbandry/bred_all_animals"));
+		require(helper,
+				SpawnPlacements.getPlacementType(
+								CakeWorldEntities
+										.BRITTLE_BISCUIT_STEED
+										.get())
+								== SpawnPlacements
+										.getPlacementType(
+												EntityType
+														.SKELETON_HORSE)
+						&& SpawnPlacements.getHeightmapType(
+								CakeWorldEntities
+										.BRITTLE_BISCUIT_STEED
+										.get())
+								== SpawnPlacements
+										.getHeightmapType(
+												EntityType
+														.SKELETON_HORSE)
+						&& CakeWorldItems
+								.BRITTLE_BISCUIT_STEED_SPAWN_EGG
+								.isPresent()
+						&& steed.getLootTableId().equals(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/brittle_biscuit_steed"))
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+												.BRITTLE_BISCUIT_STEED
+												.get())
+								== null
+						&& monstersHunted != null
+						&& !monstersHunted.getCriteria()
+								.containsKey(
+										"minecraft:skeleton_horse")
+						&& bredAll != null
+						&& !bredAll.getCriteria()
+								.containsKey(
+										"minecraft:skeleton_horse"),
+				"Brittle Biscuit Steed lost matching non-spawn placement, egg, loot, no-mimic or no-invented-advancement contract");
+
+		BrittleBiscuitSteedProbe trap =
+				new BrittleBiscuitSteedProbe(
+						helper.getLevel());
+		trap.moveTo(
+				cakeWorldPos.getX() + 0.5D,
+				cakeWorldPos.getY() + 2.0D,
+				cakeWorldPos.getZ() + 0.5D);
+		trap.setTrap(true);
+		helper.getLevel().addFreshEntity(trap);
+		ServerPlayer nearbyPlayer =
+				new ServerPlayer(
+						helper.getLevel().getServer(),
+						helper.getLevel(),
+						new GameProfile(
+								UUID.fromString(
+										"1978feed-feed-4bad-babe-1978feed2051"),
+								"CakeWorldSkeletonTrapTest"));
+		nearbyPlayer.setPos(trap.getX() + 5.0D,
+				trap.getY(), trap.getZ());
+		SkeletonTrapGoal inheritedTrigger =
+				new SkeletonTrapGoal(trap);
+		List<ServerPlayer> levelPlayers =
+				testLevelPlayers(helper.getLevel());
+		levelPlayers.add(nearbyPlayer);
+		try {
+			require(helper,
+					inheritedTrigger.canUse(),
+					"Inherited Skeleton Trap no longer detects a living player within ten blocks");
+		} finally {
+			levelPlayers.remove(nearbyPlayer);
+		}
+		nearbyPlayer.setPos(trap.getX() + 11.0D,
+				trap.getY(), trap.getZ());
+		levelPlayers.add(nearbyPlayer);
+		try {
+			require(helper,
+					!inheritedTrigger.canUse(),
+					"Inherited Skeleton Trap activated beyond the exact ten-block radius");
+		} finally {
+			levelPlayers.remove(nearbyPlayer);
+		}
+		inheritedTrigger.tick();
+
+		AABB trapArea = trap.getBoundingBox()
+				.inflate(12.0D);
+		helper.runAfterDelay(1, () -> {
+			LightningBolt cue = helper.getLevel()
+					.getEntitiesOfClass(
+							LightningBolt.class,
+							trapArea)
+					.stream().findFirst()
+					.orElse(null);
+			require(helper,
+					cue != null
+							&& isVisualOnly(cue)
+							&& !trap.isTrap()
+							&& trap.isTamed()
+							&& !trap.isBaby(),
+					"Inherited Skeleton Trap lost its visual-only lightning cue or did not tame/adult the original steed");
+		});
+		helper.runAfterDelay(6, () -> {
+			List<BrittleBiscuitSteed> mounts =
+					helper.getLevel()
+							.getEntitiesOfClass(
+									BrittleBiscuitSteed
+											.class,
+									trapArea);
+			List<CandyCaneArcher> riders =
+					helper.getLevel()
+							.getEntitiesOfClass(
+									CandyCaneArcher.class,
+									trapArea,
+									archer -> archer
+											.isPassenger());
+			long persistentMounts = mounts.stream()
+					.filter(mount -> mount
+							.isPersistenceRequired())
+					.count();
+			long protectedChildMounts = mounts.stream()
+					.filter(mount ->
+							mount.invulnerableTime > 0)
+					.count();
+			require(helper,
+					mounts.size() == 4
+							&& mounts.contains(trap)
+							&& mounts.stream().allMatch(
+									mount -> mount
+											.isTamed()
+											&& !mount
+													.isBaby()
+											&& !mount
+													.isTrap())
+							&& persistentMounts == 3
+							&& protectedChildMounts == 3
+							&& riders.size() == 4
+							&& riders.stream().allMatch(
+									rider -> rider
+											.getType()
+													== CakeWorldEntities
+															.CANDY_CANE_ARCHER
+															.get()
+											&& rider
+													.isPersistenceRequired()
+											&& rider
+													.invulnerableTime
+													> 0
+											&& rider
+													.getMainHandItem()
+													.is(Items.BOW)
+											&& !rider
+													.getItemBySlot(
+															EquipmentSlot
+																	.HEAD)
+													.isEmpty()
+											&& rider
+													.getVehicle()
+													instanceof BrittleBiscuitSteed)
+							&& mounts.stream().allMatch(
+									mount -> mount
+											.getPassengers()
+											.size() == 1
+											&& mount
+													.getFirstPassenger()
+													instanceof CandyCaneArcher)
+							&& helper.getLevel()
+									.getEntitiesOfClass(
+											SkeletonHorse.class,
+											trapArea,
+											horse -> horse
+													.getType()
+													== EntityType
+															.SKELETON_HORSE)
+									.isEmpty()
+							&& helper.getLevel()
+									.getEntitiesOfClass(
+											Skeleton.class,
+											trapArea,
+											rider -> rider
+													.getType()
+													== EntityType
+															.SKELETON)
+									.isEmpty(),
+					"Inherited trap did not produce exactly four custom tamed adult mounts and four protected equipped Archer riders without literal leakage");
+			helper.succeed();
+		});
+	}
+
 	@GameTest(template = EMPTY, timeoutTicks = 200)
 	public static void fudgeFolkKeepPiglinSocietyBarterAndSafePeril(
 			GameTestHelper helper) {
@@ -17440,6 +17932,63 @@ public final class FirstBiteGameTests {
 		}
 	}
 
+	private static final class BrittleBiscuitSteedProbe
+			extends BrittleBiscuitSteed {
+		private BrittleBiscuitSteedProbe(Level level) {
+			super(CakeWorldEntities.BRITTLE_BISCUIT_STEED
+					.get(), level);
+		}
+
+		private int getExperienceValue() {
+			return getExperienceReward(null);
+		}
+
+		private void seedRandom(long seed) {
+			random.setSeed(seed);
+		}
+
+		private ResourceLocation getLootTableId() {
+			return getLootTable();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				ambientSound() {
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent hurtSound() {
+			return getHurtSound(DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent deathSound() {
+			return getDeathSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent swimSound() {
+			return getSwimSound();
+		}
+
+		private float waterSlowDown() {
+			return getWaterSlowDown();
+		}
+
+		private int goalPriority(String name) {
+			return goalSelector.getAvailableGoals()
+					.stream()
+					.filter(wrapped -> name.equals(
+							wrapped.getGoal()
+									.getClass()
+									.getSimpleName()))
+					.mapToInt(WrappedGoal::getPriority)
+					.findFirst().orElse(-1);
+		}
+
+		private int targetGoalCount() {
+			return targetSelector.getAvailableGoals()
+					.size();
+		}
+	}
+
 	private static final class FixedRandom extends Random {
 		private static final long serialVersionUID = 1L;
 		private final int value;
@@ -17613,6 +18162,35 @@ public final class FirstBiteGameTests {
 						&& player.getAdvancements().getOrStartProgress(advancement)
 								.getCriterion(criterion).isDone(),
 				"Vanilla role criterion was not credited: " + criterion);
+	}
+
+	@SuppressWarnings("unchecked")
+	private static List<ServerPlayer> testLevelPlayers(
+			ServerLevel level) {
+		try {
+			Field field = ServerLevel.class
+					.getDeclaredField("players");
+			field.setAccessible(true);
+			return (List<ServerPlayer>)field.get(level);
+		} catch (ReflectiveOperationException exception) {
+			throw new IllegalStateException(
+					"Could not access the test level player list",
+					exception);
+		}
+	}
+
+	private static boolean isVisualOnly(
+			LightningBolt lightning) {
+		try {
+			Field field = LightningBolt.class
+					.getDeclaredField("visualOnly");
+			field.setAccessible(true);
+			return field.getBoolean(lightning);
+		} catch (ReflectiveOperationException exception) {
+			throw new IllegalStateException(
+					"Could not inspect the Skeleton Trap lightning cue",
+					exception);
+		}
 	}
 
 	private static boolean close(double actual, double expected) {
