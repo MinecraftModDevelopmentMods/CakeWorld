@@ -30,6 +30,7 @@ import com.mcmoddev.cakeworld.cookbook.SharedCookbookLibrary;
 import com.mcmoddev.cakeworld.compat.VanillaRoleAdvancements;
 import com.mcmoddev.cakeworld.entity.CandyflossSheep;
 import com.mcmoddev.cakeworld.entity.CocoaCow;
+import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
 import com.mcmoddev.cakeworld.entity.TrufflePig;
@@ -41,6 +42,7 @@ import com.mcmoddev.cakeworld.init.CakeWorldEntities;
 import com.mcmoddev.cakeworld.init.CakeWorldFluids;
 import com.mcmoddev.cakeworld.init.CakeWorldItems;
 import com.mcmoddev.cakeworld.init.CakeWorldSounds;
+import com.mcmoddev.cakeworld.item.JellylotlBucketItem;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -65,6 +67,8 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.animal.Pig;
+import net.minecraft.world.entity.animal.Cod;
+import net.minecraft.world.entity.animal.axolotl.Axolotl;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
@@ -1592,6 +1596,96 @@ public final class FirstBiteGameTests {
 				"minecraft:husbandry/bred_all_animals", "minecraft:sheep");
 		requireCriterion(helper, advancementPlayer,
 				"minecraft:adventure/kill_all_mobs", "minecraft:zombie");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void jellylotlPreservesAquaticRoleWithoutNormalDamage(
+			GameTestHelper helper) {
+		Jellylotl jellylotl =
+				CakeWorldEntities.JELLYLOTL.get().create(helper.getLevel());
+		require(helper, jellylotl != null
+						&& jellylotl.getBreedOffspring(helper.getLevel(),
+								jellylotl) instanceof Jellylotl,
+				"Jellylotls did not breed their own entity type");
+
+		ItemStack flavourSource =
+				new ItemStack(CakeWorldItems.JELLYLOTL_BUCKET.get());
+		flavourSource.getOrCreateTag().putInt(Axolotl.VARIANT_TAG, 3);
+		jellylotl.loadFromBucketTag(flavourSource.getTag());
+		ItemStack captured = jellylotl.getBucketItemStack();
+		jellylotl.saveToBucketTag(captured);
+		Jellylotl restored =
+				CakeWorldEntities.JELLYLOTL.get().create(helper.getLevel());
+		require(helper, restored != null
+						&& captured.is(CakeWorldItems.JELLYLOTL_BUCKET.get())
+						&& CakeWorldItems.JELLYLOTL_BUCKET.get()
+								instanceof net.minecraft.world.item.MobBucketItem
+						&& "tooltip.cakeworld.jellylotl.flavour.3".equals(
+								JellylotlBucketItem.flavourKey(captured)),
+				"Jellylotl capture lost its dedicated bucket or flavour");
+		restored.loadFromBucketTag(captured.getTag());
+		require(helper, restored.getVariant() == jellylotl.getVariant(),
+				"Jellylotl bucket round trip changed its flavour variant");
+
+		Cod target = EntityType.COD.create(helper.getLevel());
+		require(helper, target != null,
+				"Could not create Jellylotl helper target");
+		float fullTargetHealth = target.getMaxHealth();
+		Difficulty originalDifficulty = helper.getLevel().getDifficulty();
+		try {
+			for (Difficulty safeDifficulty :
+					new Difficulty[] {Difficulty.EASY, Difficulty.NORMAL}) {
+				target.removeAllEffects();
+				target.setHealth(fullTargetHealth);
+				helper.getLevel().getServer().setDifficulty(
+						safeDifficulty, true);
+				require(helper, jellylotl.doHurtTarget(target)
+								&& Math.abs(target.getHealth()
+										- fullTargetHealth)
+										< 0.001F
+								&& target.hasEffect(
+										net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN)
+								&& target.hasEffect(
+										net.minecraft.world.effect.MobEffects.GLOWING),
+						safeDifficulty
+								+ " Jellylotl helper attack caused damage or lacked its visible slow");
+			}
+			target.removeAllEffects();
+			target.setHealth(fullTargetHealth);
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			require(helper, jellylotl.doHurtTarget(target)
+							&& target.getHealth() < fullTargetHealth,
+					"Hard Jellylotl attack did not restore real damage");
+		} finally {
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		Biome sodaOcean = helper.getLevel().registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY)
+				.get(CakeWorldBiomes.SODA_OCEAN.getId());
+		require(helper, sodaOcean != null,
+				"Could not inspect Soda Ocean Jellylotl spawning");
+		requireSpawnReplacement(helper, sodaOcean, EntityType.AXOLOTL,
+				CakeWorldEntities.JELLYLOTL.get(),
+				MobCategory.AXOLOTLS);
+		require(helper, CakeWorldBlocks.BISCUIT_CRUMBS.get()
+						.defaultBlockState().is(
+								BlockTags.AXOLOTLS_SPAWNABLE_ON),
+				"Biscuit Crumbs cannot support natural Jellylotl spawning");
+
+		ServerPlayer advancementPlayer = new ServerPlayer(
+				helper.getLevel().getServer(), helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2001"),
+						"CakeWorldJellylotlRoleTest"));
+		VanillaRoleAdvancements.creditBredRole(advancementPlayer,
+				CakeWorldEntities.JELLYLOTL.get());
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:husbandry/bred_all_animals",
+				"minecraft:axolotl");
 		helper.succeed();
 	}
 

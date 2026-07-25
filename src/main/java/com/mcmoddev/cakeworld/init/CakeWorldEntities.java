@@ -3,6 +3,7 @@ package com.mcmoddev.cakeworld.init;
 import com.mcmoddev.cakeworld.CakeWorld;
 import com.mcmoddev.cakeworld.entity.CandyflossSheep;
 import com.mcmoddev.cakeworld.entity.CocoaCow;
+import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
 import com.mcmoddev.cakeworld.entity.TrufflePig;
@@ -11,6 +12,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.entity.animal.axolotl.Axolotl;
 import net.minecraft.world.entity.animal.Chicken;
 import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.entity.animal.Pig;
@@ -32,6 +34,12 @@ public final class CakeWorldEntities {
 	public static final RegistryObject<EntityType<CocoaCow>> COCOA_COW =
 			entity("cocoa_cow", EntityType.Builder.of(CocoaCow::new, MobCategory.CREATURE)
 					.sized(0.9F, 1.4F).clientTrackingRange(10));
+	public static final RegistryObject<EntityType<Jellylotl>> JELLYLOTL =
+			entity("jellylotl",
+					EntityType.Builder.of(Jellylotl::new,
+							MobCategory.AXOLOTLS)
+							.sized(0.75F, 0.42F)
+							.clientTrackingRange(10));
 	public static final RegistryObject<EntityType<MallowChick>> MALLOW_CHICK =
 			entity("mallow_chick", EntityType.Builder.of(MallowChick::new, MobCategory.CREATURE)
 					.sized(0.4F, 0.7F).clientTrackingRange(10));
@@ -57,6 +65,7 @@ public final class CakeWorldEntities {
 	}
 
 	private static void createAttributes(EntityAttributeCreationEvent event) {
+		event.put(JELLYLOTL.get(), Axolotl.createAttributes().build());
 		event.put(COCOA_COW.get(), Cow.createAttributes().build());
 		event.put(MALLOW_CHICK.get(), Chicken.createAttributes().build());
 		event.put(TRUFFLE_PIG.get(), Pig.createAttributes().build());
@@ -66,6 +75,10 @@ public final class CakeWorldEntities {
 
 	private static void commonSetup(FMLCommonSetupEvent event) {
 		event.enqueueWork(() -> {
+			SpawnPlacements.register(JELLYLOTL.get(),
+					SpawnPlacements.Type.IN_WATER,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					Axolotl::checkAxolotlSpawnRules);
 			SpawnPlacements.register(COCOA_COW.get(), SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					Animal::checkAnimalSpawnRules);

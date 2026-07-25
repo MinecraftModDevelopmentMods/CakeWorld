@@ -4,6 +4,7 @@ import java.util.function.Supplier;
 
 import com.mcmoddev.cakeworld.CakeWorld;
 import com.mcmoddev.cakeworld.item.ExplorersCookbookItem;
+import com.mcmoddev.cakeworld.item.JellylotlBucketItem;
 import com.mcmoddev.cakeworld.item.LemonadeBottleItem;
 import com.mcmoddev.cakeworld.item.ReusableKitchenToolItem;
 
@@ -123,6 +124,14 @@ public final class CakeWorldItems {
 			ITEMS.register("explorers_cookbook",
 					() -> new ExplorersCookbookItem(new Item.Properties()
 							.tab(CreativeModeTab.TAB_MISC).stacksTo(1)));
+	public static final RegistryObject<Item> JELLYLOTL_BUCKET =
+			ITEMS.register("jellylotl_bucket",
+					() -> new JellylotlBucketItem(new Item.Properties()
+							.tab(CreativeModeTab.TAB_MISC)
+							.stacksTo(1)));
+	public static final RegistryObject<Item> JELLYLOTL_SPAWN_EGG =
+			spawnEgg("jellylotl_spawn_egg", CakeWorldEntities.JELLYLOTL,
+					0xF29AB2, 0x8AD9E8);
 	public static final RegistryObject<Item> COCOA_COW_SPAWN_EGG =
 			spawnEgg("cocoa_cow_spawn_egg", CakeWorldEntities.COCOA_COW,
 					0x5A2E1D, 0xE7C28E);

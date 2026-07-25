@@ -47,6 +47,10 @@ public final class CakeWorldCreatureSpawns {
 			replace(event, MobCategory.CREATURE, EntityType.CHICKEN,
 					CakeWorldEntities.MALLOW_CHICK, 10, 2, 4);
 		}
+		if ("soda_ocean".equals(biome.getPath())) {
+			replace(event, MobCategory.AXOLOTLS, EntityType.AXOLOTL,
+					CakeWorldEntities.JELLYLOTL, 6, 1, 3);
+		}
 	}
 
 	private static <T extends Mob> void replace(BiomeLoadingEvent event,
