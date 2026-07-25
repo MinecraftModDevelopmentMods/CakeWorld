@@ -17,6 +17,7 @@ import com.mcmoddev.cakeworld.entity.SodaCod;
 import com.mcmoddev.cakeworld.entity.SodaDolphin;
 import com.mcmoddev.cakeworld.entity.SoggyBiscuit;
 import com.mcmoddev.cakeworld.entity.SoggyTridentProjectile;
+import com.mcmoddev.cakeworld.entity.SourSorcerer;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
 import com.mcmoddev.cakeworld.entity.SugarBee;
 import com.mcmoddev.cakeworld.entity.SugarMite;
@@ -45,6 +46,7 @@ import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.ElderGuardian;
 import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.entity.monster.Endermite;
+import net.minecraft.world.entity.monster.Evoker;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
@@ -143,6 +145,12 @@ public final class CakeWorldEntities {
 							MobCategory.MONSTER)
 							.sized(0.4F, 0.3F)
 							.clientTrackingRange(8));
+	public static final RegistryObject<EntityType<SourSorcerer>>
+			SOUR_SORCERER = entity("sour_sorcerer",
+					EntityType.Builder.of(SourSorcerer::new,
+							MobCategory.MONSTER)
+							.sized(0.6F, 1.95F)
+							.clientTrackingRange(8));
 	public static final RegistryObject<EntityType<PopRockPopper>>
 			POP_ROCK_POPPER = entity("pop_rock_popper",
 					EntityType.Builder.of(PopRockPopper::new,
@@ -208,6 +216,8 @@ public final class CakeWorldEntities {
 				EnderMan.createAttributes().build());
 		event.put(SUGAR_MITE.get(),
 				Endermite.createAttributes().build());
+		event.put(SOUR_SORCERER.get(),
+				Evoker.createAttributes().build());
 		event.put(POP_ROCK_POPPER.get(), Creeper.createAttributes().build());
 		event.put(CINNAMON_SPARK.get(),
 				Blaze.createAttributes().build());

@@ -97,6 +97,10 @@ public final class VanillaRoleAdvancements {
 		award(player, KILL_ALL, "minecraft:endermite");
 	}
 
+	public static void creditKilledEvokerRole(ServerPlayer player) {
+		award(player, KILL_ALL, "minecraft:evoker");
+	}
+
 	private static String killedCriterion(EntityType<?> type) {
 		if (type == CakeWorldEntities.STALE_CRUMBLER.get()) {
 			return "minecraft:zombie";
@@ -121,6 +125,9 @@ public final class VanillaRoleAdvancements {
 		}
 		if (type == CakeWorldEntities.SUGAR_MITE.get()) {
 			return "minecraft:endermite";
+		}
+		if (type == CakeWorldEntities.SOUR_SORCERER.get()) {
+			return "minecraft:evoker";
 		}
 		return null;
 	}

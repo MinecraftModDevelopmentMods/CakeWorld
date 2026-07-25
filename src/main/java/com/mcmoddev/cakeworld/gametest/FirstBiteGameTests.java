@@ -44,6 +44,7 @@ import com.mcmoddev.cakeworld.entity.SodaCod;
 import com.mcmoddev.cakeworld.entity.SodaDolphin;
 import com.mcmoddev.cakeworld.entity.SoggyBiscuit;
 import com.mcmoddev.cakeworld.entity.SoggyTridentProjectile;
+import com.mcmoddev.cakeworld.entity.SourSorcerer;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
 import com.mcmoddev.cakeworld.entity.SugarBee;
 import com.mcmoddev.cakeworld.entity.SugarMite;
@@ -100,6 +101,10 @@ import net.minecraft.world.entity.monster.Drowned;
 import net.minecraft.world.entity.monster.ElderGuardian;
 import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.entity.monster.Endermite;
+import net.minecraft.world.entity.monster.Evoker;
+import net.minecraft.world.entity.monster.Ravager;
+import net.minecraft.world.entity.monster.Vex;
+import net.minecraft.world.entity.projectile.EvokerFangs;
 import net.minecraft.world.entity.projectile.SmallFireball;
 import net.minecraft.world.entity.projectile.ThrownTrident;
 import net.minecraft.world.entity.player.Player;
@@ -130,6 +135,7 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.MobSpawnSettings;
 import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
+import net.minecraft.world.entity.raid.Raid;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -145,6 +151,7 @@ import com.mcmoddev.cakeworld.world.StarterPicnicFeature;
 import com.mcmoddev.cakeworld.world.CakeWorldDrownedReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldElderGuardianReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldEndermiteReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldEvokerReplacement;
 
 @GameTestHolder(CakeWorld.MODID)
 @PrefixGameTestTemplate(false)
@@ -3074,6 +3081,173 @@ public final class FirstBiteGameTests {
 		requireCriterion(helper, advancementPlayer,
 				"minecraft:adventure/kill_all_mobs",
 				"minecraft:endermite");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void sourSorcerersKeepRaidsAndGentleSpells(
+			GameTestHelper helper) {
+		SourSorcerer sorcerer = CakeWorldEntities.SOUR_SORCERER.get()
+				.create(helper.getLevel());
+		Pig target = EntityType.PIG.create(helper.getLevel());
+		Vex vex = EntityType.VEX.create(helper.getLevel());
+		require(helper, sorcerer != null && target != null && vex != null,
+				"Could not create Sour Sorcerer spell fixtures");
+		BlockPos anchor = helper.absolutePos(new BlockPos(2, 3, 2));
+		sorcerer.setNoAi(true);
+		sorcerer.setPos(anchor.getX(), anchor.getY(), anchor.getZ());
+		target.setPos(anchor.getX() + 1.0D,
+				anchor.getY(), anchor.getZ());
+		vex.setNoAi(true);
+		vex.setPos(anchor.getX() - 1.0D,
+				anchor.getY(), anchor.getZ());
+		vex.setOwner(sorcerer);
+		helper.getLevel().addFreshEntity(sorcerer);
+		helper.getLevel().addFreshEntity(target);
+		helper.getLevel().addFreshEntity(vex);
+		require(helper,
+				sorcerer instanceof Evoker
+						&& sorcerer.getMobType() == MobType.ILLAGER
+						&& Math.abs(sorcerer.getMaxHealth() - 24.0F)
+								< 0.001F
+						&& Math.abs(sorcerer.getAttributeValue(
+								Attributes.MOVEMENT_SPEED) - 0.5D)
+								< 0.001D
+						&& Math.abs(sorcerer.getAttributeValue(
+								Attributes.FOLLOW_RANGE) - 12.0D)
+								< 0.001D
+						&& sorcerer.isAlliedTo(vex),
+				"Sour Sorcerer lost the Evoker illager, attribute or summoned-Vex alliance role");
+
+		EvokerFangs fangs = new EvokerFangs(helper.getLevel(),
+				target.getX(), target.getY(), target.getZ(),
+				0.0F, 0, sorcerer);
+		Difficulty originalDifficulty = helper.getLevel().getDifficulty();
+		try {
+			for (Difficulty safeDifficulty :
+					new Difficulty[] {Difficulty.EASY, Difficulty.NORMAL}) {
+				helper.getLevel().getServer().setDifficulty(
+						safeDifficulty, true);
+				target.removeAllEffects();
+				target.setHealth(10.0F);
+				target.invulnerableTime = 0;
+				target.setSecondsOnFire(5);
+				target.fallDistance = 6.0F;
+				target.setDeltaMovement(Vec3.ZERO);
+				target.hurt(DamageSource.indirectMagic(
+						fangs, sorcerer), 6.0F);
+				require(helper,
+						Math.abs(target.getHealth() - 10.0F) < 0.001F
+								&& !target.isOnFire()
+								&& target.fallDistance == 0.0F
+								&& target.hasEffect(MobEffects.CONFUSION)
+								&& target.hasEffect(MobEffects.GLOWING)
+								&& target.hasEffect(
+										MobEffects.SLOW_FALLING)
+								&& target.hasEffect(
+										MobEffects.FIRE_RESISTANCE)
+								&& target.getEffect(
+										MobEffects.DAMAGE_RESISTANCE)
+										.getAmplifier() == 4,
+						safeDifficulty
+								+ " Sour Sorcerer fangs caused damage or lacked rescue effects");
+
+				target.removeAllEffects();
+				target.setHealth(10.0F);
+				target.invulnerableTime = 0;
+				target.hurt(DamageSource.mobAttack(vex), 4.0F);
+				require(helper,
+						Math.abs(target.getHealth() - 10.0F) < 0.001F
+								&& target.hasEffect(MobEffects.CONFUSION)
+								&& target.hasEffect(
+										MobEffects.DAMAGE_RESISTANCE),
+						safeDifficulty
+								+ " Sour Sorcerer summon caused health damage");
+			}
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			target.removeAllEffects();
+			target.setHealth(10.0F);
+			target.invulnerableTime = 0;
+			target.hurt(DamageSource.indirectMagic(
+					fangs, sorcerer), 6.0F);
+			require(helper, target.getHealth() < 10.0F,
+					"Hard Sour Sorcerer fangs did not retain real damage");
+			target.removeAllEffects();
+			target.setHealth(10.0F);
+			target.invulnerableTime = 0;
+			target.hurt(DamageSource.mobAttack(vex), 4.0F);
+			require(helper, target.getHealth() < 10.0F,
+					"Hard Sour Sorcerer summon did not retain real damage");
+		} finally {
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		Evoker raidEvoker = EntityType.EVOKER.create(helper.getLevel());
+		Ravager ravager = EntityType.RAVAGER.create(helper.getLevel());
+		require(helper, raidEvoker != null && ravager != null,
+				"Could not create raid conversion fixtures");
+		raidEvoker.moveTo(anchor.getX() + 3.0D, anchor.getY(),
+				anchor.getZ(), 27.0F, 0.0F);
+		raidEvoker.setCustomName(new TextComponent("Tang"));
+		raidEvoker.setPersistenceRequired();
+		CompoundTag castingState = raidEvoker.saveWithoutId(
+				new CompoundTag());
+		castingState.putInt("SpellTicks", 25);
+		raidEvoker.load(castingState);
+		ravager.setPos(anchor.getX() + 3.0D,
+				anchor.getY(), anchor.getZ());
+		helper.getLevel().addFreshEntity(ravager);
+		Raid raid = new Raid(197825, helper.getLevel(), anchor);
+		raid.joinRaid(3, raidEvoker, null, true);
+		raid.setLeader(3, raidEvoker);
+		helper.getLevel().addFreshEntity(raidEvoker);
+		raidEvoker.startRiding(ravager, true);
+		SourSorcerer converted =
+				CakeWorldEvokerReplacement.replaceIfInCakeWorldBiome(
+						helper.getLevel(), raidEvoker);
+		require(helper, converted != null
+						&& raidEvoker.isRemoved()
+						&& converted.getType()
+								== CakeWorldEntities.SOUR_SORCERER.get()
+						&& converted.hasCustomName()
+						&& converted.getCustomName().getString()
+								.equals("Tang")
+						&& converted.isPersistenceRequired()
+						&& converted.isCastingSpell()
+						&& Math.abs(converted.getYRot() - 27.0F)
+								< 0.001F,
+				"Raid conversion lost Sorcerer type, name, persistence, spell or rotation");
+		CompoundTag convertedState = converted.saveWithoutId(
+				new CompoundTag());
+		require(helper, convertedState.getInt("SpellTicks") == 25
+						&& converted.getCurrentRaid() == raid
+						&& converted.getWave() == 3
+						&& raid.getLeader(3) == converted
+						&& raid.getTotalRaidersAlive() == 1
+						&& converted.getVehicle() == ravager,
+				"Raid conversion lost spell ticks, wave, leader, count or Ravager seat");
+
+		TagKey<EntityType<?>> raiders = TagKey.create(
+				Registry.ENTITY_TYPE_REGISTRY,
+				new ResourceLocation("minecraft", "raiders"));
+		require(helper, CakeWorldEntities.SOUR_SORCERER.get()
+						.is(raiders),
+				"Sour Sorcerer did not preserve the vanilla raider tag role");
+		require(helper, CakeWorldItems.SOUR_SORCERER_SPAWN_EGG.isPresent(),
+				"Sour Sorcerer has no creative/testing spawn egg");
+		ServerPlayer advancementPlayer = new ServerPlayer(
+				helper.getLevel().getServer(), helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2018"),
+						"CakeWorldSourSorcererRoleTest"));
+		VanillaRoleAdvancements.creditKilledEvokerRole(
+				advancementPlayer);
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:adventure/kill_all_mobs",
+				"minecraft:evoker");
 		helper.succeed();
 	}
 
