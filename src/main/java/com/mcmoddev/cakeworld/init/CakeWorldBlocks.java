@@ -65,6 +65,10 @@ public final class CakeWorldBlocks {
 			() -> new GummyBlock(BlockBehaviour.Properties.of(Material.CLAY)
 					.strength(0.5F).sound(SoundType.SLIME_BLOCK)
 					.noOcclusion()));
+	public static final RegistryObject<Block> WAFER_BLOCK = block("wafer_block",
+			BlockBehaviour.Properties.of(Material.WOOD)
+					.strength(0.2F, 0.2F)
+					.sound(SoundType.BAMBOO));
 	public static final RegistryObject<Block> CANDY_CANE_PILLAR =
 			block("candy_cane_pillar",
 					() -> new RotatedPillarBlock(

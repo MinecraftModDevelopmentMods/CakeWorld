@@ -300,6 +300,46 @@ public final class FirstBiteGameTests {
 	}
 
 	@GameTest(template = EMPTY)
+	public static void waferBlocksAreCheapSolidAndDeliberatelyFragile(
+			GameTestHelper helper) {
+		BlockState wafer = CakeWorldBlocks.WAFER_BLOCK.get().defaultBlockState();
+		BlockPos testPos = helper.absolutePos(new BlockPos(1, 1, 1));
+		require(helper, !wafer.requiresCorrectToolForDrops()
+						&& close(wafer.getDestroySpeed(
+								helper.getLevel(), testPos), 0.2D)
+						&& close(CakeWorldBlocks.WAFER_BLOCK.get()
+								.getExplosionResistance(), 0.2D),
+				"Wafer Block lost its quick-break fragile building contract");
+		require(helper, !wafer.getCollisionShape(
+						helper.getLevel(), testPos).isEmpty(),
+				"Wafer Block cannot support a temporary bridge");
+
+		ShapedRecipe recipe = (ShapedRecipe) helper.getLevel()
+				.getRecipeManager().byKey(
+						new ResourceLocation(CakeWorld.MODID, "wafer_block"))
+				.orElseThrow();
+		AbstractContainerMenu recipeMenu =
+				new AbstractContainerMenu(null, 0) {
+					@Override
+					public boolean stillValid(Player player) {
+						return true;
+					}
+				};
+		CraftingContainer ingredients =
+				new CraftingContainer(recipeMenu, 2, 2);
+		for (int slot = 0; slot < 4; slot++) {
+			ingredients.setItem(slot,
+					new ItemStack(CakeWorldItems.SIMPLE_BISCUIT.get()));
+		}
+		ItemStack result = recipe.assemble(ingredients);
+		require(helper, recipe.matches(ingredients, helper.getLevel())
+						&& result.is(CakeWorldBlocks.WAFER_BLOCK.get().asItem())
+						&& result.getCount() == 8,
+				"Wafer Block recipe is not a high-yield bridge supply");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
 	public static void candyCanePillarsKeepAllThreeStructuralAxes(
 			GameTestHelper helper) {
 		RotatedPillarBlock pillar =
