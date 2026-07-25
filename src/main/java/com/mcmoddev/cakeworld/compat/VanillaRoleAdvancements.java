@@ -334,6 +334,9 @@ public final class VanillaRoleAdvancements {
 		if (type == CakeWorldEntities.MACARON_CLAM.get()) {
 			return "minecraft:shulker";
 		}
+		if (type == CakeWorldEntities.CRUMB_MITE.get()) {
+			return "minecraft:silverfish";
+		}
 		if (type == CakeWorldEntities.SUGAR_MITE.get()) {
 			return "minecraft:endermite";
 		}

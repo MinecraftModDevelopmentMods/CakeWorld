@@ -38,6 +38,8 @@ import com.mcmoddev.cakeworld.entity.BonbonBat;
 import com.mcmoddev.cakeworld.entity.ChocolatePanda;
 import com.mcmoddev.cakeworld.entity.CocoaCow;
 import com.mcmoddev.cakeworld.entity.CupcakeCow;
+import com.mcmoddev.cakeworld.entity.CrumbMite;
+import com.mcmoddev.cakeworld.entity.CrumbMiteGriefSafety;
 import com.mcmoddev.cakeworld.entity.CinnamonPuffProjectile;
 import com.mcmoddev.cakeworld.entity.CinnamonSpark;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
@@ -106,6 +108,7 @@ import com.mcmoddev.cakeworld.world.CakeWorldPiglinBruteReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldPillagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldRavagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldShulkerReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldSilverfishReplacement;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -210,6 +213,7 @@ import net.minecraft.world.entity.monster.PatrollingMonster;
 import net.minecraft.world.entity.monster.Phantom;
 import net.minecraft.world.entity.monster.Ravager;
 import net.minecraft.world.entity.monster.Shulker;
+import net.minecraft.world.entity.monster.Silverfish;
 import net.minecraft.world.entity.monster.Vex;
 import net.minecraft.world.entity.monster.ZombifiedPiglin;
 import net.minecraft.world.entity.monster.Zoglin;
@@ -255,6 +259,7 @@ import net.minecraft.world.level.NaturalSpawner;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CarrotBlock;
 import net.minecraft.world.level.block.FallingBlock;
+import net.minecraft.world.level.block.InfestedBlock;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -14705,6 +14710,514 @@ public final class FirstBiteGameTests {
 	}
 
 	@GameTest(template = EMPTY, timeoutTicks = 200)
+	public static void crumbMitesKeepSilverfishNestsAndSafeMischief(
+			GameTestHelper helper) {
+		CrumbMiteProbe mite =
+				new CrumbMiteProbe(helper.getLevel());
+		require(helper,
+				mite instanceof Silverfish
+						&& mite.getType()
+								== CakeWorldEntities
+										.CRUMB_MITE.get()
+						&& mite.getType().getCategory()
+								== MobCategory.MONSTER
+						&& close(mite.getMaxHealth(), 8.0D)
+						&& close(mite.getAttributeValue(
+								Attributes
+										.MOVEMENT_SPEED),
+								0.25D)
+						&& close(mite.getAttributeValue(
+								Attributes.ATTACK_DAMAGE),
+								1.0D)
+						&& close(mite.getDimensions(
+								Pose.STANDING).width,
+								0.4D)
+						&& close(mite.getDimensions(
+								Pose.STANDING).height,
+								0.3D)
+						&& mite.getType()
+								.clientTrackingRange() == 8
+						&& mite.getExperienceValue() == 5
+						&& mite.getMobType()
+								== MobType.ARTHROPOD
+						&& close(mite.getMyRidingOffset(),
+								0.1D)
+						&& close(mite.standingEyeHeight(),
+								0.13D),
+				"Crumb Mite lost its genuine Silverfish body, attributes, XP or arthropod role");
+		require(helper,
+				mite.ambientSound()
+								== SoundEvents
+										.SILVERFISH_AMBIENT
+						&& mite.hurtSound()
+								== SoundEvents
+										.SILVERFISH_HURT
+						&& mite.deathSound()
+								== SoundEvents
+										.SILVERFISH_DEATH
+						&& mite.stepSound()
+								== SoundEvents
+										.SILVERFISH_STEP
+						&& mite.countGoalsNamed(
+								"FloatGoal") == 1
+						&& mite.goalPriority(
+								"FloatGoal") == 1
+						&& mite.countGoalsNamed(
+								"ClimbOnTopOfPowderSnowGoal")
+								== 1
+						&& mite.goalPriority(
+								"ClimbOnTopOfPowderSnowGoal")
+								== 1
+						&& mite.countGoalsNamed(
+								"SilverfishWakeUpFriendsGoal")
+								== 1
+						&& mite.goalPriority(
+								"SilverfishWakeUpFriendsGoal")
+								== 3
+						&& mite.countGoalsNamed(
+								"MeleeAttackGoal") == 1
+						&& mite.goalPriority(
+								"MeleeAttackGoal") == 4
+						&& mite.countGoalsNamed(
+								"SilverfishMergeWithStoneGoal")
+								== 1
+						&& mite.goalPriority(
+								"SilverfishMergeWithStoneGoal")
+								== 5
+						&& mite.targetGoalPriority(
+								"HurtByTargetGoal") == 1
+						&& mite.targetGoalPriority(
+								"NearestAttackableTargetGoal")
+								== 2,
+				"Crumb Mite lost exact Silverfish sounds or goal priorities");
+
+		BlockState biscuit =
+				CakeWorldBlocks.BISCUIT_STONE.get()
+						.defaultBlockState();
+		BlockState nest =
+				CakeWorldBlocks.CRUMB_MITE_NEST.get()
+						.defaultBlockState();
+		require(helper,
+				nest.getBlock() instanceof InfestedBlock
+						&& ((InfestedBlock)nest.getBlock())
+								.getHostBlock()
+								== CakeWorldBlocks
+										.BISCUIT_STONE.get()
+						&& InfestedBlock
+								.isCompatibleHostBlock(
+										biscuit)
+						&& InfestedBlock
+								.infestedStateByHost(
+										biscuit)
+								.is(CakeWorldBlocks
+										.CRUMB_MITE_NEST
+										.get())
+						&& ((InfestedBlock)nest.getBlock())
+								.hostStateByInfested(nest)
+								.is(CakeWorldBlocks
+										.BISCUIT_STONE
+										.get())
+						&& CakeWorldBlocks.CRUMB_MITE_NEST
+								.get().getLootTable()
+								.equals(new ResourceLocation(
+										CakeWorld.MODID,
+										"blocks/crumb_mite_nest")),
+				"Crumb-Mite Biscuit Stone lost its true InfestedBlock host or Silk-Touch loot route");
+		BlockPos center =
+				helper.absolutePos(new BlockPos(1, 1, 1));
+		helper.getLevel().setBlock(center.below(),
+				biscuit, 3);
+		require(helper,
+				close(mite.getWalkTargetValue(
+						center, helper.getLevel()),
+						10.0D),
+				"Crumb Mite no longer prefers its compatible edible host");
+		helper.getLevel().setBlock(center.below(),
+				Blocks.AIR.defaultBlockState(), 3);
+
+		for (Difficulty difficulty : List.of(
+				Difficulty.PEACEFUL,
+				Difficulty.EASY,
+				Difficulty.NORMAL,
+				Difficulty.HARD)) {
+			EntityMobGriefingEvent grief =
+					new EntityMobGriefingEvent(mite);
+			CrumbMiteGriefSafety.applyForDifficulty(
+					grief, difficulty);
+			require(helper,
+					grief.getResult()
+							== (difficulty
+									== Difficulty.HARD
+											? Event.Result
+													.DEFAULT
+											: Event.Result
+													.DENY),
+					difficulty
+							+ " Crumb Mite crossed the Hard-only nest-grief boundary");
+		}
+
+		Difficulty originalDifficulty =
+				helper.getLevel().getDifficulty();
+		boolean originalMobGriefing =
+				helper.getLevel().getGameRules()
+						.getBoolean(
+								GameRules
+										.RULE_MOBGRIEFING);
+		CrumbMite converted = null;
+		try {
+			helper.getLevel().getGameRules()
+					.getRule(GameRules.RULE_MOBGRIEFING)
+					.set(true,
+							helper.getLevel().getServer());
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.NORMAL, true);
+			Pig safeTarget =
+					EntityType.PIG.create(
+							helper.getLevel());
+			require(helper, safeTarget != null,
+					"Could not create safe Crumb Mite target");
+			safeTarget.setHealth(10.0F);
+			safeTarget.setSecondsOnFire(5);
+			safeTarget.fallDistance = 20.0F;
+			require(helper,
+					mite.doHurtTarget(safeTarget)
+							&& close(safeTarget
+									.getHealth(),
+									10.0D)
+							&& !safeTarget.isOnFire()
+							&& close(safeTarget
+									.fallDistance,
+									0.0D)
+							&& safeTarget.hasEffect(
+									MobEffects
+											.MOVEMENT_SLOWDOWN)
+							&& safeTarget.hasEffect(
+									MobEffects.GLOWING)
+							&& safeTarget.hasEffect(
+									MobEffects
+											.SLOW_FALLING)
+							&& safeTarget.hasEffect(
+									MobEffects
+											.FIRE_RESISTANCE)
+							&& safeTarget.hasEffect(
+									MobEffects
+											.DAMAGE_RESISTANCE),
+					"Normal Crumb Mite bite caused health damage or lacked complete rescue");
+
+			CrumbMiteProbe safeMerge =
+					new CrumbMiteProbe(
+							helper.getLevel());
+			safeMerge.moveTo(center.getX() + 0.5D,
+					center.getY(),
+					center.getZ() + 0.5D);
+			safeMerge.setNoGravity(true);
+			for (Direction direction :
+					Direction.values()) {
+				helper.getLevel().setBlock(
+						center.relative(direction),
+						biscuit, 3);
+			}
+			helper.getLevel().addFreshEntity(safeMerge);
+			safeMerge.seedRandom(0L);
+			safeMerge.startGoal(
+					"SilverfishMergeWithStoneGoal");
+			require(helper,
+					Direction.values().length
+									== Arrays.stream(
+											Direction
+													.values())
+											.filter(direction ->
+													!helper
+															.getLevel()
+															.getBlockState(
+																	center
+																			.relative(
+																					direction))
+															.is(CakeWorldBlocks
+																	.CRUMB_MITE_NEST
+																	.get()))
+											.count()
+							&& !safeMerge.isRemoved(),
+					"Normal Crumb Mite changed a possession into a nest");
+			safeMerge.discard();
+
+			for (Direction direction :
+					Direction.values()) {
+				helper.getLevel().setBlock(
+						center.relative(direction),
+						Blocks.AIR.defaultBlockState(),
+						3);
+			}
+			CrumbMiteProbe safeWake =
+					new CrumbMiteProbe(
+							helper.getLevel());
+			CrumbMiteProbe attacker =
+					new CrumbMiteProbe(
+							helper.getLevel());
+			safeWake.moveTo(center.getX() + 0.5D,
+					center.getY(),
+					center.getZ() + 0.5D);
+			safeWake.setNoGravity(true);
+			helper.getLevel().addFreshEntity(safeWake);
+			helper.getLevel().setBlock(center, nest, 3);
+			safeWake.hurt(
+					DamageSource.mobAttack(attacker),
+					1.0F);
+			safeWake.tickGoal(
+					"SilverfishWakeUpFriendsGoal", 25);
+			require(helper,
+					helper.getLevel()
+								.getBlockState(center)
+								.is(CakeWorldBlocks
+										.BISCUIT_STONE
+										.get())
+							&& helper.getLevel()
+									.getEntitiesOfClass(
+											Silverfish.class,
+											new AABB(center)
+													.inflate(
+															1.0D),
+											entity ->
+													entity
+															.getType()
+															== EntityType
+																	.SILVERFISH)
+									.isEmpty(),
+					"Normal hurt Crumb Mite woke a damaging friend instead of safely clearing the nest");
+			safeWake.discard();
+
+			helper.getLevel().setBlock(center,
+					Blocks.AIR.defaultBlockState(), 3);
+			for (Direction direction :
+					Direction.values()) {
+				helper.getLevel().setBlock(
+						center.relative(direction),
+						biscuit, 3);
+			}
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			CrumbMiteProbe hardMerge =
+					new CrumbMiteProbe(
+							helper.getLevel());
+			hardMerge.moveTo(center.getX() + 0.5D,
+					center.getY(),
+					center.getZ() + 0.5D);
+			hardMerge.setNoGravity(true);
+			helper.getLevel().addFreshEntity(hardMerge);
+			hardMerge.seedRandom(0L);
+			boolean merged = hardMerge.startGoal(
+					"SilverfishMergeWithStoneGoal");
+			long nestCount = Arrays.stream(
+					Direction.values())
+					.filter(direction -> helper
+							.getLevel()
+							.getBlockState(
+									center.relative(direction))
+							.is(CakeWorldBlocks
+									.CRUMB_MITE_NEST.get()))
+					.count();
+			require(helper,
+					merged && hardMerge.isRemoved()
+							&& nestCount == 1,
+					"Hard Crumb Mite did not use the inherited merge goal to create exactly one edible nest: "
+							+ nestCount);
+
+			for (Direction direction :
+					Direction.values()) {
+				helper.getLevel().setBlock(
+						center.relative(direction),
+						Blocks.AIR.defaultBlockState(),
+						3);
+			}
+			CrumbMiteProbe hardWake =
+					new CrumbMiteProbe(
+							helper.getLevel());
+			hardWake.moveTo(center.getX() + 0.5D,
+					center.getY(),
+					center.getZ() + 0.5D);
+			hardWake.setNoGravity(true);
+			helper.getLevel().addFreshEntity(hardWake);
+			helper.getLevel().setBlock(center, nest, 3);
+			hardWake.hurt(
+					DamageSource.mobAttack(attacker),
+					1.0F);
+			hardWake.tickGoal(
+					"SilverfishWakeUpFriendsGoal", 25);
+			Silverfish literal = helper.getLevel()
+					.getEntitiesOfClass(
+							Silverfish.class,
+							new AABB(center)
+									.inflate(1.0D),
+							entity -> entity.getType()
+									== EntityType.SILVERFISH)
+					.stream().findFirst().orElse(null);
+			require(helper,
+					helper.getLevel()
+								.getBlockState(center)
+								.isAir()
+							&& literal != null,
+					"Hard friend-wake did not break the edible nest and spawn its literal Stronghold role");
+			literal.setHealth(5.0F);
+			literal.setCustomName(
+					new TextComponent(
+							"Vault Crumb Mite"));
+			literal.setPersistenceRequired();
+			converted = CakeWorldSilverfishReplacement
+					.replaceIfInCakeWorldBiome(
+							helper.getLevel(),
+							literal);
+			require(helper,
+					converted != null
+							&& converted.getType()
+									== CakeWorldEntities
+											.CRUMB_MITE.get()
+							&& close(converted.getHealth(),
+									5.0D)
+							&& converted.hasCustomName()
+							&& "Vault Crumb Mite"
+									.equals(converted
+											.getCustomName()
+											.getString())
+							&& converted
+									.isPersistenceRequired()
+							&& literal.isRemoved(),
+					"Fresh infested-block/Stronghold conversion lost Crumb Mite type or state");
+
+			Pig hardTarget = EntityType.PIG.create(
+					helper.getLevel());
+			require(helper, hardTarget != null,
+					"Could not create Hard Crumb Mite target");
+			hardTarget.setHealth(10.0F);
+			hardTarget.invulnerableTime = 0;
+			require(helper,
+					mite.doHurtTarget(hardTarget)
+							&& close(hardTarget
+									.getHealth(),
+									9.0D),
+					"Hard Crumb Mite lost the exact one-point Silverfish bite");
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.PEACEFUL, true);
+			CrumbMiteProbe peaceful =
+					new CrumbMiteProbe(
+							helper.getLevel());
+			peaceful.moveTo(center.getX() + 0.5D,
+					center.getY(),
+					center.getZ() + 0.5D);
+			helper.getLevel().addFreshEntity(peaceful);
+			peaceful.checkDespawn();
+			require(helper,
+					peaceful.isRemoved()
+							&& peaceful
+									.despawnsInPeaceful(),
+					"Peaceful Crumb Mite lost vanilla Monster removal");
+		} finally {
+			if (converted != null) {
+				converted.discard();
+			}
+			for (int x = -1; x <= 1; x++) {
+				for (int y = -1; y <= 1; y++) {
+					for (int z = -1; z <= 1; z++) {
+						helper.getLevel().setBlock(
+								center.offset(x, y, z),
+								Blocks.AIR
+										.defaultBlockState(),
+								3);
+					}
+				}
+			}
+			helper.getLevel().getGameRules()
+					.getRule(GameRules.RULE_MOBGRIEFING)
+					.set(originalMobGriefing,
+							helper.getLevel()
+									.getServer());
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		Registry<Biome> biomes = helper.getLevel()
+				.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY);
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS.getId())) {
+			Biome biome = biomes.get(biomeId);
+			require(helper,
+					biome != null
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory
+													.MONSTER)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType
+															.SILVERFISH
+											|| spawn.type
+													== CakeWorldEntities
+															.CRUMB_MITE
+															.get()),
+					"Structure-only Silverfish/Crumb Mite leaked into open-biome spawning in "
+							+ biomeId);
+		}
+		TagKey<EntityType<?>> powderWalkers =
+				TagKey.create(
+						Registry.ENTITY_TYPE_REGISTRY,
+						new ResourceLocation(
+								"minecraft",
+								"powder_snow_walkable_mobs"));
+		require(helper,
+				SpawnPlacements.getPlacementType(
+								CakeWorldEntities
+										.CRUMB_MITE.get())
+								== SpawnPlacements.Type
+										.ON_GROUND
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+												.CRUMB_MITE
+												.get())
+								== Heightmap.Types
+										.MOTION_BLOCKING_NO_LEAVES
+						&& CakeWorldEntities.CRUMB_MITE
+								.get().is(powderWalkers)
+						&& CakeWorldItems
+								.CRUMB_MITE_SPAWN_EGG
+								.isPresent()
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+												.CRUMB_MITE
+												.get())
+								== SoundEvents
+										.PARROT_IMITATE_SILVERFISH
+						&& mite.getLootTable().equals(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/crumb_mite")),
+				"Crumb Mite lost placement, powder walking, egg, mimic or empty loot");
+
+		ServerPlayer advancementPlayer = new ServerPlayer(
+				helper.getLevel().getServer(),
+				helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2049"),
+						"CakeWorldCrumbMiteRoleTest"));
+		VanillaRoleAdvancements.onDeath(
+				new LivingDeathEvent(mite,
+						DamageSource.playerAttack(
+								advancementPlayer)));
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:adventure/kill_all_mobs",
+				"minecraft:silverfish");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 200)
 	public static void fudgeFolkKeepPiglinSocietyBarterAndSafePeril(
 			GameTestHelper helper) {
 		FudgeFolkProbe folk =
@@ -16040,6 +16553,122 @@ public final class FirstBiteGameTests {
 		protected boolean teleportSomewhere() {
 			setPos(getX() + 3.0D, getY(), getZ());
 			return true;
+		}
+	}
+
+	private static final class CrumbMiteProbe
+			extends CrumbMite {
+		private net.minecraft.sounds.SoundEvent lastSound;
+
+		private CrumbMiteProbe(Level level) {
+			super(CakeWorldEntities.CRUMB_MITE.get(),
+					level);
+		}
+
+		private int getExperienceValue() {
+			return getExperienceReward(null);
+		}
+
+		private float standingEyeHeight() {
+			return getStandingEyeHeight(Pose.STANDING,
+					getDimensions(Pose.STANDING));
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				ambientSound() {
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent hurtSound() {
+			return getHurtSound(DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent deathSound() {
+			return getDeathSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent stepSound() {
+			lastSound = null;
+			playStepSound(BlockPos.ZERO,
+					CakeWorldBlocks.BISCUIT_STONE.get()
+							.defaultBlockState());
+			return lastSound;
+		}
+
+		private int countGoalsNamed(String name) {
+			return (int)goalSelector
+					.getAvailableGoals().stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
+		}
+
+		private int goalPriority(String name) {
+			return goalSelector.getAvailableGoals()
+					.stream()
+					.filter(wrapped -> name.equals(
+							wrapped.getGoal()
+									.getClass()
+									.getSimpleName()))
+					.mapToInt(WrappedGoal::getPriority)
+					.findFirst().orElse(-1);
+		}
+
+		private int targetGoalPriority(String name) {
+			return targetSelector.getAvailableGoals()
+					.stream()
+					.filter(wrapped -> name.equals(
+							wrapped.getGoal()
+									.getClass()
+									.getSimpleName()))
+					.mapToInt(WrappedGoal::getPriority)
+					.findFirst().orElse(-1);
+		}
+
+		private void seedRandom(long seed) {
+			random.setSeed(seed);
+		}
+
+		private boolean startGoal(String name) {
+			for (WrappedGoal wrapped :
+					goalSelector.getAvailableGoals()) {
+				if (name.equals(wrapped.getGoal()
+						.getClass().getSimpleName())) {
+					if (!wrapped.getGoal().canUse()) {
+						return false;
+					}
+					wrapped.getGoal().start();
+					return true;
+				}
+			}
+			return false;
+		}
+
+		private void tickGoal(String name, int times) {
+			for (WrappedGoal wrapped :
+					goalSelector.getAvailableGoals()) {
+				if (name.equals(wrapped.getGoal()
+						.getClass().getSimpleName())) {
+					for (int tick = 0;
+							tick < times; tick++) {
+						wrapped.getGoal().tick();
+					}
+					return;
+				}
+			}
+		}
+
+		private boolean despawnsInPeaceful() {
+			return shouldDespawnInPeaceful();
+		}
+
+		@Override
+		public void playSound(
+				net.minecraft.sounds.SoundEvent sound,
+				float volume, float pitch) {
+			lastSound = sound;
 		}
 	}
 

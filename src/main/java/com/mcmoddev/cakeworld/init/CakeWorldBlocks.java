@@ -25,6 +25,7 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.GlassBlock;
+import net.minecraft.world.level.block.InfestedBlock;
 import net.minecraft.world.level.block.OreBlock;
 import net.minecraft.world.level.block.RedStoneOreBlock;
 import net.minecraft.world.level.block.RotatedPillarBlock;
@@ -56,6 +57,13 @@ public final class CakeWorldBlocks {
 	public static final RegistryObject<Block> BISCUIT_STONE = block("biscuit_stone",
 			BlockBehaviour.Properties.of(Material.STONE).requiresCorrectToolForDrops()
 					.strength(1.5F, 6.0F).sound(SoundType.STONE));
+	public static final RegistryObject<Block> CRUMB_MITE_NEST =
+			block("crumb_mite_nest",
+					() -> new InfestedBlock(
+							BISCUIT_STONE.get(),
+							BlockBehaviour.Properties
+									.of(Material.CLAY)
+									.sound(SoundType.STONE)));
 	public static final RegistryObject<Block> BISCUIT_SAND = block("biscuit_sand",
 			BlockBehaviour.Properties.of(Material.SAND).strength(0.5F).sound(SoundType.SAND));
 	public static final RegistryObject<Block> BISCUIT_CRUMBS = block("biscuit_crumbs",
