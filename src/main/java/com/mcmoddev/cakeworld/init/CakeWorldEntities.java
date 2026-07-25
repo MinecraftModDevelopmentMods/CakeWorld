@@ -21,6 +21,7 @@ import com.mcmoddev.cakeworld.entity.FudgeBrute;
 import com.mcmoddev.cakeworld.entity.FudgeFolk;
 import com.mcmoddev.cakeworld.entity.FizzballFish;
 import com.mcmoddev.cakeworld.entity.FrostedArcher;
+import com.mcmoddev.cakeworld.entity.FudgeSkater;
 import com.mcmoddev.cakeworld.entity.GingerbreadPony;
 import com.mcmoddev.cakeworld.entity.GingerbreadStomper;
 import com.mcmoddev.cakeworld.entity.GrandGumballGuardian;
@@ -115,6 +116,7 @@ import net.minecraft.world.entity.monster.Shulker;
 import net.minecraft.world.entity.monster.Silverfish;
 import net.minecraft.world.entity.monster.Skeleton;
 import net.minecraft.world.entity.monster.Spider;
+import net.minecraft.world.entity.monster.Strider;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.monster.hoglin.Hoglin;
 import net.minecraft.world.entity.monster.piglin.Piglin;
@@ -391,6 +393,14 @@ public final class CakeWorldEntities {
 									Blocks.POWDER_SNOW)
 							.sized(0.6F, 1.99F)
 							.clientTrackingRange(8));
+	public static final RegistryObject<EntityType<FudgeSkater>>
+			FUDGE_SKATER = entity("fudge_skater",
+					EntityType.Builder.of(
+							FudgeSkater::new,
+							MobCategory.CREATURE)
+							.fireImmune()
+							.sized(0.9F, 1.7F)
+							.clientTrackingRange(10));
 	public static final RegistryObject<
 			EntityType<BrittleBiscuitSteed>>
 			BRITTLE_BISCUIT_STEED =
@@ -599,6 +609,8 @@ public final class CakeWorldEntities {
 				Skeleton.createAttributes().build());
 		event.put(FROSTED_ARCHER.get(),
 				Skeleton.createAttributes().build());
+		event.put(FUDGE_SKATER.get(),
+				Strider.createAttributes().build());
 		event.put(BRITTLE_BISCUIT_STEED.get(),
 				SkeletonHorse.createAttributes().build());
 		event.put(JELLY_BLOB.get(),
@@ -780,6 +792,12 @@ public final class CakeWorldEntities {
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					FrostedArcher
 							::checkFrostedArcherSpawnRules);
+			SpawnPlacements.register(
+					FUDGE_SKATER.get(),
+					SpawnPlacements.Type.IN_LAVA,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					FudgeSkater
+							::checkFudgeSkaterSpawnRules);
 			SpawnPlacements.register(
 					BRITTLE_BISCUIT_STEED.get(),
 					SpawnPlacements.Type.ON_GROUND,

@@ -69,6 +69,7 @@ import com.mcmoddev.cakeworld.entity.FudgeFolk;
 import com.mcmoddev.cakeworld.entity.FizzballFish;
 import com.mcmoddev.cakeworld.entity.FizzballFishDamageSafety;
 import com.mcmoddev.cakeworld.entity.FrostedArcher;
+import com.mcmoddev.cakeworld.entity.FudgeSkater;
 import com.mcmoddev.cakeworld.entity.GingerbreadPony;
 import com.mcmoddev.cakeworld.entity.GingerbreadStomper;
 import com.mcmoddev.cakeworld.entity.GingerbreadStomperDamageSafety;
@@ -125,6 +126,8 @@ import com.mcmoddev.cakeworld.world.CakeWorldSnowGolemReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldSpiderReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldSquidReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldStrayReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldStriderReplacement;
+import com.mcmoddev.cakeworld.world.FudgeSkaterRideCompatibility;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
@@ -246,6 +249,7 @@ import net.minecraft.world.entity.monster.Skeleton;
 import net.minecraft.world.entity.monster.Slime;
 import net.minecraft.world.entity.monster.Spider;
 import net.minecraft.world.entity.monster.Stray;
+import net.minecraft.world.entity.monster.Strider;
 import net.minecraft.world.entity.monster.Vex;
 import net.minecraft.world.entity.monster.ZombifiedPiglin;
 import net.minecraft.world.entity.monster.Zoglin;
@@ -16436,6 +16440,529 @@ public final class FirstBiteGameTests {
 	}
 
 	@GameTest(template = EMPTY, timeoutTicks = 300)
+	public static void fudgeSkatersKeepCompleteStriderRidingAndHotFudgeTraversal(
+			GameTestHelper helper) {
+		FudgeSkaterProbe skater =
+				new FudgeSkaterProbe(helper.getLevel());
+		skater.seedRandom(1978L);
+		int experience = skater.getExperienceValue();
+		require(helper,
+				skater instanceof Strider
+						&& skater instanceof Animal
+						&& skater.getType()
+								== CakeWorldEntities
+										.FUDGE_SKATER.get()
+						&& skater.getType().getCategory()
+								== MobCategory.CREATURE
+						&& skater.getType()
+								.fireImmune()
+						&& !skater.isOnFire()
+						&& skater.isSensitiveToWater()
+						&& skater.blocksBuilding()
+						&& close(skater.getMaxHealth(),
+								20.0D)
+						&& close(skater.getAttributeValue(
+								Attributes.MOVEMENT_SPEED),
+								0.175D)
+						&& close(skater.getAttributeValue(
+								Attributes.FOLLOW_RANGE),
+								16.0D)
+						&& skater.getAttribute(
+								Attributes.ATTACK_DAMAGE)
+								== null
+						&& close(skater.getDimensions(
+								Pose.STANDING).width,
+								0.9D)
+						&& close(skater.getDimensions(
+								Pose.STANDING).height,
+								1.7D)
+						&& skater.getType()
+								.clientTrackingRange() == 10
+						&& experience >= 1
+						&& experience <= 3
+						&& close(skater.getPathfindingMalus(
+								net.minecraft.world.level
+										.pathfinder
+										.BlockPathTypes.WATER),
+								-1.0D)
+						&& close(skater.getPathfindingMalus(
+								net.minecraft.world.level
+										.pathfinder
+										.BlockPathTypes.LAVA),
+								0.0D),
+				"Fudge Skater lost the genuine passive fire-immune Strider body, attributes, tracking or path roles");
+		require(helper,
+				skater.goalPriority("PanicGoal") == 1
+						&& skater.goalPriority(
+								"BreedGoal") == 2
+						&& skater.goalPriority(
+								"TemptGoal") == 3
+						&& skater.goalPriority(
+								"FudgeSkaterGoToHotFluidGoal")
+								== 4
+						&& skater.countGoalsNamed(
+								"StriderGoToLavaGoal")
+								== 0
+						&& skater.goalPriority(
+								"FollowParentGoal") == 5
+						&& skater.goalPriority(
+								"RandomStrollGoal") == 7
+						&& skater.countGoalsNamed(
+								"LookAtPlayerGoal") == 2
+						&& skater.goalPriority(
+								"RandomLookAroundGoal")
+								== 8
+						&& skater.targetGoalCount() == 0
+						&& skater.ambientSound()
+								== SoundEvents
+										.STRIDER_AMBIENT
+						&& skater.hurtSound()
+								== SoundEvents
+										.STRIDER_HURT
+						&& skater.deathSound()
+								== SoundEvents
+										.STRIDER_DEATH,
+				"Fudge Skater lost exact Strider goals, passive targeting or sounds");
+
+		BlockPos hotPos = helper.absolutePos(
+				new BlockPos(1, 2, 1));
+		BlockPos coldPos = hotPos.offset(4, 3, 0);
+		helper.getLevel().setBlock(hotPos,
+				CakeWorldFluids.HOT_FUDGE_BLOCK.get()
+						.defaultBlockState(), 3);
+		helper.getLevel().setBlock(hotPos.above(),
+				Blocks.AIR.defaultBlockState(), 3);
+		helper.getLevel().setBlock(coldPos.below(),
+				CakeWorldBlocks.BISCUIT_STONE.get()
+						.defaultBlockState(), 3);
+		helper.getLevel().setBlock(coldPos,
+				Blocks.AIR.defaultBlockState(), 3);
+		require(helper,
+				helper.getLevel().getFluidState(hotPos)
+								.is(FluidTags.LAVA)
+						&& helper.getLevel()
+								.getBlockState(hotPos)
+								.is(BlockTags
+										.STRIDER_WARM_BLOCKS)
+						&& skater.canStandOnFluid(
+								helper.getLevel()
+										.getFluidState(
+												hotPos))
+						&& close(skater
+								.getWalkTargetValue(
+										hotPos,
+										helper.getLevel()),
+								10.0D)
+						&& skater.getNavigation()
+								.isStableDestination(
+										hotPos)
+						&& skater.hotFluidGoalAccepts(
+								helper.getLevel(),
+								hotPos)
+						&& FudgeSkater
+								.checkFudgeSkaterSpawnRules(
+										CakeWorldEntities
+												.FUDGE_SKATER
+												.get(),
+										helper.getLevel(),
+										MobSpawnType.NATURAL,
+										hotPos,
+										new Random(1978L)),
+				"Hot Fudge did not participate in every Strider lava movement, seek, stable-destination, warmth or spawn seam");
+
+		skater.moveTo(hotPos.getX() + 0.5D,
+				hotPos.getY() + 0.1D,
+				hotPos.getZ() + 0.5D);
+		helper.getLevel().addFreshEntity(skater);
+		skater.tick();
+		require(helper,
+				!skater.isSuffocating()
+						&& skater.isInLava()
+						&& close(skater.getMoveSpeed(),
+								0.175D)
+						&& close(skater
+								.getSteeringSpeed(),
+								0.09625D)
+						&& skater.stepSound()
+								== SoundEvents
+										.STRIDER_STEP_LAVA,
+				"Fudge Skater did not become warm, float-state aware or use exact warm speeds and lava steps in Hot Fudge");
+		FudgeSkaterProbe coldSkater =
+				new FudgeSkaterProbe(helper.getLevel());
+		coldSkater.moveTo(coldPos.getX() + 0.5D,
+				coldPos.getY(),
+				coldPos.getZ() + 0.5D);
+		helper.getLevel().addFreshEntity(coldSkater);
+		coldSkater.tick();
+		require(helper,
+				coldSkater.isSuffocating()
+						&& !coldSkater.isInLava()
+						&& close(coldSkater.getMoveSpeed(),
+								0.1155D)
+						&& close(coldSkater
+								.getSteeringSpeed(),
+								0.04025D)
+						&& coldSkater.stepSound()
+								== SoundEvents.STRIDER_STEP,
+				"Fudge Skater lost exact cold-state speed, steering or dry step cue: suffocating="
+						+ coldSkater.isSuffocating()
+						+ ", in_lava="
+						+ coldSkater.isInLava()
+						+ ", move="
+						+ coldSkater.getMoveSpeed()
+						+ ", steering="
+						+ coldSkater.getSteeringSpeed()
+						+ ", step="
+						+ coldSkater.stepSound());
+
+		FudgeSkater child = skater.getBreedOffspring(
+				helper.getLevel(), skater);
+		require(helper,
+				child != null
+						&& child.getType()
+								== CakeWorldEntities
+										.FUDGE_SKATER.get()
+						&& skater.isFood(new ItemStack(
+								Items.WARPED_FUNGUS))
+						&& !skater.isFood(new ItemStack(
+								Items.WARPED_FUNGUS_ON_A_STICK)),
+				"Fudge Skater lost same-family offspring or exact Warped Fungus food role");
+
+		skater.setAge(0);
+		skater.equipSaddle(SoundSource.NEUTRAL);
+		require(helper,
+				skater.isSaddled()
+						&& skater.isSaddleable(),
+				"Fudge Skater lost adult saddle state");
+		CompoundTag saddleState =
+				skater.saveWithoutId(new CompoundTag());
+		FudgeSkater saddleReload =
+				CakeWorldEntities.FUDGE_SKATER
+						.get().create(helper.getLevel());
+		require(helper, saddleReload != null,
+				"Could not create Fudge Skater saddle reload fixture");
+		saddleReload.load(saddleState);
+		require(helper, saddleReload.isSaddled(),
+				"Fudge Skater lost exact Saddle NBT");
+
+		ServerPlayer rider = new ServerPlayer(
+				helper.getLevel().getServer(),
+				helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2057"),
+						"CakeWorldFudgeSkaterRoleTest"));
+		rider.connection =
+				new ServerGamePacketListenerImpl(
+						helper.getLevel().getServer(),
+						new Connection(
+								PacketFlow.CLIENTBOUND),
+						rider);
+		rider.setItemInHand(
+				InteractionHand.MAIN_HAND,
+				new ItemStack(
+						Items.WARPED_FUNGUS_ON_A_STICK));
+		require(helper,
+				rider.startRiding(skater, true)
+						&& skater
+								.getControllingPassenger()
+								== rider
+						&& skater.canBeControlledByRider(),
+				"Fudge Skater lost vanilla rider or Warped-Fungus-on-a-Stick directional control");
+		PlayerInteractEvent.RightClickItem boostEvent =
+				new PlayerInteractEvent.RightClickItem(
+						rider,
+						InteractionHand.MAIN_HAND);
+		FudgeSkaterRideCompatibility
+				.onRightClickItem(boostEvent);
+		require(helper,
+				boostEvent.isCanceled()
+						&& boostEvent
+								.getCancellationResult()
+								== InteractionResult.SUCCESS
+						&& rider.getMainHandItem()
+								.getDamageValue() == 1
+						&& !skater.boost(),
+				"Fudge Skater did not bridge vanilla's literal-Strider boost gate or exact durability cost");
+		requireCriterion(helper, rider,
+				"minecraft:nether/ride_strider",
+				"used_warped_fungus_on_a_stick");
+
+		skater.moveTo(hotPos.getX() + 0.5D,
+				hotPos.getY() + 0.1D,
+				hotPos.getZ() + 0.5D);
+		skater.tick();
+		rider.setPos(skater.getX(),
+				skater.getY(), skater.getZ());
+		FudgeSkaterRideCompatibility
+				.trackHotFluidRide(rider);
+		rider.setPos(skater.getX() + 50.0D,
+				skater.getY(), skater.getZ());
+		FudgeSkaterRideCompatibility
+				.trackHotFluidRide(rider);
+		requireCriterion(helper, rider,
+				"minecraft:nether/ride_strider_in_overworld_lava",
+				"ride_entity_distance");
+		VanillaRoleAdvancements.creditBredRole(
+				rider, child.getType());
+		requireCriterion(helper, rider,
+				"minecraft:husbandry/bred_all_animals",
+				"minecraft:strider");
+		rider.stopRiding();
+
+		BlockPos cakeWorldPos =
+				findCakeWorldBiomePosition(
+						helper, hotPos, 256);
+		require(helper, cakeWorldPos != null,
+				"Could not locate CakeWorld terrain for literal Strider conversion");
+		Strider literal =
+				EntityType.STRIDER.create(
+						helper.getLevel());
+		Boat vehicle =
+				EntityType.BOAT.create(
+						helper.getLevel());
+		Pig passenger =
+				EntityType.PIG.create(
+						helper.getLevel());
+		require(helper,
+				literal != null
+						&& vehicle != null
+						&& passenger != null,
+				"Could not create literal Strider relationship fixtures");
+		literal.moveTo(
+				cakeWorldPos.getX() + 0.5D,
+				cakeWorldPos.getY() + 2.0D,
+				cakeWorldPos.getZ() + 0.5D);
+		vehicle.moveTo(literal.getX(),
+				literal.getY(), literal.getZ());
+		passenger.moveTo(literal.getX(),
+				literal.getY(), literal.getZ());
+		literal.setHealth(13.0F);
+		literal.setCustomName(
+				new TextComponent("Fudge Ferryman"));
+		literal.setPersistenceRequired();
+		literal.setNoAi(true);
+		literal.equipSaddle(null);
+		helper.getLevel().addFreshEntity(vehicle);
+		helper.getLevel().addFreshEntity(literal);
+		helper.getLevel().addFreshEntity(passenger);
+		literal.startRiding(vehicle, true);
+		passenger.startRiding(literal, true);
+		FudgeSkater converted =
+				CakeWorldStriderReplacement
+						.replaceIfInCakeWorldBiome(
+								helper.getLevel(),
+								literal);
+		require(helper,
+				converted != null
+						&& converted.getType()
+								== CakeWorldEntities
+										.FUDGE_SKATER.get()
+						&& close(converted.getHealth(),
+								13.0D)
+						&& converted.hasCustomName()
+						&& "Fudge Ferryman".equals(
+								converted
+										.getCustomName()
+										.getString())
+						&& converted
+								.isPersistenceRequired()
+						&& converted.isNoAi()
+						&& converted.isSaddled()
+						&& converted.getVehicle()
+								== vehicle
+						&& converted.getPassengers()
+								.contains(passenger)
+						&& passenger.getVehicle()
+								== converted
+						&& literal.isRemoved(),
+				"Fresh literal Strider conversion lost Fudge Skater state, saddle, vehicle or passenger");
+
+		FudgeSkaterProbe piglinJockey =
+				new FudgeSkaterProbe(helper.getLevel());
+		piglinJockey.moveTo(
+				cakeWorldPos.getX() + 4.5D,
+				cakeWorldPos.getY() + 2.0D,
+				cakeWorldPos.getZ() + 0.5D);
+		piglinJockey.seedRandom(0L);
+		piglinJockey.finalizeSpawn(
+				helper.getLevel(),
+				helper.getLevel().getCurrentDifficultyAt(
+						piglinJockey.blockPosition()),
+				MobSpawnType.NATURAL, null, null);
+		require(helper,
+				piglinJockey.isSaddled()
+						&& piglinJockey
+								.getFirstPassenger()
+								instanceof ZombifiedPiglin
+						&& ((ZombifiedPiglin)piglinJockey
+								.getFirstPassenger())
+								.getMainHandItem()
+								.is(Items
+										.WARPED_FUNGUS_ON_A_STICK),
+				"Fudge Skater lost exact seeded one-in-thirty Zombified-Piglin jockey, saddle or control item");
+
+		FudgeSkaterProbe babyJockey =
+				new FudgeSkaterProbe(helper.getLevel());
+		babyJockey.moveTo(
+				cakeWorldPos.getX() + 8.5D,
+				cakeWorldPos.getY() + 2.0D,
+				cakeWorldPos.getZ() + 0.5D);
+		babyJockey.seedRandom(3L);
+		babyJockey.finalizeSpawn(
+				helper.getLevel(),
+				helper.getLevel().getCurrentDifficultyAt(
+						babyJockey.blockPosition()),
+				MobSpawnType.NATURAL, null, null);
+		require(helper,
+				babyJockey.getFirstPassenger()
+								instanceof Strider
+						&& babyJockey
+								.getFirstPassenger()
+								.getType()
+								== EntityType.STRIDER
+						&& ((Strider)babyJockey
+								.getFirstPassenger())
+								.isBaby(),
+				"Fudge Skater lost exact seeded subsequent one-in-ten baby-Strider jockey branch");
+		Strider literalBaby =
+				(Strider)babyJockey
+						.getFirstPassenger();
+		FudgeSkater convertedBaby =
+				CakeWorldStriderReplacement
+						.replaceIfInCakeWorldBiome(
+								helper.getLevel(),
+								literalBaby);
+		require(helper,
+				convertedBaby != null
+						&& convertedBaby.isBaby()
+						&& convertedBaby.getVehicle()
+								== babyJockey
+						&& babyJockey
+								.getPassengers()
+								.contains(
+										convertedBaby),
+				"Inherited baby-Strider jockey did not hand off to a baby Fudge Skater");
+
+		Registry<Biome> biomes = helper.getLevel()
+				.registryAccess()
+				.registryOrThrow(
+						Registry.BIOME_REGISTRY);
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS.getId())) {
+			Biome biome = biomes.get(biomeId);
+			require(helper, biome != null,
+					"Missing CakeWorld biome "
+							+ biomeId);
+			List<MobSpawnSettings.SpawnerData>
+					skaterSpawns = biome
+							.getMobSettings()
+							.getMobs(
+									MobCategory.CREATURE)
+							.unwrap().stream()
+							.filter(spawn ->
+									spawn.type
+											== CakeWorldEntities
+													.FUDGE_SKATER
+													.get())
+							.toList();
+			require(helper,
+					biome.getMobSettings()
+							.getMobs(
+									MobCategory.CREATURE)
+							.unwrap().stream()
+							.noneMatch(spawn ->
+									spawn.type
+											== EntityType.STRIDER),
+					"Literal Strider leaked into CakeWorld spawning in "
+							+ biomeId);
+			if (biomeId.equals(
+					CakeWorldBiomes.FUDGE_WASTES
+							.getId())) {
+				require(helper,
+						skaterSpawns.size() == 1
+								&& skaterSpawns
+										.get(0).getWeight()
+										.asInt() == 60
+								&& skaterSpawns
+										.get(0).minCount
+										== 1
+								&& skaterSpawns
+										.get(0).maxCount
+										== 2,
+						"Fudge Wastes lost exact inherited 60/1-2 Strider ecology: "
+								+ skaterSpawns);
+			} else {
+				require(helper,
+						skaterSpawns.isEmpty(),
+						"Fudge Skater ecology was invented outside Fudge Wastes in "
+								+ biomeId);
+			}
+		}
+
+		require(helper,
+				SpawnPlacements.getPlacementType(
+								CakeWorldEntities
+										.FUDGE_SKATER
+										.get())
+								== SpawnPlacements.Type
+										.IN_LAVA
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+												.FUDGE_SKATER
+												.get())
+								== Heightmap.Types
+										.MOTION_BLOCKING_NO_LEAVES
+						&& CakeWorldItems
+								.FUDGE_SKATER_SPAWN_EGG
+								.isPresent()
+						&& skater.getLootTableId()
+								.equals(
+										new ResourceLocation(
+												CakeWorld.MODID,
+												"entities/fudge_skater"))
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+												.FUDGE_SKATER
+												.get())
+								== null,
+				"Fudge Skater lost exact placement, egg, String-loot route or deliberate no-mimic role");
+
+		if (child != null) {
+			child.discard();
+		}
+		if (!skater.isRemoved()) {
+			skater.discard();
+		}
+		if (!coldSkater.isRemoved()) {
+			coldSkater.discard();
+		}
+		saddleReload.discard();
+		if (!converted.isRemoved()) {
+			converted.discard();
+		}
+		if (!vehicle.isRemoved()) {
+			vehicle.discard();
+		}
+		if (!passenger.isRemoved()) {
+			passenger.discard();
+		}
+		piglinJockey.discard();
+		babyJockey.discard();
+		if (convertedBaby != null
+				&& !convertedBaby.isRemoved()) {
+			convertedBaby.discard();
+		}
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 300)
 	public static void brittleBiscuitSteedsKeepTheCompleteSkeletonTrap(
 			GameTestHelper helper) {
 		BrittleBiscuitSteedProbe steed =
@@ -20794,6 +21321,123 @@ public final class FirstBiteGameTests {
 		@Override
 		protected boolean isSunBurnTick() {
 			return forceSunBurn || super.isSunBurnTick();
+		}
+
+		@Override
+		public void playSound(
+				net.minecraft.sounds.SoundEvent sound,
+				float volume, float pitch) {
+			lastSound = sound;
+		}
+	}
+
+	private static final class FudgeSkaterProbe
+			extends FudgeSkater {
+		private net.minecraft.sounds.SoundEvent lastSound;
+
+		private FudgeSkaterProbe(Level level) {
+			super(CakeWorldEntities.FUDGE_SKATER.get(),
+					level);
+		}
+
+		private void seedRandom(long seed) {
+			random.setSeed(seed);
+		}
+
+		private int getExperienceValue() {
+			return getExperienceReward(null);
+		}
+
+		private boolean blocksBuilding() {
+			return blocksBuilding;
+		}
+
+		private int goalPriority(String name) {
+			return goalSelector.getAvailableGoals()
+					.stream()
+					.filter(wrapped -> name.equals(
+							wrapped.getGoal()
+									.getClass()
+									.getSimpleName()))
+					.mapToInt(WrappedGoal::getPriority)
+					.findFirst().orElse(-1);
+		}
+
+		private int countGoalsNamed(String name) {
+			return (int)goalSelector
+					.getAvailableGoals().stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
+		}
+
+		private int targetGoalCount() {
+			return targetSelector
+					.getAvailableGoals().size();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				ambientSound() {
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent hurtSound() {
+			return getHurtSound(DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent deathSound() {
+			return getDeathSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent stepSound() {
+			lastSound = null;
+			playStepSound(blockPosition(),
+					getBlockStateOn());
+			return lastSound;
+		}
+
+		private net.minecraft.sounds.SoundEvent lastSound() {
+			return lastSound;
+		}
+
+		private ResourceLocation getLootTableId() {
+			return getLootTable();
+		}
+
+		private boolean hotFluidGoalAccepts(
+				net.minecraft.world.level.LevelReader level,
+				BlockPos pos) {
+			for (WrappedGoal wrapped :
+					goalSelector.getAvailableGoals()) {
+				if ("FudgeSkaterGoToHotFluidGoal"
+						.equals(wrapped.getGoal()
+								.getClass()
+								.getSimpleName())) {
+					try {
+						java.lang.reflect.Method method =
+								wrapped.getGoal()
+										.getClass()
+										.getDeclaredMethod(
+												"isValidTarget",
+												net.minecraft.world.level
+														.LevelReader
+														.class,
+												BlockPos.class);
+						method.setAccessible(true);
+						return (boolean)method.invoke(
+								wrapped.getGoal(),
+								level, pos);
+					} catch (ReflectiveOperationException
+							exception) {
+						throw new IllegalStateException(
+								"Could not inspect Fudge Skater hot-fluid goal",
+								exception);
+					}
+				}
+			}
+			return false;
 		}
 
 		@Override

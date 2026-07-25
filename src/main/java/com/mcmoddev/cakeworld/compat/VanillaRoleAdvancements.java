@@ -45,6 +45,12 @@ public final class VanillaRoleAdvancements {
 	private static final ResourceLocation TACTICAL_FISHING =
 			new ResourceLocation("minecraft",
 					"husbandry/tactical_fishing");
+	private static final ResourceLocation RIDE_STRIDER =
+			new ResourceLocation("minecraft",
+					"nether/ride_strider");
+	private static final ResourceLocation RIDE_STRIDER_OVERWORLD =
+			new ResourceLocation("minecraft",
+					"nether/ride_strider_in_overworld_lava");
 	private VanillaRoleAdvancements() {
 	}
 
@@ -150,6 +156,9 @@ public final class VanillaRoleAdvancements {
 		} else if (childType
 				== CakeWorldEntities.GUMMY_BUNNY.get()) {
 			criterion = "minecraft:rabbit";
+		} else if (childType
+				== CakeWorldEntities.FUDGE_SKATER.get()) {
+			criterion = "minecraft:strider";
 		}
 		if (criterion != null) {
 			award(player, BRED_ALL, criterion);
@@ -158,6 +167,18 @@ public final class VanillaRoleAdvancements {
 
 	public static void creditKilledZombieRole(ServerPlayer player) {
 		award(player, KILL_ALL, "minecraft:zombie");
+	}
+
+	public static void creditRodeStriderRole(
+			ServerPlayer player) {
+		award(player, RIDE_STRIDER,
+				"used_warped_fungus_on_a_stick");
+	}
+
+	public static void creditRodeStriderDistanceRole(
+			ServerPlayer player) {
+		award(player, RIDE_STRIDER_OVERWORLD,
+				"ride_entity_distance");
 	}
 
 	public static void creditKilledBlazeRole(ServerPlayer player) {

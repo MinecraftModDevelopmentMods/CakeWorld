@@ -52,6 +52,7 @@ import net.minecraft.client.renderer.entity.SkeletonRenderer;
 import net.minecraft.client.renderer.entity.SlimeRenderer;
 import net.minecraft.client.renderer.entity.SnowGolemRenderer;
 import net.minecraft.client.renderer.entity.StrayRenderer;
+import net.minecraft.client.renderer.entity.StriderRenderer;
 import net.minecraft.client.renderer.entity.SpiderRenderer;
 import net.minecraft.client.renderer.entity.SquidRenderer;
 import net.minecraft.client.renderer.entity.ZombieRenderer;
@@ -174,6 +175,9 @@ public final class CakeWorldClientEvents {
 		event.registerEntityRenderer(
 				CakeWorldEntities.FROSTED_ARCHER.get(),
 				StrayRenderer::new);
+		event.registerEntityRenderer(
+				CakeWorldEntities.FUDGE_SKATER.get(),
+				StriderRenderer::new);
 		event.registerEntityRenderer(
 				CakeWorldEntities.BRITTLE_BISCUIT_STEED
 						.get(),
