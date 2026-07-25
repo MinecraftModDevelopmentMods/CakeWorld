@@ -43,6 +43,7 @@ import com.mcmoddev.cakeworld.entity.SugarBee;
 import com.mcmoddev.cakeworld.entity.SugarMite;
 import com.mcmoddev.cakeworld.entity.TaffyTallwalker;
 import com.mcmoddev.cakeworld.entity.TrufflePig;
+import com.mcmoddev.cakeworld.entity.WaferWraith;
 
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.GlowSquid;
@@ -147,6 +148,12 @@ public final class CakeWorldEntities {
 					EntityType.Builder.of(LollipopLorikeet::new,
 							MobCategory.CREATURE)
 							.sized(0.5F, 0.9F)
+							.clientTrackingRange(8));
+	public static final RegistryObject<EntityType<WaferWraith>>
+			WAFER_WRAITH = entity("wafer_wraith",
+					EntityType.Builder.of(WaferWraith::new,
+							MobCategory.MONSTER)
+							.sized(0.9F, 0.5F)
 							.clientTrackingRange(8));
 	public static final RegistryObject<EntityType<DeepLiquoriceWeaver>>
 			DEEP_LIQUORICE_WEAVER = entity("deep_liquorice_weaver",
@@ -377,6 +384,8 @@ public final class CakeWorldEntities {
 				Panda.createAttributes().build());
 		event.put(LOLLIPOP_LORIKEET.get(),
 				Parrot.createAttributes().build());
+		event.put(WAFER_WRAITH.get(),
+				Monster.createMonsterAttributes().build());
 		event.put(DEEP_LIQUORICE_WEAVER.get(),
 				CaveSpider.createCaveSpider().build());
 		event.put(SODA_COD.get(), Cod.createMobAttributes().build());
@@ -467,6 +476,10 @@ public final class CakeWorldEntities {
 					Heightmap.Types.MOTION_BLOCKING,
 					LollipopLorikeet
 							::checkLollipopLorikeetSpawnRules);
+			SpawnPlacements.register(WAFER_WRAITH.get(),
+					SpawnPlacements.Type.NO_RESTRICTIONS,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					Mob::checkMobSpawnRules);
 			SpawnPlacements.register(DEEP_LIQUORICE_WEAVER.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,

@@ -35,6 +35,7 @@ import net.minecraft.client.renderer.entity.MushroomCowRenderer;
 import net.minecraft.client.renderer.entity.OcelotRenderer;
 import net.minecraft.client.renderer.entity.PandaRenderer;
 import net.minecraft.client.renderer.entity.ParrotRenderer;
+import net.minecraft.client.renderer.entity.PhantomRenderer;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.client.renderer.entity.CowRenderer;
 import net.minecraft.client.renderer.entity.PigRenderer;
@@ -74,6 +75,9 @@ public final class CakeWorldClientEvents {
 		event.registerEntityRenderer(
 				CakeWorldEntities.LOLLIPOP_LORIKEET.get(),
 				ParrotRenderer::new);
+		event.registerEntityRenderer(
+				CakeWorldEntities.WAFER_WRAITH.get(),
+				PhantomRenderer::new);
 		event.registerEntityRenderer(
 				CakeWorldEntities.DEEP_LIQUORICE_WEAVER.get(),
 				CaveSpiderRenderer::new);

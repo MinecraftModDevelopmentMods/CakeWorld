@@ -73,6 +73,7 @@ import com.mcmoddev.cakeworld.entity.SugarBee;
 import com.mcmoddev.cakeworld.entity.SugarMite;
 import com.mcmoddev.cakeworld.entity.TaffyTallwalker;
 import com.mcmoddev.cakeworld.entity.TrufflePig;
+import com.mcmoddev.cakeworld.entity.WaferWraith;
 import com.mcmoddev.cakeworld.effect.FizzyFeetEffect;
 import com.mcmoddev.cakeworld.init.CakeWorldBiomes;
 import com.mcmoddev.cakeworld.init.CakeWorldBlocks;
@@ -167,6 +168,7 @@ import net.minecraft.world.entity.monster.Husk;
 import net.minecraft.world.entity.monster.Illusioner;
 import net.minecraft.world.entity.monster.MagmaCube;
 import net.minecraft.world.entity.monster.Pillager;
+import net.minecraft.world.entity.monster.Phantom;
 import net.minecraft.world.entity.monster.Ravager;
 import net.minecraft.world.entity.monster.Vex;
 import net.minecraft.world.entity.monster.Zoglin;
@@ -243,6 +245,7 @@ import com.mcmoddev.cakeworld.world.CakeWorldGuardianReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldIllusionerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldIronGolemReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldMagmaCubeReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldPhantomReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldCreatureSpawns;
 
 @GameTestHolder(CakeWorld.MODID)
@@ -3550,18 +3553,26 @@ public final class FirstBiteGameTests {
 		Ravager ravager = EntityType.RAVAGER.create(helper.getLevel());
 		require(helper, raidEvoker != null && ravager != null,
 				"Could not create raid conversion fixtures");
-		raidEvoker.moveTo(anchor.getX() + 3.0D, anchor.getY(),
-				anchor.getZ(), 27.0F, 0.0F);
+		BlockPos conversionAnchor =
+				findCakeWorldBiomePosition(helper,
+						anchor, 64);
+		require(helper, conversionAnchor != null,
+				"Could not find a runtime CakeWorld biome for Sour Sorcerer conversion");
+		raidEvoker.moveTo(conversionAnchor.getX(),
+				conversionAnchor.getY(),
+				conversionAnchor.getZ(), 27.0F, 0.0F);
 		raidEvoker.setCustomName(new TextComponent("Tang"));
 		raidEvoker.setPersistenceRequired();
 		CompoundTag castingState = raidEvoker.saveWithoutId(
 				new CompoundTag());
 		castingState.putInt("SpellTicks", 25);
 		raidEvoker.load(castingState);
-		ravager.setPos(anchor.getX() + 3.0D,
-				anchor.getY(), anchor.getZ());
+		ravager.setPos(conversionAnchor.getX(),
+				conversionAnchor.getY(),
+				conversionAnchor.getZ());
 		helper.getLevel().addFreshEntity(ravager);
-		Raid raid = new Raid(197825, helper.getLevel(), anchor);
+		Raid raid = new Raid(197825, helper.getLevel(),
+				conversionAnchor);
 		raid.joinRaid(3, raidEvoker, null, true);
 		raid.setLeader(3, raidEvoker);
 		helper.getLevel().addFreshEntity(raidEvoker);
@@ -3580,7 +3591,14 @@ public final class FirstBiteGameTests {
 						&& converted.isCastingSpell()
 						&& Math.abs(converted.getYRot() - 27.0F)
 								< 0.001F,
-				"Raid conversion lost Sorcerer type, name, persistence, spell or rotation");
+				"Raid conversion lost Sorcerer type, name, persistence, spell or rotation: converted="
+						+ converted
+						+ ", sourceBiome="
+						+ helper.getLevel()
+								.getBiome(conversionAnchor)
+								.unwrapKey()
+								.map(key -> key.location())
+								.orElse(null));
 		CompoundTag convertedState = converted.saveWithoutId(
 				new CompoundTag());
 		require(helper, convertedState.getInt("SpellTicks") == 25
@@ -9254,6 +9272,269 @@ public final class FirstBiteGameTests {
 		});
 	}
 
+	@GameTest(template = EMPTY)
+	public static void waferWraithsKeepInsomniaSwoopsAndProgression(
+			GameTestHelper helper) {
+		WaferWraithProbe wraith =
+				new WaferWraithProbe(helper.getLevel());
+		wraith.setPhantomSize(4);
+		require(helper,
+				wraith instanceof Phantom
+						&& wraith.getType()
+								== CakeWorldEntities
+										.WAFER_WRAITH.get()
+						&& wraith.getType().getCategory()
+								== MobCategory.MONSTER
+						&& close(wraith.getMaxHealth(), 20.0D)
+						&& close(wraith.getAttributeValue(
+								Attributes.ATTACK_DAMAGE),
+								10.0D)
+						&& close(wraith.getDimensions(
+								Pose.STANDING).width,
+								1.7D)
+						&& close(wraith.getDimensions(
+								Pose.STANDING).height,
+								0.9444444D)
+						&& wraith.getMobType() == MobType.UNDEAD
+						&& wraith.despawnsInPeaceful()
+						&& wraith.canAttackType(EntityType.PIG)
+						&& wraith.getLootTable().equals(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/wafer_wraith"))
+						&& wraith.countGoalsNamed(
+								"PhantomAttackStrategyGoal")
+								== 1
+						&& wraith.countGoalsNamed(
+								"PhantomSweepAttackGoal")
+								== 1
+						&& wraith.countGoalsNamed(
+								"PhantomCircleAroundAnchorGoal")
+								== 1
+						&& wraith.countTargetGoalsNamed(
+								"PhantomAttackPlayerTargetGoal")
+								== 1,
+				"Wafer Wraith lost exact Phantom type, size, damage, undead, loot or circling/swoop goals");
+
+		Pig target = EntityType.PIG.create(helper.getLevel());
+		require(helper, target != null,
+				"Could not create Wafer Wraith swoop target");
+		float fullHealth = target.getHealth();
+		Difficulty originalDifficulty =
+				helper.getLevel().getDifficulty();
+		try {
+			for (Difficulty safeDifficulty :
+					new Difficulty[] {
+							Difficulty.PEACEFUL,
+							Difficulty.EASY,
+							Difficulty.NORMAL}) {
+				helper.getLevel().getServer()
+						.setDifficulty(safeDifficulty,
+								true);
+				target.setHealth(fullHealth);
+				target.invulnerableTime = 0;
+				target.removeAllEffects();
+				target.setDeltaMovement(Vec3.ZERO);
+				target.setSecondsOnFire(5);
+				target.fallDistance = 12.0F;
+				require(helper,
+						wraith.doHurtTarget(target)
+								&& close(target.getHealth(),
+										fullHealth)
+								&& !target.isOnFire()
+								&& target.fallDistance
+										== 0.0F
+								&& target.getDeltaMovement().y
+										> 0.0D
+								&& target.hasEffect(
+										MobEffects.BLINDNESS)
+								&& target.hasEffect(
+										MobEffects
+												.MOVEMENT_SLOWDOWN)
+								&& target.hasEffect(
+										MobEffects.SLOW_FALLING)
+								&& target.hasEffect(
+										MobEffects
+												.FIRE_RESISTANCE)
+								&& target.getEffect(
+										MobEffects
+												.DAMAGE_RESISTANCE)
+										.getAmplifier()
+										== 4,
+						safeDifficulty
+								+ " Wafer Wraith swoop caused health damage or lacked its obscuring rescue envelope");
+			}
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			target.setHealth(fullHealth);
+			target.invulnerableTime = 0;
+			target.removeAllEffects();
+			require(helper,
+					wraith.doHurtTarget(target)
+							&& close(target.getHealth(),
+									fullHealth - 10.0D),
+					"Hard size-four Wafer Wraith lost its exact ten-point Phantom attack");
+		} finally {
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		BlockPos runtimeCakeWorld =
+				findCakeWorldBiomePosition(helper,
+						helper.absolutePos(
+								new BlockPos(2, 2, 2)),
+						64);
+		require(helper, runtimeCakeWorld != null,
+				"Could not find runtime CakeWorld biome for insomnia conversion");
+		Phantom literal = EntityType.PHANTOM.create(
+				helper.getLevel());
+		require(helper, literal != null,
+				"Could not create literal insomnia Phantom fixture");
+		CompoundTag literalState =
+				literal.saveWithoutId(new CompoundTag());
+		literalState.putInt("AX", 1978);
+		literalState.putInt("AY", 111);
+		literalState.putInt("AZ", -37);
+		literalState.putInt("Size", 3);
+		literal.load(literalState);
+		literal.setPos(runtimeCakeWorld.getX(),
+				runtimeCakeWorld.getY(),
+				runtimeCakeWorld.getZ());
+		literal.setHealth(13.0F);
+		literal.setCustomName(new TextComponent(
+				"Late-Night Wafer"));
+		literal.setPersistenceRequired();
+		literal.setNoAi(true);
+		literal.setInvulnerable(true);
+		helper.getLevel().addFreshEntity(literal);
+		WaferWraith converted =
+				CakeWorldPhantomReplacement
+						.replaceIfInCakeWorldBiome(
+								helper.getLevel(),
+								literal);
+		CompoundTag convertedState = converted == null
+				? new CompoundTag()
+				: converted.saveWithoutId(new CompoundTag());
+		require(helper,
+				converted != null
+						&& literal.isRemoved()
+						&& converted.getType()
+								== CakeWorldEntities
+										.WAFER_WRAITH.get()
+						&& converted.getPhantomSize() == 3
+						&& close(converted.getAttributeValue(
+								Attributes.ATTACK_DAMAGE),
+								9.0D)
+						&& close(converted.getHealth(), 13.0D)
+						&& converted.isPersistenceRequired()
+						&& converted.isNoAi()
+						&& converted.isInvulnerable()
+						&& converted.hasCustomName()
+						&& "Late-Night Wafer".equals(
+								converted.getName()
+										.getString())
+						&& convertedState.getInt("AX") == 1978
+						&& convertedState.getInt("AY") == 111
+						&& convertedState.getInt("AZ") == -37,
+				"Fresh CakeWorld insomnia conversion lost Phantom size, anchor, health, name, persistence, AI or invulnerability");
+
+		Registry<Biome> biomes = helper.getLevel()
+				.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY);
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS
+						.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS
+						.getId())) {
+			Biome biome = biomes.get(biomeId);
+			require(helper,
+					biome != null
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory.MONSTER)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType.PHANTOM
+											|| spawn.type
+													== CakeWorldEntities
+															.WAFER_WRAITH
+															.get()),
+					"Wafer Wraith leaked into ordinary biome spawning instead of the insomnia path: "
+							+ biomeId);
+		}
+		require(helper,
+				SpawnPlacements.getPlacementType(
+						CakeWorldEntities.WAFER_WRAITH.get())
+								== SpawnPlacements.Type
+										.NO_RESTRICTIONS
+						&& SpawnPlacements.getHeightmapType(
+								CakeWorldEntities
+										.WAFER_WRAITH.get())
+								== Heightmap.Types
+										.MOTION_BLOCKING_NO_LEAVES
+						&& CakeWorldItems.WAFER_WRAITH_SPAWN_EGG
+								.isPresent()
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+												.WAFER_WRAITH
+												.get())
+								== SoundEvents
+										.PARROT_IMITATE_PHANTOM,
+				"Wafer Wraith lost exact Phantom placement metadata, testing egg or Lorikeet mimic role");
+
+		ServerPlayer advancementPlayer = new ServerPlayer(
+				helper.getLevel().getServer(),
+				helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2037"),
+						"CakeWorldWaferWraithRoleTest"));
+		VanillaRoleAdvancements.creditKilledPhantomRole(
+				advancementPlayer);
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:adventure/kill_all_mobs",
+				"minecraft:phantom");
+		Advancement twoBirds = advancementPlayer.getServer()
+				.getAdvancements().getAdvancement(
+						new ResourceLocation("minecraft",
+								"adventure/two_birds_one_arrow"));
+		AbstractArrow piercingArrow =
+				EntityType.ARROW.create(helper.getLevel());
+		require(helper,
+				twoBirds != null && piercingArrow != null,
+				"Could not create Two Birds, One Arrow fixtures");
+		piercingArrow.setOwner(advancementPlayer);
+		piercingArrow.setShotFromCrossbow(true);
+		piercingArrow.setPierceLevel((byte)1);
+		VanillaRoleAdvancements
+				.recordPhantomRoleCrossbowKill(
+						advancementPlayer,
+						piercingArrow,
+						CakeWorldEntities.WAFER_WRAITH.get());
+		require(helper,
+				!advancementPlayer.getAdvancements()
+						.getOrStartProgress(twoBirds)
+						.getCriterion("two_birds").isDone(),
+				"One Wafer Wraith incorrectly completed Two Birds, One Arrow");
+		VanillaRoleAdvancements
+				.recordPhantomRoleCrossbowKill(
+						advancementPlayer,
+						piercingArrow,
+						CakeWorldEntities.WAFER_WRAITH.get());
+		require(helper,
+				advancementPlayer.getAdvancements()
+						.getOrStartProgress(twoBirds)
+						.getCriterion("two_birds").isDone(),
+				"Two Wafer Wraiths killed by one piercing crossbow arrow did not preserve Two Birds, One Arrow");
+		converted.discard();
+		helper.succeed();
+	}
+
 	private static final class LollipopLorikeetProbe
 			extends LollipopLorikeet {
 		private LollipopLorikeetProbe(Level level) {
@@ -9273,6 +9554,38 @@ public final class FirstBiteGameTests {
 
 		private void seedRandom(long seed) {
 			random.setSeed(seed);
+		}
+	}
+
+	private static final class WaferWraithProbe
+			extends WaferWraith {
+		private WaferWraithProbe(Level level) {
+			super(CakeWorldEntities.WAFER_WRAITH.get(),
+					level);
+		}
+
+		private boolean despawnsInPeaceful() {
+			return shouldDespawnInPeaceful();
+		}
+
+		private int countGoalsNamed(String name) {
+			return (int)goalSelector.getAvailableGoals()
+					.stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
+		}
+
+		private int countTargetGoalsNamed(String name) {
+			return (int)targetSelector.getAvailableGoals()
+					.stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
 		}
 	}
 

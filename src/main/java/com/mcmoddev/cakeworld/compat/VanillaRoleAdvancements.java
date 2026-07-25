@@ -7,6 +7,7 @@ import net.minecraft.advancements.Advancement;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.LargeFireball;
 import net.minecraft.world.entity.vehicle.Boat;
 import net.minecraftforge.event.entity.EntityMountEvent;
@@ -23,6 +24,11 @@ public final class VanillaRoleAdvancements {
 			new ResourceLocation("minecraft", "adventure/kill_all_mobs");
 	private static final ResourceLocation RETURN_TO_SENDER =
 			new ResourceLocation("minecraft", "nether/return_to_sender");
+	private static final ResourceLocation TWO_BIRDS =
+			new ResourceLocation("minecraft",
+					"adventure/two_birds_one_arrow");
+	private static final String PHANTOM_ROLE_CROSSBOW_KILLS =
+			"CakeWorldPhantomRoleCrossbowKills";
 	private static final ResourceLocation RIDE_WITH_GOAT =
 			new ResourceLocation("minecraft",
 					"husbandry/ride_a_boat_with_a_goat");
@@ -50,6 +56,13 @@ public final class VanillaRoleAdvancements {
 					&& event.getSource().getDirectEntity()
 							instanceof LargeFireball) {
 				creditReturnToSenderRole(player);
+			}
+			if (event.getSource().getDirectEntity()
+							instanceof AbstractArrow arrow
+					&& event.getEntityLiving().getType()
+							== CakeWorldEntities.WAFER_WRAITH.get()) {
+				recordPhantomRoleCrossbowKill(player, arrow,
+						event.getEntityLiving().getType());
 			}
 		}
 	}
@@ -172,6 +185,31 @@ public final class VanillaRoleAdvancements {
 		award(player, KILL_ALL, "minecraft:ghast");
 	}
 
+	public static void creditKilledPhantomRole(ServerPlayer player) {
+		award(player, KILL_ALL, "minecraft:phantom");
+	}
+
+	public static void recordPhantomRoleCrossbowKill(
+			ServerPlayer player, AbstractArrow arrow,
+			EntityType<?> victimType) {
+		if (!arrow.shotFromCrossbow()
+				|| arrow.getPierceLevel() <= 0
+				|| arrow.getOwner() != player
+				|| (victimType != EntityType.PHANTOM
+						&& victimType
+								!= CakeWorldEntities.WAFER_WRAITH
+										.get())) {
+			return;
+		}
+		int kills = arrow.getPersistentData().getInt(
+				PHANTOM_ROLE_CROSSBOW_KILLS) + 1;
+		arrow.getPersistentData().putInt(
+				PHANTOM_ROLE_CROSSBOW_KILLS, kills);
+		if (kills >= 2) {
+			award(player, TWO_BIRDS, "two_birds");
+		}
+	}
+
 	public static void creditReturnToSenderRole(ServerPlayer player) {
 		award(player, RETURN_TO_SENDER, "killed_ghast");
 	}
@@ -223,6 +261,9 @@ public final class VanillaRoleAdvancements {
 		}
 		if (type == CakeWorldEntities.MALLOW_FLOATER.get()) {
 			return "minecraft:ghast";
+		}
+		if (type == CakeWorldEntities.WAFER_WRAITH.get()) {
+			return "minecraft:phantom";
 		}
 		return null;
 	}
