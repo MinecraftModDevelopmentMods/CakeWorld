@@ -31,6 +31,9 @@ public final class VanillaRoleAdvancements {
 	private static final ResourceLocation TWO_BIRDS =
 			new ResourceLocation("minecraft",
 					"adventure/two_birds_one_arrow");
+	private static final ResourceLocation WHOS_THE_PILLAGER_NOW =
+			new ResourceLocation("minecraft",
+					"adventure/whos_the_pillager_now");
 	private static final String PHANTOM_ROLE_CROSSBOW_KILLS =
 			"CakeWorldPhantomRoleCrossbowKills";
 	private static final ResourceLocation RIDE_WITH_GOAT =
@@ -67,6 +70,12 @@ public final class VanillaRoleAdvancements {
 							== CakeWorldEntities.WAFER_WRAITH.get()) {
 				recordPhantomRoleCrossbowKill(player, arrow,
 						event.getEntityLiving().getType());
+			}
+			if (event.getEntityLiving().getType()
+							== CakeWorldEntities.BISCUIT_BANDIT.get()
+					&& event.getSource().getDirectEntity()
+							instanceof AbstractArrow arrow) {
+				creditWhosPillagerNowRole(player, arrow);
 			}
 		}
 	}
@@ -202,6 +211,11 @@ public final class VanillaRoleAdvancements {
 		award(player, KILL_ALL, "minecraft:piglin_brute");
 	}
 
+	public static void creditKilledPillagerRole(
+			ServerPlayer player) {
+		award(player, KILL_ALL, "minecraft:pillager");
+	}
+
 	public static void creditDistractedPiglinRole(
 			ServerPlayer player, boolean direct) {
 		if (player.getItemBySlot(
@@ -241,6 +255,15 @@ public final class VanillaRoleAdvancements {
 				PHANTOM_ROLE_CROSSBOW_KILLS, kills);
 		if (kills >= 2) {
 			award(player, TWO_BIRDS, "two_birds");
+		}
+	}
+
+	public static void creditWhosPillagerNowRole(
+			ServerPlayer player, AbstractArrow arrow) {
+		if (arrow.shotFromCrossbow()
+				&& arrow.getOwner() == player) {
+			award(player, WHOS_THE_PILLAGER_NOW,
+					"kill_pillager");
 		}
 	}
 
@@ -304,6 +327,9 @@ public final class VanillaRoleAdvancements {
 		}
 		if (type == CakeWorldEntities.FUDGE_BRUTE.get()) {
 			return "minecraft:piglin_brute";
+		}
+		if (type == CakeWorldEntities.BISCUIT_BANDIT.get()) {
+			return "minecraft:pillager";
 		}
 		return null;
 	}

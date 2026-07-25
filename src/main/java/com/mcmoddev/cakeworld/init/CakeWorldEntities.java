@@ -1,6 +1,7 @@
 package com.mcmoddev.cakeworld.init;
 
 import com.mcmoddev.cakeworld.CakeWorld;
+import com.mcmoddev.cakeworld.entity.BiscuitBandit;
 import com.mcmoddev.cakeworld.entity.BonbonBat;
 import com.mcmoddev.cakeworld.entity.CandyflossSheep;
 import com.mcmoddev.cakeworld.entity.CinnamonPuffProjectile;
@@ -86,6 +87,8 @@ import net.minecraft.world.entity.monster.Giant;
 import net.minecraft.world.entity.monster.Guardian;
 import net.minecraft.world.entity.monster.Illusioner;
 import net.minecraft.world.entity.monster.MagmaCube;
+import net.minecraft.world.entity.monster.PatrollingMonster;
+import net.minecraft.world.entity.monster.Pillager;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.monster.hoglin.Hoglin;
 import net.minecraft.world.entity.monster.piglin.Piglin;
@@ -232,6 +235,12 @@ public final class CakeWorldEntities {
 	public static final RegistryObject<EntityType<FudgeBrute>> FUDGE_BRUTE =
 			entity("fudge_brute",
 					EntityType.Builder.of(FudgeBrute::new,
+							MobCategory.MONSTER)
+							.sized(0.6F, 1.95F)
+							.clientTrackingRange(8));
+	public static final RegistryObject<EntityType<BiscuitBandit>>
+			BISCUIT_BANDIT = entity("biscuit_bandit",
+					EntityType.Builder.of(BiscuitBandit::new,
 							MobCategory.MONSTER)
 							.sized(0.6F, 1.95F)
 							.clientTrackingRange(8));
@@ -424,6 +433,8 @@ public final class CakeWorldEntities {
 				Piglin.createAttributes().build());
 		event.put(FUDGE_BRUTE.get(),
 				PiglinBrute.createAttributes().build());
+		event.put(BISCUIT_BANDIT.get(),
+				Pillager.createAttributes().build());
 		event.put(GINGERBREAD_PONY.get(),
 				AbstractHorse.createBaseHorseAttributes()
 						.build());
@@ -536,6 +547,11 @@ public final class CakeWorldEntities {
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					FudgeFolk::checkFudgeFolkSpawnRules);
+			SpawnPlacements.register(BISCUIT_BANDIT.get(),
+					SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					PatrollingMonster
+							::checkPatrollingMonsterSpawnRules);
 			SpawnPlacements.register(GINGERBREAD_PONY.get(),
 					SpawnPlacements.Type.NO_RESTRICTIONS,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,

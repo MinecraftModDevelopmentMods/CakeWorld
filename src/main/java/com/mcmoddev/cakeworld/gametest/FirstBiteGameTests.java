@@ -29,6 +29,7 @@ import com.mcmoddev.cakeworld.cookbook.CookbookSummary;
 import com.mcmoddev.cakeworld.cookbook.DiscoveryType;
 import com.mcmoddev.cakeworld.cookbook.SharedCookbookLibrary;
 import com.mcmoddev.cakeworld.compat.VanillaRoleAdvancements;
+import com.mcmoddev.cakeworld.entity.BiscuitBandit;
 import com.mcmoddev.cakeworld.entity.CandyflossSheep;
 import com.mcmoddev.cakeworld.entity.BonbonBat;
 import com.mcmoddev.cakeworld.entity.ChocolatePanda;
@@ -87,6 +88,7 @@ import com.mcmoddev.cakeworld.init.CakeWorldSounds;
 import com.mcmoddev.cakeworld.item.JellylotlBucketItem;
 import com.mcmoddev.cakeworld.world.CakeWorldPiglinReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldPiglinBruteReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldPillagerReplacement;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -174,7 +176,9 @@ import net.minecraft.world.entity.monster.Husk;
 import net.minecraft.world.entity.monster.Illusioner;
 import net.minecraft.world.entity.monster.MagmaCube;
 import net.minecraft.world.entity.monster.Pillager;
+import net.minecraft.world.entity.monster.AbstractIllager;
 import net.minecraft.world.entity.monster.CrossbowAttackMob;
+import net.minecraft.world.entity.monster.PatrollingMonster;
 import net.minecraft.world.entity.monster.Phantom;
 import net.minecraft.world.entity.monster.Ravager;
 import net.minecraft.world.entity.monster.Vex;
@@ -201,8 +205,11 @@ import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemNameBlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.MobBucketItem;
 import net.minecraft.world.item.SuspiciousStewItem;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.item.crafting.ShapelessRecipe;
@@ -227,9 +234,13 @@ import net.minecraft.world.level.biome.MobSpawnSettings;
 import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.feature.NetherFortressFeature;
+import net.minecraft.data.worldgen.StructureFeatures;
+import net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature;
+import net.minecraft.world.level.levelgen.structure.StructureSpawnOverride;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 import net.minecraft.world.entity.raid.Raid;
+import net.minecraft.world.entity.raid.Raider;
 import net.minecraft.world.entity.vehicle.Boat;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.AABB;
@@ -10477,6 +10488,650 @@ public final class FirstBiteGameTests {
 	}
 
 	@GameTest(template = EMPTY, timeoutTicks = 200)
+	public static void biscuitBanditsKeepPatrolOutpostAndRaidRoles(
+			GameTestHelper helper) {
+		BiscuitBanditProbe bandit =
+				new BiscuitBanditProbe(helper.getLevel());
+		require(helper,
+				bandit instanceof Pillager
+						&& bandit instanceof Raider
+						&& bandit instanceof PatrollingMonster
+						&& bandit instanceof CrossbowAttackMob
+						&& bandit.getType()
+								== CakeWorldEntities
+										.BISCUIT_BANDIT.get()
+						&& bandit.getType().getCategory()
+								== MobCategory.MONSTER
+						&& close(bandit.getMaxHealth(), 24.0D)
+						&& close(bandit.getAttributeValue(
+								Attributes.MOVEMENT_SPEED),
+								0.35D)
+						&& close(bandit.getAttributeValue(
+								Attributes.FOLLOW_RANGE),
+								32.0D)
+						&& close(bandit.getAttributeValue(
+								Attributes.ATTACK_DAMAGE),
+								5.0D)
+						&& close(bandit.getDimensions(
+								Pose.STANDING).width,
+								0.6D)
+						&& close(bandit.getDimensions(
+								Pose.STANDING).height,
+								1.95D)
+						&& bandit.getMaxSpawnClusterSize() == 1
+						&& bandit.getExperienceValue() == 5
+						&& bandit.getInventory()
+								.getContainerSize() == 5
+						&& bandit.canFireProjectileWeapon(
+								(net.minecraft.world.item
+										.ProjectileWeaponItem)
+										Items.CROSSBOW)
+						&& bandit.canBeLeader()
+						&& bandit.canJoinPatrol()
+						&& bandit.despawnsInPeaceful()
+						&& close(bandit.getWalkTargetValue(
+								helper.absolutePos(
+										new BlockPos(
+												2, 3, 2)),
+								helper.getLevel()),
+								0.0D)
+						&& bandit.getLootTableId().equals(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/biscuit_bandit"))
+						&& bandit.ambientSound()
+								== SoundEvents
+										.PILLAGER_AMBIENT
+						&& bandit.hurtSound()
+								== SoundEvents
+										.PILLAGER_HURT
+						&& bandit.deathSound()
+								== SoundEvents
+										.PILLAGER_DEATH
+						&& bandit.getCelebrateSound()
+								== SoundEvents
+										.PILLAGER_CELEBRATE
+						&& bandit.countGoalsNamed(
+								"RangedCrossbowAttackGoal")
+								== 1
+						&& bandit.countGoalsNamed(
+								"LongDistancePatrolGoal")
+								== 1
+						&& bandit.countGoalsNamed(
+								"HoldGroundAttackGoal")
+								== 1
+						&& bandit.countTargetGoalsNamed(
+								"NearestAttackableTargetGoal")
+								== 3,
+				"Biscuit Bandit lost exact Pillager body, inventory, crossbow, patrol, goals, XP, loot or sound roles");
+
+		BlockPos patrolPos = helper.absolutePos(
+				new BlockPos(2, 3, 2));
+		BlockPos patrolTarget = patrolPos.offset(
+				64, 0, 64);
+		bandit.setPos(patrolPos.getX() + 0.5D,
+				patrolPos.getY(),
+				patrolPos.getZ() + 0.5D);
+		bandit.setPatrolLeader(true);
+		bandit.setPatrolTarget(patrolTarget);
+		bandit.finalizeSpawn(
+				helper.getLevel(),
+				helper.getLevel().getCurrentDifficultyAt(
+						patrolPos),
+				MobSpawnType.PATROL, null, null);
+		helper.getLevel().addFreshEntity(bandit);
+		require(helper,
+				bandit.isPatrolLeader()
+						&& bandit.isPatrollingRole()
+						&& bandit.hasPatrolTarget()
+						&& patrolTarget.equals(
+								bandit.getPatrolTarget())
+						&& ItemStack.isSameItemSameTags(
+								bandit.getItemBySlot(
+										EquipmentSlot.HEAD),
+								Raid.getLeaderBannerInstance())
+						&& bandit.getMainHandItem()
+								.is(Items.CROSSBOW)
+						&& bandit.canJoinRaid(),
+				"Biscuit Bandit lost patrol target, captain banner, crossbow or raid eligibility");
+		bandit.setChargingCrossbow(true);
+		require(helper,
+				bandit.isChargingCrossbow()
+						&& bandit.getArmPose()
+								== AbstractIllager
+										.IllagerArmPose
+										.CROSSBOW_CHARGE,
+				"Biscuit Bandit lost its crossbow charging state");
+		bandit.setChargingCrossbow(false);
+		require(helper,
+				bandit.getArmPose()
+						== AbstractIllager.IllagerArmPose
+								.CROSSBOW_HOLD,
+				"Biscuit Bandit lost its charged crossbow hold pose");
+
+		Pig rangedCueTarget =
+				EntityType.PIG.create(helper.getLevel());
+		require(helper, rangedCueTarget != null,
+				"Could not create Biscuit Bandit ranged cue target");
+		rangedCueTarget.setPos(bandit.getX() + 8.0D,
+				bandit.getY(), bandit.getZ());
+		rangedCueTarget.setNoAi(true);
+		helper.getLevel().addFreshEntity(rangedCueTarget);
+		ItemStack chargedCrossbow =
+				new ItemStack(Items.CROSSBOW);
+		ListTag chargedProjectiles = new ListTag();
+		chargedProjectiles.add(
+				new ItemStack(Items.ARROW).save(
+						new CompoundTag()));
+		chargedCrossbow.getOrCreateTag().put(
+				"ChargedProjectiles", chargedProjectiles);
+		CrossbowItem.setCharged(chargedCrossbow, true);
+		bandit.setItemSlot(EquipmentSlot.MAINHAND,
+				chargedCrossbow);
+		bandit.setTarget(rangedCueTarget);
+		bandit.performRangedAttack(
+				rangedCueTarget, 1.0F);
+		AbstractArrow visibleBolt = helper.getLevel()
+				.getEntitiesOfClass(
+						AbstractArrow.class,
+						bandit.getBoundingBox()
+								.inflate(12.0D))
+				.stream()
+				.filter(arrow -> arrow.getOwner()
+						== bandit)
+				.findFirst().orElse(null);
+		require(helper,
+				visibleBolt != null
+						&& visibleBolt.shotFromCrossbow(),
+				"Biscuit Bandit did not fire a visible crossbow bolt");
+		bandit.setTarget(null);
+		visibleBolt.discard();
+		rangedCueTarget.discard();
+
+		Villager villager =
+				EntityType.VILLAGER.create(helper.getLevel());
+		require(helper, villager != null,
+				"Could not create Biscuit Bandit Villager-awareness fixture");
+		villager.setPos(bandit.getX() + 10.0D,
+				bandit.getY(), bandit.getZ());
+		villager.setNoAi(true);
+		helper.getLevel().addFreshEntity(villager);
+		villager.getBrain().eraseMemory(
+				MemoryModuleType.NEAREST_HOSTILE);
+		villager.getBrain().setMemory(
+				MemoryModuleType
+						.NEAREST_VISIBLE_LIVING_ENTITIES,
+				new NearestVisibleLivingEntities(
+						villager, List.of(bandit)));
+		bandit.setTestTickCount(20);
+		bandit.runVillagerHostileRepair();
+		require(helper,
+				villager.getBrain().getMemory(
+						MemoryModuleType.NEAREST_HOSTILE)
+						.filter(hostile -> hostile
+								== bandit)
+						.isPresent(),
+				"Biscuit Bandit did not repair Pillager's exact 15-block Villager fear role");
+		villager.discard();
+
+		Evoker illagerColleague =
+				EntityType.EVOKER.create(helper.getLevel());
+		require(helper,
+				illagerColleague != null
+						&& bandit.getMobType()
+								== MobType.ILLAGER
+						&& bandit.isAlliedTo(
+								illagerColleague),
+				"Biscuit Bandit lost its Illager alliance");
+		illagerColleague.discard();
+
+		BiscuitBanditProbe raidBandit =
+				new BiscuitBanditProbe(helper.getLevel());
+		raidBandit.setPos(bandit.getX() + 4.0D,
+				bandit.getY(), bandit.getZ());
+		raidBandit.finalizeSpawn(
+				helper.getLevel(),
+				helper.getLevel().getCurrentDifficultyAt(
+						raidBandit.blockPosition()),
+				MobSpawnType.EVENT, null, null);
+		Raid buffRaid = new Raid(197841,
+				helper.getLevel(),
+				raidBandit.blockPosition());
+		buffRaid.setBadOmenLevel(5);
+		buffRaid.joinRaid(
+				7, raidBandit, null, true);
+		buffRaid.setLeader(7, raidBandit);
+		raidBandit.seedRandom(0L);
+		raidBandit.applyRaidBuffs(7, false);
+		ItemStack raidCrossbow =
+				raidBandit.getMainHandItem();
+		require(helper,
+				raidBandit.getCurrentRaid() == buffRaid
+						&& raidBandit.getWave() == 7
+						&& buffRaid.getLeader(7)
+								== raidBandit
+						&& ItemStack.isSameItemSameTags(
+								raidBandit.getItemBySlot(
+										EquipmentSlot.HEAD),
+								Raid.getLeaderBannerInstance())
+						&& raidCrossbow.is(Items.CROSSBOW)
+						&& EnchantmentHelper
+								.getItemEnchantmentLevel(
+										Enchantments
+												.QUICK_CHARGE,
+										raidCrossbow)
+								== 2
+						&& EnchantmentHelper
+								.getItemEnchantmentLevel(
+										Enchantments
+												.MULTISHOT,
+										raidCrossbow)
+								== 1,
+				"Biscuit Bandit lost raid membership, leadership, banner or wave-seven crossbow buffs");
+		buffRaid.removeFromRaid(raidBandit, true);
+		raidBandit.discard();
+
+		Difficulty originalDifficulty =
+				helper.getLevel().getDifficulty();
+		try {
+			for (Difficulty safeDifficulty :
+					List.of(Difficulty.EASY,
+							Difficulty.NORMAL)) {
+				helper.getLevel().getServer().setDifficulty(
+						safeDifficulty, true);
+				Pig meleeTarget =
+						EntityType.PIG.create(
+								helper.getLevel());
+				require(helper, meleeTarget != null,
+						"Could not create safe Biscuit Bandit melee target");
+				meleeTarget.setPos(bandit.getX() + 6.0D,
+						bandit.getY(),
+						bandit.getZ()
+								+ safeDifficulty.getId()
+										* 2.0D);
+				helper.getLevel().addFreshEntity(
+						meleeTarget);
+				meleeTarget.setSecondsOnFire(5);
+				meleeTarget.fallDistance = 8.0F;
+				bandit.doHurtTarget(meleeTarget);
+				require(helper,
+						close(meleeTarget.getHealth(),
+								meleeTarget
+										.getMaxHealth())
+								&& !meleeTarget.isOnFire()
+								&& close(meleeTarget
+										.fallDistance,
+										0.0D)
+								&& meleeTarget.hasEffect(
+										MobEffects
+												.BLINDNESS)
+								&& meleeTarget.hasEffect(
+										MobEffects
+												.MOVEMENT_SLOWDOWN)
+								&& meleeTarget.hasEffect(
+										MobEffects
+												.SLOW_FALLING)
+								&& meleeTarget.hasEffect(
+										MobEffects
+												.FIRE_RESISTANCE)
+								&& meleeTarget.getEffect(
+										MobEffects
+												.DAMAGE_RESISTANCE)
+										.getAmplifier() == 4,
+						safeDifficulty
+								+ " Biscuit Bandit melee caused damage or lacked crumb rescue");
+				meleeTarget.discard();
+
+				Pig rangedTarget =
+						EntityType.PIG.create(
+								helper.getLevel());
+				require(helper, rangedTarget != null,
+						"Could not create safe Biscuit Bandit bolt target");
+				rangedTarget.setPos(bandit.getX() + 7.0D,
+						bandit.getY(),
+						bandit.getZ()
+								+ safeDifficulty.getId()
+										* 2.0D);
+				helper.getLevel().addFreshEntity(
+						rangedTarget);
+				Arrow safeArrow = new Arrow(
+						helper.getLevel(), bandit);
+				rangedTarget.hurt(DamageSource.arrow(
+						safeArrow, bandit), 5.0F);
+				require(helper,
+						close(rangedTarget.getHealth(),
+								rangedTarget
+										.getMaxHealth())
+								&& rangedTarget.hasEffect(
+										MobEffects
+												.BLINDNESS)
+								&& rangedTarget.hasEffect(
+										MobEffects
+												.FIRE_RESISTANCE),
+						safeDifficulty
+								+ " Biscuit Bandit bolt caused damage or lacked crumb rescue");
+				rangedTarget.discard();
+			}
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			Pig hardMelee =
+					EntityType.PIG.create(helper.getLevel());
+			Pig hardRanged =
+					EntityType.PIG.create(helper.getLevel());
+			require(helper,
+					hardMelee != null && hardRanged != null,
+					"Could not create Hard Biscuit Bandit targets");
+			hardMelee.setPos(bandit.getX() + 6.0D,
+					bandit.getY(), bandit.getZ() + 6.0D);
+			hardRanged.setPos(bandit.getX() + 7.0D,
+					bandit.getY(), bandit.getZ() + 7.0D);
+			helper.getLevel().addFreshEntity(hardMelee);
+			helper.getLevel().addFreshEntity(hardRanged);
+			bandit.doHurtTarget(hardMelee);
+			Arrow hardArrow = new Arrow(
+					helper.getLevel(), bandit);
+			hardRanged.hurt(DamageSource.arrow(
+					hardArrow, bandit), 5.0F);
+			require(helper,
+					hardMelee.getHealth()
+							< hardMelee.getMaxHealth()
+							&& hardRanged.getHealth()
+									< hardRanged
+											.getMaxHealth(),
+					"Hard Biscuit Bandit melee or bolt did not cause real damage");
+			hardMelee.discard();
+			hardRanged.discard();
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.PEACEFUL, true);
+			BiscuitBanditProbe peaceful =
+					new BiscuitBanditProbe(
+							helper.getLevel());
+			peaceful.setPos(bandit.getX() + 9.0D,
+					bandit.getY(), bandit.getZ());
+			helper.getLevel().addFreshEntity(peaceful);
+			peaceful.checkDespawn();
+			require(helper,
+					peaceful.isRemoved()
+							&& peaceful
+									.despawnsInPeaceful(),
+					"Peaceful Biscuit Bandit did not retain vanilla Monster removal");
+		} finally {
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		BlockPos cakeWorldPos =
+				findCakeWorldBiomePosition(helper,
+						helper.absolutePos(
+								new BlockPos(8, 3, 8)),
+						256);
+		require(helper, cakeWorldPos != null,
+				"Could not locate CakeWorld terrain for literal Pillager conversion");
+		Pillager literalPatrol =
+				EntityType.PILLAGER.create(
+						helper.getLevel());
+		require(helper, literalPatrol != null,
+				"Could not create literal patrol Pillager fixture");
+		literalPatrol.setPos(
+				cakeWorldPos.getX() + 0.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		literalPatrol.setPatrolLeader(true);
+		BlockPos convertedPatrolTarget =
+				cakeWorldPos.offset(96, 0, -64);
+		literalPatrol.setPatrolTarget(
+				convertedPatrolTarget);
+		literalPatrol.finalizeSpawn(
+				helper.getLevel(),
+				helper.getLevel().getCurrentDifficultyAt(
+						cakeWorldPos),
+				MobSpawnType.PATROL, null, null);
+		literalPatrol.setNoAi(true);
+		literalPatrol.setHealth(17.0F);
+		literalPatrol.setCustomName(new TextComponent(
+				"Crumb Patrol Captain"));
+		literalPatrol.setPersistenceRequired();
+		literalPatrol.getInventory().setItem(0,
+				new ItemStack(Items.ARROW, 2));
+		BiscuitBandit patrolReplacement =
+				CakeWorldPillagerReplacement
+						.replaceIfInCakeWorldBiome(
+								helper.getLevel(),
+								literalPatrol);
+		require(helper,
+				literalPatrol.isRemoved()
+						&& patrolReplacement != null
+						&& patrolReplacement.isNoAi()
+						&& patrolReplacement
+								.isPersistenceRequired()
+						&& close(patrolReplacement
+								.getHealth(), 17.0D)
+						&& patrolReplacement
+								.isPatrolLeader()
+						&& patrolReplacement
+								.hasPatrolTarget()
+						&& convertedPatrolTarget.equals(
+								patrolReplacement
+										.getPatrolTarget())
+						&& ItemStack.isSameItemSameTags(
+								patrolReplacement
+										.getItemBySlot(
+												EquipmentSlot
+														.HEAD),
+								Raid.getLeaderBannerInstance())
+						&& patrolReplacement
+								.getInventory()
+								.countItem(Items.ARROW)
+								== 2
+						&& "Crumb Patrol Captain".equals(
+								patrolReplacement
+										.getName()
+										.getString()),
+				"Fresh patrol Pillager conversion lost captain, target, banner, inventory or NBT state");
+
+		Ravager ravager =
+				EntityType.RAVAGER.create(helper.getLevel());
+		Pillager literalRaider =
+				EntityType.PILLAGER.create(
+						helper.getLevel());
+		require(helper,
+				ravager != null && literalRaider != null,
+				"Could not create mounted raid Pillager fixtures");
+		ravager.setPos(cakeWorldPos.getX() + 0.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		ravager.setNoAi(true);
+		helper.getLevel().addFreshEntity(ravager);
+		literalRaider.setPos(ravager.getX(),
+				ravager.getY(), ravager.getZ());
+		literalRaider.finalizeSpawn(
+				helper.getLevel(),
+				helper.getLevel().getCurrentDifficultyAt(
+						cakeWorldPos),
+				MobSpawnType.EVENT, null, null);
+		literalRaider.setNoAi(true);
+		literalRaider.setCustomName(new TextComponent(
+				"Mounted Biscuit Captain"));
+		literalRaider.getInventory().setItem(0,
+				new ItemStack(Items.ARROW, 4));
+		Raid transferRaid = new Raid(197842,
+				helper.getLevel(), cakeWorldPos);
+		transferRaid.joinRaid(
+				3, literalRaider, null, true);
+		transferRaid.setLeader(3, literalRaider);
+		literalRaider.startRiding(ravager, true);
+		literalRaider.moveTo(
+				cakeWorldPos.getX() + 0.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D,
+				31.0F, 0.0F);
+		BiscuitBandit raidReplacement =
+				CakeWorldPillagerReplacement
+						.replaceIfInCakeWorldBiome(
+								helper.getLevel(),
+								literalRaider);
+		require(helper,
+				literalRaider.isRemoved()
+						&& raidReplacement != null
+						&& raidReplacement
+								.getCurrentRaid()
+								== transferRaid
+						&& raidReplacement.getWave() == 3
+						&& transferRaid.getLeader(3)
+								== raidReplacement
+						&& transferRaid
+								.getTotalRaidersAlive()
+								== 1
+						&& raidReplacement.getVehicle()
+								== ravager
+						&& ravager.getPassengers()
+								.contains(
+										raidReplacement)
+						&& raidReplacement
+								.getInventory()
+								.countItem(Items.ARROW)
+								== 4
+						&& "Mounted Biscuit Captain"
+								.equals(raidReplacement
+										.getName()
+										.getString()),
+				"Fresh raid Pillager conversion lost wave, leader, mount, inventory or NBT state");
+
+		ConfiguredStructureFeature<?, ?> outpost =
+				StructureFeatures.PILLAGER_OUTPOST.value();
+		StructureSpawnOverride outpostOverride =
+				outpost.spawnOverrides.get(
+						MobCategory.MONSTER);
+		MobSpawnSettings.SpawnerData outpostSpawn =
+				outpostOverride == null ? null
+						: outpostOverride.spawns()
+								.unwrap().stream()
+								.filter(spawn -> spawn.type
+										== EntityType
+												.PILLAGER)
+								.findFirst()
+								.orElse(null);
+		require(helper,
+				outpostOverride != null
+						&& outpostOverride.boundingBox()
+								== StructureSpawnOverride
+										.BoundingBoxType
+										.STRUCTURE
+						&& outpostSpawn != null
+						&& outpostSpawn.getWeight()
+								.asInt() == 1
+						&& outpostSpawn.minCount == 1
+						&& outpostSpawn.maxCount == 1,
+				"Biscuit Bandit lost the exact dormant Outpost 1/1-1 literal source contract");
+
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS
+						.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS
+						.getId())) {
+			Biome biome = helper.getLevel()
+					.registryAccess()
+					.registryOrThrow(
+							Registry.BIOME_REGISTRY)
+					.get(biomeId);
+			require(helper,
+					biome != null
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory
+													.MONSTER)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType
+															.PILLAGER
+											|| spawn.type
+													== CakeWorldEntities
+															.BISCUIT_BANDIT
+															.get()),
+					"Open biome leaked Pillager/Biscuit Bandit spawning before Lookouts: "
+							+ biomeId);
+		}
+
+		TagKey<EntityType<?>> raiders =
+				TagKey.create(Registry.ENTITY_TYPE_REGISTRY,
+						new ResourceLocation(
+								"minecraft", "raiders"));
+		ServerPlayer advancementPlayer = new ServerPlayer(
+				helper.getLevel().getServer(),
+				helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2041"),
+						"CakeWorldBiscuitBanditRoleTest"));
+		Arrow roleArrow = new Arrow(
+				helper.getLevel(), advancementPlayer);
+		roleArrow.setShotFromCrossbow(true);
+		VanillaRoleAdvancements
+				.creditKilledPillagerRole(
+						advancementPlayer);
+		VanillaRoleAdvancements
+				.creditWhosPillagerNowRole(
+						advancementPlayer, roleArrow);
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:adventure/kill_all_mobs",
+				"minecraft:pillager");
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:adventure/whos_the_pillager_now",
+				"kill_pillager");
+		require(helper,
+				CakeWorldItems
+						.BISCUIT_BANDIT_SPAWN_EGG
+						.isPresent()
+						&& CakeWorldEntities.BISCUIT_BANDIT
+								.get().is(raiders)
+						&& SpawnPlacements
+								.getPlacementType(
+										CakeWorldEntities
+												.BISCUIT_BANDIT
+												.get())
+								== SpawnPlacements.Type
+										.ON_GROUND
+						&& SpawnPlacements
+								.getPlacementType(
+										CakeWorldEntities
+												.BISCUIT_BANDIT
+												.get())
+								== SpawnPlacements
+										.getPlacementType(
+												EntityType
+														.PILLAGER)
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+												.BISCUIT_BANDIT
+												.get())
+								== Heightmap.Types
+										.MOTION_BLOCKING_NO_LEAVES
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+												.BISCUIT_BANDIT
+												.get())
+								== SoundEvents
+										.PARROT_IMITATE_PILLAGER,
+				"Biscuit Bandit lost its raider tag, egg, placement or mimic role");
+
+		bandit.discard();
+		patrolReplacement.discard();
+		transferRaid.removeFromRaid(
+				raidReplacement, true);
+		raidReplacement.discard();
+		ravager.discard();
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 200)
 	public static void fudgeFolkKeepPiglinSocietyBarterAndSafePeril(
 			GameTestHelper helper) {
 		FudgeFolkProbe folk =
@@ -11129,6 +11784,74 @@ public final class FirstBiteGameTests {
 
 		private void runFamilyInteractionRepair() {
 			repairCakeWorldFamilyInteraction();
+		}
+	}
+
+	private static final class BiscuitBanditProbe
+			extends BiscuitBandit {
+		private BiscuitBanditProbe(Level level) {
+			super(CakeWorldEntities.BISCUIT_BANDIT.get(),
+					level);
+		}
+
+		private boolean despawnsInPeaceful() {
+			return shouldDespawnInPeaceful();
+		}
+
+		private int getExperienceValue() {
+			return getExperienceReward(null);
+		}
+
+		private ResourceLocation getLootTableId() {
+			return getLootTable();
+		}
+
+		private net.minecraft.sounds.SoundEvent ambientSound() {
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent hurtSound() {
+			return getHurtSound(DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent deathSound() {
+			return getDeathSound();
+		}
+
+		private boolean isPatrollingRole() {
+			return isPatrolling();
+		}
+
+		private void seedRandom(long seed) {
+			random.setSeed(seed);
+		}
+
+		private void setTestTickCount(int ticks) {
+			tickCount = ticks;
+		}
+
+		private void runVillagerHostileRepair() {
+			repairVillagerHostileAwareness();
+		}
+
+		private int countGoalsNamed(String name) {
+			return (int)goalSelector.getAvailableGoals()
+					.stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
+		}
+
+		private int countTargetGoalsNamed(String name) {
+			return (int)targetSelector.getAvailableGoals()
+					.stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
 		}
 	}
 
