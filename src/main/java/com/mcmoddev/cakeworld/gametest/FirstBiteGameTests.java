@@ -17,6 +17,7 @@ import com.mcmoddev.cakeworld.block.CoolingRackBlock;
 import com.mcmoddev.cakeworld.block.GummyBlock;
 import com.mcmoddev.cakeworld.block.IcingLayerBlock;
 import com.mcmoddev.cakeworld.block.MarshmallowBlock;
+import com.mcmoddev.cakeworld.block.SodaFountainBlock;
 import com.mcmoddev.cakeworld.cookbook.CookbookEvents;
 import com.mcmoddev.cakeworld.cookbook.CookbookProgress;
 import com.mcmoddev.cakeworld.cookbook.DiscoveryType;
@@ -748,6 +749,62 @@ public final class FirstBiteGameTests {
 						&& player.getMainHandItem().is(Items.BEEF)
 						&& player.getOffhandItem().is(Items.COAL),
 				"Candy Cooker consumed an unrelated smoker recipe");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void sodaFountainDispensesMeasuredBottleServings(
+			GameTestHelper helper) {
+		var recipes = helper.getLevel().getRecipeManager();
+		require(helper,
+				recipes.byKey(new ResourceLocation(CakeWorld.MODID,
+								"lemonade_bottles")).orElse(null)
+						instanceof ShapelessRecipe
+						&& recipes.byKey(new ResourceLocation(CakeWorld.MODID,
+								"soda_fountain")).isPresent(),
+				"Soda Fountain is missing its block or standard drink recipe");
+		ItemStack lemonadeBucket = new ItemStack(
+				CakeWorldFluids.LEMONADE_BUCKET.get());
+		require(helper, lemonadeBucket.is(SodaFountainBlock.INPUTS),
+				"Lemonade Bucket is missing the public fountain input tag");
+
+		BlockPos relativeFountainPos = new BlockPos(1, 1, 1);
+		BlockPos absoluteFountainPos =
+				helper.absolutePos(relativeFountainPos);
+		SodaFountainBlock fountain =
+				(SodaFountainBlock) CakeWorldBlocks.SODA_FOUNTAIN.get();
+		helper.setBlock(relativeFountainPos, fountain.defaultBlockState());
+		Player player = helper.makeMockPlayer();
+		player.getAbilities().instabuild = false;
+		player.setItemInHand(InteractionHand.MAIN_HAND, lemonadeBucket);
+		player.setItemInHand(InteractionHand.OFF_HAND,
+				new ItemStack(Items.GLASS_BOTTLE, 2));
+		BlockHitResult hit = new BlockHitResult(
+				Vec3.atCenterOf(absoluteFountainPos), Direction.UP,
+				absoluteFountainPos, false);
+		InteractionResult shortServing = fountain.use(
+				fountain.defaultBlockState(), helper.getLevel(),
+				absoluteFountainPos, player, InteractionHand.MAIN_HAND, hit);
+		require(helper, shortServing == InteractionResult.PASS
+						&& player.getMainHandItem().is(
+								CakeWorldFluids.LEMONADE_BUCKET.get())
+						&& player.getOffhandItem().getCount() == 2,
+				"Fountain consumed an incomplete three-bottle serving");
+
+		player.setItemInHand(InteractionHand.OFF_HAND,
+				new ItemStack(Items.GLASS_BOTTLE, 3));
+		InteractionResult dispensed = fountain.use(
+				fountain.defaultBlockState(), helper.getLevel(),
+				absoluteFountainPos, player, InteractionHand.MAIN_HAND, hit);
+		int lemonadeBottles = player.getInventory().items.stream()
+				.filter(stack -> stack.is(
+						CakeWorldItems.LEMONADE_BOTTLE.get()))
+				.mapToInt(ItemStack::getCount).sum();
+		require(helper, dispensed.consumesAction()
+						&& player.getMainHandItem().is(Items.BUCKET)
+						&& player.getOffhandItem().isEmpty()
+						&& lemonadeBottles == 3,
+				"Fountain did not return the bucket and three drinks");
 		helper.succeed();
 	}
 

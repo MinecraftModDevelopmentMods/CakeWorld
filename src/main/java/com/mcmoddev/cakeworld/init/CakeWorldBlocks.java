@@ -14,6 +14,7 @@ import com.mcmoddev.cakeworld.block.GummyBlock;
 import com.mcmoddev.cakeworld.block.IcingLayerBlock;
 import com.mcmoddev.cakeworld.block.MarshmallowBlock;
 import com.mcmoddev.cakeworld.block.MixingBowlBlock;
+import com.mcmoddev.cakeworld.block.SodaFountainBlock;
 import com.mcmoddev.cakeworld.item.ReusableBlockItem;
 
 import net.minecraft.util.valueproviders.UniformInt;
@@ -196,6 +197,13 @@ public final class CakeWorldBlocks {
 							BlockBehaviour.Properties.of(Material.METAL)
 									.requiresCorrectToolForDrops()
 									.strength(2.5F, 6.0F)
+									.sound(SoundType.METAL)));
+	public static final RegistryObject<Block> SODA_FOUNTAIN =
+			block("soda_fountain",
+					() -> new SodaFountainBlock(
+							BlockBehaviour.Properties.of(Material.METAL)
+									.requiresCorrectToolForDrops()
+									.strength(2.0F, 6.0F)
 									.sound(SoundType.METAL)));
 
 	private CakeWorldBlocks() {
