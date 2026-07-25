@@ -19,6 +19,7 @@ import com.mcmoddev.cakeworld.entity.SoggyBiscuit;
 import com.mcmoddev.cakeworld.entity.SoggyTridentProjectile;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
 import com.mcmoddev.cakeworld.entity.SugarBee;
+import com.mcmoddev.cakeworld.entity.TaffyTallwalker;
 import com.mcmoddev.cakeworld.entity.TrufflePig;
 
 import net.minecraft.world.entity.EntityType;
@@ -41,6 +42,7 @@ import net.minecraft.world.entity.monster.Blaze;
 import net.minecraft.world.entity.monster.CaveSpider;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.ElderGuardian;
+import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
@@ -127,6 +129,12 @@ public final class CakeWorldEntities {
 							MobCategory.MONSTER)
 							.sized(1.9975F, 1.9975F)
 							.clientTrackingRange(10));
+	public static final RegistryObject<EntityType<TaffyTallwalker>>
+			TAFFY_TALLWALKER = entity("taffy_tallwalker",
+					EntityType.Builder.of(TaffyTallwalker::new,
+							MobCategory.MONSTER)
+							.sized(0.6F, 2.9F)
+							.clientTrackingRange(8));
 	public static final RegistryObject<EntityType<PopRockPopper>>
 			POP_ROCK_POPPER = entity("pop_rock_popper",
 					EntityType.Builder.of(PopRockPopper::new,
@@ -188,6 +196,8 @@ public final class CakeWorldEntities {
 				Zombie.createAttributes().build());
 		event.put(GRAND_GUMBALL_GUARDIAN.get(),
 				ElderGuardian.createAttributes().build());
+		event.put(TAFFY_TALLWALKER.get(),
+				EnderMan.createAttributes().build());
 		event.put(POP_ROCK_POPPER.get(), Creeper.createAttributes().build());
 		event.put(CINNAMON_SPARK.get(),
 				Blaze.createAttributes().build());
@@ -236,6 +246,10 @@ public final class CakeWorldEntities {
 					SpawnPlacements.Type.IN_WATER,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					SoggyBiscuit::checkSoggyBiscuitSpawnRules);
+			SpawnPlacements.register(TAFFY_TALLWALKER.get(),
+					SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					Monster::checkMonsterSpawnRules);
 			SpawnPlacements.register(POP_ROCK_POPPER.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,

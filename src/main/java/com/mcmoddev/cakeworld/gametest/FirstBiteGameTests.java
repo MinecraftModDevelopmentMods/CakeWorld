@@ -46,6 +46,7 @@ import com.mcmoddev.cakeworld.entity.SoggyBiscuit;
 import com.mcmoddev.cakeworld.entity.SoggyTridentProjectile;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
 import com.mcmoddev.cakeworld.entity.SugarBee;
+import com.mcmoddev.cakeworld.entity.TaffyTallwalker;
 import com.mcmoddev.cakeworld.entity.TrufflePig;
 import com.mcmoddev.cakeworld.effect.FizzyFeetEffect;
 import com.mcmoddev.cakeworld.init.CakeWorldBiomes;
@@ -96,6 +97,7 @@ import net.minecraft.world.entity.animal.axolotl.Axolotl;
 import net.minecraft.world.entity.animal.horse.Horse;
 import net.minecraft.world.entity.monster.Drowned;
 import net.minecraft.world.entity.monster.ElderGuardian;
+import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.entity.projectile.SmallFireball;
 import net.minecraft.world.entity.projectile.ThrownTrident;
 import net.minecraft.world.entity.player.Player;
@@ -131,6 +133,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
+import net.minecraftforge.event.ForgeEventFactory;
 import net.minecraftforge.common.util.FakePlayerFactory;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
@@ -2767,6 +2770,159 @@ public final class FirstBiteGameTests {
 		requireCriterion(helper, advancementPlayer,
 				"minecraft:adventure/kill_all_mobs",
 				"minecraft:elder_guardian");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void taffyTallwalkersTeleportAndCarryWithoutSafeGrief(
+			GameTestHelper helper) {
+		TaffyTallwalker tallwalker =
+				CakeWorldEntities.TAFFY_TALLWALKER.get()
+						.create(helper.getLevel());
+		Pig target = EntityType.PIG.create(helper.getLevel());
+		require(helper, tallwalker != null && target != null,
+				"Could not create Taffy Tallwalker fixtures");
+		BlockPos anchor = helper.absolutePos(new BlockPos(2, 3, 2));
+		tallwalker.setNoAi(true);
+		tallwalker.setPos(anchor.getX(), anchor.getY(), anchor.getZ());
+		target.setPos(anchor.getX() + 2.0D,
+				anchor.getY(), anchor.getZ());
+		helper.getLevel().addFreshEntity(tallwalker);
+		helper.getLevel().addFreshEntity(target);
+		require(helper,
+				tallwalker instanceof EnderMan
+						&& tallwalker.isSensitiveToWater()
+						&& Math.abs(tallwalker.getMaxHealth() - 40.0F)
+								< 0.001F
+						&& Math.abs(tallwalker.getAttributeValue(
+								Attributes.ATTACK_DAMAGE) - 7.0D)
+								< 0.001D
+						&& Math.abs(tallwalker.getAttributeValue(
+								Attributes.FOLLOW_RANGE) - 64.0D)
+								< 0.001D,
+				"Taffy Tallwalker lost the Enderman teleport/water, health, attack or follow-range role");
+
+		UUID angerTarget = UUID.fromString(
+				"1978feed-feed-4bad-babe-1978feed2016");
+		tallwalker.setRemainingPersistentAngerTime(321);
+		tallwalker.setPersistentAngerTarget(angerTarget);
+		tallwalker.setCarriedBlock(CakeWorldBlocks.ICING_LAYER.get()
+				.defaultBlockState());
+		require(helper, tallwalker.requiresCustomPersistence(),
+				"A block-carrying Taffy Tallwalker was not persistent");
+		CompoundTag saved = tallwalker.saveWithoutId(new CompoundTag());
+		TaffyTallwalker restored =
+				CakeWorldEntities.TAFFY_TALLWALKER.get()
+						.create(helper.getLevel());
+		require(helper, restored != null,
+				"Could not create Taffy Tallwalker NBT fixture");
+		restored.load(saved);
+		require(helper,
+				restored.getCarriedBlock() != null
+						&& restored.getCarriedBlock().is(
+								CakeWorldBlocks.ICING_LAYER.get())
+						&& restored.getRemainingPersistentAngerTime()
+								== 321
+						&& angerTarget.equals(
+								restored.getPersistentAngerTarget()),
+				"Taffy Tallwalker lost its carried block or persistent anger through NBT");
+
+		Difficulty originalDifficulty = helper.getLevel().getDifficulty();
+		boolean originalMobGriefing = helper.getLevel().getGameRules()
+				.getBoolean(GameRules.RULE_MOBGRIEFING);
+		try {
+			helper.getLevel().getGameRules()
+					.getRule(GameRules.RULE_MOBGRIEFING)
+					.set(true, helper.getLevel().getServer());
+			for (Difficulty safeDifficulty :
+					new Difficulty[] {Difficulty.EASY, Difficulty.NORMAL}) {
+				helper.getLevel().getServer().setDifficulty(
+						safeDifficulty, true);
+				target.removeAllEffects();
+				target.setHealth(10.0F);
+				target.setSecondsOnFire(5);
+				target.fallDistance = 12.0F;
+				target.setDeltaMovement(Vec3.ZERO);
+				require(helper,
+						tallwalker.doHurtTarget(target)
+								&& Math.abs(target.getHealth()
+										- 10.0F) < 0.001F
+								&& !target.isOnFire()
+								&& target.fallDistance == 0.0F
+								&& target.hasEffect(
+										MobEffects.MOVEMENT_SLOWDOWN)
+								&& target.hasEffect(
+										MobEffects.LEVITATION)
+								&& target.hasEffect(
+										MobEffects.SLOW_FALLING)
+								&& target.hasEffect(
+										MobEffects.FIRE_RESISTANCE)
+								&& target.hasEffect(
+										MobEffects.DAMAGE_RESISTANCE)
+								&& target.getEffect(
+										MobEffects.DAMAGE_RESISTANCE)
+										.getAmplifier() == 4,
+						safeDifficulty
+								+ " Taffy Tallwalker attack caused damage or lacked void-rescue effects");
+				require(helper,
+						!ForgeEventFactory.getMobGriefingEvent(
+								helper.getLevel(), tallwalker),
+						safeDifficulty
+								+ " Taffy Tallwalker could take or place blocks");
+			}
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			target.removeAllEffects();
+			target.setHealth(10.0F);
+			require(helper,
+					tallwalker.doHurtTarget(target)
+							&& target.getHealth() < 10.0F,
+					"Hard Taffy Tallwalker did not retain real Enderman damage");
+			require(helper,
+					ForgeEventFactory.getMobGriefingEvent(
+							helper.getLevel(), tallwalker),
+					"Hard Taffy Tallwalker did not honor the enabled mobGriefing rule");
+		} finally {
+			helper.getLevel().getGameRules()
+					.getRule(GameRules.RULE_MOBGRIEFING)
+					.set(originalMobGriefing,
+							helper.getLevel().getServer());
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		for (ResourceLocation biomeId : new ResourceLocation[] {
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS.getId()}) {
+			Biome loaded = helper.getLevel().registryAccess()
+					.registryOrThrow(Registry.BIOME_REGISTRY)
+					.get(biomeId);
+			require(helper, loaded != null,
+					"Could not inspect Taffy Tallwalker biome role");
+			requireSpawnReplacement(helper, loaded,
+					EntityType.ENDERMAN,
+					CakeWorldEntities.TAFFY_TALLWALKER.get(),
+					MobCategory.MONSTER);
+		}
+		require(helper,
+				CakeWorldItems.TAFFY_TALLWALKER_SPAWN_EGG.isPresent(),
+				"Taffy Tallwalker has no creative/testing spawn egg");
+
+		ServerPlayer advancementPlayer = new ServerPlayer(
+				helper.getLevel().getServer(), helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed3016"),
+						"CakeWorldTaffyTallwalkerRoleTest"));
+		VanillaRoleAdvancements.creditKilledEndermanRole(
+				advancementPlayer);
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:adventure/kill_all_mobs",
+				"minecraft:enderman");
 		helper.succeed();
 	}
 

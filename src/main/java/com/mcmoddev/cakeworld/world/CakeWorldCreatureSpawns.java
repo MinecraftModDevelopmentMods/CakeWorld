@@ -33,6 +33,9 @@ public final class CakeWorldCreatureSpawns {
 			return;
 		}
 
+		replace(event, MobCategory.MONSTER, EntityType.ENDERMAN,
+				CakeWorldEntities.TAFFY_TALLWALKER, 10, 1, 4);
+
 		if (OVERWORLD_BIOMES.contains(biome.getPath())) {
 			replace(event, MobCategory.MONSTER, EntityType.ZOMBIE,
 					CakeWorldEntities.STALE_CRUMBLER, 95, 4, 4);

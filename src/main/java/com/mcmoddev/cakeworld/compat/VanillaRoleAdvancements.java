@@ -89,6 +89,10 @@ public final class VanillaRoleAdvancements {
 		award(player, KILL_ALL, "minecraft:elder_guardian");
 	}
 
+	public static void creditKilledEndermanRole(ServerPlayer player) {
+		award(player, KILL_ALL, "minecraft:enderman");
+	}
+
 	private static String killedCriterion(EntityType<?> type) {
 		if (type == CakeWorldEntities.STALE_CRUMBLER.get()) {
 			return "minecraft:zombie";
@@ -107,6 +111,9 @@ public final class VanillaRoleAdvancements {
 		}
 		if (type == CakeWorldEntities.GRAND_GUMBALL_GUARDIAN.get()) {
 			return "minecraft:elder_guardian";
+		}
+		if (type == CakeWorldEntities.TAFFY_TALLWALKER.get()) {
+			return "minecraft:enderman";
 		}
 		return null;
 	}
