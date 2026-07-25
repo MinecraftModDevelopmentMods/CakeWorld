@@ -13,11 +13,13 @@ import net.minecraft.client.renderer.entity.CaveSpiderRenderer;
 import net.minecraft.client.renderer.entity.CodRenderer;
 import net.minecraft.client.renderer.entity.CreeperRenderer;
 import net.minecraft.client.renderer.entity.DolphinRenderer;
+import net.minecraft.client.renderer.entity.DrownedRenderer;
 import net.minecraft.client.renderer.entity.CowRenderer;
 import net.minecraft.client.renderer.entity.PigRenderer;
 import net.minecraft.client.renderer.entity.SheepRenderer;
 import net.minecraft.client.renderer.entity.ZombieRenderer;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
+import net.minecraft.client.renderer.entity.ThrownTridentRenderer;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -48,6 +50,10 @@ public final class CakeWorldClientEvents {
 				DolphinRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.DOUGH_DONKEY.get(),
 				DoughDonkeyRenderer::new);
+		event.registerEntityRenderer(CakeWorldEntities.SOGGY_BISCUIT.get(),
+				DrownedRenderer::new);
+		event.registerEntityRenderer(CakeWorldEntities.SOGGY_TRIDENT.get(),
+				ThrownTridentRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.POP_ROCK_POPPER.get(),
 				CreeperRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.CINNAMON_SPARK.get(),

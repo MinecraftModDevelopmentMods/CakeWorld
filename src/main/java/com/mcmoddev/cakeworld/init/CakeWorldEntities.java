@@ -14,6 +14,8 @@ import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.PopRockPopper;
 import com.mcmoddev.cakeworld.entity.SodaCod;
 import com.mcmoddev.cakeworld.entity.SodaDolphin;
+import com.mcmoddev.cakeworld.entity.SoggyBiscuit;
+import com.mcmoddev.cakeworld.entity.SoggyTridentProjectile;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
 import com.mcmoddev.cakeworld.entity.SugarBee;
 import com.mcmoddev.cakeworld.entity.TrufflePig;
@@ -101,6 +103,20 @@ public final class CakeWorldEntities {
 							MobCategory.CREATURE)
 							.sized(1.3964844F, 1.5F)
 							.clientTrackingRange(10));
+	public static final RegistryObject<EntityType<SoggyBiscuit>> SOGGY_BISCUIT =
+			entity("soggy_biscuit",
+					EntityType.Builder.of(SoggyBiscuit::new,
+							MobCategory.MONSTER)
+							.sized(0.6F, 1.95F)
+							.clientTrackingRange(8));
+	public static final RegistryObject<EntityType<SoggyTridentProjectile>>
+			SOGGY_TRIDENT = entity("soggy_trident",
+					EntityType.Builder.<SoggyTridentProjectile>of(
+							SoggyTridentProjectile::new,
+							MobCategory.MISC)
+							.sized(0.5F, 0.5F)
+							.clientTrackingRange(4)
+							.updateInterval(20));
 	public static final RegistryObject<EntityType<PopRockPopper>>
 			POP_ROCK_POPPER = entity("pop_rock_popper",
 					EntityType.Builder.of(PopRockPopper::new,
@@ -158,6 +174,8 @@ public final class CakeWorldEntities {
 		event.put(DOUGH_DONKEY.get(),
 				AbstractChestedHorse.createBaseChestedHorseAttributes()
 						.build());
+		event.put(SOGGY_BISCUIT.get(),
+				Zombie.createAttributes().build());
 		event.put(POP_ROCK_POPPER.get(), Creeper.createAttributes().build());
 		event.put(CINNAMON_SPARK.get(),
 				Blaze.createAttributes().build());
@@ -202,6 +220,10 @@ public final class CakeWorldEntities {
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					Animal::checkAnimalSpawnRules);
+			SpawnPlacements.register(SOGGY_BISCUIT.get(),
+					SpawnPlacements.Type.IN_WATER,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					SoggyBiscuit::checkSoggyBiscuitSpawnRules);
 			SpawnPlacements.register(POP_ROCK_POPPER.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,

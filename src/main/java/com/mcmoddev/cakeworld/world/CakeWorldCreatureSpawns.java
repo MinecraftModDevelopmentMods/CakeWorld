@@ -60,6 +60,8 @@ public final class CakeWorldCreatureSpawns {
 					CakeWorldEntities.MALLOW_CHICK, 10, 2, 4);
 		}
 		if ("soda_ocean".equals(biome.getPath())) {
+			replace(event, MobCategory.MONSTER, EntityType.DROWNED,
+					CakeWorldEntities.SOGGY_BISCUIT, 5, 1, 1);
 			replace(event, MobCategory.AXOLOTLS, EntityType.AXOLOTL,
 					CakeWorldEntities.JELLYLOTL, 6, 1, 3);
 			replace(event, MobCategory.WATER_AMBIENT, EntityType.COD,

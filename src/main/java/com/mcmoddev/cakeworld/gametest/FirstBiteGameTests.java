@@ -41,6 +41,8 @@ import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.PopRockPopper;
 import com.mcmoddev.cakeworld.entity.SodaCod;
 import com.mcmoddev.cakeworld.entity.SodaDolphin;
+import com.mcmoddev.cakeworld.entity.SoggyBiscuit;
+import com.mcmoddev.cakeworld.entity.SoggyTridentProjectile;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
 import com.mcmoddev.cakeworld.entity.SugarBee;
 import com.mcmoddev.cakeworld.entity.TrufflePig;
@@ -78,6 +80,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.AgeableMob;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -88,7 +91,9 @@ import net.minecraft.world.entity.animal.Cod;
 import net.minecraft.world.entity.animal.WaterAnimal;
 import net.minecraft.world.entity.animal.axolotl.Axolotl;
 import net.minecraft.world.entity.animal.horse.Horse;
+import net.minecraft.world.entity.monster.Drowned;
 import net.minecraft.world.entity.projectile.SmallFireball;
+import net.minecraft.world.entity.projectile.ThrownTrident;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
@@ -128,6 +133,7 @@ import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.world.BlockEvent;
 import com.mcmoddev.cakeworld.world.StarterPicnicFeature;
+import com.mcmoddev.cakeworld.world.CakeWorldDrownedReplacement;
 
 @GameTestHolder(CakeWorld.MODID)
 @PrefixGameTestTemplate(false)
@@ -2406,6 +2412,189 @@ public final class FirstBiteGameTests {
 		requireCriterion(helper, advancementPlayer,
 				"minecraft:husbandry/bred_all_animals",
 				"minecraft:donkey");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void soggyBiscuitsKeepAquaticRolesGentleUntilHard(
+			GameTestHelper helper) {
+		SoggyBiscuit biscuit = CakeWorldEntities.SOGGY_BISCUIT.get()
+				.create(helper.getLevel());
+		Pig target = EntityType.PIG.create(helper.getLevel());
+		require(helper, biscuit != null && target != null,
+				"Could not create Soggy Biscuit attack fixtures");
+		BlockPos anchor = helper.absolutePos(new BlockPos(2, 3, 2));
+		biscuit.setPos(anchor.getX(), anchor.getY(), anchor.getZ());
+		target.setPos(anchor.getX() + 2.0D,
+				anchor.getY(), anchor.getZ());
+		biscuit.setItemSlot(EquipmentSlot.MAINHAND,
+				new ItemStack(Items.TRIDENT));
+		helper.getLevel().addFreshEntity(biscuit);
+		helper.getLevel().addFreshEntity(target);
+
+		BlockPos lemonadePos = anchor.offset(0, 0, 4);
+		helper.getLevel().setBlock(lemonadePos,
+				CakeWorldFluids.LEMONADE_BLOCK.get()
+						.defaultBlockState(), 3);
+		require(helper, SoggyBiscuit.isTaggedWater(
+						helper.getLevel(), lemonadePos),
+				"Soggy Biscuit's daylight water goal did not recognize Lemonade through the standard water tag");
+		biscuit.setSwimming(true);
+		require(helper, !biscuit.isPushedByFluid(),
+				"Soggy Biscuit lost Drowned swimming-fluid control");
+		biscuit.setSwimming(false);
+		require(helper, biscuit.isPushedByFluid(),
+				"Soggy Biscuit no longer resumes ordinary fluid pushing on land");
+
+		Difficulty originalDifficulty = helper.getLevel().getDifficulty();
+		try {
+			for (Difficulty safeDifficulty :
+					new Difficulty[] {Difficulty.EASY, Difficulty.NORMAL}) {
+				helper.getLevel().getServer().setDifficulty(
+						safeDifficulty, true);
+				target.removeAllEffects();
+				target.setHealth(10.0F);
+				target.setSecondsOnFire(5);
+				target.fallDistance = 8.0F;
+				target.setDeltaMovement(Vec3.ZERO);
+				require(helper,
+						biscuit.doHurtTarget(target)
+								&& Math.abs(target.getHealth() - 10.0F)
+										< 0.001F
+								&& !target.isOnFire()
+								&& target.fallDistance == 0.0F
+								&& target.hasEffect(
+										MobEffects.MOVEMENT_SLOWDOWN)
+								&& target.hasEffect(
+										MobEffects.DIG_SLOWDOWN)
+								&& target.hasEffect(
+										MobEffects.WATER_BREATHING)
+								&& target.hasEffect(
+										MobEffects.SLOW_FALLING)
+								&& target.hasEffect(
+										MobEffects.FIRE_RESISTANCE)
+								&& target.hasEffect(
+										MobEffects.DAMAGE_RESISTANCE)
+								&& target.getEffect(
+										MobEffects.DAMAGE_RESISTANCE)
+										.getAmplifier() == 4,
+						safeDifficulty
+								+ " Soggy Biscuit melee caused damage or lacked soggy/rescue effects");
+
+				target.removeAllEffects();
+				target.setHealth(10.0F);
+				biscuit.performRangedAttack(target, 1.0F);
+				java.util.List<SoggyTridentProjectile> safeTridents =
+						helper.getLevel().getEntitiesOfClass(
+								SoggyTridentProjectile.class,
+								biscuit.getBoundingBox().inflate(4.0D));
+				require(helper, safeTridents.size() == 1
+								&& safeTridents.get(0).getType()
+										== CakeWorldEntities.SOGGY_TRIDENT.get(),
+						safeDifficulty
+								+ " Soggy Biscuit did not throw its visible safe trident");
+				require(helper,
+						safeTridents.get(0).splash(target)
+								&& Math.abs(target.getHealth() - 10.0F)
+										< 0.001F
+								&& target.hasEffect(
+										MobEffects.MOVEMENT_SLOWDOWN)
+								&& target.hasEffect(
+										MobEffects.WATER_BREATHING)
+								&& target.hasEffect(
+										MobEffects.DAMAGE_RESISTANCE),
+						safeDifficulty
+								+ " Soggy Trident caused damage or lacked its splash protection");
+				safeTridents.get(0).discard();
+			}
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			target.removeAllEffects();
+			target.setHealth(10.0F);
+			require(helper, biscuit.doHurtTarget(target)
+							&& target.getHealth() < 10.0F,
+					"Hard Soggy Biscuit did not retain real melee damage");
+			biscuit.performRangedAttack(target, 1.0F);
+			java.util.List<ThrownTrident> hardTridents =
+					helper.getLevel().getEntitiesOfClass(
+							ThrownTrident.class,
+							biscuit.getBoundingBox().inflate(4.0D),
+							trident -> trident.getType()
+									== EntityType.TRIDENT);
+			require(helper, hardTridents.size() == 1,
+					"Hard Soggy Biscuit did not retain the genuine damaging vanilla trident projectile");
+			hardTridents.forEach(ThrownTrident::discard);
+		} finally {
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		Drowned ruinDrowned = EntityType.DROWNED.create(
+				helper.getLevel());
+		require(helper, ruinDrowned != null,
+				"Could not create the ocean-ruin conversion fixture");
+		ResourceLocation fixtureBiome = helper.getLevel().getBiome(anchor)
+				.unwrapKey().map(key -> key.location()).orElse(null);
+		require(helper, fixtureBiome != null
+						&& CakeWorld.MODID.equals(
+								fixtureBiome.getNamespace()),
+				"Ocean-ruin conversion fixture was not in a CakeWorld biome");
+		ruinDrowned.moveTo(anchor.getX(), anchor.getY(), anchor.getZ(),
+				37.0F, 0.0F);
+		ruinDrowned.setItemSlot(EquipmentSlot.MAINHAND,
+				new ItemStack(Items.TRIDENT));
+		ruinDrowned.setItemSlot(EquipmentSlot.OFFHAND,
+				new ItemStack(Items.NAUTILUS_SHELL));
+		ruinDrowned.setCustomName(new TextComponent("Sodden"));
+		ruinDrowned.setPersistenceRequired();
+		SoggyBiscuit converted =
+				CakeWorldDrownedReplacement.convertIfInCakeWorldBiome(
+						helper.getLevel(), ruinDrowned);
+		require(helper, converted != null
+						&& converted.getType()
+								== CakeWorldEntities.SOGGY_BISCUIT.get()
+						&& converted.getMainHandItem().is(Items.TRIDENT)
+						&& converted.getOffhandItem().is(
+								Items.NAUTILUS_SHELL)
+						&& converted.hasCustomName()
+						&& converted.getCustomName().getString()
+								.equals("Sodden")
+						&& converted.isPersistenceRequired()
+						&& Math.abs(converted.getYRot() - 37.0F)
+								< 0.001F,
+				"Ocean-ruin/Zombie conversion lost Drowned type, equipment, name, persistence or rotation");
+
+		Biome sodaOcean = helper.getLevel().registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY)
+				.get(CakeWorldBiomes.SODA_OCEAN.getId());
+		require(helper, sodaOcean != null,
+				"Could not inspect Soda Ocean Soggy Biscuit spawning");
+		requireSpawnReplacement(helper, sodaOcean, EntityType.DROWNED,
+				CakeWorldEntities.SOGGY_BISCUIT.get(),
+				MobCategory.MONSTER);
+		TagKey<EntityType<?>> axolotlHostiles = TagKey.create(
+				Registry.ENTITY_TYPE_REGISTRY,
+				new ResourceLocation("minecraft",
+						"axolotl_always_hostiles"));
+		require(helper,
+				CakeWorldEntities.SOGGY_BISCUIT.get()
+						.is(axolotlHostiles),
+				"Soggy Biscuit did not preserve Drowned's axolotl-hostile tag role");
+		require(helper,
+				CakeWorldItems.SOGGY_BISCUIT_SPAWN_EGG.isPresent(),
+				"Soggy Biscuit has no creative/testing spawn egg");
+
+		ServerPlayer advancementPlayer = new ServerPlayer(
+				helper.getLevel().getServer(), helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2013"),
+						"CakeWorldSoggyBiscuitRoleTest"));
+		VanillaRoleAdvancements.creditKilledDrownedRole(
+				advancementPlayer);
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:adventure/kill_all_mobs",
+				"minecraft:drowned");
 		helper.succeed();
 	}
 

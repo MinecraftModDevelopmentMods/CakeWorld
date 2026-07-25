@@ -80,6 +80,10 @@ public final class VanillaRoleAdvancements {
 		award(player, KILL_ALL, "minecraft:creeper");
 	}
 
+	public static void creditKilledDrownedRole(ServerPlayer player) {
+		award(player, KILL_ALL, "minecraft:drowned");
+	}
+
 	private static String killedCriterion(EntityType<?> type) {
 		if (type == CakeWorldEntities.STALE_CRUMBLER.get()) {
 			return "minecraft:zombie";
@@ -92,6 +96,9 @@ public final class VanillaRoleAdvancements {
 		}
 		if (type == CakeWorldEntities.POP_ROCK_POPPER.get()) {
 			return "minecraft:creeper";
+		}
+		if (type == CakeWorldEntities.SOGGY_BISCUIT.get()) {
+			return "minecraft:drowned";
 		}
 		return null;
 	}
