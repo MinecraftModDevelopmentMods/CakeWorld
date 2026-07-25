@@ -1,5 +1,6 @@
 package com.mcmoddev.cakeworld.gametest;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -44,6 +45,7 @@ import com.mcmoddev.cakeworld.entity.GlowJelly;
 import com.mcmoddev.cakeworld.entity.GumballGuardian;
 import com.mcmoddev.cakeworld.entity.FudgeBoar;
 import com.mcmoddev.cakeworld.entity.GingerbreadPony;
+import com.mcmoddev.cakeworld.entity.JawbreakerGuardian;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.MallowFloater;
 import com.mcmoddev.cakeworld.entity.MallowPuffProjectile;
@@ -106,6 +108,7 @@ import net.minecraft.world.entity.MobType;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.ai.sensing.GolemSensor;
 import net.minecraft.world.entity.ai.sensing.HoglinSpecificSensor;
 import net.minecraft.world.entity.ai.sensing.NearestLivingEntitySensor;
 import net.minecraft.world.entity.ai.sensing.PiglinSpecificSensor;
@@ -117,6 +120,7 @@ import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.animal.Cat;
 import net.minecraft.world.entity.animal.Cod;
 import net.minecraft.world.entity.animal.Fox;
+import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.animal.goat.Goat;
 import net.minecraft.world.entity.animal.WaterAnimal;
 import net.minecraft.world.entity.animal.axolotl.Axolotl;
@@ -133,6 +137,7 @@ import net.minecraft.world.entity.monster.Giant;
 import net.minecraft.world.entity.monster.Guardian;
 import net.minecraft.world.entity.monster.Husk;
 import net.minecraft.world.entity.monster.Illusioner;
+import net.minecraft.world.entity.monster.Pillager;
 import net.minecraft.world.entity.monster.Ravager;
 import net.minecraft.world.entity.monster.Vex;
 import net.minecraft.world.entity.monster.Zoglin;
@@ -145,6 +150,7 @@ import net.minecraft.world.entity.projectile.LargeFireball;
 import net.minecraft.world.entity.projectile.SmallFireball;
 import net.minecraft.world.entity.projectile.ThrownTrident;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.DyeColor;
@@ -172,6 +178,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.MobSpawnSettings;
 import net.minecraft.world.level.levelgen.GenerationStep;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.minecraft.world.entity.raid.Raid;
 import net.minecraft.world.entity.vehicle.Boat;
@@ -195,6 +202,7 @@ import com.mcmoddev.cakeworld.world.CakeWorldEvokerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldGiantReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldGuardianReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldIllusionerReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldIronGolemReplacement;
 
 @GameTestHolder(CakeWorld.MODID)
 @PrefixGameTestTemplate(false)
@@ -5775,6 +5783,340 @@ public final class FirstBiteGameTests {
 										CakeWorld.MODID,
 										"entities/mirage_confectioner")),
 				"Mirage Confectioner lost empty loot or fabricated a spawn placement, egg, or nonexistent advancement criterion");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void jawbreakerGuardiansKeepSettlementDefenceAndSafeLaunches(
+			GameTestHelper helper) {
+		JawbreakerGuardian guardian =
+				CakeWorldEntities.JAWBREAKER_GUARDIAN
+						.get().create(helper.getLevel());
+		Pig target = EntityType.PIG.create(helper.getLevel());
+		require(helper, guardian != null && target != null,
+				"Could not create Jawbreaker Guardian fixtures");
+		BlockPos anchor = helper.absolutePos(
+				new BlockPos(2, 3, 2));
+		guardian.setPos(anchor.getX(), anchor.getY(),
+				anchor.getZ());
+		target.setPos(anchor.getX() + 2.0D,
+				anchor.getY(), anchor.getZ());
+		require(helper,
+				guardian instanceof IronGolem
+						&& guardian.getType()
+								== CakeWorldEntities
+										.JAWBREAKER_GUARDIAN
+										.get()
+						&& guardian.getType().getCategory()
+								== MobCategory.MISC
+						&& close(guardian.getMaxHealth(),
+								100.0D)
+						&& close(guardian.getAttributeValue(
+								Attributes.MOVEMENT_SPEED),
+								0.25D)
+						&& close(guardian.getAttributeValue(
+								Attributes
+										.KNOCKBACK_RESISTANCE),
+								1.0D)
+						&& close(guardian.getAttributeValue(
+								Attributes.ATTACK_DAMAGE),
+								15.0D)
+						&& close(guardian
+								.getDimensions(Pose.STANDING)
+								.width, 1.4D)
+						&& close(guardian
+								.getDimensions(Pose.STANDING)
+								.height, 2.7D)
+						&& close(guardian.maxUpStep, 1.0D)
+						&& !guardian.causeFallDamage(
+								30.0F, 1.0F,
+								DamageSource.FALL)
+						&& !guardian.removeWhenFarAway(
+								10000.0D),
+				"Jawbreaker Guardian lost Iron Golem type, attributes, body, step, fall, or persistence roles");
+		guardian.setPlayerCreated(true);
+		require(helper,
+				guardian.isPlayerCreated()
+						&& !guardian.canAttackType(
+								EntityType.PLAYER)
+						&& !guardian.canAttackType(
+								EntityType.CREEPER)
+						&& guardian.canAttackType(
+								EntityType.ZOMBIE),
+				"Jawbreaker Guardian lost player-created loyalty or hostile/Creeper targeting rules");
+
+		guardian.setHealth(74.0F);
+		require(helper,
+				guardian.getCrackiness()
+						== IronGolem.Crackiness.LOW,
+				"Jawbreaker Guardian lost low crack state");
+		guardian.setHealth(49.0F);
+		require(helper,
+				guardian.getCrackiness()
+						== IronGolem.Crackiness.MEDIUM,
+				"Jawbreaker Guardian lost medium crack state");
+		guardian.setHealth(24.0F);
+		require(helper,
+				guardian.getCrackiness()
+						== IronGolem.Crackiness.HIGH,
+				"Jawbreaker Guardian lost high crack state");
+		ServerPlayer player = new ServerPlayer(
+				helper.getLevel().getServer(),
+				helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2029"),
+						"CakeWorldJawbreakerGuardianRoleTest"));
+		guardian.setHealth(74.0F);
+		player.setItemInHand(InteractionHand.MAIN_HAND,
+				new ItemStack(Items.IRON_INGOT));
+		InteractionResult repair = player.interactOn(
+				guardian, InteractionHand.MAIN_HAND);
+		require(helper,
+				repair.consumesAction()
+						&& close(guardian.getHealth(), 99.0D)
+						&& guardian.getCrackiness()
+								== IronGolem.Crackiness.NONE
+						&& player.getMainHandItem().isEmpty(),
+				"Jawbreaker Guardian lost one-ingot, twenty-five-health crack repair");
+		guardian.offerFlower(true);
+		require(helper, guardian.getOfferFlowerTick() == 400,
+				"Jawbreaker Guardian lost its Villager flower-offering animation");
+		guardian.offerFlower(false);
+		require(helper, guardian.getOfferFlowerTick() == 0,
+				"Jawbreaker Guardian could not end its flower offering");
+
+		Difficulty originalDifficulty =
+				helper.getLevel().getDifficulty();
+		try {
+			for (Difficulty safeDifficulty :
+					new Difficulty[] {Difficulty.EASY,
+							Difficulty.NORMAL}) {
+				helper.getLevel().getServer().setDifficulty(
+						safeDifficulty, true);
+				target.removeAllEffects();
+				target.setHealth(10.0F);
+				target.invulnerableTime = 0;
+				target.setDeltaMovement(Vec3.ZERO);
+				target.setSecondsOnFire(5);
+				target.fallDistance = 12.0F;
+				boolean attacked =
+						guardian.doHurtTarget(target);
+				require(helper,
+						attacked
+								&& close(target.getHealth(),
+										10.0D)
+								&& guardian
+										.getAttackAnimationTick()
+										== 10
+								&& !target.isOnFire()
+								&& target.fallDistance == 0.0F
+								&& target.hasEffect(
+										MobEffects
+												.MOVEMENT_SLOWDOWN)
+								&& target.hasEffect(
+										MobEffects.GLOWING)
+								&& target.hasEffect(
+										MobEffects
+												.SLOW_FALLING)
+								&& target.hasEffect(
+										MobEffects
+												.FIRE_RESISTANCE)
+								&& target.getEffect(
+										MobEffects
+												.DAMAGE_RESISTANCE)
+										.getAmplifier() == 4
+								&& target.getDeltaMovement()
+										.y > 0.5D,
+						safeDifficulty
+								+ " Jawbreaker swing caused damage or lost its visible protected defence bounce");
+			}
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			target.removeAllEffects();
+			target.setHealth(10.0F);
+			target.invulnerableTime = 0;
+			target.setDeltaMovement(Vec3.ZERO);
+			require(helper,
+					guardian.doHurtTarget(target)
+							&& target.getHealth() < 10.0F
+							&& target.getDeltaMovement().y
+									>= 0.4D,
+					"Hard Jawbreaker Guardian did not retain genuine Iron Golem damage and launch");
+		} finally {
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		Villager villager =
+				EntityType.VILLAGER.create(helper.getLevel());
+		Pillager raider =
+				EntityType.PILLAGER.create(helper.getLevel());
+		require(helper, villager != null && raider != null,
+				"Could not create Jawbreaker village-integration fixtures");
+		villager.setPos(anchor.getX() + 3.0D,
+				anchor.getY(), anchor.getZ());
+		raider.setPos(anchor.getX() + 4.0D,
+				anchor.getY(), anchor.getZ());
+		helper.getLevel().addFreshEntity(guardian);
+		helper.getLevel().addFreshEntity(villager);
+		helper.getLevel().addFreshEntity(raider);
+		villager.getBrain().eraseMemory(
+				MemoryModuleType.GOLEM_DETECTED_RECENTLY);
+		villager.getBrain().setMemory(
+				MemoryModuleType.NEAREST_LIVING_ENTITIES,
+				List.of(guardian));
+		GolemSensor.checkForNearbyGolem(villager);
+		require(helper,
+				!villager.getBrain().hasMemoryValue(
+						MemoryModuleType
+								.GOLEM_DETECTED_RECENTLY),
+				"Vanilla GolemSensor unexpectedly stopped using its literal-type boundary");
+		guardian.refreshVillagerAwareness();
+		require(helper,
+				villager.getBrain().hasMemoryValue(
+						MemoryModuleType
+								.GOLEM_DETECTED_RECENTLY),
+				"Jawbreaker Guardian did not refresh nearby Villager golem awareness");
+		raider.setTarget(guardian);
+		raider.setNoActionTime(999);
+		guardian.refreshRaiderCombatActivity();
+		require(helper, raider.getNoActionTime() == 0,
+				"Jawbreaker Guardian did not preserve active Raider-versus-golem combat");
+
+		var nearestCakeWorldBiome =
+				helper.getLevel().findNearestBiome(
+						holder -> holder.unwrapKey()
+								.map(key -> CakeWorld.MODID
+										.equals(key.location()
+												.getNamespace()))
+								.orElse(false),
+						anchor, 512, 4);
+		require(helper, nearestCakeWorldBiome != null,
+				"Could not locate CakeWorld terrain for Iron Golem conversion");
+		BlockPos conversionPos =
+				nearestCakeWorldBiome.getFirst();
+		IronGolem literal =
+				EntityType.IRON_GOLEM.create(
+						helper.getLevel());
+		Ravager ravager =
+				EntityType.RAVAGER.create(helper.getLevel());
+		require(helper, literal != null && ravager != null,
+				"Could not create Iron Golem conversion fixtures");
+		literal.moveTo(conversionPos.getX(),
+				conversionPos.getY(),
+				conversionPos.getZ(), 29.0F, 0.0F);
+		literal.setHealth(49.0F);
+		literal.setCustomName(new TextComponent(
+				"Jawbreaker Jane"));
+		literal.setPersistenceRequired();
+		literal.setNoAi(true);
+		literal.setPlayerCreated(true);
+		literal.setRemainingPersistentAngerTime(321);
+		literal.setPersistentAngerTarget(
+				player.getUUID());
+		ravager.setPos(conversionPos.getX(),
+				conversionPos.getY(),
+				conversionPos.getZ());
+		helper.getLevel().addFreshEntity(ravager);
+		helper.getLevel().addFreshEntity(literal);
+		CriteriaTriggers.SUMMONED_ENTITY.trigger(
+				player, literal);
+		requireCriterion(helper, player,
+				"minecraft:adventure/summon_iron_golem",
+				"summoned_golem");
+		literal.startRiding(ravager, true);
+		JawbreakerGuardian converted =
+				CakeWorldIronGolemReplacement
+						.replaceIfInCakeWorldBiome(
+								helper.getLevel(),
+								literal);
+		require(helper,
+				converted != null
+						&& literal.isRemoved()
+						&& converted.getType()
+								== CakeWorldEntities
+										.JAWBREAKER_GUARDIAN
+										.get()
+						&& close(converted.getHealth(), 49.0D)
+						&& converted.getCrackiness()
+								== IronGolem.Crackiness.MEDIUM
+						&& converted.hasCustomName()
+						&& "Jawbreaker Jane".equals(
+								converted.getCustomName()
+										.getString())
+						&& converted.isPersistenceRequired()
+						&& converted.isNoAi()
+						&& converted.isPlayerCreated()
+						&& converted
+								.getRemainingPersistentAngerTime()
+								== 321
+						&& player.getUUID().equals(converted
+								.getPersistentAngerTarget())
+						&& close(converted.getYRot(), 29.0D)
+						&& converted.getVehicle() == ravager,
+				"Literal Iron Golem conversion lost type, NBT, crack, loyalty, anger, rotation, or vehicle state");
+
+		for (ResourceLocation biomeId :
+				new ResourceLocation[] {
+						CakeWorldBiomes.CANDY_PLAINS.getId(),
+						CakeWorldBiomes.COOKIE_FOREST.getId(),
+						CakeWorldBiomes.MARSHMALLOW_PEAKS
+								.getId(),
+						CakeWorldBiomes.SODA_OCEAN.getId(),
+						CakeWorldBiomes.FUDGE_WASTES.getId(),
+						CakeWorldBiomes.MERINGUE_ISLANDS
+								.getId()}) {
+			Biome biome = helper.getLevel().registryAccess()
+					.registryOrThrow(
+							Registry.BIOME_REGISTRY)
+					.get(biomeId);
+			require(helper, biome != null,
+					"Could not inspect Jawbreaker structure-only spawn boundary for "
+							+ biomeId);
+			boolean leaked = biome.getMobSettings()
+					.getMobs(MobCategory.MISC)
+					.unwrap().stream()
+					.anyMatch(spawn ->
+							spawn.type
+									== EntityType.IRON_GOLEM
+									|| spawn.type
+											== CakeWorldEntities
+													.JAWBREAKER_GUARDIAN
+													.get());
+			require(helper, !leaked,
+					"Jawbreaker Guardian leaked into open-biome spawning at "
+							+ biomeId);
+		}
+		ResourceLocation eggId = new ResourceLocation(
+				CakeWorld.MODID,
+				"jawbreaker_guardian_spawn_egg");
+		Advancement killAll = helper.getLevel().getServer()
+				.getAdvancements().getAdvancement(
+						new ResourceLocation("minecraft",
+								"adventure/kill_all_mobs"));
+		require(helper,
+				SpawnPlacements.getPlacementType(
+						CakeWorldEntities
+								.JAWBREAKER_GUARDIAN
+								.get())
+						== SpawnPlacements.Type.ON_GROUND
+						&& SpawnPlacements.getHeightmapType(
+								CakeWorldEntities
+										.JAWBREAKER_GUARDIAN
+										.get())
+								== Heightmap.Types
+										.MOTION_BLOCKING_NO_LEAVES
+						&& Registry.ITEM.getOptional(eggId)
+								.isEmpty()
+						&& killAll != null
+						&& !killAll.getCriteria().containsKey(
+								"minecraft:iron_golem")
+						&& converted.getLootTable().equals(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/jawbreaker_guardian")),
+				"Jawbreaker Guardian lost Iron Golem placement/loot or fabricated an egg or Monsters Hunted criterion");
 		helper.succeed();
 	}
 

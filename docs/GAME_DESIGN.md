@@ -262,7 +262,7 @@ document explicitly says otherwise.
 | MOB-026 | `minecraft:horse` | Gingerbread Pony | Primary tameable, saddleable and armour-compatible rideable mount, retaining Horse appearance and attribute inheritance. |
 | MOB-027 | `minecraft:husk` | Dried Crumbler | Daylight-safe Sherbet Dunes Crumbler retaining Husk dimensions, attributes, sounds, loot, water conversion and progression roles; dusty harmless contact below Hard, real damage and Hunger on Hard. |
 | MOB-028 | `minecraft:illusioner` | Mirage Confectioner | Command-only compatibility caster retaining mirage copies, invisibility, Hard-only blindness, bow AI, raider state and empty loot; harmless obscuring sweet shots below Hard and real arrows on Hard. |
-| MOB-029 | `minecraft:iron_golem` | Jawbreaker Guardian | Settlement defender. |
+| MOB-029 | `minecraft:iron_golem` | Jawbreaker Guardian | Settlement defender retaining village patrol, hostile targeting, player-created loyalty, flower offering, anger, crack/repair and construction roles; protected slowing bounce below Hard and real launch damage on Hard. |
 | MOB-030 | `minecraft:llama` | Meringue Llama | Caravan and pack-animal role. |
 | MOB-031 | `minecraft:magma_cube` | Hot-Fudge Blob | Elastic Nether hazard and cream ingredient source. |
 | MOB-032 | `minecraft:mule` | Marzipan Mule | Rideable pack-animal hybrid. |
@@ -340,6 +340,22 @@ entities and commands outside CakeWorld biomes remain untouched. It has no
 natural spawn list, no spawn egg, and no fabricated Monsters Hunted criterion,
 matching all three vanilla Illusioner boundaries. A future structure must
 explicitly approve and specify any ordinary encounter.
+
+MOB-029 converts fresh literal Iron Golems created by villagers, the vanilla
+player block pattern or commands inside CakeWorld terrain; loaded entities and
+fresh entities outside CakeWorld biomes remain untouched. The deferred player
+construction path lets the literal entity satisfy the vanilla Summon an Iron
+Golem criterion before conversion. The inherited pattern still uses iron
+blocks and a carved pumpkin; a future themed construction pattern must define
+its own materials and criterion bridge explicitly.
+
+Villager golem awareness and Raider combat activity compare literal entity
+types in 1.18.2. Jawbreaker Guardians refresh those two memories at the same
+low-frequency cadences while retaining the inherited village, flower, anger
+and defence AI. They keep Iron Golem's exact loot and ground placement but
+have no biome spawn list, spawn egg or Monsters Hunted criterion. Gingerbread
+Villages and their natural defender encounter remain a STRUCT-001 integration
+dependency rather than an invented open-biome spawn.
 
 Projectiles, vehicles, decorative entities, experience, items, the player, and
 other non-mob entity types retain vanilla identity unless a later feature

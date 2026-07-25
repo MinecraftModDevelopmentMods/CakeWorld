@@ -16,6 +16,7 @@ import com.mcmoddev.cakeworld.entity.GrandGumballGuardian;
 import com.mcmoddev.cakeworld.entity.GiantStaleCrumbler;
 import com.mcmoddev.cakeworld.entity.GlowJelly;
 import com.mcmoddev.cakeworld.entity.GumballGuardian;
+import com.mcmoddev.cakeworld.entity.JawbreakerGuardian;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.MallowFloater;
@@ -38,6 +39,7 @@ import com.mcmoddev.cakeworld.entity.TrufflePig;
 
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.GlowSquid;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.entity.animal.Animal;
@@ -49,6 +51,7 @@ import net.minecraft.world.entity.animal.Cat;
 import net.minecraft.world.entity.animal.Cod;
 import net.minecraft.world.entity.animal.Dolphin;
 import net.minecraft.world.entity.animal.Fox;
+import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.animal.Sheep;
@@ -195,6 +198,14 @@ public final class CakeWorldEntities {
 							.sized(0.25F, 0.25F)
 							.clientTrackingRange(4)
 							.updateInterval(10));
+	public static final RegistryObject<EntityType<JawbreakerGuardian>>
+			JAWBREAKER_GUARDIAN = entity(
+					"jawbreaker_guardian",
+					EntityType.Builder.of(
+							JawbreakerGuardian::new,
+							MobCategory.MISC)
+							.sized(1.4F, 2.7F)
+							.clientTrackingRange(10));
 	public static final RegistryObject<EntityType<TaffyTallwalker>>
 			TAFFY_TALLWALKER = entity("taffy_tallwalker",
 					EntityType.Builder.of(TaffyTallwalker::new,
@@ -326,6 +337,8 @@ public final class CakeWorldEntities {
 				Zombie.createAttributes().build());
 		event.put(MIRAGE_CONFECTIONER.get(),
 				Illusioner.createAttributes().build());
+		event.put(JAWBREAKER_GUARDIAN.get(),
+				IronGolem.createAttributes().build());
 		event.put(TAFFY_TALLWALKER.get(),
 				EnderMan.createAttributes().build());
 		event.put(SUGAR_MITE.get(),
@@ -408,6 +421,10 @@ public final class CakeWorldEntities {
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					DriedCrumbler
 							::checkDriedCrumblerSpawnRules);
+			SpawnPlacements.register(JAWBREAKER_GUARDIAN.get(),
+					SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					Mob::checkMobSpawnRules);
 			SpawnPlacements.register(TAFFY_TALLWALKER.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
