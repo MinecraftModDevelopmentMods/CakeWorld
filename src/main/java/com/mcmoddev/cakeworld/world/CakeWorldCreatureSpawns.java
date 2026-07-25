@@ -76,6 +76,8 @@ public final class CakeWorldCreatureSpawns {
 		if ("fudge_wastes".equals(biome.getPath())) {
 			replace(event, MobCategory.MONSTER, EntityType.BLAZE,
 					CakeWorldEntities.CINNAMON_SPARK, 10, 1, 3);
+			replace(event, MobCategory.MONSTER, EntityType.GHAST,
+					CakeWorldEntities.MALLOW_FLOATER, 50, 4, 4);
 		}
 	}
 

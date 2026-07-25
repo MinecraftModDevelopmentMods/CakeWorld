@@ -12,6 +12,8 @@ import com.mcmoddev.cakeworld.entity.DoughDonkey;
 import com.mcmoddev.cakeworld.entity.GrandGumballGuardian;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.MallowChick;
+import com.mcmoddev.cakeworld.entity.MallowFloater;
+import com.mcmoddev.cakeworld.entity.MallowPuffProjectile;
 import com.mcmoddev.cakeworld.entity.PeppermintFox;
 import com.mcmoddev.cakeworld.entity.PopRockPopper;
 import com.mcmoddev.cakeworld.entity.SodaCod;
@@ -49,6 +51,7 @@ import net.minecraft.world.entity.monster.ElderGuardian;
 import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.entity.monster.Endermite;
 import net.minecraft.world.entity.monster.Evoker;
+import net.minecraft.world.entity.monster.Ghast;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
@@ -159,6 +162,22 @@ public final class CakeWorldEntities {
 							MobCategory.CREATURE)
 							.sized(0.6F, 0.7F)
 							.clientTrackingRange(8));
+	public static final RegistryObject<EntityType<MallowFloater>>
+			MALLOW_FLOATER = entity("mallow_floater",
+					EntityType.Builder.of(MallowFloater::new,
+							MobCategory.MONSTER)
+							.fireImmune()
+							.sized(4.0F, 4.0F)
+							.clientTrackingRange(10));
+	public static final RegistryObject<EntityType<MallowPuffProjectile>>
+			MALLOW_PUFF = entity("mallow_puff",
+					EntityType.Builder.<MallowPuffProjectile>of(
+							MallowPuffProjectile::new,
+							MobCategory.MISC)
+							.fireImmune()
+							.sized(1.0F, 1.0F)
+							.clientTrackingRange(4)
+							.updateInterval(10));
 	public static final RegistryObject<EntityType<PopRockPopper>>
 			POP_ROCK_POPPER = entity("pop_rock_popper",
 					EntityType.Builder.of(PopRockPopper::new,
@@ -228,6 +247,8 @@ public final class CakeWorldEntities {
 				Evoker.createAttributes().build());
 		event.put(PEPPERMINT_FOX.get(),
 				Fox.createAttributes().build());
+		event.put(MALLOW_FLOATER.get(),
+				Ghast.createAttributes().build());
 		event.put(POP_ROCK_POPPER.get(), Creeper.createAttributes().build());
 		event.put(CINNAMON_SPARK.get(),
 				Blaze.createAttributes().build());
@@ -288,6 +309,10 @@ public final class CakeWorldEntities {
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					PeppermintFox::checkPeppermintFoxSpawnRules);
+			SpawnPlacements.register(MALLOW_FLOATER.get(),
+					SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					MallowFloater::checkMallowFloaterSpawnRules);
 			SpawnPlacements.register(POP_ROCK_POPPER.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,

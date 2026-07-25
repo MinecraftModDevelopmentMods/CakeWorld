@@ -7,6 +7,7 @@ import net.minecraft.advancements.Advancement;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.projectile.LargeFireball;
 import net.minecraftforge.event.entity.living.BabyEntitySpawnEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -18,6 +19,8 @@ public final class VanillaRoleAdvancements {
 			new ResourceLocation("minecraft", "husbandry/bred_all_animals");
 	private static final ResourceLocation KILL_ALL =
 			new ResourceLocation("minecraft", "adventure/kill_all_mobs");
+	private static final ResourceLocation RETURN_TO_SENDER =
+			new ResourceLocation("minecraft", "nether/return_to_sender");
 	private VanillaRoleAdvancements() {
 	}
 
@@ -36,6 +39,12 @@ public final class VanillaRoleAdvancements {
 					event.getEntityLiving().getType());
 			if (criterion != null) {
 				award(player, KILL_ALL, criterion);
+			}
+			if (event.getEntityLiving().getType()
+						== CakeWorldEntities.MALLOW_FLOATER.get()
+					&& event.getSource().getDirectEntity()
+							instanceof LargeFireball) {
+				creditReturnToSenderRole(player);
 			}
 		}
 	}
@@ -103,6 +112,14 @@ public final class VanillaRoleAdvancements {
 		award(player, KILL_ALL, "minecraft:evoker");
 	}
 
+	public static void creditKilledGhastRole(ServerPlayer player) {
+		award(player, KILL_ALL, "minecraft:ghast");
+	}
+
+	public static void creditReturnToSenderRole(ServerPlayer player) {
+		award(player, RETURN_TO_SENDER, "killed_ghast");
+	}
+
 	private static String killedCriterion(EntityType<?> type) {
 		if (type == CakeWorldEntities.STALE_CRUMBLER.get()) {
 			return "minecraft:zombie";
@@ -130,6 +147,9 @@ public final class VanillaRoleAdvancements {
 		}
 		if (type == CakeWorldEntities.SOUR_SORCERER.get()) {
 			return "minecraft:evoker";
+		}
+		if (type == CakeWorldEntities.MALLOW_FLOATER.get()) {
+			return "minecraft:ghast";
 		}
 		return null;
 	}

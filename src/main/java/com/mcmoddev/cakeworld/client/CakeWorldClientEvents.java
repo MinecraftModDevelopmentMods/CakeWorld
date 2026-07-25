@@ -19,6 +19,7 @@ import net.minecraft.client.renderer.entity.EndermanRenderer;
 import net.minecraft.client.renderer.entity.EndermiteRenderer;
 import net.minecraft.client.renderer.entity.EvokerRenderer;
 import net.minecraft.client.renderer.entity.FoxRenderer;
+import net.minecraft.client.renderer.entity.GhastRenderer;
 import net.minecraft.client.renderer.entity.CowRenderer;
 import net.minecraft.client.renderer.entity.PigRenderer;
 import net.minecraft.client.renderer.entity.SheepRenderer;
@@ -71,6 +72,11 @@ public final class CakeWorldClientEvents {
 				EvokerRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.PEPPERMINT_FOX.get(),
 				FoxRenderer::new);
+		event.registerEntityRenderer(CakeWorldEntities.MALLOW_FLOATER.get(),
+				GhastRenderer::new);
+		event.registerEntityRenderer(CakeWorldEntities.MALLOW_PUFF.get(),
+				context -> new ThrownItemRenderer<>(
+						context, 3.0F, true));
 		event.registerEntityRenderer(CakeWorldEntities.POP_ROCK_POPPER.get(),
 				CreeperRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.CINNAMON_SPARK.get(),

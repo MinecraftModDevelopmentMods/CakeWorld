@@ -39,6 +39,8 @@ import com.mcmoddev.cakeworld.entity.DeepLiquoriceWeaver;
 import com.mcmoddev.cakeworld.entity.DoughDonkey;
 import com.mcmoddev.cakeworld.entity.GrandGumballGuardian;
 import com.mcmoddev.cakeworld.entity.MallowChick;
+import com.mcmoddev.cakeworld.entity.MallowFloater;
+import com.mcmoddev.cakeworld.entity.MallowPuffProjectile;
 import com.mcmoddev.cakeworld.entity.PeppermintFox;
 import com.mcmoddev.cakeworld.entity.PopRockPopper;
 import com.mcmoddev.cakeworld.entity.SodaCod;
@@ -106,9 +108,12 @@ import net.minecraft.world.entity.monster.ElderGuardian;
 import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.entity.monster.Endermite;
 import net.minecraft.world.entity.monster.Evoker;
+import net.minecraft.world.entity.monster.Ghast;
 import net.minecraft.world.entity.monster.Ravager;
 import net.minecraft.world.entity.monster.Vex;
+import net.minecraft.world.entity.projectile.AbstractHurtingProjectile;
 import net.minecraft.world.entity.projectile.EvokerFangs;
+import net.minecraft.world.entity.projectile.LargeFireball;
 import net.minecraft.world.entity.projectile.SmallFireball;
 import net.minecraft.world.entity.projectile.ThrownTrident;
 import net.minecraft.world.entity.player.Player;
@@ -3403,6 +3408,158 @@ public final class FirstBiteGameTests {
 						"peppermint_pinewoods"));
 		require(helper, peppermintPinewoods == null,
 				"Peppermint Pinewoods now exists; replace this dependency gate with exact Fox spawn-role proof");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void mallowFloatersUseSafePuffsUntilHard(
+			GameTestHelper helper) {
+		MallowFloater floater = CakeWorldEntities.MALLOW_FLOATER.get()
+				.create(helper.getLevel());
+		Pig target = EntityType.PIG.create(helper.getLevel());
+		require(helper, floater != null && target != null,
+				"Could not create Mallow Floater fixtures");
+		BlockPos anchor = helper.absolutePos(new BlockPos(2, 4, 2));
+		floater.setNoAi(true);
+		floater.setPos(anchor.getX(), anchor.getY(), anchor.getZ());
+		target.setPos(anchor.getX() + 4.0D,
+				anchor.getY(), anchor.getZ());
+		helper.getLevel().addFreshEntity(floater);
+		helper.getLevel().addFreshEntity(target);
+		CompoundTag floaterState = floater.saveWithoutId(
+				new CompoundTag());
+		floaterState.putByte("ExplosionPower", (byte)3);
+		floater.load(floaterState);
+		require(helper,
+				floater instanceof Ghast
+						&& floater.fireImmune()
+						&& floater.getExplosionPower() == 3
+						&& Math.abs(floater.getMaxHealth() - 10.0F)
+								< 0.001F
+						&& Math.abs(floater.getAttributeValue(
+								Attributes.FOLLOW_RANGE) - 100.0D)
+								< 0.001D
+						&& floater.getMaxSpawnClusterSize() == 1,
+				"Mallow Floater lost the Ghast fire, explosion, health, range or solitary-spawn role");
+
+		BlockPos protectedBlock = anchor.offset(4, 0, 1);
+		helper.getLevel().setBlockAndUpdate(
+				protectedBlock, Blocks.GLASS.defaultBlockState());
+		ItemEntity protectedItem = new ItemEntity(helper.getLevel(),
+				target.getX(), target.getY(), target.getZ() + 1.0D,
+				new ItemStack(Items.DIAMOND, 3));
+		protectedItem.setDeltaMovement(Vec3.ZERO);
+		helper.getLevel().addFreshEntity(protectedItem);
+
+		Difficulty originalDifficulty = helper.getLevel().getDifficulty();
+		try {
+			for (Difficulty safeDifficulty :
+					new Difficulty[] {Difficulty.EASY, Difficulty.NORMAL}) {
+				helper.getLevel().getServer().setDifficulty(
+						safeDifficulty, true);
+				target.removeAllEffects();
+				target.setHealth(10.0F);
+				target.setSecondsOnFire(5);
+				target.fallDistance = 6.0F;
+				target.setDeltaMovement(Vec3.ZERO);
+				protectedItem.setDeltaMovement(Vec3.ZERO);
+				AbstractHurtingProjectile shot =
+						floater.createShot(target);
+				require(helper, shot instanceof MallowPuffProjectile,
+						safeDifficulty
+								+ " Mallow Floater did not create a safe visible puff");
+				shot.setPos(target.getX(), target.getY(),
+						target.getZ());
+				helper.getLevel().addFreshEntity(shot);
+				((MallowPuffProjectile)shot).burst();
+				require(helper,
+						shot.isRemoved()
+								&& Math.abs(target.getHealth()
+										- 10.0F) < 0.001F
+								&& !target.isOnFire()
+								&& target.fallDistance == 0.0F
+								&& target.hasEffect(
+										MobEffects.MOVEMENT_SLOWDOWN)
+								&& target.hasEffect(
+										MobEffects.SLOW_FALLING)
+								&& target.hasEffect(
+										MobEffects.FIRE_RESISTANCE)
+								&& target.getEffect(
+										MobEffects.DAMAGE_RESISTANCE)
+										.getAmplifier() == 4
+								&& helper.getLevel().getBlockState(
+										protectedBlock).is(Blocks.GLASS)
+								&& protectedItem.isAlive()
+								&& protectedItem.getItem().getCount() == 3
+								&& protectedItem.getDeltaMovement()
+										.equals(Vec3.ZERO),
+						safeDifficulty
+								+ " Mallow Puff caused damage/destruction or lacked rescue effects");
+			}
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			target.removeAllEffects();
+			target.setHealth(10.0F);
+			target.invulnerableTime = 0;
+			AbstractHurtingProjectile hardShot =
+					floater.createShot(target);
+			LargeFireball hardFireball =
+					(LargeFireball)hardShot;
+			CompoundTag hardShotState = hardShot.saveWithoutId(
+					new CompoundTag());
+			target.hurt(DamageSource.fireball(
+					hardFireball, floater), 6.0F);
+			require(helper,
+					hardShot.getClass() == LargeFireball.class
+							&& hardShotState.getByte(
+									"ExplosionPower") == 3
+							&& target.getHealth() < 10.0F,
+					"Hard Mallow Floater did not restore a real power-three Ghast fireball");
+		} finally {
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		Biome fudgeWastes = helper.getLevel().registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY)
+				.get(CakeWorldBiomes.FUDGE_WASTES.getId());
+		require(helper, fudgeWastes != null,
+				"Could not inspect the Mallow Floater's Fudge Wastes biome");
+		requireSpawnReplacement(helper, fudgeWastes,
+				EntityType.GHAST,
+				CakeWorldEntities.MALLOW_FLOATER.get(),
+				MobCategory.MONSTER);
+		require(helper, CakeWorldItems.MALLOW_FLOATER_SPAWN_EGG.isPresent(),
+				"Mallow Floater has no creative/testing spawn egg");
+
+		ServerPlayer advancementPlayer = new ServerPlayer(
+				helper.getLevel().getServer(), helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2020"),
+						"CakeWorldMallowFloaterRoleTest"));
+		MallowFloater returned = CakeWorldEntities.MALLOW_FLOATER.get()
+				.create(helper.getLevel());
+		require(helper, returned != null,
+				"Could not create Return to Sender fixture");
+		returned.setPos(anchor.getX() - 4.0D,
+				anchor.getY(), anchor.getZ());
+		helper.getLevel().addFreshEntity(returned);
+		MallowPuffProjectile reflected =
+				new MallowPuffProjectile(helper.getLevel(),
+						returned, 1.0D, 0.0D, 0.0D);
+		reflected.setOwner(advancementPlayer);
+		require(helper,
+				returned.hurt(DamageSource.fireball(
+						reflected, advancementPlayer), 1.0F)
+						&& !returned.isAlive(),
+				"Reflected Mallow Puff did not retain Ghast return-fire defeat");
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:adventure/kill_all_mobs",
+				"minecraft:ghast");
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:nether/return_to_sender",
+				"killed_ghast");
 		helper.succeed();
 	}
 
