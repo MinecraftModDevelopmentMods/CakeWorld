@@ -4,9 +4,12 @@ import java.util.function.Supplier;
 
 import com.mcmoddev.cakeworld.CakeWorld;
 import com.mcmoddev.cakeworld.block.BiscuitCrumbsBlock;
+import com.mcmoddev.cakeworld.block.CakeOvenBlock;
 import com.mcmoddev.cakeworld.block.ChocolateSpongeBlock;
 import com.mcmoddev.cakeworld.block.CookbookKioskBlock;
 import com.mcmoddev.cakeworld.block.IcingLayerBlock;
+import com.mcmoddev.cakeworld.block.MixingBowlBlock;
+import com.mcmoddev.cakeworld.item.ReusableBlockItem;
 
 import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.item.BlockItem;
@@ -135,6 +138,13 @@ public final class CakeWorldBlocks {
 	public static final RegistryObject<Block> COOKBOOK_KIOSK = block("cookbook_kiosk",
 			() -> new CookbookKioskBlock(BlockBehaviour.Properties.of(Material.WOOD)
 					.strength(2.0F).sound(SoundType.WOOD)));
+	public static final RegistryObject<Block> MIXING_BOWL = reusableBlock("mixing_bowl",
+			() -> new MixingBowlBlock(BlockBehaviour.Properties.of(Material.WOOD)
+					.strength(1.0F).sound(SoundType.WOOD).noOcclusion()));
+	public static final RegistryObject<Block> OVEN = block("oven",
+			() -> new CakeOvenBlock(BlockBehaviour.Properties.of(Material.STONE)
+					.requiresCorrectToolForDrops().strength(3.0F, 6.0F)
+					.sound(SoundType.STONE)));
 
 	private CakeWorldBlocks() {
 	}
@@ -153,6 +163,15 @@ public final class CakeWorldBlocks {
 		RegistryObject<Block> block = BLOCKS.register(name, supplier);
 		ITEMS.register(name, () -> new BlockItem(block.get(),
 				new Item.Properties().tab(CreativeModeTab.TAB_BUILDING_BLOCKS)));
+		return block;
+	}
+
+	private static RegistryObject<Block> reusableBlock(String name,
+			Supplier<Block> supplier) {
+		RegistryObject<Block> block = BLOCKS.register(name, supplier);
+		ITEMS.register(name, () -> new ReusableBlockItem(block.get(),
+				new Item.Properties().tab(CreativeModeTab.TAB_DECORATIONS)
+						.stacksTo(1)));
 		return block;
 	}
 

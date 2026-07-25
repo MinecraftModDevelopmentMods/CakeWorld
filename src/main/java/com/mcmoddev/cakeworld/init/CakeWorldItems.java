@@ -35,6 +35,12 @@ public final class CakeWorldItems {
 	public static final RegistryObject<Item> CHOCOLATE_SPONGE_SUNDAE =
 			ITEMS.register("chocolate_sponge_sundae",
 					() -> new BowlFoodItem(foodProperties(8, 0.8F).stacksTo(1)));
+	public static final RegistryObject<Item> SPONGE_BATTER =
+			ITEMS.register("sponge_batter",
+					() -> new Item(new Item.Properties()
+							.tab(CreativeModeTab.TAB_MISC)));
+	public static final RegistryObject<Item> WARM_SPONGE_CAKE =
+			food("warm_sponge_cake", 6, 0.7F);
 	public static final RegistryObject<Item> EXPLORERS_COOKBOOK =
 			ITEMS.register("explorers_cookbook",
 					() -> new ExplorersCookbookItem(new Item.Properties()

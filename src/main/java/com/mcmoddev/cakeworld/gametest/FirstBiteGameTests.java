@@ -8,6 +8,7 @@ import java.util.UUID;
 import com.mojang.authlib.GameProfile;
 import com.mcmoddev.cakeworld.CakeWorld;
 import com.mcmoddev.cakeworld.block.BiscuitCrumbsBlock;
+import com.mcmoddev.cakeworld.block.CakeOvenBlock;
 import com.mcmoddev.cakeworld.block.ChocolateSpongeBlock;
 import com.mcmoddev.cakeworld.block.IcingLayerBlock;
 import com.mcmoddev.cakeworld.cookbook.CookbookProgress;
@@ -34,6 +35,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -42,9 +44,14 @@ import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.item.crafting.ShapelessRecipe;
+import net.minecraft.world.item.crafting.SmeltingRecipe;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FallingBlock;
@@ -294,6 +301,110 @@ public final class FirstBiteGameTests {
 		require(helper, CakeWorldItems.LEMONADE_BOTTLE.get().getCraftingRemainingItem()
 						== Items.GLASS_BOTTLE,
 				"Lemonade bottles do not return their container in crafting");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void starterKitchenUsesReusableMixingAndStandardCooking(
+			GameTestHelper helper) {
+		var recipes = helper.getLevel().getRecipeManager();
+		var batterRecipe = recipes.byKey(
+				new ResourceLocation(CakeWorld.MODID, "sponge_batter"));
+		var ovenRecipe = recipes.byKey(
+				new ResourceLocation(CakeWorld.MODID,
+						"warm_sponge_cake_from_oven"));
+		require(helper, batterRecipe.orElse(null) instanceof ShapelessRecipe,
+				"Sponge batter is not a data-driven shapeless recipe");
+		require(helper, ovenRecipe.orElse(null) instanceof SmeltingRecipe,
+				"Warm Sponge Cake is not a standard smelting recipe");
+
+		ItemStack mixingBowl =
+				new ItemStack(CakeWorldBlocks.MIXING_BOWL.get());
+		require(helper, mixingBowl.hasContainerItem()
+						&& mixingBowl.getContainerItem().is(
+								CakeWorldBlocks.MIXING_BOWL.get().asItem()),
+				"The Mixing Bowl is not returned after shapeless preparation");
+		AbstractContainerMenu testMenu =
+				new AbstractContainerMenu(null, 0) {
+					@Override
+					public boolean stillValid(Player player) {
+						return true;
+					}
+				};
+		CraftingContainer craftingGrid =
+				new CraftingContainer(testMenu, 2, 2);
+		craftingGrid.setItem(0, mixingBowl);
+		craftingGrid.setItem(1,
+				new ItemStack(CakeWorldItems.ICING_SPOONFUL.get()));
+		craftingGrid.setItem(3,
+				new ItemStack(CakeWorldItems.CHOCOLATE_SPONGE_SLICE.get()));
+		ShapelessRecipe shapelessBatter =
+				(ShapelessRecipe) batterRecipe.orElseThrow();
+		require(helper, shapelessBatter.matches(
+						craftingGrid, helper.getLevel())
+						&& shapelessBatter.getRemainingItems(craftingGrid)
+								.get(0).is(
+										CakeWorldBlocks.MIXING_BOWL.get()
+												.asItem()),
+				"Mixed ingredient order did not match or return the Mixing Bowl");
+		TagKey<Item> ovenBatters = TagKey.create(Registry.ITEM_REGISTRY,
+				new ResourceLocation("forge", "oven_batters"));
+		require(helper, new ItemStack(CakeWorldItems.SPONGE_BATTER.get())
+						.is(ovenBatters),
+				"Sponge Batter is missing the public oven-batter tag");
+
+		BlockPos relativeOvenPos = new BlockPos(1, 1, 1);
+		BlockPos absoluteOvenPos = helper.absolutePos(relativeOvenPos);
+		CakeOvenBlock oven = (CakeOvenBlock) CakeWorldBlocks.OVEN.get();
+		helper.setBlock(relativeOvenPos, oven.defaultBlockState());
+		Player player = helper.makeMockPlayer();
+		player.getAbilities().instabuild = false;
+		player.setItemInHand(InteractionHand.MAIN_HAND,
+				new ItemStack(CakeWorldItems.SPONGE_BATTER.get()));
+		BlockHitResult hit = new BlockHitResult(
+				Vec3.atCenterOf(absoluteOvenPos), Direction.UP,
+				absoluteOvenPos, false);
+		require(helper, oven.use(oven.defaultBlockState(),
+						helper.getLevel(), absoluteOvenPos, player,
+						InteractionHand.MAIN_HAND, hit)
+						== InteractionResult.PASS
+						&& player.getMainHandItem().is(
+								CakeWorldItems.SPONGE_BATTER.get()),
+				"The Oven cooked without fuel or consumed its input");
+
+		player.setItemInHand(InteractionHand.OFF_HAND,
+				new ItemStack(Items.COAL));
+		InteractionResult cooked = oven.use(oven.defaultBlockState(),
+				helper.getLevel(), absoluteOvenPos, player,
+				InteractionHand.MAIN_HAND, hit);
+		require(helper, cooked.consumesAction(),
+				"The fuelled Oven rejected its standard food recipe: "
+						+ cooked);
+		require(helper, player.getMainHandItem().is(
+						CakeWorldItems.WARM_SPONGE_CAKE.get()),
+				"The Oven did not return Warm Sponge Cake; main hand is "
+						+ player.getMainHandItem());
+		require(helper, player.getOffhandItem().isEmpty(),
+				"The Oven did not consume one standard fuel; offhand is "
+						+ player.getOffhandItem());
+
+		player.setItemInHand(InteractionHand.MAIN_HAND,
+				new ItemStack(CakeWorldBlocks.COCOA_COAL.get()));
+		player.setItemInHand(InteractionHand.OFF_HAND,
+				new ItemStack(Items.COAL));
+		require(helper, oven.use(oven.defaultBlockState(),
+						helper.getLevel(), absoluteOvenPos, player,
+						InteractionHand.MAIN_HAND, hit)
+						== InteractionResult.PASS
+						&& player.getMainHandItem().is(
+								CakeWorldBlocks.COCOA_COAL.get().asItem())
+						&& player.getOffhandItem().is(Items.COAL),
+				"The starter Oven accepted a non-food resource recipe");
+		require(helper, CakeWorldItems.WARM_SPONGE_CAKE.get()
+						.getFoodProperties().getNutrition()
+						> CakeWorldItems.CHOCOLATE_SPONGE_SLICE.get()
+								.getFoodProperties().getNutrition(),
+				"Cooked Sponge Cake is not a worthwhile prepared food");
 		helper.succeed();
 	}
 
