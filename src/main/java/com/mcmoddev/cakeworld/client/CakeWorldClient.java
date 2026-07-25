@@ -21,6 +21,15 @@ public final class CakeWorldClient {
 		event.enqueueWork(() -> {
 			ItemBlockRenderTypes.setRenderLayer(CakeWorldBlocks.GUMMY_BLOCK.get(),
 					RenderType.translucent());
+			ItemBlockRenderTypes.setRenderLayer(
+					CakeWorldBlocks.RASPBERRY_GUMMY_BLOCK.get(),
+					RenderType.translucent());
+			ItemBlockRenderTypes.setRenderLayer(
+					CakeWorldBlocks.BLUEBERRY_GUMMY_BLOCK.get(),
+					RenderType.translucent());
+			ItemBlockRenderTypes.setRenderLayer(
+					CakeWorldBlocks.GRAPE_GUMMY_BLOCK.get(),
+					RenderType.translucent());
 			ItemBlockRenderTypes.setRenderLayer(CakeWorldBlocks.CANDY_GLASS.get(),
 					RenderType.translucent());
 			ItemBlockRenderTypes.setRenderLayer(CakeWorldFluids.LEMONADE.get(),

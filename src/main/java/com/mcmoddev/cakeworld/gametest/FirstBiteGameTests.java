@@ -296,6 +296,23 @@ public final class FirstBiteGameTests {
 						&& gummyResult.is(CakeWorldBlocks.GUMMY_BLOCK.get().asItem())
 						&& returnedBottle.is(Items.GLASS_BOTTLE),
 				"Gummy recipe did not assemble the block and return its bottle");
+		Map<String, BlockState> flavours = Map.of(
+				"gummy_block",
+				CakeWorldBlocks.GUMMY_BLOCK.get().defaultBlockState(),
+				"raspberry_gummy_block",
+				CakeWorldBlocks.RASPBERRY_GUMMY_BLOCK.get().defaultBlockState(),
+				"blueberry_gummy_block",
+				CakeWorldBlocks.BLUEBERRY_GUMMY_BLOCK.get().defaultBlockState(),
+				"grape_gummy_block",
+				CakeWorldBlocks.GRAPE_GUMMY_BLOCK.get().defaultBlockState());
+		for (Map.Entry<String, BlockState> flavour : flavours.entrySet()) {
+			require(helper, flavour.getValue().getBlock() instanceof GummyBlock
+							&& helper.getLevel().getRecipeManager().byKey(
+									new ResourceLocation(CakeWorld.MODID,
+											flavour.getKey())).isPresent(),
+					"Missing elastic block or recipe for gummy flavour "
+							+ flavour.getKey());
+		}
 		helper.succeed();
 	}
 

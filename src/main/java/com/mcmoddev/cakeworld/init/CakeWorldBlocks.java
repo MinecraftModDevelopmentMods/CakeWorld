@@ -61,10 +61,13 @@ public final class CakeWorldBlocks {
 	public static final RegistryObject<Block> MARSHMALLOW = block("marshmallow",
 			() -> new MarshmallowBlock(BlockBehaviour.Properties.of(Material.WOOL)
 					.strength(0.4F).sound(SoundType.WOOL)));
-	public static final RegistryObject<Block> GUMMY_BLOCK = block("gummy_block",
-			() -> new GummyBlock(BlockBehaviour.Properties.of(Material.CLAY)
-					.strength(0.5F).sound(SoundType.SLIME_BLOCK)
-					.noOcclusion()));
+	public static final RegistryObject<Block> GUMMY_BLOCK = gummy("gummy_block");
+	public static final RegistryObject<Block> RASPBERRY_GUMMY_BLOCK =
+			gummy("raspberry_gummy_block");
+	public static final RegistryObject<Block> BLUEBERRY_GUMMY_BLOCK =
+			gummy("blueberry_gummy_block");
+	public static final RegistryObject<Block> GRAPE_GUMMY_BLOCK =
+			gummy("grape_gummy_block");
 	public static final RegistryObject<Block> WAFER_BLOCK = block("wafer_block",
 			BlockBehaviour.Properties.of(Material.WOOD)
 					.strength(0.2F, 0.2F)
@@ -205,6 +208,13 @@ public final class CakeWorldBlocks {
 		return block(name, BlockBehaviour.Properties.of(Material.STONE)
 				.requiresCorrectToolForDrops().strength(strength, 6.0F)
 				.sound(SoundType.STONE));
+	}
+
+	private static RegistryObject<Block> gummy(String name) {
+		return block(name,
+				() -> new GummyBlock(BlockBehaviour.Properties.of(Material.CLAY)
+						.strength(0.5F).sound(SoundType.SLIME_BLOCK)
+						.noOcclusion()));
 	}
 
 	private static RegistryObject<Block> ore(String name) {
