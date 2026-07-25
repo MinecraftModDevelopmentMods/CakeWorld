@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "minecraft:block/copper_block",
+    "up": "minecraft:block/cauldron_top",
+    "north": "minecraft:block/smoker_front",
+    "south": "minecraft:block/copper_block",
+    "west": "minecraft:block/copper_block",
+    "east": "minecraft:block/copper_block",
+    "particle": "minecraft:block/copper_block"
+  }
+}

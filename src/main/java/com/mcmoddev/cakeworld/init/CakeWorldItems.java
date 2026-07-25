@@ -89,6 +89,8 @@ public final class CakeWorldItems {
 									.build())));
 	public static final RegistryObject<Item> FUDGE_SQUARE =
 			food("fudge_square", 5, 0.5F);
+	public static final RegistryObject<Item> CARAMEL_CHEW =
+			food("caramel_chew", 3, 0.3F);
 	public static final RegistryObject<Item> SPRINKLE_SEEDS =
 			ITEMS.register("sprinkle_seeds",
 					() -> new ItemNameBlockItem(

@@ -9,6 +9,7 @@ import com.mojang.authlib.GameProfile;
 import com.mcmoddev.cakeworld.CakeWorld;
 import com.mcmoddev.cakeworld.block.BiscuitCrumbsBlock;
 import com.mcmoddev.cakeworld.block.CakeOvenBlock;
+import com.mcmoddev.cakeworld.block.CandyCookerBlock;
 import com.mcmoddev.cakeworld.block.CandySproutBlock;
 import com.mcmoddev.cakeworld.block.ChocolateSpongeBlock;
 import com.mcmoddev.cakeworld.block.CookbookKioskBlock;
@@ -66,6 +67,7 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.item.crafting.ShapelessRecipe;
 import net.minecraft.world.item.crafting.SmeltingRecipe;
+import net.minecraft.world.item.crafting.SmokingRecipe;
 import net.minecraft.world.item.crafting.StonecutterRecipe;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.CraftingContainer;
@@ -683,6 +685,69 @@ public final class FirstBiteGameTests {
 		require(helper, rejected == InteractionResult.PASS
 						&& player.getMainHandItem().is(Items.SUGAR),
 				"Cooling Rack consumed an untagged unrelated input");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void candyCookerUsesTaggedSmokingRecipes(
+			GameTestHelper helper) {
+		var recipes = helper.getLevel().getRecipeManager();
+		var candyRecipe = recipes.byKey(new ResourceLocation(
+				CakeWorld.MODID, "caramel_chew_from_candy_cooker"));
+		require(helper,
+				candyRecipe.orElse(null) instanceof SmokingRecipe
+						&& recipes.byKey(new ResourceLocation(CakeWorld.MODID,
+								"candy_cooker")).isPresent(),
+				"Candy Cooker is missing its block or standard recipe");
+		ItemStack sugar = new ItemStack(Items.SUGAR, 2);
+		require(helper, sugar.is(CandyCookerBlock.INPUTS),
+				"Sugar is missing the public Candy Cooker input tag");
+
+		BlockPos relativeCookerPos = new BlockPos(1, 1, 1);
+		BlockPos absoluteCookerPos = helper.absolutePos(relativeCookerPos);
+		CandyCookerBlock cooker =
+				(CandyCookerBlock) CakeWorldBlocks.CANDY_COOKER.get();
+		helper.setBlock(relativeCookerPos, cooker.defaultBlockState());
+		Player player = helper.makeMockPlayer();
+		player.getAbilities().instabuild = false;
+		player.setItemInHand(InteractionHand.MAIN_HAND, sugar);
+		BlockHitResult hit = new BlockHitResult(
+				Vec3.atCenterOf(absoluteCookerPos), Direction.UP,
+				absoluteCookerPos, false);
+		InteractionResult unfuelled = cooker.use(cooker.defaultBlockState(),
+				helper.getLevel(), absoluteCookerPos, player,
+				InteractionHand.MAIN_HAND, hit);
+		require(helper, unfuelled == InteractionResult.PASS
+						&& player.getMainHandItem().getCount() == 2,
+				"Unfuelled Candy Cooker consumed its input");
+
+		player.setItemInHand(InteractionHand.OFF_HAND,
+				new ItemStack(Items.COAL));
+		InteractionResult cooked = cooker.use(cooker.defaultBlockState(),
+				helper.getLevel(), absoluteCookerPos, player,
+				InteractionHand.MAIN_HAND, hit);
+		int caramelChews = player.getInventory().items.stream()
+				.filter(stack -> stack.is(
+						CakeWorldItems.CARAMEL_CHEW.get()))
+				.mapToInt(ItemStack::getCount).sum();
+		require(helper, cooked.consumesAction()
+						&& player.getMainHandItem().is(Items.SUGAR)
+						&& player.getMainHandItem().getCount() == 1
+						&& player.getOffhandItem().isEmpty()
+						&& caramelChews == 1,
+				"Candy Cooker did not consume one input/fuel and make one chew");
+
+		player.setItemInHand(InteractionHand.MAIN_HAND,
+				new ItemStack(Items.BEEF));
+		player.setItemInHand(InteractionHand.OFF_HAND,
+				new ItemStack(Items.COAL));
+		InteractionResult rejected = cooker.use(cooker.defaultBlockState(),
+				helper.getLevel(), absoluteCookerPos, player,
+				InteractionHand.MAIN_HAND, hit);
+		require(helper, rejected == InteractionResult.PASS
+						&& player.getMainHandItem().is(Items.BEEF)
+						&& player.getOffhandItem().is(Items.COAL),
+				"Candy Cooker consumed an unrelated smoker recipe");
 		helper.succeed();
 	}
 

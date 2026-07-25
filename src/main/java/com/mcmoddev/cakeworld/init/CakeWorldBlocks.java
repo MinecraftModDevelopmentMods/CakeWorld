@@ -5,6 +5,7 @@ import java.util.function.Supplier;
 import com.mcmoddev.cakeworld.CakeWorld;
 import com.mcmoddev.cakeworld.block.BiscuitCrumbsBlock;
 import com.mcmoddev.cakeworld.block.CakeOvenBlock;
+import com.mcmoddev.cakeworld.block.CandyCookerBlock;
 import com.mcmoddev.cakeworld.block.CandySproutBlock;
 import com.mcmoddev.cakeworld.block.ChocolateSpongeBlock;
 import com.mcmoddev.cakeworld.block.CookbookKioskBlock;
@@ -189,6 +190,13 @@ public final class CakeWorldBlocks {
 									.strength(1.0F)
 									.sound(SoundType.METAL)
 									.noOcclusion()));
+	public static final RegistryObject<Block> CANDY_COOKER =
+			block("candy_cooker",
+					() -> new CandyCookerBlock(
+							BlockBehaviour.Properties.of(Material.METAL)
+									.requiresCorrectToolForDrops()
+									.strength(2.5F, 6.0F)
+									.sound(SoundType.METAL)));
 
 	private CakeWorldBlocks() {
 	}
