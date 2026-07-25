@@ -35,6 +35,7 @@ import com.mcmoddev.cakeworld.entity.CinnamonPuffProjectile;
 import com.mcmoddev.cakeworld.entity.CinnamonSpark;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.CustardCat;
+import com.mcmoddev.cakeworld.entity.DeepLiquoriceWeaver;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
 import com.mcmoddev.cakeworld.entity.SugarBee;
@@ -69,6 +70,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -1929,6 +1931,88 @@ public final class FirstBiteGameTests {
 		requireCriterion(helper, advancementPlayer,
 				"minecraft:adventure/kill_all_mobs",
 				"minecraft:blaze");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void deepLiquoriceWeaversStayStickyUntilHard(
+			GameTestHelper helper) {
+		DeepLiquoriceWeaver weaver =
+				CakeWorldEntities.DEEP_LIQUORICE_WEAVER.get()
+						.create(helper.getLevel());
+		Pig target = EntityType.PIG.create(helper.getLevel());
+		require(helper, weaver != null && target != null,
+				"Could not create Deep Liquorice Weaver attack fixtures");
+		helper.getLevel().addFreshEntity(weaver);
+		helper.getLevel().addFreshEntity(target);
+
+		Difficulty originalDifficulty = helper.getLevel().getDifficulty();
+		try {
+			for (Difficulty safeDifficulty :
+					new Difficulty[] {Difficulty.EASY, Difficulty.NORMAL}) {
+				target.removeAllEffects();
+				target.setHealth(10.0F);
+				helper.getLevel().getServer().setDifficulty(
+						safeDifficulty, true);
+				require(helper, weaver.doHurtTarget(target)
+								&& Math.abs(target.getHealth() - 10.0F)
+										< 0.001F
+								&& !target.hasEffect(MobEffects.POISON)
+								&& target.hasEffect(
+										MobEffects.MOVEMENT_SLOWDOWN)
+								&& target.hasEffect(
+										MobEffects.DIG_SLOWDOWN),
+						safeDifficulty
+								+ " Weaver bite caused damage/poison or lacked sticky effects");
+			}
+
+			target.removeAllEffects();
+			target.setHealth(10.0F);
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			require(helper, weaver.doHurtTarget(target)
+							&& target.getHealth() < 10.0F
+							&& target.hasEffect(MobEffects.POISON),
+					"Hard Weaver bite did not restore damage and poison");
+		} finally {
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		for (ResourceLocation biomeId : new ResourceLocation[] {
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId()}) {
+			Biome biome = helper.getLevel().registryAccess()
+					.registryOrThrow(Registry.BIOME_REGISTRY)
+					.get(biomeId);
+			require(helper, biome != null,
+					"Could not inspect Weaver surface-spawn contract");
+			for (MobSpawnSettings.SpawnerData spawn :
+					biome.getMobSettings().getMobs(
+							MobCategory.MONSTER).unwrap()) {
+				require(helper,
+						spawn.type != EntityType.CAVE_SPIDER
+								&& spawn.type
+										!= CakeWorldEntities.DEEP_LIQUORICE_WEAVER.get(),
+						"Deep Liquorice Weaver was accidentally made a surface biome spawn");
+			}
+		}
+
+		require(helper,
+				CakeWorldItems.DEEP_LIQUORICE_WEAVER_SPAWN_EGG.isPresent(),
+				"Deep Liquorice Weaver has no creative/testing spawn egg");
+		ServerPlayer advancementPlayer = new ServerPlayer(
+				helper.getLevel().getServer(), helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2006"),
+						"CakeWorldWeaverRoleTest"));
+		VanillaRoleAdvancements.creditKilledCaveSpiderRole(
+				advancementPlayer);
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:adventure/kill_all_mobs",
+				"minecraft:cave_spider");
 		helper.succeed();
 	}
 

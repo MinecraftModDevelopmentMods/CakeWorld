@@ -70,12 +70,19 @@ public final class VanillaRoleAdvancements {
 		award(player, KILL_ALL, "minecraft:blaze");
 	}
 
+	public static void creditKilledCaveSpiderRole(ServerPlayer player) {
+		award(player, KILL_ALL, "minecraft:cave_spider");
+	}
+
 	private static String killedCriterion(EntityType<?> type) {
 		if (type == CakeWorldEntities.STALE_CRUMBLER.get()) {
 			return "minecraft:zombie";
 		}
 		if (type == CakeWorldEntities.CINNAMON_SPARK.get()) {
 			return "minecraft:blaze";
+		}
+		if (type == CakeWorldEntities.DEEP_LIQUORICE_WEAVER.get()) {
+			return "minecraft:cave_spider";
 		}
 		return null;
 	}
