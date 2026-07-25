@@ -58,6 +58,8 @@ public final class VanillaRoleAdvancements {
 			criterion = "minecraft:sheep";
 		} else if (childType == CakeWorldEntities.DOUGH_DONKEY.get()) {
 			criterion = "minecraft:donkey";
+		} else if (childType == CakeWorldEntities.PEPPERMINT_FOX.get()) {
+			criterion = "minecraft:fox";
 		}
 		if (criterion != null) {
 			award(player, BRED_ALL, criterion);

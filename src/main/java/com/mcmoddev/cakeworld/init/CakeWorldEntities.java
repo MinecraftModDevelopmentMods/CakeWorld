@@ -12,6 +12,7 @@ import com.mcmoddev.cakeworld.entity.DoughDonkey;
 import com.mcmoddev.cakeworld.entity.GrandGumballGuardian;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.MallowChick;
+import com.mcmoddev.cakeworld.entity.PeppermintFox;
 import com.mcmoddev.cakeworld.entity.PopRockPopper;
 import com.mcmoddev.cakeworld.entity.SodaCod;
 import com.mcmoddev.cakeworld.entity.SodaDolphin;
@@ -35,6 +36,7 @@ import net.minecraft.world.entity.animal.Chicken;
 import net.minecraft.world.entity.animal.Cat;
 import net.minecraft.world.entity.animal.Cod;
 import net.minecraft.world.entity.animal.Dolphin;
+import net.minecraft.world.entity.animal.Fox;
 import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.animal.Sheep;
@@ -151,6 +153,12 @@ public final class CakeWorldEntities {
 							MobCategory.MONSTER)
 							.sized(0.6F, 1.95F)
 							.clientTrackingRange(8));
+	public static final RegistryObject<EntityType<PeppermintFox>>
+			PEPPERMINT_FOX = entity("peppermint_fox",
+					EntityType.Builder.of(PeppermintFox::new,
+							MobCategory.CREATURE)
+							.sized(0.6F, 0.7F)
+							.clientTrackingRange(8));
 	public static final RegistryObject<EntityType<PopRockPopper>>
 			POP_ROCK_POPPER = entity("pop_rock_popper",
 					EntityType.Builder.of(PopRockPopper::new,
@@ -218,6 +226,8 @@ public final class CakeWorldEntities {
 				Endermite.createAttributes().build());
 		event.put(SOUR_SORCERER.get(),
 				Evoker.createAttributes().build());
+		event.put(PEPPERMINT_FOX.get(),
+				Fox.createAttributes().build());
 		event.put(POP_ROCK_POPPER.get(), Creeper.createAttributes().build());
 		event.put(CINNAMON_SPARK.get(),
 				Blaze.createAttributes().build());
@@ -274,6 +284,10 @@ public final class CakeWorldEntities {
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					SugarMite::checkSugarMiteSpawnRules);
+			SpawnPlacements.register(PEPPERMINT_FOX.get(),
+					SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					PeppermintFox::checkPeppermintFoxSpawnRules);
 			SpawnPlacements.register(POP_ROCK_POPPER.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,

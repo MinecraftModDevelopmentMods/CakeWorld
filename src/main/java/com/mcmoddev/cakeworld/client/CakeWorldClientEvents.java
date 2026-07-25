@@ -18,6 +18,7 @@ import net.minecraft.client.renderer.entity.ElderGuardianRenderer;
 import net.minecraft.client.renderer.entity.EndermanRenderer;
 import net.minecraft.client.renderer.entity.EndermiteRenderer;
 import net.minecraft.client.renderer.entity.EvokerRenderer;
+import net.minecraft.client.renderer.entity.FoxRenderer;
 import net.minecraft.client.renderer.entity.CowRenderer;
 import net.minecraft.client.renderer.entity.PigRenderer;
 import net.minecraft.client.renderer.entity.SheepRenderer;
@@ -68,6 +69,8 @@ public final class CakeWorldClientEvents {
 				EndermiteRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.SOUR_SORCERER.get(),
 				EvokerRenderer::new);
+		event.registerEntityRenderer(CakeWorldEntities.PEPPERMINT_FOX.get(),
+				FoxRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.POP_ROCK_POPPER.get(),
 				CreeperRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.CINNAMON_SPARK.get(),

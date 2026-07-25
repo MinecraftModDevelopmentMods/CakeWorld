@@ -39,6 +39,7 @@ import com.mcmoddev.cakeworld.entity.DeepLiquoriceWeaver;
 import com.mcmoddev.cakeworld.entity.DoughDonkey;
 import com.mcmoddev.cakeworld.entity.GrandGumballGuardian;
 import com.mcmoddev.cakeworld.entity.MallowChick;
+import com.mcmoddev.cakeworld.entity.PeppermintFox;
 import com.mcmoddev.cakeworld.entity.PopRockPopper;
 import com.mcmoddev.cakeworld.entity.SodaCod;
 import com.mcmoddev.cakeworld.entity.SodaDolphin;
@@ -69,6 +70,8 @@ import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -94,6 +97,7 @@ import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.animal.Cat;
 import net.minecraft.world.entity.animal.Cod;
+import net.minecraft.world.entity.animal.Fox;
 import net.minecraft.world.entity.animal.WaterAnimal;
 import net.minecraft.world.entity.animal.axolotl.Axolotl;
 import net.minecraft.world.entity.animal.horse.Horse;
@@ -3248,6 +3252,157 @@ public final class FirstBiteGameTests {
 		requireCriterion(helper, advancementPlayer,
 				"minecraft:adventure/kill_all_mobs",
 				"minecraft:evoker");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void peppermintFoxesKeepTrustSleepAndMintyPounces(
+			GameTestHelper helper) {
+		PeppermintFox fox = CakeWorldEntities.PEPPERMINT_FOX.get()
+				.create(helper.getLevel());
+		PeppermintFox partner = CakeWorldEntities.PEPPERMINT_FOX.get()
+				.create(helper.getLevel());
+		Pig target = EntityType.PIG.create(helper.getLevel());
+		require(helper, fox != null && partner != null && target != null,
+				"Could not create Peppermint Fox fixtures");
+		BlockPos anchor = helper.absolutePos(new BlockPos(2, 3, 2));
+		fox.setNoAi(true);
+		fox.setPos(anchor.getX(), anchor.getY(), anchor.getZ());
+		partner.setNoAi(true);
+		partner.setPos(anchor.getX() - 1.0D,
+				anchor.getY(), anchor.getZ());
+		target.setPos(anchor.getX() + 1.0D,
+				anchor.getY(), anchor.getZ());
+		helper.getLevel().addFreshEntity(fox);
+		helper.getLevel().addFreshEntity(partner);
+		helper.getLevel().addFreshEntity(target);
+		require(helper,
+				fox instanceof Fox
+						&& Math.abs(fox.getMaxHealth() - 10.0F)
+								< 0.001F
+						&& Math.abs(fox.getAttributeValue(
+								Attributes.MOVEMENT_SPEED) - 0.3D)
+								< 0.001D
+						&& Math.abs(fox.getAttributeValue(
+								Attributes.FOLLOW_RANGE) - 32.0D)
+								< 0.001D
+						&& Math.abs(fox.getAttributeValue(
+								Attributes.ATTACK_DAMAGE) - 2.0D)
+								< 0.001D,
+				"Peppermint Fox lost the Fox health, movement, follow or pounce role");
+
+		UUID trusted = UUID.fromString(
+				"1978feed-feed-4bad-babe-1978feed2019");
+		for (PeppermintFox fixture :
+				new PeppermintFox[] {fox, partner}) {
+			fixture.setItemSlot(EquipmentSlot.MAINHAND,
+					new ItemStack(CakeWorldItems.BOILED_SWEET.get()));
+			CompoundTag state = fixture.saveWithoutId(
+					new CompoundTag());
+			ListTag trustedList = new ListTag();
+			trustedList.add(NbtUtils.createUUID(trusted));
+			state.put("Trusted", trustedList);
+			state.putBoolean("Sleeping", true);
+			state.putBoolean("Sitting", true);
+			state.putString("Type", Fox.Type.SNOW.getName());
+			fixture.load(state);
+		}
+		CompoundTag savedFox = fox.saveWithoutId(new CompoundTag());
+		ListTag savedTrusted = savedFox.getList("Trusted", 11);
+		require(helper,
+				fox.getFoxType() == Fox.Type.SNOW
+						&& fox.isSleeping()
+						&& fox.isSitting()
+						&& fox.getItemBySlot(EquipmentSlot.MAINHAND)
+								.is(CakeWorldItems.BOILED_SWEET.get())
+						&& savedTrusted.size() == 1
+						&& NbtUtils.loadUUID(savedTrusted.get(0))
+								.equals(trusted),
+				"Peppermint Fox lost climate type, sleep, carried sweet or trusted player NBT");
+		require(helper,
+				fox.isFood(new ItemStack(Items.SWEET_BERRIES))
+						&& fox.isFood(new ItemStack(
+								CakeWorldItems.BOILED_SWEET.get()))
+						&& fox.isFood(new ItemStack(
+								CakeWorldItems.MINT_WAFER.get())),
+				"Peppermint Fox did not accept vanilla berries and tagged sweets");
+
+		PeppermintFox child = fox.getBreedOffspring(
+				helper.getLevel(), partner);
+		require(helper, child != null
+						&& child.getType()
+								== CakeWorldEntities.PEPPERMINT_FOX.get()
+						&& child.getFoxType() == Fox.Type.SNOW,
+				"Peppermint Fox breeding lost the custom type or parent climate");
+
+		Difficulty originalDifficulty = helper.getLevel().getDifficulty();
+		try {
+			for (Difficulty safeDifficulty :
+					new Difficulty[] {Difficulty.EASY, Difficulty.NORMAL}) {
+				helper.getLevel().getServer().setDifficulty(
+						safeDifficulty, true);
+				target.removeAllEffects();
+				target.setHealth(10.0F);
+				target.setSecondsOnFire(5);
+				target.fallDistance = 6.0F;
+				target.setDeltaMovement(Vec3.ZERO);
+				require(helper,
+						fox.doHurtTarget(target)
+								&& Math.abs(target.getHealth()
+										- 10.0F) < 0.001F
+								&& !target.isOnFire()
+								&& target.fallDistance == 0.0F
+								&& target.hasEffect(
+										MobEffects.MOVEMENT_SPEED)
+								&& target.hasEffect(
+										MobEffects.SLOW_FALLING)
+								&& target.hasEffect(
+										MobEffects.FIRE_RESISTANCE)
+								&& target.getEffect(
+										MobEffects.DAMAGE_RESISTANCE)
+										.getAmplifier() == 4,
+						safeDifficulty
+								+ " Peppermint Fox pounce caused damage or lacked mint rescue effects");
+			}
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			target.removeAllEffects();
+			target.setHealth(10.0F);
+			require(helper, fox.doHurtTarget(target)
+							&& target.getHealth() < 10.0F,
+					"Hard Peppermint Fox did not retain real Fox damage");
+		} finally {
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		TagKey<EntityType<?>> powderSnowWalkers = TagKey.create(
+				Registry.ENTITY_TYPE_REGISTRY,
+				new ResourceLocation("minecraft",
+						"powder_snow_walkable_mobs"));
+		require(helper, CakeWorldEntities.PEPPERMINT_FOX.get()
+						.is(powderSnowWalkers),
+				"Peppermint Fox did not preserve Fox's powder-snow walking role");
+		require(helper, CakeWorldItems.PEPPERMINT_FOX_SPAWN_EGG.isPresent(),
+				"Peppermint Fox has no creative/testing spawn egg");
+		ServerPlayer advancementPlayer = new ServerPlayer(
+				helper.getLevel().getServer(), helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2119"),
+						"CakeWorldPeppermintFoxRoleTest"));
+		VanillaRoleAdvancements.creditBredRole(
+				advancementPlayer,
+				CakeWorldEntities.PEPPERMINT_FOX.get());
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:husbandry/bred_all_animals",
+				"minecraft:fox");
+
+		Biome peppermintPinewoods = helper.getLevel().registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY)
+				.get(new ResourceLocation(CakeWorld.MODID,
+						"peppermint_pinewoods"));
+		require(helper, peppermintPinewoods == null,
+				"Peppermint Pinewoods now exists; replace this dependency gate with exact Fox spawn-role proof");
 		helper.succeed();
 	}
 
