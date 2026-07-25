@@ -8322,14 +8322,26 @@ public final class FirstBiteGameTests {
 						&& child.getType()
 								== CakeWorldEntities
 										.CHOCOLATE_PANDA.get()
-						&& Set.of(child.getMainGene(),
-								child.getHiddenGene())
-								.equals(Set.of(
-										Panda.Gene.BROWN,
-										Panda.Gene.WEAK))
-						&& child.getVariant()
+						&& List.of(Panda.Gene.values())
+								.contains(child.getMainGene())
+						&& List.of(Panda.Gene.values())
+								.contains(child.getHiddenGene()),
+				"Chocolate Panda offspring leaked a literal Panda or produced invalid genes");
+		ChocolatePandaProbe inheritedChild =
+				new ChocolatePandaProbe(helper.getLevel());
+		inheritedChild.seedRandom(1978L);
+		inheritedChild.setGeneFromParents(
+				brownParent, weakParent);
+		inheritedChild.setAttributes();
+		require(helper,
+				Set.of(inheritedChild.getMainGene(),
+						inheritedChild.getHiddenGene())
+						.equals(Set.of(
+								Panda.Gene.BROWN,
+								Panda.Gene.WEAK))
+						&& inheritedChild.getVariant()
 								== Panda.Gene.NORMAL,
-				"Chocolate Panda offspring leaked a literal Panda or lost parent-gene inheritance");
+				"Chocolate Panda lost fixed-seed parent-gene inheritance outside vanilla's deliberate mutation cases");
 
 		ChocolatePandaProbe animation =
 				new ChocolatePandaProbe(helper.getLevel());
@@ -8768,6 +8780,10 @@ public final class FirstBiteGameTests {
 							goal.getClass()
 									.getSimpleName()))
 					.count();
+		}
+
+		private void seedRandom(long seed) {
+			random.setSeed(seed);
 		}
 
 		private int countTargetGoalsNamed(String name) {
