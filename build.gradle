@@ -258,6 +258,9 @@ eclipse {
 // See https://docs.gradle.org/current/dsl/org.gradle.language.jvm.tasks.ProcessResources.html
 tasks.named('processResources', ProcessResources).configure {
     dependsOn generateCakeWorldOreSpawnProvider
+    // Local agent context is deliberately ignored by Git and must never be
+    // copied into development resources or a public mod artifact.
+    exclude '**/AGENTS.md', '**/agent-notes/**', '**/.codex/**'
     var replaceProperties = [
             minecraft_version: minecraft_version, minecraft_version_range: minecraft_version_range,
             forge_version: forge_version, forge_version_range: forge_version_range,
@@ -274,6 +277,8 @@ tasks.named('processResources', ProcessResources).configure {
 
 // Example for how to get properties into the manifest for reading at runtime.
 tasks.named('jar', Jar).configure {
+    // Defence in depth for stale or externally generated resource outputs.
+    exclude '**/AGENTS.md', '**/agent-notes/**', '**/.codex/**'
     manifest {
         attributes([
                 'Specification-Title'     : mod_id,

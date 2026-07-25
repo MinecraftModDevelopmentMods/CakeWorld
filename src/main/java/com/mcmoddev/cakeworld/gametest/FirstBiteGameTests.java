@@ -36,6 +36,7 @@ import com.mcmoddev.cakeworld.entity.CinnamonSpark;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.CustardCat;
 import com.mcmoddev.cakeworld.entity.DeepLiquoriceWeaver;
+import com.mcmoddev.cakeworld.entity.DoughDonkey;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.PopRockPopper;
 import com.mcmoddev.cakeworld.entity.SodaCod;
@@ -76,6 +77,7 @@ import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -85,6 +87,7 @@ import net.minecraft.world.entity.animal.Cat;
 import net.minecraft.world.entity.animal.Cod;
 import net.minecraft.world.entity.animal.WaterAnimal;
 import net.minecraft.world.entity.animal.axolotl.Axolotl;
+import net.minecraft.world.entity.animal.horse.Horse;
 import net.minecraft.world.entity.projectile.SmallFireball;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
@@ -2296,6 +2299,113 @@ public final class FirstBiteGameTests {
 						&& !killAll.getCriteria().containsKey(
 								"minecraft:dolphin"),
 				"Vanilla unexpectedly added a Dolphin kill criterion; reassess compatibility before inventing a bridge");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void doughDonkeysArePersistentRideablePackAnimals(
+			GameTestHelper helper) {
+		DoughDonkey first = CakeWorldEntities.DOUGH_DONKEY.get()
+				.create(helper.getLevel());
+		DoughDonkey second = CakeWorldEntities.DOUGH_DONKEY.get()
+				.create(helper.getLevel());
+		require(helper, first != null && second != null,
+				"Could not create Dough Donkey breeding fixtures");
+		first.setTamed(true);
+		second.setTamed(true);
+		first.setInLove(null);
+		second.setInLove(null);
+		require(helper, first.canMate(second),
+				"Two adult, tame, willing Dough Donkeys could not mate");
+		AgeableMob child = first.getBreedOffspring(
+				helper.getLevel(), second);
+		require(helper, child instanceof DoughDonkey
+						&& child.getType()
+								== CakeWorldEntities.DOUGH_DONKEY.get(),
+				"Dough Donkeys did not breed into their own entity type");
+
+		Horse transitionalHorse = EntityType.HORSE.create(
+				helper.getLevel());
+		require(helper, transitionalHorse != null,
+				"Could not create the staged horse-family fixture");
+		AgeableMob transitionalMule = first.getBreedOffspring(
+				helper.getLevel(), transitionalHorse);
+		require(helper, transitionalMule != null
+						&& transitionalMule.getType() == EntityType.MULE,
+				"Dough Donkey broke vanilla horse-to-mule breeding before the CakeWorld Pony/Mule replacements exist");
+
+		DoughDonkey packAnimal = CakeWorldEntities.DOUGH_DONKEY.get()
+				.create(helper.getLevel());
+		require(helper, packAnimal != null,
+				"Could not create the Dough Donkey pack fixture");
+		Player rider = helper.makeMockPlayer();
+		packAnimal.setPos(rider.getX(), rider.getY(), rider.getZ());
+		packAnimal.setTamed(true);
+		packAnimal.setOwnerUUID(rider.getUUID());
+		helper.getLevel().addFreshEntity(packAnimal);
+		rider.getAbilities().instabuild = false;
+		rider.setItemInHand(InteractionHand.MAIN_HAND,
+				new ItemStack(Items.CHEST));
+		InteractionResult chestResult = packAnimal.mobInteract(
+				rider, InteractionHand.MAIN_HAND);
+		require(helper, chestResult.consumesAction()
+						&& packAnimal.hasChest()
+						&& packAnimal.getInventoryColumns() == 5
+						&& rider.getMainHandItem().isEmpty(),
+				"Dough Donkey did not equip and consume its survival chest");
+		require(helper, packAnimal.getSlot(500).set(
+						new ItemStack(Items.DIAMOND, 3)),
+				"Dough Donkey rejected the first of its 15 pack slots");
+		require(helper, packAnimal.getSlot(400).set(
+						new ItemStack(Items.SADDLE))
+						&& packAnimal.isSaddled(),
+				"Dough Donkey could not equip its saddle");
+		rider.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+		InteractionResult rideResult = packAnimal.mobInteract(
+				rider, InteractionHand.MAIN_HAND);
+		require(helper, rideResult.consumesAction()
+						&& rider.getVehicle() == packAnimal
+						&& packAnimal.hasPassenger(rider),
+				"A tame adult Dough Donkey did not accept an empty-hand rider");
+		rider.stopRiding();
+
+		CompoundTag saved = new CompoundTag();
+		packAnimal.addAdditionalSaveData(saved);
+		DoughDonkey restored = CakeWorldEntities.DOUGH_DONKEY.get()
+				.create(helper.getLevel());
+		require(helper, restored != null,
+				"Could not create the Dough Donkey reload fixture");
+		restored.readAdditionalSaveData(saved);
+		ItemStack restoredPackItem = restored.getSlot(500).get();
+		require(helper, restored.isTamed()
+						&& rider.getUUID().equals(restored.getOwnerUUID())
+						&& restored.hasChest()
+						&& restored.isSaddled()
+						&& restoredPackItem.is(Items.DIAMOND)
+						&& restoredPackItem.getCount() == 3,
+				"Dough Donkey lost owner, tame, chest, saddle, or pack contents across save/load");
+
+		Biome candyPlains = helper.getLevel().registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY)
+				.get(CakeWorldBiomes.CANDY_PLAINS.getId());
+		require(helper, candyPlains != null,
+				"Could not inspect Candy Plains Dough Donkey spawning");
+		requireSpawnReplacement(helper, candyPlains, EntityType.DONKEY,
+				CakeWorldEntities.DOUGH_DONKEY.get(),
+				MobCategory.CREATURE);
+		require(helper, CakeWorldItems.DOUGH_DONKEY_SPAWN_EGG.isPresent(),
+				"Dough Donkey has no creative/testing spawn egg");
+
+		ServerPlayer advancementPlayer = new ServerPlayer(
+				helper.getLevel().getServer(), helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2012"),
+						"CakeWorldDoughDonkeyRoleTest"));
+		VanillaRoleAdvancements.creditBredRole(advancementPlayer,
+				CakeWorldEntities.DOUGH_DONKEY.get());
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:husbandry/bred_all_animals",
+				"minecraft:donkey");
 		helper.succeed();
 	}
 
