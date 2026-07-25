@@ -103,6 +103,8 @@ public final class CakeWorldClientEvents {
 				HoglinRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.FUDGE_FOLK.get(),
 				FudgeFolkRenderer::new);
+		event.registerEntityRenderer(CakeWorldEntities.FUDGE_BRUTE.get(),
+				FudgeBruteRenderer::new);
 		event.registerEntityRenderer(
 				CakeWorldEntities.GINGERBREAD_PONY.get(),
 				HorseRenderer::new);

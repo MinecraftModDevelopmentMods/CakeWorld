@@ -211,6 +211,10 @@ public final class CakeWorldItems {
 			spawnEgg("fudge_folk_spawn_egg",
 					CakeWorldEntities.FUDGE_FOLK,
 					0x4A1F18, 0xE0A25B);
+	public static final RegistryObject<Item> FUDGE_BRUTE_SPAWN_EGG =
+			spawnEgg("fudge_brute_spawn_egg",
+					CakeWorldEntities.FUDGE_BRUTE,
+					0x35140F, 0xC8833A);
 	public static final RegistryObject<Item> GINGERBREAD_PONY_SPAWN_EGG =
 			spawnEgg("gingerbread_pony_spawn_egg",
 					CakeWorldEntities.GINGERBREAD_PONY,

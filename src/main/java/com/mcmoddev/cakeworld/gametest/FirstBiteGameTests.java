@@ -47,6 +47,7 @@ import com.mcmoddev.cakeworld.entity.GiantStaleCrumbler;
 import com.mcmoddev.cakeworld.entity.GlowJelly;
 import com.mcmoddev.cakeworld.entity.GumballGuardian;
 import com.mcmoddev.cakeworld.entity.FudgeBoar;
+import com.mcmoddev.cakeworld.entity.FudgeBrute;
 import com.mcmoddev.cakeworld.entity.FudgeFolk;
 import com.mcmoddev.cakeworld.entity.GingerbreadPony;
 import com.mcmoddev.cakeworld.entity.HotFudgeBlob;
@@ -85,9 +86,11 @@ import com.mcmoddev.cakeworld.init.CakeWorldItems;
 import com.mcmoddev.cakeworld.init.CakeWorldSounds;
 import com.mcmoddev.cakeworld.item.JellylotlBucketItem;
 import com.mcmoddev.cakeworld.world.CakeWorldPiglinReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldPiglinBruteReplacement;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.advancements.Advancement;
@@ -128,6 +131,7 @@ import net.minecraft.world.entity.ai.goal.LlamaFollowCaravanGoal;
 import net.minecraft.world.entity.ai.goal.WrappedGoal;
 import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.ai.memory.NearestVisibleLivingEntities;
 import net.minecraft.world.entity.ai.sensing.GolemSensor;
 import net.minecraft.world.entity.ai.sensing.HoglinSpecificSensor;
 import net.minecraft.world.entity.ai.sensing.NearestLivingEntitySensor;
@@ -176,8 +180,11 @@ import net.minecraft.world.entity.monster.Ravager;
 import net.minecraft.world.entity.monster.Vex;
 import net.minecraft.world.entity.monster.ZombifiedPiglin;
 import net.minecraft.world.entity.monster.Zoglin;
+import net.minecraft.world.entity.monster.WitherSkeleton;
 import net.minecraft.world.entity.monster.hoglin.Hoglin;
+import net.minecraft.world.entity.monster.piglin.AbstractPiglin;
 import net.minecraft.world.entity.monster.piglin.Piglin;
+import net.minecraft.world.entity.monster.piglin.PiglinBrute;
 import net.minecraft.world.entity.projectile.AbstractHurtingProjectile;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.Arrow;
@@ -5998,6 +6005,12 @@ public final class FirstBiteGameTests {
 		raid.setLeader(2, literal);
 		helper.getLevel().addFreshEntity(literal);
 		literal.startRiding(ravager, true);
+		// Riding raises the passenger and can cross a vertical 3D-biome
+		// boundary. Keep the conversion fixture at the coordinate which
+		// was explicitly resolved as CakeWorld while preserving its mount.
+		literal.moveTo(conversionPos.getX(),
+				conversionPos.getY(),
+				conversionPos.getZ(), 29.0F, 0.0F);
 		MirageConfectioner converted =
 				CakeWorldIllusionerReplacement
 						.replaceIfInCakeWorldBiome(
@@ -7434,6 +7447,14 @@ public final class FirstBiteGameTests {
 
 		BlockPos vanillaShearPos = helper.absolutePos(
 				new BlockPos(2, 2, 2));
+		helper.getLevel().getEntitiesOfClass(
+				CocoaCow.class,
+				new AABB(vanillaShearPos).inflate(2.0D))
+				.forEach(Entity::discard);
+		helper.getLevel().getEntitiesOfClass(
+				ItemEntity.class,
+				new AABB(vanillaShearPos).inflate(2.0D))
+				.forEach(Entity::discard);
 		CupcakeCow vanillaShear =
 				CakeWorldEntities.CUPCAKE_COW.get()
 						.create(helper.getLevel());
@@ -7462,7 +7483,14 @@ public final class FirstBiteGameTests {
 				helper.getLevel().getEntitiesOfClass(
 						CocoaCow.class,
 						new AABB(vanillaShearPos)
-								.inflate(2.0D));
+								.inflate(2.0D))
+				.stream()
+				.filter(cow -> cow.distanceToSqr(
+						vanillaShearPos.getX(),
+						vanillaShearPos.getY(),
+						vanillaShearPos.getZ())
+						< 0.01D)
+				.toList();
 		int redMushrooms = helper.getLevel()
 				.getEntitiesOfClass(ItemEntity.class,
 						new AABB(vanillaShearPos)
@@ -7497,6 +7525,10 @@ public final class FirstBiteGameTests {
 
 		BlockPos forgeShearPos = helper.absolutePos(
 				new BlockPos(8, 2, 2));
+		helper.getLevel().getEntitiesOfClass(
+				CocoaCow.class,
+				new AABB(forgeShearPos).inflate(2.0D))
+				.forEach(Entity::discard);
 		CupcakeCow forgeShear =
 				CakeWorldEntities.CUPCAKE_COW.get()
 						.create(helper.getLevel());
@@ -7514,7 +7546,14 @@ public final class FirstBiteGameTests {
 				helper.getLevel().getEntitiesOfClass(
 						CocoaCow.class,
 						new AABB(forgeShearPos)
-								.inflate(2.0D));
+								.inflate(2.0D))
+				.stream()
+				.filter(cow -> cow.distanceToSqr(
+						forgeShearPos.getX(),
+						forgeShearPos.getY(),
+						forgeShearPos.getZ())
+						< 0.01D)
+				.toList();
 		require(helper,
 				forgeShear.isRemoved()
 						&& forgeShearCows.size() == 1
@@ -7531,10 +7570,11 @@ public final class FirstBiteGameTests {
 				CakeWorldBlocks.CHOCOLATE_SPONGE.get()
 						.defaultBlockState(), 3);
 		helper.getLevel().setBlock(spawnPos,
-				Blocks.AIR.defaultBlockState(), 3);
+				Blocks.LIGHT.defaultBlockState(), 3);
 		helper.getLevel().setBlock(spawnPos.above(),
 				Blocks.AIR.defaultBlockState(), 3);
-		require(helper,
+		helper.runAfterDelay(5, () -> {
+			require(helper,
 				helper.getLevel()
 						.getBlockState(spawnPos.below())
 						.is(BlockTags
@@ -7575,6 +7615,18 @@ public final class FirstBiteGameTests {
 								spawnPos,
 								helper.getLevel()), 10.0D),
 				"Cupcake Cow lost bright ground placement, edible spawn surface or surface preference");
+			vanillaShearCows.forEach(Entity::discard);
+			forgeShearCows.forEach(Entity::discard);
+			helper.getLevel().getEntitiesOfClass(
+					ItemEntity.class,
+					new AABB(vanillaShearPos).inflate(2.0D))
+					.forEach(Entity::discard);
+			helper.getLevel().setBlock(spawnPos.below(),
+					Blocks.AIR.defaultBlockState(), 3);
+			helper.getLevel().setBlock(spawnPos,
+					Blocks.AIR.defaultBlockState(), 3);
+			helper.succeed();
+		});
 
 		MobSpawnSettingsBuilder futureSpawns =
 				new MobSpawnSettingsBuilder(
@@ -7661,9 +7713,6 @@ public final class FirstBiteGameTests {
 		requireCriterion(helper, advancementPlayer,
 				"minecraft:husbandry/bred_all_animals",
 				"minecraft:mooshroom");
-		vanillaShearCows.forEach(Entity::discard);
-		forgeShearCows.forEach(Entity::discard);
-		helper.succeed();
 	}
 
 	@GameTest(template = EMPTY)
@@ -9953,6 +10002,481 @@ public final class FirstBiteGameTests {
 	}
 
 	@GameTest(template = EMPTY, timeoutTicks = 200)
+	public static void fudgeBrutesGuardFoundriesWithoutBreakingFamilySafety(
+			GameTestHelper helper) {
+		FudgeBruteProbe brute =
+				new FudgeBruteProbe(helper.getLevel());
+		require(helper,
+				brute instanceof PiglinBrute
+						&& brute instanceof AbstractPiglin
+						&& brute.getType()
+								== CakeWorldEntities
+										.FUDGE_BRUTE.get()
+						&& brute.getType().getCategory()
+								== MobCategory.MONSTER
+						&& close(brute.getMaxHealth(), 50.0D)
+						&& close(brute.getAttributeValue(
+								Attributes.MOVEMENT_SPEED),
+								0.35D)
+						&& close(brute.getAttributeValue(
+								Attributes.ATTACK_DAMAGE),
+								7.0D)
+						&& close(brute.getDimensions(
+								Pose.STANDING).width,
+								0.6D)
+						&& close(brute.getDimensions(
+								Pose.STANDING).height,
+								1.95D)
+						&& brute.getExperienceValue() == 20
+						&& !brute.canHuntRole()
+						&& brute.despawnsInPeaceful()
+						&& brute.getLootTableId().equals(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/fudge_brute"))
+						&& brute.ambientSound()
+								== SoundEvents
+										.PIGLIN_BRUTE_AMBIENT
+						&& brute.hurtSound()
+								== SoundEvents
+										.PIGLIN_BRUTE_HURT
+						&& brute.deathSound()
+								== SoundEvents
+										.PIGLIN_BRUTE_DEATH,
+				"Fudge Brute lost exact Piglin Brute type, body, attributes, XP, hunt, Peaceful, loot or sound roles");
+
+		BlockPos guardPos = helper.absolutePos(
+				new BlockPos(2, 3, 2));
+		brute.setPos(guardPos.getX() + 0.5D,
+				guardPos.getY(), guardPos.getZ() + 0.5D);
+		brute.finalizeSpawn(
+				helper.getLevel(),
+				helper.getLevel().getCurrentDifficultyAt(
+						guardPos),
+				MobSpawnType.STRUCTURE, null, null);
+		helper.getLevel().addFreshEntity(brute);
+		GlobalPos home = brute.getBrain().getMemory(
+				MemoryModuleType.HOME).orElse(null);
+		require(helper,
+				home != null
+						&& home.dimension().equals(
+								helper.getLevel()
+										.dimension())
+						&& home.pos().equals(
+								brute.blockPosition())
+						&& brute.getMainHandItem()
+								.is(Items.GOLDEN_AXE)
+						&& brute.wantsToPickUp(
+								new ItemStack(
+										Items.GOLDEN_AXE))
+						&& !brute.wantsToPickUp(
+								new ItemStack(
+										Items.GOLD_INGOT)),
+				"Fudge Brute lost its Foundry home, guaranteed Golden Axe or exact pickup role");
+
+		ServerPlayer goldPlayer = new ServerPlayer(
+				helper.getLevel().getServer(),
+				helper.getLevel(),
+				new GameProfile(UUID.fromString(
+						"1978feed-feed-4bad-babe-1978feed2040"),
+						"CakeWorldFudgeBruteTest"));
+		goldPlayer.setPos(brute.getX() + 2.0D,
+				brute.getY(), brute.getZ());
+		goldPlayer.setItemSlot(EquipmentSlot.HEAD,
+				new ItemStack(Items.GOLDEN_HELMET));
+		goldPlayer.setItemInHand(InteractionHand.MAIN_HAND,
+				new ItemStack(Items.GOLD_INGOT));
+		InteractionResult barter = brute.runMobInteract(
+				goldPlayer, InteractionHand.MAIN_HAND);
+		require(helper,
+				!barter.consumesAction()
+						&& goldPlayer.getMainHandItem()
+								.is(Items.GOLD_INGOT)
+						&& !brute.getBrain()
+								.hasMemoryValue(
+										MemoryModuleType
+												.ADMIRING_ITEM),
+				"Fudge Brute incorrectly inherited the ordinary Piglin barter role");
+		Difficulty targetingDifficulty =
+				helper.getLevel().getDifficulty();
+		FudgeBruteProbe nemesisBrute =
+				new FudgeBruteProbe(helper.getLevel());
+		WitherSkeleton nemesis =
+				EntityType.WITHER_SKELETON.create(
+						helper.getLevel());
+		require(helper, nemesis != null,
+				"Could not create Fudge Brute nemesis fixture");
+		try {
+			// Player targeting is disabled globally in Peaceful. Pin this
+			// synchronous assertion so concurrently scheduled mob tests
+			// cannot make gold armour look like a Brute exemption.
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			for (int attempt = 0; attempt < 25
+					&& !brute.getBrain().hasMemoryValue(
+							MemoryModuleType.ATTACK_TARGET);
+					attempt++) {
+				// The vanilla PlayerSensor may run during this manual
+				// brain tick. Re-seed across one complete scan cadence
+				// so the test is independent of its random phase.
+				brute.getBrain().setMemory(
+						MemoryModuleType
+								.NEAREST_VISIBLE_ATTACKABLE_PLAYER,
+						goldPlayer);
+				brute.runServerAiStep();
+			}
+			require(helper,
+					brute.getBrain().getMemory(
+							MemoryModuleType.ATTACK_TARGET)
+							.filter(target ->
+									target == goldPlayer)
+							.isPresent()
+							&& brute.isAggressive(),
+					"Fudge Brute stopped targeting a gold-armoured player");
+
+			nemesisBrute.setPos(brute.getX(),
+					brute.getY(), brute.getZ() + 3.0D);
+			nemesis.setPos(nemesisBrute.getX() + 2.0D,
+					nemesisBrute.getY(),
+					nemesisBrute.getZ());
+			for (int attempt = 0; attempt < 25
+					&& !nemesisBrute.getBrain()
+							.hasMemoryValue(
+									MemoryModuleType
+											.ATTACK_TARGET);
+					attempt++) {
+				nemesisBrute.getBrain().setMemory(
+						MemoryModuleType
+								.NEAREST_VISIBLE_NEMESIS,
+						nemesis);
+				nemesisBrute.runServerAiStep();
+			}
+			require(helper,
+					nemesisBrute.getBrain().getMemory(
+							MemoryModuleType.ATTACK_TARGET)
+							.filter(target ->
+									target == nemesis)
+							.isPresent(),
+					"Fudge Brute lost inherited nemesis targeting");
+			VanillaRoleAdvancements
+					.creditKilledPiglinBruteRole(
+							goldPlayer);
+			requireCriterion(helper, goldPlayer,
+					"minecraft:adventure/kill_all_mobs",
+					"minecraft:piglin_brute");
+		} finally {
+			nemesisBrute.discard();
+			nemesis.discard();
+			helper.getLevel().getServer().setDifficulty(
+					targetingDifficulty, true);
+		}
+
+		FudgeBruteProbe familyBrute =
+				new FudgeBruteProbe(helper.getLevel());
+		FudgeFolkProbe familyFolk =
+				new FudgeFolkProbe(helper.getLevel());
+		familyBrute.setPos(brute.getX() + 5.0D,
+				brute.getY(), brute.getZ());
+		familyFolk.setPos(familyBrute.getX() + 1.0D,
+				familyBrute.getY(), familyBrute.getZ());
+		helper.getLevel().addFreshEntity(familyBrute);
+		helper.getLevel().addFreshEntity(familyFolk);
+		familyBrute.getBrain().setMemory(
+				MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES,
+				new NearestVisibleLivingEntities(
+						familyBrute,
+						List.of(familyFolk)));
+		familyFolk.getBrain().setMemory(
+				MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES,
+				new NearestVisibleLivingEntities(
+						familyFolk,
+						List.of(familyBrute)));
+		familyBrute.tickCount = 20;
+		familyFolk.tickCount = 20;
+		familyBrute.runFamilyInteractionRepair();
+		familyFolk.runFamilyInteractionRepair();
+		require(helper,
+				familyBrute.getBrain().getMemory(
+						MemoryModuleType.INTERACTION_TARGET)
+						.filter(target ->
+								target == familyFolk)
+						.isPresent()
+						&& familyFolk.getBrain()
+								.getMemory(
+										MemoryModuleType
+												.INTERACTION_TARGET)
+								.filter(target ->
+										target
+												== familyBrute)
+								.isPresent(),
+				"Custom Piglin family did not repair literal-type idle interaction");
+
+		Difficulty originalDifficulty =
+				helper.getLevel().getDifficulty();
+		ZombifiedPiglin conversion = null;
+		try {
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			float beforeFamilyHit = familyBrute.getHealth();
+			require(helper,
+					familyBrute.hurt(
+							DamageSource.mobAttack(
+									familyFolk),
+							1.0F)
+							&& close(
+									familyBrute
+											.getHealth(),
+									beforeFamilyHit
+											- 1.0D)
+							&& !familyBrute.getBrain()
+									.hasMemoryValue(
+											MemoryModuleType
+													.ANGRY_AT)
+							&& !familyBrute.getBrain()
+									.hasMemoryValue(
+											MemoryModuleType
+													.ATTACK_TARGET),
+					"Fudge Brute retaliated against its AbstractPiglin family");
+
+			for (Difficulty safeDifficulty :
+					List.of(Difficulty.EASY,
+							Difficulty.NORMAL)) {
+				helper.getLevel().getServer().setDifficulty(
+						safeDifficulty, true);
+				Pig safeTarget = EntityType.PIG.create(
+						helper.getLevel());
+				require(helper, safeTarget != null,
+						"Could not create safe Fudge Brute target");
+				safeTarget.setPos(brute.getX() + 8.0D,
+						brute.getY(),
+						brute.getZ()
+								+ safeDifficulty.getId()
+										* 2.0D);
+				helper.getLevel().addFreshEntity(
+						safeTarget);
+				safeTarget.setSecondsOnFire(5);
+				safeTarget.fallDistance = 8.0F;
+				brute.doHurtTarget(safeTarget);
+				require(helper,
+						close(safeTarget.getHealth(),
+								safeTarget
+										.getMaxHealth())
+								&& !safeTarget.isOnFire()
+								&& close(safeTarget
+										.fallDistance,
+										0.0D)
+								&& safeTarget.hasEffect(
+										MobEffects
+												.MOVEMENT_SLOWDOWN)
+								&& safeTarget.hasEffect(
+										MobEffects
+												.SLOW_FALLING)
+								&& safeTarget.hasEffect(
+										MobEffects
+												.FIRE_RESISTANCE)
+								&& safeTarget.getEffect(
+										MobEffects
+												.DAMAGE_RESISTANCE)
+										.getAmplifier() == 4,
+						safeDifficulty
+								+ " Fudge Brute axe caused damage or lacked rescue");
+			}
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			Pig hardTarget = EntityType.PIG.create(
+					helper.getLevel());
+			require(helper, hardTarget != null,
+					"Could not create Hard Fudge Brute target");
+			hardTarget.setPos(brute.getX() + 8.0D,
+					brute.getY(), brute.getZ() + 6.0D);
+			helper.getLevel().addFreshEntity(hardTarget);
+			brute.doHurtTarget(hardTarget);
+			require(helper,
+					hardTarget.getHealth()
+							< hardTarget.getMaxHealth(),
+					"Hard Fudge Brute axe did not cause real damage");
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.PEACEFUL, true);
+			FudgeBruteProbe peaceful =
+					new FudgeBruteProbe(helper.getLevel());
+			peaceful.setPos(brute.getX() + 10.0D,
+					brute.getY(), brute.getZ());
+			helper.getLevel().addFreshEntity(peaceful);
+			peaceful.checkDespawn();
+			require(helper,
+					peaceful.isRemoved()
+							&& peaceful
+									.despawnsInPeaceful(),
+					"Peaceful Fudge Brute did not retain vanilla Monster removal");
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.NORMAL, true);
+			FudgeBruteProbe converting =
+					new FudgeBruteProbe(helper.getLevel());
+			converting.setPos(brute.getX() + 12.0D,
+					brute.getY(), brute.getZ());
+			converting.setCustomName(new TextComponent(
+					"Staged Burnt Fudge Brute"));
+			converting.setPersistenceRequired();
+			converting.setItemSlot(EquipmentSlot.MAINHAND,
+					new ItemStack(Items.GOLDEN_AXE));
+			CompoundTag convertingState =
+					converting.saveWithoutId(
+							new CompoundTag());
+			convertingState.putInt(
+					"TimeInOverworld", 300);
+			converting.load(convertingState);
+			helper.getLevel().addFreshEntity(converting);
+			converting.runServerAiStep();
+			conversion = helper.getLevel()
+					.getEntitiesOfClass(
+							ZombifiedPiglin.class,
+							converting.getBoundingBox()
+									.inflate(3.0D))
+					.stream().findFirst().orElse(null);
+			require(helper,
+					converting.isRemoved()
+							&& conversion != null
+							&& conversion
+									.isPersistenceRequired()
+							&& conversion.getMainHandItem()
+									.is(Items.GOLDEN_AXE)
+							&& "Staged Burnt Fudge Brute"
+									.equals(conversion.getName()
+											.getString())
+							&& conversion.hasEffect(
+									MobEffects.CONFUSION),
+					"Fudge Brute lost staged vanilla zombification for MOB-073");
+		} finally {
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+			if (conversion != null) {
+				conversion.discard();
+			}
+		}
+
+		BlockPos cakeWorldPos =
+				findCakeWorldBiomePosition(helper,
+						helper.absolutePos(
+								new BlockPos(8, 3, 8)),
+						256);
+		require(helper, cakeWorldPos != null,
+				"Could not locate CakeWorld terrain for literal Piglin Brute conversion");
+		PiglinBrute literal =
+				EntityType.PIGLIN_BRUTE.create(
+						helper.getLevel());
+		require(helper, literal != null,
+				"Could not create literal Bastion Piglin Brute fixture");
+		literal.setPos(cakeWorldPos.getX() + 0.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		literal.finalizeSpawn(
+				helper.getLevel(),
+				helper.getLevel().getCurrentDifficultyAt(
+						cakeWorldPos),
+				MobSpawnType.STRUCTURE, null, null);
+		literal.setNoAi(true);
+		literal.setHealth(37.0F);
+		literal.setCustomName(new TextComponent(
+				"Foundry Captain"));
+		literal.setPersistenceRequired();
+		FudgeBrute structureReplacement =
+				CakeWorldPiglinBruteReplacement
+						.replaceIfInCakeWorldBiome(
+								helper.getLevel(),
+								literal);
+		require(helper,
+				literal.isRemoved()
+						&& structureReplacement != null
+						&& structureReplacement.isNoAi()
+						&& structureReplacement
+								.isPersistenceRequired()
+						&& close(structureReplacement
+								.getHealth(), 37.0D)
+						&& structureReplacement
+								.getMainHandItem()
+								.is(Items.GOLDEN_AXE)
+						&& structureReplacement.getBrain()
+								.hasMemoryValue(
+										MemoryModuleType.HOME)
+						&& "Foundry Captain".equals(
+								structureReplacement
+										.getName()
+										.getString()),
+				"Fresh literal Piglin Brute conversion lost Foundry state");
+
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS.getId())) {
+			Biome biome = helper.getLevel().registryAccess()
+					.registryOrThrow(
+							Registry.BIOME_REGISTRY)
+					.get(biomeId);
+			require(helper,
+					biome != null
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory
+													.MONSTER)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType
+															.PIGLIN_BRUTE
+													|| spawn.type
+															== CakeWorldEntities
+																	.FUDGE_BRUTE
+																	.get()),
+					"Fudge Brute leaked into open spawning in "
+							+ biomeId);
+		}
+
+		require(helper,
+				CakeWorldItems.FUDGE_BRUTE_SPAWN_EGG
+						.isPresent()
+						&& SpawnPlacements
+								.getPlacementType(
+										CakeWorldEntities
+												.FUDGE_BRUTE
+												.get())
+								== SpawnPlacements.Type
+										.NO_RESTRICTIONS
+						&& SpawnPlacements
+								.getPlacementType(
+										CakeWorldEntities
+												.FUDGE_BRUTE
+												.get())
+								== SpawnPlacements
+										.getPlacementType(
+												EntityType
+														.PIGLIN_BRUTE)
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+												.FUDGE_BRUTE
+												.get())
+								== SpawnPlacements
+										.getHeightmapType(
+												EntityType
+														.PIGLIN_BRUTE)
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+												.FUDGE_BRUTE
+												.get())
+								== SoundEvents
+										.PARROT_IMITATE_PIGLIN_BRUTE,
+				"Fudge Brute lost its egg, structure-only placement or mimic role");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 200)
 	public static void fudgeFolkKeepPiglinSocietyBarterAndSafePeril(
 			GameTestHelper helper) {
 		FudgeFolkProbe folk =
@@ -10552,6 +11076,59 @@ public final class FirstBiteGameTests {
 
 		private void runServerAiStep() {
 			customServerAiStep();
+		}
+
+		private void runFamilyInteractionRepair() {
+			repairCakeWorldFamilyInteraction();
+		}
+	}
+
+	private static final class FudgeBruteProbe
+			extends FudgeBrute {
+		private FudgeBruteProbe(Level level) {
+			super(CakeWorldEntities.FUDGE_BRUTE.get(),
+					level);
+		}
+
+		private boolean despawnsInPeaceful() {
+			return shouldDespawnInPeaceful();
+		}
+
+		private int getExperienceValue() {
+			return getExperienceReward(null);
+		}
+
+		private boolean canHuntRole() {
+			return canHunt();
+		}
+
+		private ResourceLocation getLootTableId() {
+			return getLootTable();
+		}
+
+		private net.minecraft.sounds.SoundEvent ambientSound() {
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent hurtSound() {
+			return getHurtSound(DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent deathSound() {
+			return getDeathSound();
+		}
+
+		private InteractionResult runMobInteract(
+				Player player, InteractionHand hand) {
+			return mobInteract(player, hand);
+		}
+
+		private void runServerAiStep() {
+			customServerAiStep();
+		}
+
+		private void runFamilyInteractionRepair() {
+			repairCakeWorldFamilyInteraction();
 		}
 	}
 

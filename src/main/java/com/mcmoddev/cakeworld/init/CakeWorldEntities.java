@@ -13,6 +13,7 @@ import com.mcmoddev.cakeworld.entity.DeepLiquoriceWeaver;
 import com.mcmoddev.cakeworld.entity.DoughDonkey;
 import com.mcmoddev.cakeworld.entity.DriedCrumbler;
 import com.mcmoddev.cakeworld.entity.FudgeBoar;
+import com.mcmoddev.cakeworld.entity.FudgeBrute;
 import com.mcmoddev.cakeworld.entity.FudgeFolk;
 import com.mcmoddev.cakeworld.entity.GingerbreadPony;
 import com.mcmoddev.cakeworld.entity.GrandGumballGuardian;
@@ -88,6 +89,7 @@ import net.minecraft.world.entity.monster.MagmaCube;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.monster.hoglin.Hoglin;
 import net.minecraft.world.entity.monster.piglin.Piglin;
+import net.minecraft.world.entity.monster.piglin.PiglinBrute;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -224,6 +226,12 @@ public final class CakeWorldEntities {
 	public static final RegistryObject<EntityType<FudgeFolk>> FUDGE_FOLK =
 			entity("fudge_folk",
 					EntityType.Builder.of(FudgeFolk::new,
+							MobCategory.MONSTER)
+							.sized(0.6F, 1.95F)
+							.clientTrackingRange(8));
+	public static final RegistryObject<EntityType<FudgeBrute>> FUDGE_BRUTE =
+			entity("fudge_brute",
+					EntityType.Builder.of(FudgeBrute::new,
 							MobCategory.MONSTER)
 							.sized(0.6F, 1.95F)
 							.clientTrackingRange(8));
@@ -414,6 +422,8 @@ public final class CakeWorldEntities {
 				Hoglin.createAttributes().build());
 		event.put(FUDGE_FOLK.get(),
 				Piglin.createAttributes().build());
+		event.put(FUDGE_BRUTE.get(),
+				PiglinBrute.createAttributes().build());
 		event.put(GINGERBREAD_PONY.get(),
 				AbstractHorse.createBaseHorseAttributes()
 						.build());

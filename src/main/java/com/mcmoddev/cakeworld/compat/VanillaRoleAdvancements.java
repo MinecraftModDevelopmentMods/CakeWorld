@@ -197,6 +197,11 @@ public final class VanillaRoleAdvancements {
 		award(player, KILL_ALL, "minecraft:piglin");
 	}
 
+	public static void creditKilledPiglinBruteRole(
+			ServerPlayer player) {
+		award(player, KILL_ALL, "minecraft:piglin_brute");
+	}
+
 	public static void creditDistractedPiglinRole(
 			ServerPlayer player, boolean direct) {
 		if (player.getItemBySlot(
@@ -296,6 +301,9 @@ public final class VanillaRoleAdvancements {
 		}
 		if (type == CakeWorldEntities.FUDGE_FOLK.get()) {
 			return "minecraft:piglin";
+		}
+		if (type == CakeWorldEntities.FUDGE_BRUTE.get()) {
+			return "minecraft:piglin_brute";
 		}
 		return null;
 	}

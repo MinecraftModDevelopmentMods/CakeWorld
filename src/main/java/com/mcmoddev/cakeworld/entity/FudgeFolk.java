@@ -105,6 +105,7 @@ public class FudgeFolk extends Piglin {
 		deadFudgeBoarTarget = target instanceof FudgeBoar
 				&& target.isDeadOrDying() ? target : null;
 		super.customServerAiStep();
+		repairCakeWorldFamilyInteraction();
 		if (deadFudgeBoarTarget != null) {
 			rememberFudgeBoarHunt();
 			if (getBrain().hasMemoryValue(
@@ -117,6 +118,10 @@ public class FudgeFolk extends Piglin {
 			}
 			deadFudgeBoarTarget = null;
 		}
+	}
+
+	protected void repairCakeWorldFamilyInteraction() {
+		PiglinFamilyInteraction.repair(this);
 	}
 
 	public void rememberFudgeBoarHunt() {
