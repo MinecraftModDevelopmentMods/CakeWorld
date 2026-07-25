@@ -38,6 +38,7 @@ import com.mcmoddev.cakeworld.entity.CustardCat;
 import com.mcmoddev.cakeworld.entity.DeepLiquoriceWeaver;
 import com.mcmoddev.cakeworld.entity.DoughDonkey;
 import com.mcmoddev.cakeworld.entity.GrandGumballGuardian;
+import com.mcmoddev.cakeworld.entity.GiantStaleCrumbler;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.MallowFloater;
 import com.mcmoddev.cakeworld.entity.MallowPuffProjectile;
@@ -109,6 +110,7 @@ import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.entity.monster.Endermite;
 import net.minecraft.world.entity.monster.Evoker;
 import net.minecraft.world.entity.monster.Ghast;
+import net.minecraft.world.entity.monster.Giant;
 import net.minecraft.world.entity.monster.Ravager;
 import net.minecraft.world.entity.monster.Vex;
 import net.minecraft.world.entity.projectile.AbstractHurtingProjectile;
@@ -161,6 +163,7 @@ import com.mcmoddev.cakeworld.world.CakeWorldDrownedReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldElderGuardianReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldEndermiteReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldEvokerReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldGiantReplacement;
 
 @GameTestHolder(CakeWorld.MODID)
 @PrefixGameTestTemplate(false)
@@ -3560,6 +3563,155 @@ public final class FirstBiteGameTests {
 		requireCriterion(helper, advancementPlayer,
 				"minecraft:nether/return_to_sender",
 				"killed_ghast");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY)
+	public static void giantStaleCrumblersStaySummonOnly(
+			GameTestHelper helper) {
+		GiantStaleCrumbler giant =
+				CakeWorldEntities.GIANT_STALE_CRUMBLER.get()
+						.create(helper.getLevel());
+		Pig target = EntityType.PIG.create(helper.getLevel());
+		require(helper, giant != null && target != null,
+				"Could not create Giant Stale Crumbler fixtures");
+		BlockPos anchor = helper.absolutePos(new BlockPos(2, 3, 2));
+		giant.setNoAi(true);
+		giant.setPos(anchor.getX(), anchor.getY(), anchor.getZ());
+		target.setPos(anchor.getX() + 2.0D,
+				anchor.getY(), anchor.getZ());
+		helper.getLevel().addFreshEntity(giant);
+		helper.getLevel().addFreshEntity(target);
+		require(helper,
+				giant instanceof Giant
+						&& Math.abs(giant.getBbWidth() - 3.6F)
+								< 0.001F
+						&& Math.abs(giant.getBbHeight() - 12.0F)
+								< 0.001F
+						&& Math.abs(giant.getEyeHeight() - 10.440001F)
+								< 0.001F
+						&& Math.abs(giant.getMaxHealth() - 100.0F)
+								< 0.001F
+						&& Math.abs(giant.getAttributeValue(
+								Attributes.MOVEMENT_SPEED) - 0.5D)
+								< 0.001D
+						&& Math.abs(giant.getAttributeValue(
+								Attributes.ATTACK_DAMAGE) - 50.0D)
+								< 0.001D,
+				"Giant Stale Crumbler lost the Giant dimensions, eye height or attributes");
+
+		Difficulty originalDifficulty = helper.getLevel().getDifficulty();
+		try {
+			for (Difficulty safeDifficulty :
+					new Difficulty[] {Difficulty.EASY, Difficulty.NORMAL}) {
+				helper.getLevel().getServer().setDifficulty(
+						safeDifficulty, true);
+				target.removeAllEffects();
+				target.setHealth(10.0F);
+				target.setSecondsOnFire(5);
+				target.fallDistance = 6.0F;
+				target.setDeltaMovement(Vec3.ZERO);
+				require(helper,
+						giant.doHurtTarget(target)
+								&& Math.abs(target.getHealth()
+										- 10.0F) < 0.001F
+								&& !target.isOnFire()
+								&& target.fallDistance == 0.0F
+								&& target.hasEffect(
+										MobEffects.MOVEMENT_SLOWDOWN)
+								&& target.hasEffect(
+										MobEffects.SLOW_FALLING)
+								&& target.hasEffect(
+										MobEffects.FIRE_RESISTANCE)
+								&& target.getEffect(
+										MobEffects.DAMAGE_RESISTANCE)
+										.getAmplifier() == 4,
+						safeDifficulty
+								+ " Giant crumb stomp caused damage or lacked rescue effects");
+			}
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.HARD, true);
+			Pig hardTarget = EntityType.PIG.create(helper.getLevel());
+			require(helper, hardTarget != null,
+					"Could not create Hard Giant target");
+			hardTarget.setPos(anchor.getX() + 2.0D,
+					anchor.getY(), anchor.getZ() + 2.0D);
+			helper.getLevel().addFreshEntity(hardTarget);
+			require(helper, giant.doHurtTarget(hardTarget)
+							&& !hardTarget.isAlive(),
+					"Hard Giant Stale Crumbler did not retain real fifty-point Giant damage");
+		} finally {
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		Giant vanillaGiant = EntityType.GIANT.create(helper.getLevel());
+		require(helper, vanillaGiant != null,
+				"Could not create command-summon conversion fixture");
+		vanillaGiant.moveTo(anchor.getX() + 5.0D,
+				anchor.getY(), anchor.getZ(), 31.0F, 0.0F);
+		vanillaGiant.setHealth(42.0F);
+		vanillaGiant.setCustomName(new TextComponent("Old Crumb"));
+		vanillaGiant.setPersistenceRequired();
+		vanillaGiant.setNoAi(true);
+		GiantStaleCrumbler converted =
+				CakeWorldGiantReplacement.convertIfInCakeWorldBiome(
+						helper.getLevel(), vanillaGiant);
+		require(helper, converted != null
+						&& converted.getType()
+								== CakeWorldEntities.GIANT_STALE_CRUMBLER.get()
+						&& Math.abs(converted.getHealth() - 42.0F)
+								< 0.001F
+						&& converted.hasCustomName()
+						&& converted.getCustomName().getString()
+								.equals("Old Crumb")
+						&& converted.isPersistenceRequired()
+						&& converted.isNoAi()
+						&& Math.abs(converted.getYRot() - 31.0F)
+								< 0.001F,
+				"Fresh command-Giant conversion lost type, health, name, persistence, NoAI or rotation");
+
+		ResourceLocation[] cakeWorldBiomes = {
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS.getId()
+		};
+		for (ResourceLocation biomeId : cakeWorldBiomes) {
+			Biome biome = helper.getLevel().registryAccess()
+					.registryOrThrow(Registry.BIOME_REGISTRY)
+					.get(biomeId);
+			require(helper, biome != null,
+					"Missing CakeWorld biome " + biomeId);
+			boolean spawned = biome.getMobSettings()
+					.getMobs(MobCategory.MONSTER).unwrap()
+					.stream().anyMatch(spawn ->
+							spawn.type == EntityType.GIANT
+									|| spawn.type
+											== CakeWorldEntities
+													.GIANT_STALE_CRUMBLER
+													.get());
+			require(helper, !spawned,
+					"Giant role was added to normal spawning in "
+							+ biomeId);
+		}
+		require(helper,
+				Registry.ITEM.get(new ResourceLocation(
+						CakeWorld.MODID,
+						"giant_stale_crumbler_spawn_egg"))
+						== Items.AIR,
+				"Command-only Giant unexpectedly received a spawn egg");
+		Advancement killAll = helper.getLevel().getServer()
+				.getAdvancements().getAdvancement(
+						new ResourceLocation("minecraft",
+								"adventure/kill_all_mobs"));
+		require(helper, killAll != null
+						&& !killAll.getCriteria().containsKey(
+								"minecraft:giant"),
+				"Vanilla unexpectedly requires a Giant kill criterion");
 		helper.succeed();
 	}
 

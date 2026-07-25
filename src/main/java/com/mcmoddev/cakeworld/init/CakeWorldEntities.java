@@ -10,6 +10,7 @@ import com.mcmoddev.cakeworld.entity.CustardCat;
 import com.mcmoddev.cakeworld.entity.DeepLiquoriceWeaver;
 import com.mcmoddev.cakeworld.entity.DoughDonkey;
 import com.mcmoddev.cakeworld.entity.GrandGumballGuardian;
+import com.mcmoddev.cakeworld.entity.GiantStaleCrumbler;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
 import com.mcmoddev.cakeworld.entity.MallowChick;
 import com.mcmoddev.cakeworld.entity.MallowFloater;
@@ -52,6 +53,7 @@ import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.entity.monster.Endermite;
 import net.minecraft.world.entity.monster.Evoker;
 import net.minecraft.world.entity.monster.Ghast;
+import net.minecraft.world.entity.monster.Giant;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
@@ -178,6 +180,13 @@ public final class CakeWorldEntities {
 							.sized(1.0F, 1.0F)
 							.clientTrackingRange(4)
 							.updateInterval(10));
+	public static final RegistryObject<EntityType<GiantStaleCrumbler>>
+			GIANT_STALE_CRUMBLER = entity(
+					"giant_stale_crumbler",
+					EntityType.Builder.of(GiantStaleCrumbler::new,
+							MobCategory.MONSTER)
+							.sized(3.6F, 12.0F)
+							.clientTrackingRange(10));
 	public static final RegistryObject<EntityType<PopRockPopper>>
 			POP_ROCK_POPPER = entity("pop_rock_popper",
 					EntityType.Builder.of(PopRockPopper::new,
@@ -249,6 +258,8 @@ public final class CakeWorldEntities {
 				Fox.createAttributes().build());
 		event.put(MALLOW_FLOATER.get(),
 				Ghast.createAttributes().build());
+		event.put(GIANT_STALE_CRUMBLER.get(),
+				Giant.createAttributes().build());
 		event.put(POP_ROCK_POPPER.get(), Creeper.createAttributes().build());
 		event.put(CINNAMON_SPARK.get(),
 				Blaze.createAttributes().build());
