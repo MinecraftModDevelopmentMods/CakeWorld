@@ -65,6 +65,7 @@ import com.mcmoddev.cakeworld.entity.SourSorcerer;
 import com.mcmoddev.cakeworld.entity.SourSprite;
 import com.mcmoddev.cakeworld.entity.SprinkleLlama;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
+import com.mcmoddev.cakeworld.entity.StaleFudgeBoar;
 import com.mcmoddev.cakeworld.entity.SugarBee;
 import com.mcmoddev.cakeworld.entity.SugarMite;
 import com.mcmoddev.cakeworld.entity.TaffyTallwalker;
@@ -135,6 +136,7 @@ import net.minecraft.world.entity.monster.Vex;
 import net.minecraft.world.entity.monster.Vindicator;
 import net.minecraft.world.entity.monster.Witch;
 import net.minecraft.world.entity.monster.Zombie;
+import net.minecraft.world.entity.monster.Zoglin;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.world.entity.monster.hoglin.Hoglin;
 import net.minecraft.world.entity.monster.piglin.Piglin;
@@ -299,6 +301,15 @@ public final class CakeWorldEntities {
 							MobCategory.MONSTER)
 							.sized(1.3964844F, 1.4F)
 							.clientTrackingRange(8));
+	public static final RegistryObject<EntityType<StaleFudgeBoar>>
+			STALE_FUDGE_BOAR =
+					entity("stale_fudge_boar",
+							EntityType.Builder.of(
+									StaleFudgeBoar::new,
+									MobCategory.MONSTER)
+									.fireImmune()
+									.sized(1.3964844F, 1.4F)
+									.clientTrackingRange(8));
 	public static final RegistryObject<EntityType<FudgeFolk>> FUDGE_FOLK =
 			entity("fudge_folk",
 					EntityType.Builder.of(FudgeFolk::new,
@@ -683,6 +694,8 @@ public final class CakeWorldEntities {
 				Guardian.createAttributes().build());
 		event.put(FUDGE_BOAR.get(),
 				Hoglin.createAttributes().build());
+		event.put(STALE_FUDGE_BOAR.get(),
+				Zoglin.createAttributes().build());
 		event.put(FUDGE_FOLK.get(),
 				Piglin.createAttributes().build());
 		event.put(FUDGE_BRUTE.get(),

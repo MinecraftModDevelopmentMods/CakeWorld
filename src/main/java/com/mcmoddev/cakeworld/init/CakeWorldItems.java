@@ -249,6 +249,11 @@ public final class CakeWorldItems {
 			spawnEgg("fudge_boar_spawn_egg",
 					CakeWorldEntities.FUDGE_BOAR,
 					0x5B2A22, 0xD78A52);
+	public static final RegistryObject<Item>
+			STALE_FUDGE_BOAR_SPAWN_EGG =
+			spawnEgg("stale_fudge_boar_spawn_egg",
+					CakeWorldEntities.STALE_FUDGE_BOAR,
+					0x4A211B, 0xA66C43);
 	public static final RegistryObject<Item> FUDGE_FOLK_SPAWN_EGG =
 			spawnEgg("fudge_folk_spawn_egg",
 					CakeWorldEntities.FUDGE_FOLK,

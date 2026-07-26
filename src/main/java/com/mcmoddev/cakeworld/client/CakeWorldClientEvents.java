@@ -56,6 +56,7 @@ import net.minecraft.client.renderer.entity.StriderRenderer;
 import net.minecraft.client.renderer.entity.SpiderRenderer;
 import net.minecraft.client.renderer.entity.SquidRenderer;
 import net.minecraft.client.renderer.entity.ZombieRenderer;
+import net.minecraft.client.renderer.entity.ZoglinRenderer;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.client.renderer.entity.ThrownTridentRenderer;
 import net.minecraft.client.renderer.entity.TropicalFishRenderer;
@@ -138,6 +139,9 @@ public final class CakeWorldClientEvents {
 				GuardianRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.FUDGE_BOAR.get(),
 				HoglinRenderer::new);
+		event.registerEntityRenderer(
+				CakeWorldEntities.STALE_FUDGE_BOAR.get(),
+				ZoglinRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.FUDGE_FOLK.get(),
 				FudgeFolkRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.FUDGE_BRUTE.get(),

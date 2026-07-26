@@ -110,6 +110,7 @@ import com.mcmoddev.cakeworld.entity.SourSorcerer;
 import com.mcmoddev.cakeworld.entity.SourSprite;
 import com.mcmoddev.cakeworld.entity.SprinkleLlama;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
+import com.mcmoddev.cakeworld.entity.StaleFudgeBoar;
 import com.mcmoddev.cakeworld.entity.SugarBee;
 import com.mcmoddev.cakeworld.entity.SugarMite;
 import com.mcmoddev.cakeworld.entity.TaffyTallwalker;
@@ -139,6 +140,7 @@ import com.mcmoddev.cakeworld.world.CakeWorldWitchReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldWitherReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldWitherSkeletonReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldWolfReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldZoglinReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldPillagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldRavagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldShulkerReplacement;
@@ -5073,17 +5075,21 @@ public final class FirstBiteGameTests {
 		require(helper, converting.isConverting(),
 				"Unprotected Overworld Fudge Boar did not enter the inherited zombification countdown");
 		converting.tick();
-		Zoglin converted = helper.getLevel()
-				.getEntitiesOfClass(Zoglin.class,
+		StaleFudgeBoar converted = helper.getLevel()
+				.getEntitiesOfClass(
+						StaleFudgeBoar.class,
 						new AABB(conversionPos).inflate(2.0D))
 				.stream().findFirst().orElse(null);
 		require(helper,
 				converting.isRemoved()
 						&& converted != null
-						&& converted.getType() == EntityType.ZOGLIN
+						&& converted.getType()
+								== CakeWorldEntities
+										.STALE_FUDGE_BOAR
+										.get()
 						&& converted.hasEffect(
 								MobEffects.CONFUSION),
-				"Fudge Boar did not preserve the documented transitional conversion to vanilla Zoglin");
+				"Fudge Boar did not complete its inherited conversion as a Nauseated Stale Fudge Boar");
 
 		require(helper,
 				CakeWorldItems.FUDGE_BOAR_SPAWN_EGG.isPresent()
@@ -28446,6 +28452,1091 @@ public final class FirstBiteGameTests {
 			hound.discard();
 			helper.succeed();
 		});
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 240)
+	public static void staleFudgeBoarsKeepZoglinConversionAndSafeUndeadPeril(
+			GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		BlockPos testColumn =
+				helper.absolutePos(new BlockPos(4, 4, 4));
+		BlockPos selectedAnchor = null;
+		for (int y = level.getMaxBuildHeight() - 32;
+				y >= level.getMinBuildHeight() + 32;
+				y -= 32) {
+			BlockPos candidate = new BlockPos(
+					testColumn.getX(), y,
+					testColumn.getZ());
+			if (level.getEntitiesOfClass(
+							LivingEntity.class,
+							new AABB(candidate)
+									.inflate(28.0D),
+							Entity::isAlive)
+					.isEmpty()) {
+				selectedAnchor = candidate;
+				break;
+			}
+		}
+		require(helper, selectedAnchor != null,
+				"Could not find an isolated vertical slot for the Stale Fudge Boar fixtures");
+		final BlockPos anchor = selectedAnchor;
+
+		StaleFudgeBoarProbe boar =
+				new StaleFudgeBoarProbe(level);
+		VanillaZoglinProbe vanilla =
+				new VanillaZoglinProbe(level);
+		require(helper,
+				boar instanceof Zoglin
+						&& boar.getType()
+								== CakeWorldEntities
+										.STALE_FUDGE_BOAR
+										.get()
+						&& boar.getType().getCategory()
+								== MobCategory.MONSTER
+						&& boar.fireImmune()
+						&& close(boar.getMaxHealth(),
+								40.0D)
+						&& close(boar.getAttributeValue(
+								Attributes
+										.MOVEMENT_SPEED),
+								0.3D)
+						&& close(boar.getAttributeValue(
+								Attributes
+										.KNOCKBACK_RESISTANCE),
+								0.6D)
+						&& close(boar.getAttributeValue(
+								Attributes
+										.ATTACK_KNOCKBACK),
+								1.0D)
+						&& close(boar.getAttributeValue(
+								Attributes.ATTACK_DAMAGE),
+								6.0D)
+						&& close(boar.getDimensions(
+								Pose.STANDING).width,
+								1.3964844D)
+						&& close(boar.getDimensions(
+								Pose.STANDING).height,
+								1.4D)
+						&& boar.getType()
+								.clientTrackingRange() == 8
+						&& boar
+								.getMaxSpawnClusterSize() == 4
+						&& boar.getExperienceValue() == 5
+						&& boar.getSoundSource()
+								== SoundSource.HOSTILE
+						&& boar.getMobType()
+								== MobType.UNDEAD
+						&& boar.memoryTypes()
+								.equals(vanilla
+										.memoryTypes())
+						&& boar.memoryTypes()
+								.size() == 11
+						&& boar.activeActivity()
+								.orElse(null)
+								== Activity.IDLE,
+				"Stale Fudge Boar lost exact Zoglin body, attributes, tracking, XP, undead type or Brain contract:"
+						+ " maxHealth="
+						+ boar.getMaxHealth()
+						+ ", speed="
+						+ boar.getAttributeValue(
+								Attributes
+										.MOVEMENT_SPEED)
+						+ ", knockbackResistance="
+						+ boar.getAttributeValue(
+								Attributes
+										.KNOCKBACK_RESISTANCE)
+						+ ", attackKnockback="
+						+ boar.getAttributeValue(
+								Attributes
+										.ATTACK_KNOCKBACK)
+						+ ", attack="
+						+ boar.getAttributeValue(
+								Attributes.ATTACK_DAMAGE)
+						+ ", dimensions="
+						+ boar.getDimensions(
+								Pose.STANDING)
+						+ ", tracking="
+						+ boar.getType()
+								.clientTrackingRange()
+						+ ", cluster="
+						+ boar.getMaxSpawnClusterSize()
+						+ ", xp="
+						+ boar.getExperienceValue()
+						+ ", soundSource="
+						+ boar.getSoundSource()
+						+ ", mobType="
+						+ boar.getMobType()
+						+ ", memories="
+						+ boar.memoryTypes()
+						+ ", vanillaMemories="
+						+ vanilla.memoryTypes()
+						+ ", activity="
+						+ boar.activeActivity());
+		require(helper,
+				boar.ambientSound()
+								== SoundEvents.ZOGLIN_AMBIENT
+						&& boar.hurtSound()
+								== SoundEvents.ZOGLIN_HURT
+						&& boar.deathSound()
+								== SoundEvents.ZOGLIN_DEATH,
+				"Stale Fudge Boar lost idle, hurt or death sounds");
+		boar.clearLastSound();
+		boar.playStep();
+		require(helper,
+				boar.lastSound()
+						== SoundEvents.ZOGLIN_STEP,
+				"Stale Fudge Boar lost Zoglin step sound");
+		require(helper,
+				!boar.addEffect(new MobEffectInstance(
+								MobEffects.REGENERATION,
+								100, 0))
+						&& !boar.addEffect(
+								new MobEffectInstance(
+										MobEffects.POISON,
+										100, 0)),
+				"Stale Fudge Boar lost undead Regeneration and Poison immunity");
+		require(helper,
+				boar.canBeLeashed(null)
+						&& close(boar
+								.getPassengersRidingOffset(),
+								1.25D)
+						&& SpawnPlacements
+								.getPlacementType(
+										CakeWorldEntities
+												.STALE_FUDGE_BOAR
+												.get())
+								== SpawnPlacements.Type
+										.NO_RESTRICTIONS
+						&& SpawnPlacements
+								.getPlacementType(
+										EntityType.ZOGLIN)
+								== SpawnPlacements.Type
+										.NO_RESTRICTIONS,
+				"Stale Fudge Boar lost leashing, adult rider offset or dormant Zoglin placement");
+
+		StaleFudgeBoarProbe baby =
+				new StaleFudgeBoarProbe(level);
+		baby.setBaby(true);
+		CompoundTag babyState =
+				baby.saveWithoutId(new CompoundTag());
+		StaleFudgeBoarProbe restoredBaby =
+				new StaleFudgeBoarProbe(level);
+		restoredBaby.load(babyState);
+		require(helper,
+				baby.isBaby()
+						&& babyState
+								.getBoolean("IsBaby")
+						&& restoredBaby.isBaby()
+						&& close(baby.getDimensions(
+								Pose.STANDING).width,
+								0.6982422D)
+						&& close(baby.getDimensions(
+								Pose.STANDING).height,
+								0.7D)
+						&& close(baby.getAttributeValue(
+								Attributes.ATTACK_DAMAGE),
+								0.5D)
+						&& close(baby
+								.getPassengersRidingOffset(),
+								0.5D)
+						&& baby.getExperienceValue() == 5,
+				"Baby Stale Fudge Boar lost half scale, half-point attack, rider offset, XP or IsBaby NBT");
+
+		boar.setPos(anchor.getX() + 0.5D,
+				anchor.getY(), anchor.getZ() + 0.5D);
+		StaleFudgeBoar sameFamily =
+				CakeWorldEntities.STALE_FUDGE_BOAR
+						.get().create(level);
+		Zoglin literalFamily =
+				EntityType.ZOGLIN.create(level);
+		Creeper creeper =
+				EntityType.CREEPER.create(level);
+		Pig ordinaryTarget =
+				EntityType.PIG.create(level);
+		require(helper,
+				sameFamily != null
+						&& literalFamily != null
+						&& creeper != null
+						&& ordinaryTarget != null,
+				"Could not create Stale Fudge Boar targeting fixtures");
+		sameFamily.setPos(boar.getX() + 2.0D,
+				boar.getY(), boar.getZ());
+		literalFamily.setPos(boar.getX() + 3.0D,
+				boar.getY(), boar.getZ());
+		creeper.setPos(boar.getX() + 4.0D,
+				boar.getY(), boar.getZ());
+		ordinaryTarget.setPos(boar.getX() + 5.0D,
+				boar.getY(), boar.getZ());
+		sameFamily.setNoAi(true);
+		literalFamily.setNoAi(true);
+		creeper.setNoAi(true);
+		ordinaryTarget.setNoAi(true);
+		level.addFreshEntity(boar);
+		level.addFreshEntity(sameFamily);
+		level.addFreshEntity(literalFamily);
+		level.addFreshEntity(creeper);
+		level.addFreshEntity(ordinaryTarget);
+		for (int i = 0; i < 80
+				&& boar.attackTarget() == null; i++) {
+			boar.runServerAiStep();
+		}
+		require(helper,
+				!boar.canAttack(sameFamily)
+						&& boar.canAttack(
+								ordinaryTarget)
+						&& boar.attackTarget()
+								== ordinaryTarget,
+				"Stale Fudge Boar did not exclude both Zoglin families and Creepers before choosing the nearest ordinary target: target="
+						+ boar.attackTarget());
+		boar.clearAttackTarget();
+		require(helper,
+				boar.hurt(
+								DamageSource.mobAttack(
+										ordinaryTarget),
+								1.0F)
+						&& boar.attackTarget()
+								== ordinaryTarget
+						&& boar.attackTargetExpiry()
+								== 200L,
+				"Stale Fudge Boar lost two-hundred-tick retaliation memory");
+		boar.clearAttackTarget();
+		sameFamily.discard();
+		literalFamily.discard();
+		creeper.discard();
+		ordinaryTarget.discard();
+
+		Difficulty originalDifficulty =
+				level.getDifficulty();
+		try {
+			for (Difficulty safeDifficulty : List.of(
+					Difficulty.PEACEFUL,
+					Difficulty.EASY,
+					Difficulty.NORMAL)) {
+				level.getServer().setDifficulty(
+						safeDifficulty, true);
+				StaleFudgeBoarProbe safeBoar =
+						new StaleFudgeBoarProbe(level);
+				Pig safeTarget =
+						EntityType.PIG.create(level);
+				require(helper, safeTarget != null,
+						"Could not create safe Stale Fudge Boar target");
+				safeBoar.setPos(
+						anchor.getX() + 8.5D,
+						anchor.getY(),
+						anchor.getZ()
+								+ safeDifficulty
+										.getId());
+				safeTarget.setPos(
+						safeBoar.getX() + 1.5D,
+						safeBoar.getY(),
+						safeBoar.getZ());
+				safeTarget.setNoAi(true);
+				safeTarget.setSecondsOnFire(5);
+				safeTarget.fallDistance = 12.0F;
+				level.addFreshEntity(safeBoar);
+				level.addFreshEntity(safeTarget);
+				float health = safeTarget.getHealth();
+				boolean accepted =
+						safeBoar.doHurtTarget(
+								safeTarget);
+				require(helper,
+						accepted
+								&& close(safeTarget
+										.getHealth(),
+										health)
+								&& !safeTarget.isOnFire()
+								&& close(safeTarget
+										.fallDistance,
+										0.0D)
+								&& safeTarget.hasEffect(
+										MobEffects
+												.MOVEMENT_SLOWDOWN)
+								&& safeTarget.hasEffect(
+										MobEffects.GLOWING)
+								&& safeTarget.hasEffect(
+										MobEffects
+												.SLOW_FALLING)
+								&& safeTarget.hasEffect(
+										MobEffects
+												.FIRE_RESISTANCE)
+								&& safeTarget.getEffect(
+										MobEffects
+												.DAMAGE_RESISTANCE)
+										.getAmplifier()
+										== 4
+								&& safeTarget
+										.getDeltaMovement()
+										.horizontalDistanceSqr()
+										> 0.0D
+								&& safeBoar
+										.getAttackAnimationRemainingTicks()
+										== 10
+								&& safeBoar.lastSound()
+										== SoundEvents
+												.ZOGLIN_ATTACK,
+						safeDifficulty
+								+ " Stale Fudge Boar charge caused health, fire, fall or follow-on harm");
+				safeTarget.discard();
+				safeBoar.discard();
+			}
+
+			level.getServer().setDifficulty(
+					Difficulty.NORMAL, true);
+			StaleFudgeBoarProbe safeBaby =
+					new StaleFudgeBoarProbe(level);
+			safeBaby.setBaby(true);
+			Pig safeBabyTarget =
+					EntityType.PIG.create(level);
+			require(helper, safeBabyTarget != null,
+					"Could not create safe baby Stale Fudge Boar target");
+			safeBaby.setPos(anchor.getX() + 12.5D,
+					anchor.getY(), anchor.getZ());
+			safeBabyTarget.setPos(
+					safeBaby.getX() + 1.0D,
+					safeBaby.getY(),
+					safeBaby.getZ());
+			safeBabyTarget.setNoAi(true);
+			level.addFreshEntity(safeBaby);
+			level.addFreshEntity(safeBabyTarget);
+			Vec3 safeBabyMotion =
+					safeBabyTarget.getDeltaMovement();
+			require(helper,
+					safeBaby.doHurtTarget(
+								safeBabyTarget)
+							&& close(safeBabyTarget
+									.getHealth(),
+									safeBabyTarget
+											.getMaxHealth())
+							&& safeBabyTarget
+									.getDeltaMovement()
+									.equals(
+											safeBabyMotion)
+							&& safeBabyTarget
+									.hasEffect(
+											MobEffects
+												.GLOWING),
+					"Safe baby Stale Fudge Boar did not retain its no-throw half-point bump as a protected cue");
+			safeBaby.discard();
+			safeBabyTarget.discard();
+
+			StaleFudgeBoarProbe cooldownAdult =
+					new StaleFudgeBoarProbe(level);
+			Pig cooldownAdultTarget =
+					EntityType.PIG.create(level);
+			StaleFudgeBoarProbe cooldownBaby =
+					new StaleFudgeBoarProbe(level);
+			Pig cooldownBabyTarget =
+					EntityType.PIG.create(level);
+			require(helper,
+					cooldownAdultTarget != null
+							&& cooldownBabyTarget != null,
+					"Could not create Stale Fudge Boar cooldown fixtures");
+			cooldownBaby.setBaby(true);
+			cooldownAdult.setPos(
+					anchor.getX() + 16.5D,
+					anchor.getY(), anchor.getZ());
+			cooldownAdultTarget.setPos(
+					cooldownAdult.getX() + 0.5D,
+					cooldownAdult.getY(),
+					cooldownAdult.getZ());
+			cooldownBaby.setPos(
+					anchor.getX() + 20.5D,
+					anchor.getY(), anchor.getZ());
+			cooldownBabyTarget.setPos(
+					cooldownBaby.getX() + 0.5D,
+					cooldownBaby.getY(),
+					cooldownBaby.getZ());
+			cooldownAdultTarget.setNoAi(true);
+			cooldownBabyTarget.setNoAi(true);
+			level.addFreshEntity(cooldownAdult);
+			level.addFreshEntity(
+					cooldownAdultTarget);
+			level.addFreshEntity(cooldownBaby);
+			level.addFreshEntity(
+					cooldownBabyTarget);
+			cooldownAdult.primeFight(
+					cooldownAdultTarget);
+			cooldownBaby.primeFight(
+					cooldownBabyTarget);
+			cooldownAdult.runServerAiStep();
+			cooldownBaby.runServerAiStep();
+			require(helper,
+					cooldownAdult
+								.attackCooldownExpiry()
+								== 40L
+							&& cooldownBaby
+									.attackCooldownExpiry()
+									== 15L,
+					"Adult/baby Stale Fudge Boar lost exact 40/15-tick Brain attack cooldowns: adult="
+							+ cooldownAdult
+									.attackCooldownExpiry()
+							+ ", baby="
+							+ cooldownBaby
+									.attackCooldownExpiry());
+			cooldownAdult.discard();
+			cooldownAdultTarget.discard();
+			cooldownBaby.discard();
+			cooldownBabyTarget.discard();
+
+			StaleFudgeBoarProbe shieldBoar =
+					new StaleFudgeBoarProbe(level);
+			Pig shieldTarget =
+					EntityType.PIG.create(level);
+			require(helper, shieldTarget != null,
+					"Could not create Stale Fudge Boar shield fixture");
+			shieldBoar.setPos(
+					anchor.getX() + 24.5D,
+					anchor.getY(), anchor.getZ());
+			shieldTarget.setPos(
+					shieldBoar.getX() + 1.0D,
+					shieldBoar.getY(),
+					shieldBoar.getZ());
+			shieldBoar.callBlockedByShield(
+					shieldTarget);
+			require(helper,
+					shieldTarget.hasEffect(
+								MobEffects.SLOW_FALLING)
+							&& shieldTarget
+									.getDeltaMovement()
+									.horizontalDistanceSqr()
+									> 0.0D,
+					"Normal shield block lost the protected adult Zoglin throw");
+
+			level.getServer().setDifficulty(
+					Difficulty.HARD, true);
+			StaleFudgeBoarProbe hardAdult =
+					new StaleFudgeBoarProbe(level);
+			Pig hardAdultTarget =
+					EntityType.PIG.create(level);
+			StaleFudgeBoarProbe hardBaby =
+					new StaleFudgeBoarProbe(level);
+			Pig hardBabyTarget =
+					EntityType.PIG.create(level);
+			require(helper,
+					hardAdultTarget != null
+							&& hardBabyTarget != null,
+					"Could not create Hard Stale Fudge Boar targets");
+			hardBaby.setBaby(true);
+			hardAdult.setPos(
+					anchor.getX() + 28.5D,
+					anchor.getY(), anchor.getZ());
+			hardAdultTarget.setPos(
+					hardAdult.getX() + 1.0D,
+					hardAdult.getY(),
+					hardAdult.getZ());
+			hardBaby.setPos(
+					anchor.getX() + 32.5D,
+					anchor.getY(), anchor.getZ());
+			hardBabyTarget.setPos(
+					hardBaby.getX() + 1.0D,
+					hardBaby.getY(),
+					hardBaby.getZ());
+			level.addFreshEntity(hardAdult);
+			level.addFreshEntity(
+					hardAdultTarget);
+			level.addFreshEntity(hardBaby);
+			level.addFreshEntity(
+					hardBabyTarget);
+			float hardAdultHealth =
+					hardAdultTarget.getHealth();
+			float hardBabyHealth =
+					hardBabyTarget.getHealth();
+			boolean hardAdultHit =
+					hardAdult.doHurtTarget(
+							hardAdultTarget);
+			float hardAdultDamage =
+					hardAdultHealth
+							- hardAdultTarget.getHealth();
+			Vec3 hardAdultMotion =
+					hardAdultTarget.getDeltaMovement();
+			boolean hardBabyHit =
+					hardBaby.doHurtTarget(
+							hardBabyTarget);
+			float hardBabyDamage =
+					hardBabyHealth
+							- hardBabyTarget.getHealth();
+			Vec3 hardBabyMotion =
+					hardBabyTarget.getDeltaMovement();
+			Pig vanillaBabyTarget =
+					EntityType.PIG.create(level);
+			require(helper,
+					vanillaBabyTarget != null,
+					"Could not create vanilla baby Zoglin comparison target");
+			vanilla.setBaby(true);
+			vanilla.setPos(
+					anchor.getX() + 36.5D,
+					anchor.getY(), anchor.getZ());
+			vanillaBabyTarget.setPos(
+					vanilla.getX() + 1.0D,
+					vanilla.getY(),
+					vanilla.getZ());
+			level.addFreshEntity(vanilla);
+			level.addFreshEntity(
+					vanillaBabyTarget);
+			float vanillaBabyHealth =
+					vanillaBabyTarget.getHealth();
+			boolean vanillaBabyHit =
+					vanilla.doHurtTarget(
+							vanillaBabyTarget);
+			float vanillaBabyDamage =
+					vanillaBabyHealth
+							- vanillaBabyTarget.getHealth();
+			Vec3 vanillaBabyMotion =
+					vanillaBabyTarget
+							.getDeltaMovement();
+			require(helper,
+					hardAdultHit
+							&& hardAdultDamage >= 3.0F
+							&& hardAdultDamage <= 8.0F
+							&& hardAdultMotion
+									.horizontalDistanceSqr()
+									> 0.0D
+							&& !hardAdultTarget
+									.hasEffect(
+											MobEffects
+											.MOVEMENT_SLOWDOWN)
+							&& hardBabyHit
+									== vanillaBabyHit
+							&& close(hardBabyDamage,
+									0.5D)
+							&& close(hardBabyDamage,
+									vanillaBabyDamage)
+							&& close(hardBabyMotion.x,
+									vanillaBabyMotion.x)
+							&& close(hardBabyMotion.y,
+									vanillaBabyMotion.y)
+							&& close(hardBabyMotion.z,
+									vanillaBabyMotion.z),
+					"Hard Stale Fudge Boar lost adult randomized damage/throw or baby half-point no-throw peril:"
+							+ " adultHit="
+							+ hardAdultHit
+							+ ", adultDamage="
+							+ hardAdultDamage
+							+ ", adultMotion="
+							+ hardAdultMotion
+							+ ", adultSlowness="
+							+ hardAdultTarget.hasEffect(
+									MobEffects
+											.MOVEMENT_SLOWDOWN)
+							+ ", babyHit="
+							+ hardBabyHit
+							+ ", babyDamage="
+							+ hardBabyDamage
+							+ ", babyMotion="
+							+ hardBabyMotion
+							+ ", vanillaBabyHit="
+							+ vanillaBabyHit
+							+ ", vanillaBabyDamage="
+							+ vanillaBabyDamage
+							+ ", vanillaBabyMotion="
+							+ vanillaBabyMotion);
+			hardAdult.discard();
+			hardAdultTarget.discard();
+			hardBaby.discard();
+			hardBabyTarget.discard();
+			vanilla.discard();
+			vanillaBabyTarget.discard();
+
+			level.getServer().setDifficulty(
+					Difficulty.PEACEFUL, true);
+			StaleFudgeBoarProbe peaceful =
+					new StaleFudgeBoarProbe(level);
+			peaceful.setPos(anchor.getX() + 36.5D,
+					anchor.getY(), anchor.getZ());
+			level.addFreshEntity(peaceful);
+			peaceful.checkDespawn();
+			require(helper,
+					peaceful.isRemoved()
+							&& peaceful
+									.despawnsInPeaceful(),
+					"Peaceful Stale Fudge Boar did not retain Monster removal");
+		} finally {
+			level.getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS.getId())) {
+			Biome biome = level.registryAccess()
+					.registryOrThrow(
+							Registry.BIOME_REGISTRY)
+					.get(biomeId);
+			require(helper,
+					biome != null
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory
+													.MONSTER)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType.ZOGLIN
+												|| spawn.type
+													== CakeWorldEntities
+															.STALE_FUDGE_BOAR
+															.get()),
+					"Stale Fudge Boar invented open-biome ecology in "
+							+ biomeId);
+		}
+		require(helper,
+				CakeWorldItems
+						.STALE_FUDGE_BOAR_SPAWN_EGG
+						.isPresent()
+						&& boar.getLootTableId()
+								.equals(
+										new ResourceLocation(
+												CakeWorld.MODID,
+												"entities/stale_fudge_boar"))
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+												.STALE_FUDGE_BOAR
+												.get())
+								== SoundEvents
+										.PARROT_IMITATE_ZOGLIN,
+				"Stale Fudge Boar lost spawn egg, exact loot identity or Lorikeet mimic");
+		ServerPlayer advancementPlayer =
+				new ServerPlayer(level.getServer(), level,
+						new GameProfile(
+								UUID.fromString(
+										"1978feed-feed-4bad-babe-1978feed2069"),
+								"CakeWorldStaleFudgeBoarRoleTest"));
+		VanillaRoleAdvancements.onDeath(
+				new LivingDeathEvent(boar,
+						DamageSource.playerAttack(
+								advancementPlayer)));
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:adventure/kill_all_mobs",
+				"minecraft:zoglin");
+
+		BlockPos cakeWorldPos =
+				findCakeWorldBiomePosition(helper,
+						anchor.offset(16, 0, 16),
+						256);
+		require(helper, cakeWorldPos != null,
+				"Could not locate CakeWorld terrain for Zoglin conversion");
+		Zoglin literal =
+				EntityType.ZOGLIN.create(level);
+		Pig conversionTarget =
+				EntityType.PIG.create(level);
+		Pig leashHolder =
+				EntityType.PIG.create(level);
+		Chicken passenger =
+				EntityType.CHICKEN.create(level);
+		require(helper,
+				literal != null
+						&& conversionTarget != null
+						&& leashHolder != null
+						&& passenger != null,
+				"Could not create direct Zoglin conversion fixtures");
+		literal.setPos(cakeWorldPos.getX() + 0.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		literal.setBaby(true);
+		literal.setCustomName(
+				new TextComponent("Stale Scout"));
+		literal.setPersistenceRequired();
+		literal.setNoAi(true);
+		literal.setHealth(13.0F);
+		literal.invulnerableTime = 19;
+		literal.addEffect(new MobEffectInstance(
+				MobEffects.CONFUSION, 123, 0));
+		conversionTarget.setPos(
+				literal.getX() + 4.0D,
+				literal.getY(), literal.getZ());
+		conversionTarget.setNoAi(true);
+		leashHolder.setPos(literal.getX(),
+				literal.getY(), literal.getZ() + 2.0D);
+		leashHolder.setNoAi(true);
+		passenger.setPos(literal.getX(),
+				literal.getY(), literal.getZ());
+		level.addFreshEntity(conversionTarget);
+		level.addFreshEntity(leashHolder);
+		level.addFreshEntity(literal);
+		level.addFreshEntity(passenger);
+		literal.setTarget(conversionTarget);
+		literal.setLastHurtByMob(
+				conversionTarget);
+		literal.setLeashedTo(
+				leashHolder, true);
+		passenger.startRiding(literal, true);
+		StaleFudgeBoar converted =
+				CakeWorldZoglinReplacement
+						.replaceIfInCakeWorldBiome(
+								level, literal);
+		require(helper,
+				converted != null
+						&& literal.isRemoved()
+						&& converted.isBaby()
+						&& "Stale Scout".equals(
+								converted.getName()
+										.getString())
+						&& converted
+								.isPersistenceRequired()
+						&& converted.isNoAi()
+						&& close(converted.getHealth(),
+								13.0D)
+						&& converted.invulnerableTime
+								== 19
+						&& converted.hasEffect(
+								MobEffects.CONFUSION)
+						&& converted.getTarget()
+								== conversionTarget
+						&& converted.getLastHurtByMob()
+								== conversionTarget
+						&& converted
+								.getLeashHolder()
+								== leashHolder
+						&& converted.getPassengers()
+								.contains(passenger),
+				"Fresh literal Zoglin conversion lost baby, NBT, health, combat, leash or passenger state");
+		require(helper,
+				CakeWorldZoglinReplacement
+						.replaceIfInCakeWorldBiome(
+								level, converted)
+						== null
+						&& !converted.isRemoved(),
+				"Zoglin conversion touched a non-literal entity type");
+		passenger.discard();
+		conversionTarget.discard();
+		leashHolder.discard();
+		converted.discard();
+
+		Boat vehicle =
+				EntityType.BOAT.create(level);
+		Zoglin mountedLiteral =
+				EntityType.ZOGLIN.create(level);
+		require(helper,
+				vehicle != null
+						&& mountedLiteral != null,
+				"Could not create mounted Zoglin conversion fixture");
+		vehicle.setPos(cakeWorldPos.getX() + 2.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		mountedLiteral.setPos(vehicle.getX(),
+				vehicle.getY(), vehicle.getZ());
+		mountedLiteral.setCustomName(
+				new TextComponent("Mounted Stale"));
+		level.addFreshEntity(vehicle);
+		level.addFreshEntity(mountedLiteral);
+		mountedLiteral.startRiding(vehicle, true);
+		StaleFudgeBoar mountedConverted =
+				CakeWorldZoglinReplacement
+						.replaceIfInCakeWorldBiome(
+								level,
+								mountedLiteral);
+		require(helper,
+				mountedConverted != null
+						&& mountedLiteral.isRemoved()
+						&& mountedConverted.getVehicle()
+								== vehicle,
+				"Fresh literal Zoglin conversion lost its vehicle");
+		mountedConverted.discard();
+		vehicle.discard();
+
+		FudgeBoar converting =
+				CakeWorldEntities.FUDGE_BOAR.get()
+						.create(level);
+		Pig sourceLeash =
+				EntityType.PIG.create(level);
+		Chicken sourcePassenger =
+				EntityType.CHICKEN.create(level);
+		require(helper,
+				converting != null
+						&& sourceLeash != null
+						&& sourcePassenger != null,
+				"Could not create real Fudge Boar conversion fixtures");
+		converting.setPos(
+				cakeWorldPos.getX() + 5.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		converting.setBaby(true);
+		converting.setCustomName(
+				new TextComponent(
+						"Naturally Staled"));
+		converting.setPersistenceRequired();
+		converting.setItemSlot(
+				EquipmentSlot.MAINHAND,
+				new ItemStack(Items.GOLDEN_AXE));
+		CompoundTag conversionState =
+				converting.saveWithoutId(
+						new CompoundTag());
+		conversionState.putInt(
+				"TimeInOverworld", 300);
+		converting.load(conversionState);
+		sourceLeash.setPos(converting.getX(),
+				converting.getY(),
+				converting.getZ() + 2.0D);
+		sourcePassenger.setPos(
+				converting.getX(),
+				converting.getY(),
+				converting.getZ());
+		level.addFreshEntity(sourceLeash);
+		level.addFreshEntity(converting);
+		level.addFreshEntity(sourcePassenger);
+		converting.setLeashedTo(
+				sourceLeash, true);
+		sourcePassenger.startRiding(
+				converting, true);
+		converting.tick();
+		StaleFudgeBoar naturalConversion =
+				level.getEntitiesOfClass(
+						StaleFudgeBoar.class,
+						new AABB(converting
+								.blockPosition())
+								.inflate(3.0D),
+						candidate ->
+								"Naturally Staled"
+										.equals(candidate
+												.getName()
+												.getString()))
+						.stream().findFirst()
+						.orElse(null);
+		require(helper,
+				converting.isRemoved()
+						&& naturalConversion != null
+						&& naturalConversion.isBaby()
+						&& naturalConversion
+								.isPersistenceRequired()
+						&& naturalConversion
+								.getMainHandItem()
+								.is(Items.GOLDEN_AXE)
+						&& naturalConversion.hasEffect(
+								MobEffects.CONFUSION)
+						&& naturalConversion
+								.getEffect(
+										MobEffects
+												.CONFUSION)
+								.getDuration() <= 200
+						&& naturalConversion
+								.getLeashHolder()
+								== sourceLeash
+						&& naturalConversion
+								.getPassengers()
+								.contains(
+										sourcePassenger),
+				"Real 301-tick Fudge Boar conversion lost custom type, baby, equipment, Nausea, leash or passenger state:"
+						+ " sourceRemoved="
+						+ converting.isRemoved()
+						+ ", conversion="
+						+ naturalConversion
+						+ ", baby="
+						+ (naturalConversion != null
+								&& naturalConversion
+										.isBaby())
+						+ ", persistent="
+						+ (naturalConversion != null
+								&& naturalConversion
+										.isPersistenceRequired())
+						+ ", mainHand="
+						+ (naturalConversion == null
+								? null
+								: naturalConversion
+										.getMainHandItem())
+						+ ", nausea="
+						+ (naturalConversion == null
+								? null
+								: naturalConversion
+										.getEffect(
+												MobEffects
+													.CONFUSION))
+						+ ", leashHolder="
+						+ (naturalConversion == null
+								? null
+								: naturalConversion
+										.getLeashHolder())
+						+ ", expectedLeash="
+						+ sourceLeash
+						+ ", passengers="
+						+ (naturalConversion == null
+								? null
+								: naturalConversion
+										.getPassengers())
+						+ ", passengerVehicle="
+						+ sourcePassenger.getVehicle());
+		sourcePassenger.discard();
+		sourceLeash.discard();
+		naturalConversion.discard();
+
+		BlockPos eventPos =
+				findCakeWorldBiomePosition(helper,
+						cakeWorldPos.offset(12, 0, 0),
+						64);
+		require(helper, eventPos != null,
+				"Could not locate CakeWorld terrain for deferred Zoglin conversion");
+		Zoglin eventLiteral =
+				EntityType.ZOGLIN.create(level);
+		require(helper, eventLiteral != null,
+				"Could not create deferred Zoglin fixture");
+		eventLiteral.setPos(
+				eventPos.getX() + 0.5D,
+				eventPos.getY(),
+				eventPos.getZ() + 0.5D);
+		eventLiteral.setCustomName(
+				new TextComponent("Deferred Stale"));
+		eventLiteral.setNoAi(true);
+		level.addFreshEntity(eventLiteral);
+		AABB eventArea =
+				new AABB(eventPos).inflate(3.0D);
+		boar.discard();
+		baby.discard();
+		restoredBaby.discard();
+		helper.runAfterDelay(5, () -> {
+			List<StaleFudgeBoar> emitted =
+					level.getEntitiesOfClass(
+							StaleFudgeBoar.class,
+							eventArea,
+							entity -> "Deferred Stale"
+									.equals(entity
+											.getName()
+											.getString()));
+			require(helper,
+					eventLiteral.isRemoved()
+							&& emitted.size() == 1
+							&& emitted.get(0)
+									.isNoAi(),
+					"Fresh literal Zoglin did not defer-convert with finalized Stale Fudge Boar state");
+			emitted.forEach(
+					StaleFudgeBoar::discard);
+			helper.succeed();
+		});
+	}
+
+	private static final class StaleFudgeBoarProbe
+			extends StaleFudgeBoar {
+		private net.minecraft.sounds.SoundEvent
+				lastSound;
+
+		private StaleFudgeBoarProbe(Level level) {
+			super(CakeWorldEntities
+					.STALE_FUDGE_BOAR.get(),
+					level);
+		}
+
+		private int getExperienceValue() {
+			return getExperienceReward(null);
+		}
+
+		private Set<MemoryModuleType<?>>
+				memoryTypes() {
+			return getBrain().getMemories()
+					.keySet();
+		}
+
+		private java.util.Optional<Activity>
+				activeActivity() {
+			return getBrain()
+					.getActiveNonCoreActivity();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				ambientSound() {
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				hurtSound() {
+			return getHurtSound(
+					DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				deathSound() {
+			return getDeathSound();
+		}
+
+		private void playStep() {
+			playStepSound(blockPosition(),
+					Blocks.STONE
+							.defaultBlockState());
+		}
+
+		private void clearLastSound() {
+			lastSound = null;
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				lastSound() {
+			return lastSound;
+		}
+
+		private LivingEntity attackTarget() {
+			return getBrain().getMemory(
+					MemoryModuleType.ATTACK_TARGET)
+					.orElse(null);
+		}
+
+		private long attackTargetExpiry() {
+			return getBrain().getTimeUntilExpiry(
+					MemoryModuleType.ATTACK_TARGET);
+		}
+
+		private void clearAttackTarget() {
+			getBrain().eraseMemory(
+					MemoryModuleType.ATTACK_TARGET);
+		}
+
+		private void primeFight(
+				LivingEntity target) {
+			getBrain().setMemory(
+					MemoryModuleType
+							.NEAREST_VISIBLE_LIVING_ENTITIES,
+					new NearestVisibleLivingEntities(
+							this, List.of(target)));
+			getBrain().setMemory(
+					MemoryModuleType.ATTACK_TARGET,
+					target);
+			getBrain().setActiveActivityIfPossible(
+					Activity.FIGHT);
+		}
+
+		private long attackCooldownExpiry() {
+			return getBrain().getTimeUntilExpiry(
+					MemoryModuleType
+							.ATTACK_COOLING_DOWN);
+		}
+
+		private void runServerAiStep() {
+			customServerAiStep();
+		}
+
+		private void callBlockedByShield(
+				LivingEntity target) {
+			blockedByShield(target);
+		}
+
+		private boolean despawnsInPeaceful() {
+			return shouldDespawnInPeaceful();
+		}
+
+		private ResourceLocation getLootTableId() {
+			return getLootTable();
+		}
+
+		@Override
+		public void playSound(
+				net.minecraft.sounds.SoundEvent sound,
+				float volume, float pitch) {
+			lastSound = sound;
+		}
+	}
+
+	private static final class VanillaZoglinProbe
+			extends Zoglin {
+		private VanillaZoglinProbe(Level level) {
+			super(EntityType.ZOGLIN, level);
+		}
+
+		private Set<MemoryModuleType<?>>
+				memoryTypes() {
+			return getBrain().getMemories()
+					.keySet();
+		}
 	}
 
 	private static final class GingerSnapHoundProbe
