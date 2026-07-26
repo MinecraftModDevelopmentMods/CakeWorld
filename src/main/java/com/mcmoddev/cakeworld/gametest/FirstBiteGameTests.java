@@ -154,6 +154,8 @@ import com.mcmoddev.cakeworld.world.BiscuitBanditLookoutFeature;
 import com.mcmoddev.cakeworld.world.BurntSugarArchFeature;
 import com.mcmoddev.cakeworld.world.BurntSugarArchRepairFeature;
 import com.mcmoddev.cakeworld.world.BurntSugarArchStructureFeature;
+import com.mcmoddev.cakeworld.world.AncientCakeVaultFeature;
+import com.mcmoddev.cakeworld.world.AncientCakeVaultPalette;
 import com.mcmoddev.cakeworld.world.CakeWorldFeaturePoolElement;
 import com.mcmoddev.cakeworld.world.CaramelCottageFeature;
 import com.mcmoddev.cakeworld.world.CaramelCottageRepairFeature;
@@ -383,6 +385,7 @@ import net.minecraft.world.level.NaturalSpawner;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.EndPortalFrameBlock;
 import net.minecraft.world.level.block.WitherSkullBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BrewingStandBlockEntity;
@@ -403,11 +406,19 @@ import net.minecraft.world.level.biome.BiomeGenerationSettings;
 import net.minecraft.world.level.biome.MobSpawnSettings;
 import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.levelgen.LegacyRandomSource;
 import net.minecraft.world.level.levelgen.WorldgenRandom;
 import net.minecraft.world.level.levelgen.feature.NetherFortressFeature;
 import net.minecraft.data.worldgen.StructureFeatures;
 import net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature;
+import net.minecraft.world.level.levelgen.feature.StructureFeature;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.levelgen.structure.StrongholdPieces;
+import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureSpawnOverride;
+import net.minecraft.world.level.levelgen.structure.pieces.PiecesContainer;
+import net.minecraft.world.level.levelgen.structure.pieces.StructurePiecesBuilder;
+import net.minecraft.world.level.levelgen.structure.placement.ConcentricRingsStructurePlacement;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.minecraft.world.level.portal.PortalShape;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
@@ -36231,6 +36242,408 @@ public final class FirstBiteGameTests {
 
 		bakers.forEach(BitterBaker::discard);
 		cats.forEach(CustardCat::discard);
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, batch = "struct011",
+			timeoutTicks = 1200)
+	public static void ancientCakeVaultKeepsStrongholdGraphAndEndProgression(
+			GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						AncientCakeVaultFeature
+								.STRUCTURE_ID);
+		Registry<net.minecraft.world.level.levelgen.structure.StructureSet>
+				structureSets =
+				level.registryAccess().registryOrThrow(
+						Registry.STRUCTURE_SET_REGISTRY);
+		net.minecraft.world.level.levelgen.structure.StructureSet
+				structureSet =
+				structureSets.get(
+						AncientCakeVaultFeature
+								.STRUCTURE_SET_ID);
+		boolean ownTag = structures.getTag(
+						AncientCakeVaultFeature
+								.STRUCTURE_TAG)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		boolean eyeTag = structures.getTag(
+						ConfiguredStructureTags
+								.EYE_OF_ENDER_LOCATED)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		Set<ResourceLocation> eligibleBiomes =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.getTag(AncientCakeVaultFeature
+								.GENERATES_IN)
+						.map(tag -> tag.stream()
+								.map(holder -> holder
+										.unwrapKey()
+										.orElseThrow()
+										.location())
+								.collect(
+										java.util.stream
+												.Collectors
+												.toSet()))
+						.orElse(Set.of());
+		require(helper,
+				configured != null
+						&& configured.feature
+								== StructureFeature
+										.STRONGHOLD
+						&& configured.adaptNoise
+						&& configured.feature.step()
+								== GenerationStep
+										.Decoration
+										.STRONGHOLDS
+						&& structureSet != null
+						&& structureSet.structures().size()
+								== 1
+						&& structureSet.structures().get(0)
+								.structure().value()
+								== configured
+						&& ownTag && eyeTag
+						&& eligibleBiomes.equals(Set.of(
+								CakeWorldBiomes
+										.CANDY_PLAINS
+										.getId(),
+								CakeWorldBiomes
+										.COOKIE_FOREST
+										.getId(),
+								CakeWorldBiomes
+										.MARSHMALLOW_PEAKS
+										.getId())),
+				"Ancient Cake Vault lost its one authoritative vanilla configured/set identity, exact generation flags, Eye tag or CakeWorld land conversion boundary: eligible="
+						+ eligibleBiomes
+						+ ", ownTag=" + ownTag
+						+ ", eyeTag=" + eyeTag);
+		require(helper,
+				structureSet.placement()
+						instanceof ConcentricRingsStructurePlacement,
+				"Ancient Cake Vault lost vanilla Stronghold's concentric-ring placement type");
+		ConcentricRingsStructurePlacement placement =
+				(ConcentricRingsStructurePlacement)
+						structureSet.placement();
+		require(helper,
+				placement.distance() == 32
+						&& placement.spread() == 3
+						&& placement.count() == 128,
+				"Ancient Cake Vault lost vanilla Stronghold's exact 32/3/128 ring placement");
+
+		PiecesContainer graph = null;
+		for (int index = 0;
+				index < 64 && graph == null; index++) {
+			StructurePiecesBuilder builder =
+					new StructurePiecesBuilder();
+			AncientCakeVaultPalette
+					.buildVanillaGraph(
+							builder,
+							new WorldgenRandom(
+									new LegacyRandomSource(
+											0L)),
+							level.getSeed(),
+							new ChunkPos(
+									index * 13,
+									index * -17),
+							level.getSeaLevel(),
+							level.getMinBuildHeight());
+			PiecesContainer candidate =
+					builder.build();
+			boolean hasLibrary =
+					candidate.pieces().stream()
+							.anyMatch(
+									StrongholdPieces
+											.Library.class
+											::isInstance);
+			if (hasLibrary) {
+				graph = candidate;
+			}
+		}
+		require(helper, graph != null,
+				"Ancient Cake Vault could not produce a deterministic graph with a library");
+		long portalRooms = graph.pieces().stream()
+				.filter(StrongholdPieces.PortalRoom.class
+						::isInstance)
+				.count();
+		long libraries = graph.pieces().stream()
+				.filter(StrongholdPieces.Library.class
+						::isInstance)
+				.count();
+		long junctions = graph.pieces().stream()
+				.filter(piece ->
+						piece instanceof StrongholdPieces
+								.FiveCrossing
+								|| piece
+										instanceof StrongholdPieces
+												.RoomCrossing)
+				.count();
+		int maximumDepth = graph.pieces().stream()
+				.mapToInt(StructurePiece::getGenDepth)
+				.max().orElse(-1);
+		BoundingBox graphBounds =
+				graph.calculateBoundingBox();
+		require(helper,
+				graph.pieces().size() >= 12
+						&& graph.pieces().get(0)
+								instanceof StrongholdPieces
+										.StartPiece
+						&& portalRooms == 1
+						&& libraries >= 1
+						&& libraries <= 2
+						&& junctions >= 1
+						&& maximumDepth <= 51
+						&& graphBounds.getXSpan() >= 30
+						&& graphBounds.getZSpan() >= 30
+						&& graphBounds.getXSpan() <= 240
+						&& graphBounds.getZSpan() <= 240,
+				"Ancient Cake Vault lost the native sprawling weighted Stronghold graph: pieces="
+						+ graph.pieces().size()
+						+ ", portals=" + portalRooms
+						+ ", libraries=" + libraries
+						+ ", junctions=" + junctions
+						+ ", depth=" + maximumDepth
+						+ ", bounds=" + graphBounds);
+
+		BlockPos fixtureAnchor = helper.absolutePos(
+				new BlockPos(4, 4, 4));
+		BlockPos fixture = new BlockPos(
+				fixtureAnchor.getX() + 4096,
+				level.getMaxBuildHeight() - 100,
+				fixtureAnchor.getZ() + 4096);
+		BoundingBox portalBounds = new BoundingBox(
+				fixture.getX(), fixture.getY(),
+				fixture.getZ(),
+				fixture.getX() + 10,
+				fixture.getY() + 7,
+				fixture.getZ() + 15);
+		BoundingBox libraryBounds = new BoundingBox(
+				fixture.getX() + 24, fixture.getY(),
+				fixture.getZ(),
+				fixture.getX() + 37,
+				fixture.getY() + 10,
+				fixture.getZ() + 14);
+		BoundingBox corridorBounds = new BoundingBox(
+				fixture.getX() + 45, fixture.getY(),
+				fixture.getZ(),
+				fixture.getX() + 49,
+				fixture.getY() + 4,
+				fixture.getZ() + 6);
+		for (BoundingBox bounds : List.of(
+				portalBounds, libraryBounds,
+				corridorBounds)) {
+			for (int x = bounds.minX();
+					x <= bounds.maxX(); x++) {
+				for (int y = bounds.minY();
+						y <= bounds.maxY(); y++) {
+					for (int z = bounds.minZ();
+							z <= bounds.maxZ(); z++) {
+						level.setBlock(
+								new BlockPos(x, y, z),
+								CakeWorldBlocks
+										.BISCUIT_STONE
+										.get()
+										.defaultBlockState(),
+								2);
+					}
+				}
+			}
+		}
+		StrongholdPieces.PortalRoom portal =
+				new StrongholdPieces.PortalRoom(
+						6, portalBounds,
+						Direction.SOUTH);
+		StrongholdPieces.Library library =
+				new StrongholdPieces.Library(
+						5, new Random(11011L),
+						libraryBounds,
+						Direction.SOUTH);
+		StrongholdPieces.ChestCorridor corridor =
+				new StrongholdPieces.ChestCorridor(
+						4, new Random(11012L),
+						corridorBounds,
+						Direction.SOUTH);
+		List<StructurePiece> fixturePieces =
+				List.of(portal, library, corridor);
+		for (StructurePiece piece : fixturePieces) {
+			BoundingBox bounds =
+					piece.getBoundingBox();
+			piece.postProcess(
+					level,
+					level.structureFeatureManager(),
+					level.getChunkSource()
+							.getGenerator(),
+					new Random(11013L
+							+ piece.getGenDepth()),
+					bounds,
+					new ChunkPos(
+							bounds.minX() >> 4,
+							bounds.minZ() >> 4),
+					bounds.getCenter());
+		}
+		BoundingBox completeFixture =
+				new BoundingBox(
+						portalBounds.minX(),
+						fixture.getY(),
+						fixture.getZ(),
+						corridorBounds.maxX(),
+						fixture.getY() + 10,
+						fixture.getZ() + 15);
+		AncientCakeVaultPalette
+				.applyEdiblePalette(
+						level,
+						level.structureFeatureManager(),
+						level.getChunkSource()
+								.getGenerator(),
+						new Random(11014L),
+						completeFixture,
+						new ChunkPos(fixture),
+						new PiecesContainer(
+								fixturePieces));
+
+		Map<Block, Integer> palette =
+				new java.util.LinkedHashMap<>();
+		Set<ResourceLocation> loot =
+				new java.util.LinkedHashSet<>();
+		List<BlockPos> frames =
+				new java.util.ArrayList<>();
+		String spawnerEntity = "";
+		for (int x = completeFixture.minX();
+				x <= completeFixture.maxX(); x++) {
+			for (int y = completeFixture.minY();
+					y <= completeFixture.maxY(); y++) {
+				for (int z = completeFixture.minZ();
+						z <= completeFixture.maxZ(); z++) {
+					BlockPos position =
+							new BlockPos(x, y, z);
+					BlockState state =
+							level.getBlockState(
+									position);
+					palette.merge(
+							state.getBlock(), 1,
+							Integer::sum);
+					if (state.is(
+							Blocks.END_PORTAL_FRAME)) {
+						frames.add(position);
+					}
+					BlockEntity entity =
+							level.getBlockEntity(
+									position);
+					if (entity != null) {
+						CompoundTag saved =
+								entity
+										.saveWithoutMetadata();
+						String lootTable =
+								saved.getString(
+										"LootTable");
+						if (!lootTable.isEmpty()) {
+							loot.add(
+									new ResourceLocation(
+											lootTable));
+						}
+					}
+					if (entity
+							instanceof SpawnerBlockEntity
+									spawner) {
+						CompoundTag saved =
+								spawner.getSpawner()
+										.save(
+												new CompoundTag());
+						spawnerEntity =
+								saved.getCompound(
+										"SpawnData")
+										.getCompound(
+												"entity")
+										.getString(
+												"id");
+					}
+				}
+			}
+		}
+		require(helper,
+				palette.getOrDefault(
+						CakeWorldBlocks
+								.GINGERBREAD_BRICKS
+								.get(), 0) > 100
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.BISCUIT_STONE
+										.get(), 0) > 50
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.ROCK_CANDY
+										.get(), 0) > 20
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CRUMB_MITE_NEST
+										.get(), 0) > 0
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.WAFER_BLOCK
+										.get(), 0) > 30
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.COOKBOOK_LIBRARY
+										.get(), 0) > 100
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.MARSHMALLOW
+										.get(), 0) == 8
+						&& palette.getOrDefault(
+								CakeWorldFluids
+										.HOT_FUDGE_BLOCK
+										.get(), 0) == 15
+						&& palette.getOrDefault(
+								Blocks.STONE_BRICKS,
+								0) == 0
+						&& palette.getOrDefault(
+								Blocks.BOOKSHELF,
+								0) == 0,
+				"Ancient Cake Vault lost its complete edible masonry, library, nest, Hot-Fudge hazard or Marshmallow rescue palette: "
+						+ palette);
+		require(helper,
+				frames.size() == 12
+						&& "minecraft:silverfish"
+								.equals(
+										spawnerEntity)
+						&& loot.contains(
+								BuiltInLootTables
+										.STRONGHOLD_LIBRARY)
+						&& loot.contains(
+								BuiltInLootTables
+										.STRONGHOLD_CORRIDOR),
+				"Ancient Cake Vault lost exact End frames, Silverfish/Crumb-Mite spawner source or vanilla library/corridor loot roles: frames="
+						+ frames.size()
+						+ ", spawner="
+						+ spawnerEntity
+						+ ", loot=" + loot);
+		for (BlockPos frame : frames) {
+			level.setBlock(frame,
+					level.getBlockState(frame)
+							.setValue(
+									EndPortalFrameBlock
+											.HAS_EYE,
+									true),
+					2);
+		}
+		require(helper,
+				frames.stream().anyMatch(
+						frame -> EndPortalFrameBlock
+								.getOrCreatePortalShape()
+								.find(level, frame)
+								!= null),
+				"Ancient Cake Vault's twelve vanilla frames no longer form the genuine Eye-completable End Portal pattern");
 		helper.succeed();
 	}
 

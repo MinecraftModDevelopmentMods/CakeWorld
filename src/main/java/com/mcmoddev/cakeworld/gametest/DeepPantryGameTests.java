@@ -27,6 +27,7 @@ import com.mcmoddev.cakeworld.init.CakeWorldBiomes;
 import com.mcmoddev.cakeworld.init.CakeWorldBlocks;
 import com.mcmoddev.cakeworld.init.CakeWorldFluids;
 import com.mcmoddev.cakeworld.init.CakeWorldEntities;
+import com.mcmoddev.cakeworld.world.AncientCakeVaultFeature;
 import com.mcmoddev.cakeworld.world.BiscuitBanditLookoutFeature;
 import com.mcmoddev.cakeworld.world.BurntSugarArchFeature;
 import com.mcmoddev.cakeworld.world.CaramelCottageFeature;
@@ -78,8 +79,10 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.EndPortalFrameBlock;
 import net.minecraft.world.level.block.RedStoneOreBlock;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -92,7 +95,12 @@ import net.minecraft.world.level.levelgen.Aquifer;
 import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.levelgen.structure.StrongholdPieces;
+import net.minecraft.world.level.levelgen.structure.StructurePiece;
+import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.portal.PortalShape;
+import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
@@ -3527,6 +3535,229 @@ public final class DeepPantryGameTests {
 		});
 	}
 
+	@GameTest(template = EMPTY, batch = "struct011world",
+			timeoutTicks = 7200)
+	public static void focusedAncientCakeVaultStructureAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean(
+				"cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed Ancient Cake Vault audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry
+										.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						AncientCakeVaultFeature
+								.STRUCTURE_ID);
+		require(helper, configured != null,
+				"Ancient Cake Vault configured structure was absent from the live registry");
+		boolean locatedTag = structures.getTag(
+						AncientCakeVaultFeature
+								.STRUCTURE_TAG)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		boolean eyeTag = structures.getTag(
+						ConfiguredStructureTags
+								.EYE_OF_ENDER_LOCATED)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		require(helper, locatedTag && eyeTag,
+				"Ancient Cake Vault lost its public locate tag or vanilla Eye-of-Ender locate contract");
+
+		LocatedVault vault = locateAncientCakeVault(
+				helper, level, configured,
+				new BlockPos(96, 64, 128));
+		setVaultChunksForced(level, vault, true);
+		helper.runAfterDelay(100, () -> {
+			VaultPieceAudit portal =
+					auditVaultPiece(
+							level,
+							vault.portalRoom());
+			VaultPieceAudit library =
+					vault.library() == null
+							? null
+							: auditVaultPiece(
+									level,
+									vault.library());
+			VaultPieceAudit corridor =
+					vault.corridor() == null
+							? null
+							: auditVaultPiece(
+									level,
+									vault.corridor());
+			ResourceLocation biome =
+					level.registryAccess()
+							.registryOrThrow(
+									Registry.BIOME_REGISTRY)
+							.getKey(level.getBiome(
+									new BlockPos(
+											vault.located()
+													.getX(),
+											level.getSeaLevel(),
+											vault.located()
+													.getZ()))
+									.value());
+			boolean literalEligible =
+					level.getBiome(new BlockPos(
+									vault.located().getX(),
+									level.getSeaLevel(),
+									vault.located().getZ()))
+							.is(BiomeTags.HAS_STRONGHOLD);
+			boolean portalCompletable =
+					provesCompletableEndPortal(
+							level,
+							portal.frames());
+			setVaultChunksForced(level, vault,
+					false);
+			LOGGER.info("Focused Ancient Cake Vault audit: locate={}, eyeLocate={}, bounds={}, biome={}, pieces={}, portals={}, libraries={}, corridors={}, junctions={}, maxDepth={}, portalPalette={}, portalFrames={}, portalSpawner={}, libraryPalette={}, libraryLoot={}, corridorPalette={}, corridorLoot={}, literalEligible={}, portalCompletable={}",
+					vault.located(),
+					vault.eyeLocated(),
+					vault.bounds(),
+					biome,
+					vault.pieces(),
+					vault.portalRooms(),
+					vault.libraries(),
+					vault.corridors(),
+					vault.junctions(),
+					vault.maximumDepth(),
+					portal.palette(),
+					portal.frames().size(),
+					portal.spawnerEntity(),
+					library == null
+							? Map.of()
+							: library.palette(),
+					library == null
+							? Set.of()
+							: library.loot(),
+					corridor == null
+							? Map.of()
+							: corridor.palette(),
+					corridor == null
+							? Set.of()
+							: corridor.loot(),
+					literalEligible,
+					portalCompletable);
+			require(helper,
+					vault.located().getX()
+							== vault.eyeLocated()
+									.getX()
+							&& vault.located().getZ()
+									== vault.eyeLocated()
+											.getZ()
+							&& !literalEligible
+							&& Set.of(
+									CakeWorldBiomes
+											.CANDY_PLAINS
+											.getId(),
+									CakeWorldBiomes
+											.COOKIE_FOREST
+											.getId(),
+									CakeWorldBiomes
+											.MARSHMALLOW_PEAKS
+											.getId())
+									.contains(biome),
+					"Natural Ancient Cake Vault did not share the Eye locate result or remain confined to a CakeWorld land biome outside literal vanilla Stronghold eligibility: own="
+							+ vault.located()
+							+ ", eye="
+							+ vault.eyeLocated()
+							+ ", biome=" + biome
+							+ ", literal="
+							+ literalEligible);
+			require(helper,
+					vault.pieces() >= 12
+							&& vault.portalRooms()
+									== 1
+							&& vault.libraries()
+									>= 1
+							&& vault.libraries()
+									<= 2
+							&& vault.junctions()
+									>= 1
+							&& vault.maximumDepth()
+									<= 51
+							&& vault.bounds()
+									.getXSpan()
+									>= 30
+							&& vault.bounds()
+									.getZSpan()
+									>= 30
+							&& vault.bounds()
+									.getXSpan()
+									<= 240
+							&& vault.bounds()
+									.getZSpan()
+									<= 240,
+					"Natural Ancient Cake Vault lost the saved sprawling Stronghold graph and guaranteed portal/library progression: "
+							+ vault);
+			Map<Block, Integer> portalPalette =
+					portal.palette();
+			require(helper,
+					portal.frames().size() == 12
+							&& "minecraft:silverfish"
+									.equals(portal
+											.spawnerEntity())
+							&& portalCompletable
+							&& portalPalette.getOrDefault(
+									CakeWorldBlocks
+											.GINGERBREAD_BRICKS
+											.get(),
+									0) > 0
+							&& portalPalette.getOrDefault(
+									CakeWorldBlocks
+											.MARSHMALLOW
+											.get(),
+									0) == 8
+							&& portalPalette.getOrDefault(
+									CakeWorldFluids
+											.HOT_FUDGE_BLOCK
+											.get(),
+									0) == 15
+							&& hasNoUnthemedVaultBlocks(
+									portalPalette),
+					"Natural Ancient Cake Vault portal room lost its edible masonry, rescue stairs, Hot-Fudge basin, Silverfish-to-Crumb-Mite source or genuine End progression: "
+							+ portal);
+			require(helper,
+					library != null
+							&& library.palette()
+									.getOrDefault(
+											CakeWorldBlocks
+													.COOKBOOK_LIBRARY
+													.get(),
+											0) > 0
+							&& hasNoUnthemedVaultBlocks(
+									library.palette())
+							&& library.loot()
+									.equals(Set.of(
+											BuiltInLootTables
+													.STRONGHOLD_LIBRARY)),
+					"Natural Ancient Cake Vault library lost its Cookbook shelves, edible masonry or exact vanilla loot role: "
+							+ library);
+			if (corridor != null) {
+				require(helper,
+						hasNoUnthemedVaultBlocks(
+								corridor.palette())
+								&& corridor.loot()
+										.equals(Set.of(
+												BuiltInLootTables
+														.STRONGHOLD_CORRIDOR)),
+						"Natural Ancient Cake Vault chest corridor lost its edible masonry or exact vanilla loot role: "
+								+ corridor);
+			}
+			helper.succeed();
+		});
+	}
+
 	@GameTest(template = EMPTY, timeoutTicks = 1200)
 	public static void baseMetalsCounterpartsPreserveTagsRecipesAndGeneration(
 			GameTestHelper helper) {
@@ -4700,6 +4931,324 @@ public final class DeepPantryGameTests {
 		helper.succeed();
 	}
 
+	private static LocatedVault locateAncientCakeVault(
+			GameTestHelper helper, ServerLevel level,
+			ConfiguredStructureFeature<?, ?> configured,
+			BlockPos origin) {
+		BlockPos located = level.findNearestMapFeature(
+				AncientCakeVaultFeature.STRUCTURE_TAG,
+				origin, 512, false);
+		require(helper, located != null,
+				"The fixed-seed CakeWorld contained no locatable Ancient Cake Vault within 512 chunks");
+		BlockPos eyeLocated =
+				level.findNearestMapFeature(
+						ConfiguredStructureTags
+								.EYE_OF_ENDER_LOCATED,
+						origin, 512, false);
+		require(helper, eyeLocated != null,
+				"The fixed-seed Ancient Cake Vault was not locatable with a vanilla Eye of Ender");
+		ChunkPos startChunk = new ChunkPos(located);
+		net.minecraft.world.level.chunk.LevelChunk
+				startLevelChunk =
+				level.getChunk(startChunk.x,
+						startChunk.z);
+		StructureStart start =
+				startLevelChunk.getStartForFeature(
+						configured);
+		String savedStarts =
+				startLevelChunk.getAllStarts()
+						.entrySet().stream()
+						.map(entry ->
+								structuresLabel(
+										level,
+										entry.getKey())
+										+ "->"
+										+ structuresLabel(
+												level,
+												entry.getValue()
+														.getFeature())
+										+ "(valid="
+										+ entry.getValue()
+												.isValid()
+										+ ")")
+						.sorted()
+						.collect(java.util.stream
+								.Collectors
+								.joining(", "));
+		require(helper,
+				start != null && start.isValid()
+						&& start.getFeature() == configured,
+				"The located Ancient Cake Vault lost its saved structure start: locate="
+						+ located + ", eye="
+						+ eyeLocated + ", chunk="
+						+ startChunk
+						+ ", configured="
+						+ structuresLabel(
+								level, configured)
+						+ ", direct="
+						+ (start == null
+								? "null"
+								: structuresLabel(
+										level,
+										start.getFeature())
+										+ "(valid="
+										+ start.isValid()
+										+ ")")
+						+ ", starts={"
+						+ savedStarts + "}");
+		List<StructurePiece> pieces =
+				start.getPieces();
+		StructurePiece portal = pieces.stream()
+				.filter(StrongholdPieces.PortalRoom.class
+						::isInstance)
+				.findFirst().orElse(null);
+		StructurePiece library = pieces.stream()
+				.filter(StrongholdPieces.Library.class
+						::isInstance)
+				.findFirst().orElse(null);
+		StructurePiece corridor = pieces.stream()
+				.filter(StrongholdPieces.ChestCorridor.class
+						::isInstance)
+				.findFirst().orElse(null);
+		long portals = pieces.stream()
+				.filter(StrongholdPieces.PortalRoom.class
+						::isInstance)
+				.count();
+		long libraries = pieces.stream()
+				.filter(StrongholdPieces.Library.class
+						::isInstance)
+				.count();
+		long corridors = pieces.stream()
+				.filter(StrongholdPieces.ChestCorridor.class
+						::isInstance)
+				.count();
+		long junctions = pieces.stream()
+				.filter(piece ->
+						piece instanceof StrongholdPieces
+								.FiveCrossing
+								|| piece
+										instanceof StrongholdPieces
+												.RoomCrossing)
+				.count();
+		int maximumDepth = pieces.stream()
+				.mapToInt(StructurePiece::getGenDepth)
+				.max().orElse(-1);
+		require(helper, portal != null,
+				"The natural Ancient Cake Vault graph contained no guaranteed portal room");
+		return new LocatedVault(
+				located, eyeLocated,
+				start.getBoundingBox(),
+				pieces.size(),
+				(int) portals,
+				(int) libraries,
+				(int) corridors,
+				(int) junctions,
+				maximumDepth,
+				startChunk,
+				portal, library, corridor);
+	}
+
+	private static String structuresLabel(
+			ServerLevel level,
+			ConfiguredStructureFeature<?, ?> configured) {
+		ResourceLocation id =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry
+										.CONFIGURED_STRUCTURE_FEATURE_REGISTRY)
+						.getKey(configured);
+		return id == null
+				? "<unregistered@"
+						+ System.identityHashCode(
+								configured)
+						+ ">"
+				: id + "@"
+						+ System.identityHashCode(
+								configured);
+	}
+
+	private static void setVaultChunksForced(
+			ServerLevel level, LocatedVault vault,
+			boolean forced) {
+		Set<ChunkPos> chunks =
+				new java.util.LinkedHashSet<>();
+		chunks.add(vault.startChunk());
+		for (StructurePiece piece : List.of(
+				vault.portalRoom())) {
+			addVaultPieceChunks(chunks,
+					piece.getBoundingBox());
+		}
+		if (vault.library() != null) {
+			addVaultPieceChunks(chunks,
+					vault.library()
+							.getBoundingBox());
+		}
+		if (vault.corridor() != null) {
+			addVaultPieceChunks(chunks,
+					vault.corridor()
+							.getBoundingBox());
+		}
+		for (ChunkPos chunk : chunks) {
+			level.setChunkForced(
+					chunk.x, chunk.z, forced);
+		}
+	}
+
+	private static void addVaultPieceChunks(
+			Set<ChunkPos> chunks,
+			BoundingBox bounds) {
+		int minimumChunkX =
+				Math.floorDiv(bounds.minX(), 16);
+		int maximumChunkX =
+				Math.floorDiv(bounds.maxX(), 16);
+		int minimumChunkZ =
+				Math.floorDiv(bounds.minZ(), 16);
+		int maximumChunkZ =
+				Math.floorDiv(bounds.maxZ(), 16);
+		for (int chunkX = minimumChunkX;
+				chunkX <= maximumChunkX; chunkX++) {
+			for (int chunkZ = minimumChunkZ;
+					chunkZ <= maximumChunkZ;
+					chunkZ++) {
+				chunks.add(new ChunkPos(
+						chunkX, chunkZ));
+			}
+		}
+	}
+
+	private static VaultPieceAudit auditVaultPiece(
+			ServerLevel level,
+			StructurePiece piece) {
+		BoundingBox bounds =
+				piece.getBoundingBox();
+		Map<Block, Integer> palette =
+				new LinkedHashMap<>();
+		Set<ResourceLocation> loot =
+				new java.util.LinkedHashSet<>();
+		List<BlockPos> frames =
+				new java.util.ArrayList<>();
+		String spawnerEntity = "";
+		for (int x = bounds.minX();
+				x <= bounds.maxX(); x++) {
+			for (int y = bounds.minY();
+					y <= bounds.maxY(); y++) {
+				for (int z = bounds.minZ();
+						z <= bounds.maxZ(); z++) {
+					BlockPos position =
+							new BlockPos(x, y, z);
+					BlockState state =
+							level.getBlockState(
+									position);
+					palette.merge(
+							state.getBlock(), 1,
+							Integer::sum);
+					if (state.is(
+							Blocks.END_PORTAL_FRAME)) {
+						frames.add(position);
+					}
+					BlockEntity entity =
+							level.getBlockEntity(
+									position);
+					if (entity != null) {
+						CompoundTag saved =
+								entity
+										.saveWithoutMetadata();
+						String lootTable =
+								saved.getString(
+										"LootTable");
+						if (!lootTable.isEmpty()) {
+							loot.add(
+									new ResourceLocation(
+											lootTable));
+						}
+					}
+					if (entity
+							instanceof SpawnerBlockEntity
+									spawner) {
+						CompoundTag saved =
+								spawner.getSpawner()
+										.save(
+												new CompoundTag());
+						spawnerEntity =
+								saved.getCompound(
+										"SpawnData")
+										.getCompound(
+												"entity")
+										.getString(
+												"id");
+					}
+				}
+			}
+		}
+		return new VaultPieceAudit(
+				palette, loot, frames,
+				spawnerEntity);
+	}
+
+	private static boolean provesCompletableEndPortal(
+			ServerLevel level,
+			List<BlockPos> frames) {
+		if (frames.size() != 12) {
+			return false;
+		}
+		Map<BlockPos, BlockState> originals =
+				new LinkedHashMap<>();
+		for (BlockPos frame : frames) {
+			BlockState original =
+					level.getBlockState(frame);
+			originals.put(frame.immutable(),
+					original);
+			level.setBlock(frame,
+					original.setValue(
+							EndPortalFrameBlock
+									.HAS_EYE,
+							true),
+					2);
+		}
+		boolean complete = frames.stream()
+				.anyMatch(frame ->
+						EndPortalFrameBlock
+								.getOrCreatePortalShape()
+								.find(level, frame)
+								!= null);
+		originals.forEach((position, state) ->
+				level.setBlock(position, state, 2));
+		return complete;
+	}
+
+	private static boolean hasNoUnthemedVaultBlocks(
+			Map<Block, Integer> palette) {
+		return palette.getOrDefault(
+						Blocks.STONE_BRICKS, 0) == 0
+				&& palette.getOrDefault(
+						Blocks.CRACKED_STONE_BRICKS,
+						0) == 0
+				&& palette.getOrDefault(
+						Blocks.MOSSY_STONE_BRICKS,
+						0) == 0
+				&& palette.getOrDefault(
+						Blocks.INFESTED_STONE_BRICKS,
+						0) == 0
+				&& palette.getOrDefault(
+						Blocks.STONE_BRICK_SLAB,
+						0) == 0
+				&& palette.getOrDefault(
+						Blocks.SMOOTH_STONE_SLAB,
+						0) == 0
+				&& palette.getOrDefault(
+						Blocks.STONE_BRICK_STAIRS,
+						0) == 0
+				&& palette.getOrDefault(
+						Blocks.COBBLESTONE_STAIRS,
+						0) == 0
+				&& palette.getOrDefault(
+						Blocks.OAK_PLANKS, 0) == 0
+				&& palette.getOrDefault(
+						Blocks.BOOKSHELF, 0) == 0
+				&& palette.getOrDefault(
+						Blocks.LAVA, 0) == 0;
+	}
+
 	private static LocatedArch locateBurntSugarArch(
 			GameTestHelper helper, ServerLevel level,
 			ConfiguredStructureFeature<?, ?> configured,
@@ -5283,6 +5832,29 @@ public final class DeepPantryGameTests {
 
 	private record RockDepthSummary(int samples, int minimumY, int maximumY,
 			double meanY) {
+	}
+
+	private record LocatedVault(
+			BlockPos located,
+			BlockPos eyeLocated,
+			BoundingBox bounds,
+			int pieces,
+			int portalRooms,
+			int libraries,
+			int corridors,
+			int junctions,
+			int maximumDepth,
+			ChunkPos startChunk,
+			StructurePiece portalRoom,
+			StructurePiece library,
+			StructurePiece corridor) {
+	}
+
+	private record VaultPieceAudit(
+			Map<Block, Integer> palette,
+			Set<ResourceLocation> loot,
+			List<BlockPos> frames,
+			String spawnerEntity) {
 	}
 
 	private record LocatedArch(
