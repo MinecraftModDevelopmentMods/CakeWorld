@@ -171,6 +171,8 @@ import com.mcmoddev.cakeworld.world.IceCreamParlourStructureFeature;
 import com.mcmoddev.cakeworld.world.SherbetPyramidFeature;
 import com.mcmoddev.cakeworld.world.SherbetPyramidRepairFeature;
 import com.mcmoddev.cakeworld.world.SherbetPyramidStructureFeature;
+import com.mcmoddev.cakeworld.world.SodaPalaceFeature;
+import com.mcmoddev.cakeworld.world.SodaPalacePalette;
 import com.mcmoddev.cakeworld.world.WaferMineFeature;
 import com.mcmoddev.cakeworld.world.WaferMineStructureFeature;
 import com.mcmoddev.cakeworld.world.WaferWreckFeature;
@@ -216,6 +218,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.BiomeTags;
 import net.minecraft.tags.ConfiguredStructureTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.ItemTags;
@@ -413,6 +416,7 @@ import net.minecraft.data.worldgen.StructureFeatures;
 import net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature;
 import net.minecraft.world.level.levelgen.feature.StructureFeature;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.levelgen.structure.OceanMonumentPieces;
 import net.minecraft.world.level.levelgen.structure.StrongholdPieces;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureSpawnOverride;
@@ -36644,6 +36648,366 @@ public final class FirstBiteGameTests {
 								.find(level, frame)
 								!= null),
 				"Ancient Cake Vault's twelve vanilla frames no longer form the genuine Eye-completable End Portal pattern");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, batch = "struct012",
+			timeoutTicks = 2400)
+	public static void sodaPalaceKeepsMonumentGraphRewardsAndSpawns(
+			GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						SodaPalaceFeature.STRUCTURE_ID);
+		Registry<net.minecraft.world.level.levelgen.structure.StructureSet>
+				structureSets =
+				level.registryAccess().registryOrThrow(
+						Registry.STRUCTURE_SET_REGISTRY);
+		net.minecraft.world.level.levelgen.structure.StructureSet
+				structureSet =
+				structureSets.get(
+						SodaPalaceFeature
+								.STRUCTURE_SET_ID);
+		boolean ownTag = structures.getTag(
+						SodaPalaceFeature.STRUCTURE_TAG)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		Set<ResourceLocation> eligibleBiomes =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.getTag(SodaPalaceFeature
+								.GENERATES_IN)
+						.map(tag -> tag.stream()
+								.map(holder -> holder
+										.unwrapKey()
+										.orElseThrow()
+										.location())
+								.collect(
+										java.util.stream
+												.Collectors
+												.toSet()))
+						.orElse(Set.of());
+		boolean nativeBiomeBridge =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.getTag(BiomeTags
+								.HAS_OCEAN_MONUMENT)
+						.map(tag -> tag.stream()
+								.anyMatch(holder ->
+										holder.unwrapKey()
+												.map(key ->
+														key.location()
+																.equals(
+																		CakeWorldBiomes
+																				.SODA_OCEAN
+																				.getId()))
+												.orElse(false)))
+						.orElse(false);
+		StructureSpawnOverride guardians =
+				configured == null ? null
+						: configured.spawnOverrides.get(
+								MobCategory.MONSTER);
+		MobSpawnSettings.SpawnerData guardianSpawn =
+				guardians == null ? null
+						: guardians.spawns().unwrap()
+								.stream()
+								.filter(entry ->
+										entry.type
+												== EntityType
+														.GUARDIAN)
+								.findFirst()
+								.orElse(null);
+		StructureSpawnOverride waterCreatures =
+				configured == null ? null
+						: configured.spawnOverrides.get(
+								MobCategory
+										.UNDERGROUND_WATER_CREATURE);
+		StructureSpawnOverride axolotls =
+				configured == null ? null
+						: configured.spawnOverrides.get(
+								MobCategory.AXOLOTLS);
+		require(helper,
+				configured != null
+						&& configured.feature
+								== StructureFeature
+										.OCEAN_MONUMENT
+						&& !configured.adaptNoise
+						&& configured.feature.step()
+								== GenerationStep
+										.Decoration
+										.SURFACE_STRUCTURES
+						&& structureSet != null
+						&& structureSet.structures().size()
+								== 1
+						&& structureSet.structures().get(0)
+								.structure().value()
+								== configured
+						&& ownTag
+						&& nativeBiomeBridge
+						&& eligibleBiomes.equals(Set.of(
+								CakeWorldBiomes
+										.SODA_OCEAN
+										.getId()))
+						&& guardians != null
+						&& guardians.boundingBox()
+								== StructureSpawnOverride
+										.BoundingBoxType
+										.STRUCTURE
+						&& guardians.spawns().unwrap()
+								.size() == 1
+						&& guardianSpawn != null
+						&& guardianSpawn.getWeight()
+								.asInt() == 1
+						&& guardianSpawn.minCount == 2
+						&& guardianSpawn.maxCount == 4
+						&& waterCreatures != null
+						&& waterCreatures.boundingBox()
+								== StructureSpawnOverride
+										.BoundingBoxType
+										.STRUCTURE
+						&& waterCreatures.spawns()
+								.unwrap().isEmpty()
+						&& axolotls != null
+						&& axolotls.boundingBox()
+								== StructureSpawnOverride
+										.BoundingBoxType
+										.STRUCTURE
+						&& axolotls.spawns().unwrap()
+								.isEmpty(),
+				"Soda Palace lost the one native Monument identity, Soda-Ocean conversion boundary or exact structure-bounded Guardian/aquatic spawn overrides: eligible="
+						+ eligibleBiomes
+						+ ", ownTag=" + ownTag
+						+ ", nativeBridge="
+						+ nativeBiomeBridge
+						+ ", guardian="
+						+ guardianSpawn);
+		require(helper,
+				structureSet.placement()
+						instanceof net.minecraft.world.level
+								.levelgen.structure.placement
+								.RandomSpreadStructurePlacement,
+				"Soda Palace lost vanilla Monument's random-spread placement type");
+		net.minecraft.world.level.levelgen.structure.placement
+				.RandomSpreadStructurePlacement placement =
+				(net.minecraft.world.level.levelgen.structure
+						.placement.RandomSpreadStructurePlacement)
+						structureSet.placement();
+		require(helper,
+				placement.spacing() == 32
+						&& placement.separation() == 5
+						&& placement.spreadType()
+								== net.minecraft.world.level
+										.levelgen.structure
+										.placement
+										.RandomSpreadType
+										.TRIANGULAR
+						&& placement.salt() == 10387313,
+				"Soda Palace lost vanilla Monument's exact 32/5/10387313 triangular placement");
+
+		OceanMonumentPieces.MonumentBuilding building =
+				null;
+		List<StructurePiece> childPieces = List.of();
+		try {
+			Field children = OceanMonumentPieces
+					.MonumentBuilding.class
+					.getDeclaredField("childPieces");
+			children.setAccessible(true);
+			for (int seed = 12012;
+					seed < 12140; seed++) {
+				OceanMonumentPieces.MonumentBuilding
+						candidate =
+						new OceanMonumentPieces
+								.MonumentBuilding(
+										new Random(seed),
+										helper.absolutePos(
+												new BlockPos(
+														0, 0, 0))
+												.getX()
+												+ 12288,
+										helper.absolutePos(
+												new BlockPos(
+														0, 0, 0))
+												.getZ()
+												+ 12288,
+										Direction.NORTH);
+				@SuppressWarnings("unchecked")
+				List<StructurePiece> candidateChildren =
+						(List<StructurePiece>)
+								children.get(candidate);
+				if (candidateChildren.stream()
+						.anyMatch(OceanMonumentPieces
+								.OceanMonumentSimpleTopRoom
+								.class::isInstance)) {
+					building = candidate;
+					childPieces = candidateChildren;
+					break;
+				}
+			}
+		} catch (ReflectiveOperationException exception) {
+			throw new AssertionError(
+					"Could not inspect vanilla Monument's deterministic child graph",
+					exception);
+		}
+		require(helper, building != null,
+				"Soda Palace could not produce a deterministic Monument graph with a wet-sponge room");
+		long entries = childPieces.stream()
+				.filter(OceanMonumentPieces
+						.OceanMonumentEntryRoom.class
+						::isInstance)
+				.count();
+		long cores = childPieces.stream()
+				.filter(OceanMonumentPieces
+						.OceanMonumentCoreRoom.class
+						::isInstance)
+				.count();
+		long wings = childPieces.stream()
+				.filter(OceanMonumentPieces
+						.OceanMonumentWingRoom.class
+						::isInstance)
+				.count();
+		long penthouses = childPieces.stream()
+				.filter(OceanMonumentPieces
+						.OceanMonumentPenthouse.class
+						::isInstance)
+				.count();
+		long spongeRooms = childPieces.stream()
+				.filter(OceanMonumentPieces
+						.OceanMonumentSimpleTopRoom.class
+						::isInstance)
+				.count();
+		BoundingBox bounds = building.getBoundingBox();
+		require(helper,
+				entries == 1 && cores == 1
+						&& wings == 2
+						&& penthouses == 1
+						&& spongeRooms >= 1
+						&& childPieces.size() >= 20
+						&& bounds.getXSpan() == 58
+						&& bounds.getYSpan() == 23
+						&& bounds.getZSpan() == 58
+						&& bounds.minY() == 39
+						&& bounds.maxY() == 61,
+				"Soda Palace lost the native 58x23x58 room graph, gold core, paired wings, penthouse or sponge-room fitter: children="
+						+ childPieces.size()
+						+ ", entries=" + entries
+						+ ", cores=" + cores
+						+ ", wings=" + wings
+						+ ", penthouses="
+						+ penthouses
+						+ ", spongeRooms="
+						+ spongeRooms
+						+ ", bounds=" + bounds);
+
+		building.postProcess(
+				level,
+				level.structureFeatureManager(),
+				level.getChunkSource().getGenerator(),
+				new Random(12013L), bounds,
+				new ChunkPos(bounds.minX() >> 4,
+						bounds.minZ() >> 4),
+				bounds.getCenter());
+		PiecesContainer fixture =
+				new PiecesContainer(List.of(building));
+		SodaPalacePalette.applyEdiblePalette(
+				level, bounds, fixture);
+		Map<Block, Integer> palette =
+				new java.util.LinkedHashMap<>();
+		for (int x = bounds.minX();
+				x <= bounds.maxX(); x++) {
+			for (int y = bounds.minY();
+					y <= bounds.maxY(); y++) {
+				for (int z = bounds.minZ();
+						z <= bounds.maxZ(); z++) {
+					Block block = level.getBlockState(
+							new BlockPos(x, y, z))
+							.getBlock();
+					palette.merge(block, 1,
+							Integer::sum);
+				}
+			}
+		}
+		List<ElderGuardian> elders =
+				level.getEntitiesOfClass(
+						ElderGuardian.class,
+						new AABB(bounds.minX(),
+								bounds.minY(),
+								bounds.minZ(),
+								bounds.maxX() + 1,
+								bounds.maxY() + 1,
+								bounds.maxZ() + 1));
+		Map<Block, Integer> firstPass =
+				new java.util.LinkedHashMap<>(palette);
+		SodaPalacePalette.applyEdiblePalette(
+				level, bounds, fixture);
+		Map<Block, Integer> secondPass =
+				new java.util.LinkedHashMap<>();
+		for (int x = bounds.minX();
+				x <= bounds.maxX(); x++) {
+			for (int y = bounds.minY();
+					y <= bounds.maxY(); y++) {
+				for (int z = bounds.minZ();
+						z <= bounds.maxZ(); z++) {
+					Block block = level.getBlockState(
+							new BlockPos(x, y, z))
+							.getBlock();
+					secondPass.merge(block, 1,
+							Integer::sum);
+				}
+			}
+		}
+		require(helper,
+				palette.getOrDefault(
+						CakeWorldBlocks
+								.BLUEBERRY_GUMMY_BLOCK
+								.get(), 0) > 1000
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CANDY_GLASS
+										.get(), 0) > 1000
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.GRAPE_GUMMY_BLOCK
+										.get(), 0) > 100
+						&& palette.getOrDefault(
+								Blocks.WATER, 0)
+								> 1000
+						&& palette.getOrDefault(
+								Blocks.SEA_LANTERN,
+								0) > 0
+						&& palette.getOrDefault(
+								Blocks.GOLD_BLOCK,
+								0) == 8
+						&& palette.getOrDefault(
+								Blocks.WET_SPONGE,
+								0) > 0
+						&& palette.getOrDefault(
+								Blocks.PRISMARINE,
+								0) == 0
+						&& palette.getOrDefault(
+								Blocks.PRISMARINE_BRICKS,
+								0) == 0
+						&& palette.getOrDefault(
+								Blocks.DARK_PRISMARINE,
+								0) == 0,
+				"Soda Palace lost its complete gummy/glass masonry, native water navigation, light, gold-core or wet-sponge rewards: "
+						+ palette);
+		require(helper,
+				elders.size() == 3
+						&& firstPass.equals(secondPass),
+				"Soda Palace lost its exact two-wing/one-penthouse elder encounters or idempotent palette: elders="
+						+ elders.size()
+						+ ", stable="
+						+ firstPass.equals(secondPass));
+		elders.forEach(ElderGuardian::discard);
 		helper.succeed();
 	}
 

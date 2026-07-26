@@ -21,7 +21,9 @@ import com.mcmoddev.cakeworld.entity.BiscuitBandit;
 import com.mcmoddev.cakeworld.entity.BitterBaker;
 import com.mcmoddev.cakeworld.entity.CrumbledGingerbreadFolk;
 import com.mcmoddev.cakeworld.entity.CustardCat;
+import com.mcmoddev.cakeworld.entity.GrandGumballGuardian;
 import com.mcmoddev.cakeworld.entity.GingerbreadFolk;
+import com.mcmoddev.cakeworld.entity.GumballGuardian;
 import com.mcmoddev.cakeworld.entity.JawbreakerGuardian;
 import com.mcmoddev.cakeworld.init.CakeWorldBiomes;
 import com.mcmoddev.cakeworld.init.CakeWorldBlocks;
@@ -36,6 +38,8 @@ import com.mcmoddev.cakeworld.world.GrandGingerbreadManorFeature;
 import com.mcmoddev.cakeworld.world.GummyShrineFeature;
 import com.mcmoddev.cakeworld.world.IceCreamParlourFeature;
 import com.mcmoddev.cakeworld.world.SherbetPyramidFeature;
+import com.mcmoddev.cakeworld.world.SodaPalaceFeature;
+import com.mcmoddev.cakeworld.world.SodaPalacePalette;
 import com.mcmoddev.cakeworld.world.WaferMineFeature;
 import com.mcmoddev.cakeworld.world.WaferWreckFeature;
 import com.mcmoddev.orespawn.api.CompiledOrePattern;
@@ -66,7 +70,10 @@ import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.animal.Cat;
+import net.minecraft.world.entity.monster.ElderGuardian;
+import net.minecraft.world.entity.monster.Guardian;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.VillagerType;
 import net.minecraft.world.entity.raid.Raid;
@@ -96,6 +103,7 @@ import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.levelgen.structure.OceanMonumentPieces;
 import net.minecraft.world.level.levelgen.structure.StrongholdPieces;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
@@ -3596,23 +3604,27 @@ public final class DeepPantryGameTests {
 							: auditVaultPiece(
 									level,
 									vault.corridor());
+			BlockPos vaultBiomePosition =
+					new BlockPos(
+							(vault.bounds().minX()
+									+ vault.bounds()
+											.maxX())
+									/ 2,
+							level.getSeaLevel(),
+							(vault.bounds().minZ()
+									+ vault.bounds()
+											.maxZ())
+									/ 2);
 			ResourceLocation biome =
 					level.registryAccess()
 							.registryOrThrow(
 									Registry.BIOME_REGISTRY)
 							.getKey(level.getBiome(
-									new BlockPos(
-											vault.located()
-													.getX(),
-											level.getSeaLevel(),
-											vault.located()
-													.getZ()))
+									vaultBiomePosition)
 									.value());
 			boolean literalEligible =
-					level.getBiome(new BlockPos(
-									vault.located().getX(),
-									level.getSeaLevel(),
-									vault.located().getZ()))
+					level.getBiome(
+							vaultBiomePosition)
 							.is(BiomeTags.HAS_STRONGHOLD);
 			boolean portalCompletable =
 					provesCompletableEndPortal(
@@ -3755,6 +3767,185 @@ public final class DeepPantryGameTests {
 								+ corridor);
 			}
 			helper.succeed();
+		});
+	}
+
+	@GameTest(template = EMPTY, batch = "struct012world",
+			timeoutTicks = 7200)
+	public static void focusedSodaPalaceStructureAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean(
+				"cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed Soda Palace audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry
+										.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						SodaPalaceFeature.STRUCTURE_ID);
+		require(helper, configured != null,
+				"Soda Palace configured structure was absent from the live registry");
+		boolean locatedTag = structures.getTag(
+						SodaPalaceFeature.STRUCTURE_TAG)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		require(helper, locatedTag,
+				"Soda Palace lost its public locate tag");
+
+		LocatedPalace palace = locateSodaPalace(
+				helper, level, configured,
+				new BlockPos(96, 64, 128));
+		setPalaceChunksForced(level, palace, true);
+		helper.runAfterDelay(160, () -> {
+			PalaceWorldAudit audit =
+					auditSodaPalace(level, palace);
+			LOGGER.info("Focused Soda Palace audit: locate={}, bounds={}, biome={}, pieces={}, childPieces={}, spongeRooms={}, palette={}, grandGuardians={}, literalElders={}, literalEligible={}",
+					palace.located(),
+					palace.bounds(),
+					audit.biome(),
+					palace.pieces(),
+					audit.childPieces(),
+					audit.spongeRooms(),
+					audit.palette(),
+					audit.grandGuardians(),
+					audit.literalElders(),
+					audit.literalEligible());
+			require(helper,
+					CakeWorldBiomes.SODA_OCEAN
+							.getId().equals(
+									audit.biome())
+							&& audit
+									.literalEligible(),
+					"Natural Soda Palace left Soda Ocean or lost its explicit native Monument biome-tag bridge: biome="
+							+ audit.biome()
+							+ ", literal="
+							+ audit
+									.literalEligible());
+			require(helper,
+					palace.pieces() == 1
+							&& palace.bounds()
+									.getXSpan() == 58
+							&& palace.bounds()
+									.getYSpan() == 23
+							&& palace.bounds()
+									.getZSpan() == 58
+							&& palace.bounds()
+									.minY() == 39
+							&& palace.bounds()
+									.maxY() == 61
+							&& audit.childPieces()
+									>= 20,
+					"Natural Soda Palace lost its one saved MonumentBuilding or regenerated 58x23x58 room graph: "
+							+ palace
+							+ ", children="
+							+ audit.childPieces());
+			Map<Block, Integer> palette =
+					audit.palette();
+			require(helper,
+					palette.getOrDefault(
+							CakeWorldBlocks
+									.BLUEBERRY_GUMMY_BLOCK
+									.get(), 0) > 1000
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.CANDY_GLASS
+											.get(),
+									0) > 1000
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.GRAPE_GUMMY_BLOCK
+											.get(),
+									0) > 100
+							&& palette.getOrDefault(
+									Blocks.WATER,
+									0) > 1000
+							&& palette.getOrDefault(
+									Blocks.SEA_LANTERN,
+									0) > 0
+							&& palette.getOrDefault(
+									Blocks.GOLD_BLOCK,
+									0) == 8
+							&& (audit.spongeRooms()
+									== 0
+									|| palette
+											.getOrDefault(
+													Blocks.WET_SPONGE,
+													0)
+											> 0)
+							&& hasNoUnthemedPalaceMasonry(
+									palette),
+					"Natural Soda Palace lost its complete gummy/glass masonry, native water navigation, lights, eight-block gold core or sponge-room reward: "
+							+ palette
+							+ ", spongeRooms="
+							+ audit.spongeRooms());
+			require(helper,
+					audit.grandGuardians() == 3
+							&& audit.literalElders()
+									== 0,
+					"Natural Soda Palace did not retain exactly three converted Grand Gumball Guardian encounters: custom="
+							+ audit
+									.grandGuardians()
+							+ ", literal="
+							+ audit.literalElders());
+
+			List<GumballGuardian> before =
+					level.getEntitiesOfClass(
+							GumballGuardian.class,
+							palace.boundsAabb());
+			Set<UUID> beforeIds = before.stream()
+					.map(net.minecraft.world.entity.Entity
+							::getUUID)
+					.collect(java.util.stream.Collectors
+							.toSet());
+			Guardian probe =
+					EntityType.GUARDIAN.create(level);
+			require(helper, probe != null,
+					"Could not create the native Monument Guardian spawn probe");
+			BlockPos probePosition =
+					palace.bounds().getCenter();
+			probe.moveTo(
+					probePosition.getX() + 0.5D,
+					probePosition.getY() + 0.5D,
+					probePosition.getZ() + 0.5D,
+					0.0F, 0.0F);
+			level.addFreshEntity(probe);
+			helper.runAfterDelay(3, () -> {
+				List<GumballGuardian> after =
+						level.getEntitiesOfClass(
+								GumballGuardian.class,
+								palace.boundsAabb());
+				List<GumballGuardian> converted =
+						after.stream()
+								.filter(entity ->
+										!beforeIds
+												.contains(
+														entity.getUUID()))
+								.toList();
+				require(helper,
+						probe.isRemoved()
+								&& converted.size()
+										== 1,
+						"Native structure Guardian did not convert exactly once to a Gumball Guardian inside the natural Soda Palace: before="
+								+ before.size()
+								+ ", after="
+								+ after.size()
+								+ ", converted="
+								+ converted.size());
+				converted.forEach(
+						GumballGuardian::discard);
+				setPalaceChunksForced(
+						level, palace, false);
+				helper.succeed();
+			});
 		});
 	}
 
@@ -4931,6 +5122,149 @@ public final class DeepPantryGameTests {
 		helper.succeed();
 	}
 
+	private static LocatedPalace locateSodaPalace(
+			GameTestHelper helper, ServerLevel level,
+			ConfiguredStructureFeature<?, ?> configured,
+			BlockPos origin) {
+		BlockPos located = level.findNearestMapFeature(
+				SodaPalaceFeature.STRUCTURE_TAG,
+				origin, 128, false);
+		require(helper, located != null,
+				"The fixed-seed CakeWorld contained no locatable Soda Palace within 128 chunks of Soda Ocean");
+		ChunkPos startChunk = new ChunkPos(located);
+		net.minecraft.world.level.chunk.LevelChunk
+				startLevelChunk =
+				level.getChunk(startChunk.x,
+						startChunk.z);
+		StructureStart start =
+				startLevelChunk.getStartForFeature(
+						configured);
+		require(helper,
+				start != null && start.isValid()
+						&& start.getFeature() == configured
+						&& start.getPieces().size() == 1
+						&& start.getPieces().get(0)
+								instanceof OceanMonumentPieces
+										.MonumentBuilding,
+				"The located Soda Palace lost its saved native MonumentBuilding start");
+		return new LocatedPalace(
+				located,
+				start.getBoundingBox(),
+				start.getPieces().size(),
+				startChunk,
+				start,
+				start.getPieces().get(0));
+	}
+
+	private static void setPalaceChunksForced(
+			ServerLevel level, LocatedPalace palace,
+			boolean forced) {
+		int minimumChunkX = Math.floorDiv(
+				palace.bounds().minX(), 16);
+		int maximumChunkX = Math.floorDiv(
+				palace.bounds().maxX(), 16);
+		int minimumChunkZ = Math.floorDiv(
+				palace.bounds().minZ(), 16);
+		int maximumChunkZ = Math.floorDiv(
+				palace.bounds().maxZ(), 16);
+		for (int chunkX = minimumChunkX;
+				chunkX <= maximumChunkX; chunkX++) {
+			for (int chunkZ = minimumChunkZ;
+					chunkZ <= maximumChunkZ;
+					chunkZ++) {
+				level.setChunkForced(
+						chunkX, chunkZ, forced);
+				if (forced) {
+					level.getChunk(
+							chunkX, chunkZ);
+				}
+			}
+		}
+	}
+
+	private static PalaceWorldAudit auditSodaPalace(
+			ServerLevel level, LocatedPalace palace) {
+		List<StructurePiece> childPieces = List.of();
+		try {
+			Field children = OceanMonumentPieces
+					.MonumentBuilding.class
+					.getDeclaredField("childPieces");
+			children.setAccessible(true);
+			@SuppressWarnings("unchecked")
+			List<StructurePiece> inspected =
+					(List<StructurePiece>)
+							children.get(palace.building());
+			childPieces = inspected;
+		} catch (ReflectiveOperationException exception) {
+			throw new AssertionError(
+					"Could not inspect the loaded Soda Palace child graph",
+					exception);
+		}
+		int spongeRooms = (int) childPieces.stream()
+				.filter(OceanMonumentPieces
+						.OceanMonumentSimpleTopRoom.class
+						::isInstance)
+				.count();
+		Map<Block, Integer> palette =
+				new LinkedHashMap<>();
+		BoundingBox bounds = palace.bounds();
+		for (int x = bounds.minX();
+				x <= bounds.maxX(); x++) {
+			for (int y = bounds.minY();
+					y <= bounds.maxY(); y++) {
+				for (int z = bounds.minZ();
+						z <= bounds.maxZ(); z++) {
+					Block block = level.getBlockState(
+							new BlockPos(x, y, z))
+							.getBlock();
+					palette.merge(block, 1,
+							Integer::sum);
+				}
+			}
+		}
+		BlockPos biomePosition = new BlockPos(
+				(bounds.minX() + bounds.maxX()) / 2,
+				level.getSeaLevel(),
+				(bounds.minZ() + bounds.maxZ()) / 2);
+		ResourceLocation biome =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.getKey(level.getBiome(
+								biomePosition).value());
+		boolean literalEligible =
+				level.getBiome(biomePosition).is(
+						BiomeTags.HAS_OCEAN_MONUMENT);
+		int grandGuardians =
+				level.getEntitiesOfClass(
+						GrandGumballGuardian.class,
+						palace.boundsAabb()).size();
+		int literalElders =
+				level.getEntitiesOfClass(
+						ElderGuardian.class,
+						palace.boundsAabb(),
+						entity -> entity.getType()
+								== EntityType
+										.ELDER_GUARDIAN)
+						.size();
+		return new PalaceWorldAudit(
+				palette, biome, childPieces.size(),
+				spongeRooms, grandGuardians,
+				literalElders, literalEligible);
+	}
+
+	private static boolean hasNoUnthemedPalaceMasonry(
+			Map<Block, Integer> palette) {
+		return palette.getOrDefault(
+					Blocks.PRISMARINE, 0) == 0
+				&& palette.getOrDefault(
+						Blocks.PRISMARINE_BRICKS,
+						0) == 0
+				&& palette.getOrDefault(
+						Blocks.DARK_PRISMARINE,
+						0) == 0;
+	}
+
 	private static LocatedVault locateAncientCakeVault(
 			GameTestHelper helper, ServerLevel level,
 			ConfiguredStructureFeature<?, ?> configured,
@@ -5832,6 +6166,33 @@ public final class DeepPantryGameTests {
 
 	private record RockDepthSummary(int samples, int minimumY, int maximumY,
 			double meanY) {
+	}
+
+	private record LocatedPalace(
+			BlockPos located,
+			BoundingBox bounds,
+			int pieces,
+			ChunkPos startChunk,
+			StructureStart start,
+			StructurePiece building) {
+		private AABB boundsAabb() {
+			return new AABB(
+					bounds.minX(), bounds.minY(),
+					bounds.minZ(),
+					bounds.maxX() + 1,
+					bounds.maxY() + 1,
+					bounds.maxZ() + 1);
+		}
+	}
+
+	private record PalaceWorldAudit(
+			Map<Block, Integer> palette,
+			ResourceLocation biome,
+			int childPieces,
+			int spongeRooms,
+			int grandGuardians,
+			int literalElders,
+			boolean literalEligible) {
 	}
 
 	private record LocatedVault(
