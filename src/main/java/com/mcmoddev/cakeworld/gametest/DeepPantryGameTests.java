@@ -25,6 +25,7 @@ import com.mcmoddev.cakeworld.entity.GrandGumballGuardian;
 import com.mcmoddev.cakeworld.entity.GingerbreadFolk;
 import com.mcmoddev.cakeworld.entity.GumballGuardian;
 import com.mcmoddev.cakeworld.entity.JawbreakerGuardian;
+import com.mcmoddev.cakeworld.entity.SoggyBiscuit;
 import com.mcmoddev.cakeworld.init.CakeWorldBiomes;
 import com.mcmoddev.cakeworld.init.CakeWorldBlocks;
 import com.mcmoddev.cakeworld.init.CakeWorldFluids;
@@ -40,6 +41,7 @@ import com.mcmoddev.cakeworld.world.IceCreamParlourFeature;
 import com.mcmoddev.cakeworld.world.SherbetPyramidFeature;
 import com.mcmoddev.cakeworld.world.SodaPalaceFeature;
 import com.mcmoddev.cakeworld.world.SodaPalacePalette;
+import com.mcmoddev.cakeworld.world.SunkenSweetshopFeature;
 import com.mcmoddev.cakeworld.world.WaferMineFeature;
 import com.mcmoddev.cakeworld.world.WaferWreckFeature;
 import com.mcmoddev.orespawn.api.CompiledOrePattern;
@@ -74,6 +76,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.animal.Cat;
 import net.minecraft.world.entity.monster.ElderGuardian;
 import net.minecraft.world.entity.monster.Guardian;
+import net.minecraft.world.entity.monster.Drowned;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.VillagerType;
 import net.minecraft.world.entity.raid.Raid;
@@ -104,6 +107,8 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.OceanMonumentPieces;
+import net.minecraft.world.level.levelgen.structure.OceanRuinFeature;
+import net.minecraft.world.level.levelgen.structure.OceanRuinPieces;
 import net.minecraft.world.level.levelgen.structure.StrongholdPieces;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
@@ -3392,7 +3397,7 @@ public final class DeepPantryGameTests {
 						helper, level, configured,
 						new BlockPos(96, 64, 128));
 		setCottageChunksForced(level, cottage, true);
-		helper.runAfterDelay(80, () -> {
+		helper.runAfterDelay(100, () -> {
 			CottageWorldAudit audit =
 					auditCaramelCottage(
 							level, cottage);
@@ -3946,6 +3951,186 @@ public final class DeepPantryGameTests {
 						level, palace, false);
 				helper.succeed();
 			});
+		});
+	}
+
+	@GameTest(template = EMPTY, batch = "struct013world",
+			timeoutTicks = 7200)
+	public static void focusedSunkenSweetshopStructureAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean(
+				"cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed Sunken Sweetshop audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> cold =
+				structures.get(SunkenSweetshopFeature
+						.COLD_STRUCTURE_ID);
+		ConfiguredStructureFeature<?, ?> warm =
+				structures.get(SunkenSweetshopFeature
+						.WARM_STRUCTURE_ID);
+		require(helper, cold != null && warm != null,
+				"Sunken Sweetshop warm/cold native configured structures were absent from the live registry");
+		LocatedSweetshop sweetshop =
+				locateSunkenSweetshop(helper, level,
+						cold, warm,
+						new BlockPos(96, 64, 128));
+		setSweetshopChunksForced(
+				level, sweetshop, true);
+		helper.runAfterDelay(160, () -> {
+			SweetshopWorldAudit audit =
+					auditSunkenSweetshop(
+							level, sweetshop);
+			LOGGER.info("Focused Sunken Sweetshop audit: locate={}, configured={}, bounds={}, biome={}, pieces={}, templates={}, integrities={}, large={}, palette={}, loot={}, soggyBiscuits={}, literalDrowned={}, literalEligible={}",
+					sweetshop.located(),
+					sweetshop.configuredId(),
+					sweetshop.bounds(),
+					audit.biome(),
+					sweetshop.start()
+							.getPieces().size(),
+					audit.templates(),
+					audit.integrities(),
+					audit.largePieces(),
+					audit.palette(),
+					audit.loot(),
+					audit.soggyBiscuits(),
+					audit.literalDrowned(),
+					audit.literalEligible());
+			require(helper,
+					CakeWorldBiomes.SODA_OCEAN
+							.getId().equals(
+									audit.biome())
+							&& audit
+									.literalEligible(),
+					"Natural Sunken Sweetshop left Soda Ocean or lost native warm/cold biome eligibility: biome="
+							+ audit.biome()
+							+ ", eligible="
+							+ audit
+									.literalEligible());
+			boolean coldVariant =
+					sweetshop.configuredId().equals(
+							SunkenSweetshopFeature
+									.COLD_STRUCTURE_ID);
+			require(helper,
+					!sweetshop.start()
+							.getPieces().isEmpty()
+							&& sweetshop.start()
+									.getPieces()
+									.stream()
+									.allMatch(
+											OceanRuinPieces
+													.OceanRuinPiece
+													.class
+													::isInstance)
+							&& (!coldVariant
+									|| sweetshop
+											.start()
+											.getPieces()
+											.size()
+											% 3 == 0)
+							&& audit.templates()
+									.stream()
+									.allMatch(name ->
+											coldVariant
+													? name.contains(
+															"brick")
+															|| name
+																	.contains(
+																			"cracked")
+															|| name
+																	.contains(
+																			"mossy")
+													: name.contains(
+															"warm")),
+					"Natural Sunken Sweetshop lost its saved native warm plan or cold three-layer plan: "
+							+ sweetshop
+									.configuredId()
+							+ " "
+							+ audit.templates());
+			Map<Block, Integer> palette =
+					audit.palette();
+			require(helper,
+					palette.getOrDefault(
+							CakeWorldBlocks
+									.GINGERBREAD_BRICKS
+									.get(), 0)
+								+ palette.getOrDefault(
+										CakeWorldBlocks
+												.WAFER_BLOCK
+												.get(),
+										0)
+								+ palette.getOrDefault(
+										CakeWorldBlocks
+												.BISCUIT_STONE
+												.get(),
+										0)
+								+ palette.getOrDefault(
+										CakeWorldBlocks
+												.ROCK_CANDY
+												.get(),
+										0)
+								+ palette.getOrDefault(
+										CakeWorldBlocks
+												.GRAPE_GUMMY_BLOCK
+												.get(),
+										0)
+								+ palette.getOrDefault(
+										CakeWorldBlocks
+												.BISCUIT_SAND
+												.get(),
+										0)
+								+ palette.getOrDefault(
+										CakeWorldBlocks
+												.BISCUIT_CRUMBS
+												.get(),
+										0)
+								> 10
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.WAFER_BLOCK
+											.get(), 0)
+									> 0
+							&& hasNoUnthemedSweetshopMasonry(
+									palette),
+					"Natural Sunken Sweetshop lost its piece-bounded edible warm/cold palette: "
+							+ palette);
+			require(helper,
+					!audit.loot().isEmpty()
+							&& audit.loot().stream()
+									.allMatch(loot ->
+											loot.equals(
+													BuiltInLootTables
+															.UNDERWATER_RUIN_SMALL)
+													|| loot.equals(
+															BuiltInLootTables
+																	.UNDERWATER_RUIN_BIG))
+							&& (audit.largePieces() == 0
+									|| audit.loot()
+											.contains(
+													BuiltInLootTables
+															.UNDERWATER_RUIN_BIG)),
+					"Natural Sunken Sweetshop lost its native small/big underwater ruin loot roles: large="
+							+ audit.largePieces()
+							+ ", loot="
+							+ audit.loot());
+			require(helper,
+					audit.literalDrowned()
+									== 0,
+					"Natural Sunken Sweetshop retained literal Drowned residue instead of using the existing marker conversion boundary: custom="
+							+ audit
+									.soggyBiscuits()
+							+ ", literal="
+							+ audit.literalDrowned());
+			setSweetshopChunksForced(
+					level, sweetshop, false);
+			helper.succeed();
 		});
 	}
 
@@ -5122,6 +5307,286 @@ public final class DeepPantryGameTests {
 		helper.succeed();
 	}
 
+	private static LocatedSweetshop locateSunkenSweetshop(
+			GameTestHelper helper, ServerLevel level,
+			ConfiguredStructureFeature<?, ?> cold,
+			ConfiguredStructureFeature<?, ?> warm,
+			BlockPos origin) {
+		BlockPos located = level.findNearestMapFeature(
+				SunkenSweetshopFeature.STRUCTURE_TAG,
+				origin, 128, false);
+		require(helper, located != null,
+				"The fixed-seed CakeWorld contained no locatable Sunken Sweetshop within 128 chunks of Soda Ocean");
+		ChunkPos startChunk = new ChunkPos(located);
+		net.minecraft.world.level.chunk.LevelChunk
+				startLevelChunk =
+				level.getChunk(startChunk.x,
+						startChunk.z);
+		StructureStart start =
+				startLevelChunk.getStartForFeature(cold);
+		ConfiguredStructureFeature<?, ?> configured =
+				cold;
+		if (start == null || !start.isValid()) {
+			start = startLevelChunk
+					.getStartForFeature(warm);
+			configured = warm;
+		}
+		require(helper,
+				start != null && start.isValid()
+						&& start.getFeature()
+								== configured
+						&& !start.getPieces()
+								.isEmpty(),
+				"The located Sunken Sweetshop lost its saved native Ocean Ruin start");
+		ResourceLocation configuredId =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry
+										.CONFIGURED_STRUCTURE_FEATURE_REGISTRY)
+						.getKey(configured);
+		return new LocatedSweetshop(
+				located, configuredId,
+				start.getBoundingBox(),
+				startChunk, start);
+	}
+
+	private static void setSweetshopChunksForced(
+			ServerLevel level,
+			LocatedSweetshop sweetshop,
+			boolean forced) {
+		int minimumChunkX = Math.floorDiv(
+				sweetshop.bounds().minX(), 16);
+		int maximumChunkX = Math.floorDiv(
+				sweetshop.bounds().maxX(), 16);
+		int minimumChunkZ = Math.floorDiv(
+				sweetshop.bounds().minZ(), 16);
+		int maximumChunkZ = Math.floorDiv(
+				sweetshop.bounds().maxZ(), 16);
+		for (int chunkX = minimumChunkX;
+				chunkX <= maximumChunkX; chunkX++) {
+			for (int chunkZ = minimumChunkZ;
+					chunkZ <= maximumChunkZ;
+					chunkZ++) {
+				level.setChunkForced(
+						chunkX, chunkZ, forced);
+				if (forced) {
+					level.getChunk(chunkX, chunkZ);
+				}
+			}
+		}
+	}
+
+	private static SweetshopWorldAudit
+			auditSunkenSweetshop(
+					ServerLevel level,
+					LocatedSweetshop sweetshop) {
+		Map<Block, Integer> palette =
+				new LinkedHashMap<>();
+		Set<ResourceLocation> loot =
+				new java.util.LinkedHashSet<>();
+		Set<String> templates =
+				new java.util.LinkedHashSet<>();
+		Set<Float> integrities =
+				new java.util.LinkedHashSet<>();
+		Set<Long> visited =
+				new java.util.HashSet<>();
+		int largePieces = 0;
+		try {
+			Field templateName =
+					net.minecraft.world.level.levelgen
+							.structure.TemplateStructurePiece
+							.class.getDeclaredField(
+									"templateName");
+			Field integrity =
+					OceanRuinPieces.OceanRuinPiece
+							.class.getDeclaredField(
+									"integrity");
+			Field isLarge =
+					OceanRuinPieces.OceanRuinPiece
+							.class.getDeclaredField(
+									"isLarge");
+			Field biomeType =
+					OceanRuinPieces.OceanRuinPiece
+							.class.getDeclaredField(
+									"biomeType");
+			templateName.setAccessible(true);
+			integrity.setAccessible(true);
+			isLarge.setAccessible(true);
+			biomeType.setAccessible(true);
+			boolean expectedCold =
+					sweetshop.configuredId().equals(
+							SunkenSweetshopFeature
+									.COLD_STRUCTURE_ID);
+			for (StructurePiece piece
+					: sweetshop.start()
+							.getPieces()) {
+				if (!(piece
+						instanceof OceanRuinPieces
+								.OceanRuinPiece)) {
+					continue;
+				}
+				templates.add(templateName
+						.get(piece).toString());
+				integrities.add(
+						integrity.getFloat(piece));
+				if (isLarge.getBoolean(piece)) {
+					largePieces++;
+				}
+				Object actualType =
+						biomeType.get(piece);
+				if (actualType
+						!= (expectedCold
+								? OceanRuinFeature.Type
+										.COLD
+								: OceanRuinFeature.Type
+										.WARM)) {
+					throw new AssertionError(
+							"Loaded Ocean Ruin piece lost its configured biome type");
+				}
+				BoundingBox bounds =
+						piece.getBoundingBox();
+				for (int x = bounds.minX();
+						x <= bounds.maxX(); x++) {
+					for (int y = bounds.minY();
+							y <= bounds.maxY();
+							y++) {
+						for (int z = bounds.minZ();
+								z <= bounds
+										.maxZ();
+								z++) {
+							BlockPos position =
+									new BlockPos(
+											x, y, z);
+							if (!visited.add(
+									position
+											.asLong())) {
+								continue;
+							}
+							Block block =
+									level.getBlockState(
+											position)
+											.getBlock();
+							palette.merge(
+									block, 1,
+									Integer::sum);
+							BlockEntity entity =
+									level.getBlockEntity(
+											position);
+							if (entity != null) {
+								String lootId =
+										entity.saveWithoutMetadata()
+												.getString(
+														"LootTable");
+								if (!lootId
+										.isEmpty()) {
+									loot.add(
+											new ResourceLocation(
+													lootId));
+								}
+							}
+						}
+					}
+				}
+			}
+		} catch (ReflectiveOperationException exception) {
+			throw new AssertionError(
+					"Could not inspect loaded native Ocean Ruin piece fields",
+					exception);
+		}
+		BoundingBox bounds = sweetshop.bounds();
+		AABB area = new AABB(
+				bounds.minX(), bounds.minY(),
+				bounds.minZ(),
+				bounds.maxX() + 1,
+				bounds.maxY() + 1,
+				bounds.maxZ() + 1);
+		int soggyBiscuits =
+				level.getEntitiesOfClass(
+						SoggyBiscuit.class, area)
+						.size();
+		int literalDrowned =
+				level.getEntitiesOfClass(
+						Drowned.class, area,
+						entity -> entity.getType()
+								== EntityType.DROWNED)
+						.size();
+		BlockPos biomePosition = new BlockPos(
+				(bounds.minX() + bounds.maxX()) / 2,
+				level.getSeaLevel(),
+				(bounds.minZ() + bounds.maxZ()) / 2);
+		Holder<Biome> biome =
+				level.getBiome(biomePosition);
+		ResourceLocation biomeId =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.getKey(biome.value());
+		boolean literalEligible =
+				biome.is(BiomeTags
+						.HAS_OCEAN_RUIN_COLD)
+						&& biome.is(BiomeTags
+								.HAS_OCEAN_RUIN_WARM);
+		return new SweetshopWorldAudit(
+				palette, biomeId, loot,
+				templates, integrities,
+				largePieces, soggyBiscuits,
+				literalDrowned,
+				literalEligible);
+	}
+
+	private static boolean
+			hasNoUnthemedSweetshopMasonry(
+					Map<Block, Integer> palette) {
+		return palette.getOrDefault(
+				Blocks.SANDSTONE, 0) == 0
+				&& palette.getOrDefault(
+						Blocks.CUT_SANDSTONE,
+						0) == 0
+				&& palette.getOrDefault(
+						Blocks.CHISELED_SANDSTONE,
+						0) == 0
+				&& palette.getOrDefault(
+						Blocks.SMOOTH_SANDSTONE,
+						0) == 0
+				&& palette.getOrDefault(
+						Blocks.SANDSTONE_STAIRS,
+						0) == 0
+				&& palette.getOrDefault(
+						Blocks.SANDSTONE_SLAB,
+						0) == 0
+				&& palette.getOrDefault(
+						Blocks.STONE_BRICKS,
+						0) == 0
+				&& palette.getOrDefault(
+						Blocks.CRACKED_STONE_BRICKS,
+						0) == 0
+				&& palette.getOrDefault(
+						Blocks.MOSSY_STONE_BRICKS,
+						0) == 0
+				&& palette.getOrDefault(
+						Blocks.COBBLESTONE,
+						0) == 0
+				&& palette.getOrDefault(
+						Blocks.MOSSY_COBBLESTONE,
+						0) == 0
+				&& palette.getOrDefault(
+						Blocks.STONE_BRICK_STAIRS,
+						0) == 0
+				&& palette.getOrDefault(
+						Blocks.STONE_BRICK_SLAB,
+						0) == 0
+				&& palette.getOrDefault(
+						Blocks.MOSSY_STONE_BRICK_STAIRS,
+						0) == 0
+				&& palette.getOrDefault(
+						Blocks.MOSSY_STONE_BRICK_SLAB,
+						0) == 0
+				&& palette.getOrDefault(
+						Blocks.SAND, 0) == 0
+				&& palette.getOrDefault(
+						Blocks.GRAVEL, 0) == 0;
+	}
+
 	private static LocatedPalace locateSodaPalace(
 			GameTestHelper helper, ServerLevel level,
 			ConfiguredStructureFeature<?, ?> configured,
@@ -6166,6 +6631,26 @@ public final class DeepPantryGameTests {
 
 	private record RockDepthSummary(int samples, int minimumY, int maximumY,
 			double meanY) {
+	}
+
+	private record LocatedSweetshop(
+			BlockPos located,
+			ResourceLocation configuredId,
+			BoundingBox bounds,
+			ChunkPos startChunk,
+			StructureStart start) {
+	}
+
+	private record SweetshopWorldAudit(
+			Map<Block, Integer> palette,
+			ResourceLocation biome,
+			Set<ResourceLocation> loot,
+			Set<String> templates,
+			Set<Float> integrities,
+			int largePieces,
+			int soggyBiscuits,
+			int literalDrowned,
+			boolean literalEligible) {
 	}
 
 	private record LocatedPalace(
