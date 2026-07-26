@@ -3,6 +3,7 @@ package com.mcmoddev.cakeworld.world;
 import com.mcmoddev.cakeworld.CakeWorld;
 
 import net.minecraft.world.level.levelgen.feature.Feature;
+import net.minecraft.world.level.levelgen.feature.StructureFeature;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -17,13 +18,25 @@ public final class CakeWorldFeatureRegistration {
 	public static void registerFeatures(RegistryEvent.Register<Feature<?>> event) {
 		event.getRegistry().register(StarterPicnicFeature.FEATURE);
 		event.getRegistry().register(GingerbreadVillageFeature.FEATURE);
+		event.getRegistry().register(
+				BiscuitBanditLookoutFeature.FEATURE);
+	}
+
+	@SubscribeEvent
+	public static void registerStructureFeatures(
+			RegistryEvent.Register<StructureFeature<?>> event) {
+		event.getRegistry().register(
+				BiscuitBanditLookoutFeature
+						.STRUCTURE_FEATURE);
 	}
 
 	@SubscribeEvent
 	public static void commonSetup(FMLCommonSetupEvent event) {
 		event.enqueueWork(() -> {
+			CakeWorldFeaturePoolElement.registerType();
 			StarterPicnicFeature.registerConfiguredFeature();
 			GingerbreadVillageFeature.registerWorldgen();
+			BiscuitBanditLookoutFeature.registerWorldgen();
 		});
 	}
 }

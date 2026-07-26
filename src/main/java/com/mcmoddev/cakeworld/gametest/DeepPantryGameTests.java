@@ -17,11 +17,13 @@ import com.mojang.datafixers.util.Pair;
 import com.mojang.authlib.GameProfile;
 import com.mcmoddev.cakeworld.CakeWorld;
 import com.mcmoddev.cakeworld.compat.VanillaResourceAdvancements;
+import com.mcmoddev.cakeworld.entity.BiscuitBandit;
 import com.mcmoddev.cakeworld.entity.GingerbreadFolk;
 import com.mcmoddev.cakeworld.entity.JawbreakerGuardian;
 import com.mcmoddev.cakeworld.init.CakeWorldBiomes;
 import com.mcmoddev.cakeworld.init.CakeWorldBlocks;
 import com.mcmoddev.cakeworld.init.CakeWorldFluids;
+import com.mcmoddev.cakeworld.world.BiscuitBanditLookoutFeature;
 import com.mcmoddev.cakeworld.world.GingerbreadVillageFeature;
 import com.mcmoddev.orespawn.api.CompiledOrePattern;
 import com.mcmoddev.orespawn.api.GeologyColumn;
@@ -39,6 +41,7 @@ import net.minecraft.core.Registry;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -46,6 +49,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.raid.Raid;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -55,6 +60,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RedStoneOreBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.levelgen.Aquifer;
@@ -66,6 +72,7 @@ import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.AABB;
 import net.minecraftforge.common.BiomeDictionary;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.gametest.GameTestHolder;
@@ -1220,6 +1227,265 @@ public final class DeepPantryGameTests {
 							&& residents.size() == 4
 							&& guardians.size() == 1,
 					"The natural village lost bed/meeting POIs, raid-location semantics, residents or defender");
+			helper.succeed();
+		});
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 4800)
+	public static void focusedBiscuitBanditLookoutStructureAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean(
+				"cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed Biscuit Bandit Lookout audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						BiscuitBanditLookoutFeature
+								.STRUCTURE_ID);
+		require(helper, configured != null,
+				"Biscuit Bandit Lookout configured structure was absent from the live registry");
+		boolean tagged = structures.getTag(
+						BiscuitBanditLookoutFeature
+								.STRUCTURE_TAG)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		require(helper, tagged,
+				"Biscuit Bandit Lookout was absent from its public locate tag");
+
+		BlockPos located = level.findNearestMapFeature(
+				BiscuitBanditLookoutFeature.STRUCTURE_TAG,
+				helper.absolutePos(new BlockPos(4, 4, 4)),
+				256, false);
+		require(helper, located != null,
+				"The fixed-seed CakeWorld contained no locatable Biscuit Bandit Lookout within 256 chunks");
+		net.minecraft.world.level.ChunkPos startChunk =
+				new net.minecraft.world.level.ChunkPos(
+						located);
+		net.minecraft.world.level.chunk.LevelChunk
+				startLevelChunk =
+				level.getChunk(startChunk.x,
+						startChunk.z);
+		net.minecraft.world.level.levelgen.structure.StructureStart
+				start =
+				startLevelChunk.getStartForFeature(
+						configured);
+		require(helper,
+				start != null && start.isValid()
+						&& start.getFeature() == configured
+						&& start.getPieces().size() == 1,
+				"The located Biscuit Bandit Lookout lost its saved Outpost structure start");
+		net.minecraft.world.level.levelgen.structure.BoundingBox
+				savedBounds = start.getBoundingBox();
+		require(helper,
+				savedBounds.getXSpan() >= 25
+						&& savedBounds.getYSpan() >= 21
+						&& savedBounds.getZSpan() >= 25,
+				"The saved Biscuit Bandit Lookout collapsed its structure-wide spawn bounds: "
+						+ savedBounds);
+
+		int minimumChunkX =
+				Math.floorDiv(savedBounds.minX(), 16);
+		int maximumChunkX =
+				Math.floorDiv(savedBounds.maxX(), 16);
+		int minimumChunkZ =
+				Math.floorDiv(savedBounds.minZ(), 16);
+		int maximumChunkZ =
+				Math.floorDiv(savedBounds.maxZ(), 16);
+		for (int chunkX = minimumChunkX;
+				chunkX <= maximumChunkX; chunkX++) {
+			for (int chunkZ = minimumChunkZ;
+					chunkZ <= maximumChunkZ; chunkZ++) {
+				level.setChunkForced(
+						chunkX, chunkZ, true);
+			}
+		}
+
+		helper.runAfterDelay(20, () -> {
+			BlockPos horizontalCentre =
+					new BlockPos(
+							located.getX() + 12, 0,
+							located.getZ() + 12);
+			BlockPos chestPos = null;
+			for (int y = level.getMinBuildHeight();
+					y < level.getMaxBuildHeight();
+					y++) {
+				BlockPos candidate =
+						new BlockPos(
+								horizontalCentre.getX(),
+								y,
+								horizontalCentre.getZ());
+				if (level.getBlockState(candidate)
+						.is(Blocks.CHEST)) {
+					chestPos = candidate;
+					break;
+				}
+			}
+			BlockPos centre = chestPos == null
+					? horizontalCentre
+					: chestPos.below(17);
+			Map<Block, Integer> palette =
+					new LinkedHashMap<>();
+			for (int x = -12; x <= 12; x++) {
+				for (int y = 0; y <= 20; y++) {
+					for (int z = -12; z <= 12;
+							z++) {
+						Block block =
+								level.getBlockState(
+										centre.offset(
+												x, y,
+												z))
+										.getBlock();
+						palette.merge(block, 1,
+								Integer::sum);
+					}
+				}
+			}
+			BlockEntity chest = chestPos == null
+					? null
+					: level.getBlockEntity(chestPos);
+			CompoundTag chestState =
+					chest == null ? new CompoundTag()
+							: chest.saveWithoutMetadata();
+			List<BiscuitBandit> bandits =
+					level.getEntitiesOfClass(
+							BiscuitBandit.class,
+							new AABB(centre)
+									.inflate(64.0D));
+			long persistentBandits =
+					bandits.stream()
+							.filter(BiscuitBandit
+									::isPersistenceRequired)
+							.count();
+			List<BiscuitBandit> captains =
+					bandits.stream()
+							.filter(BiscuitBandit
+									::isPatrolLeader)
+							.toList();
+			boolean captainBanner =
+					captains.stream().anyMatch(
+							captain ->
+									ItemStack
+											.isSameItemSameTags(
+													captain
+															.getItemBySlot(
+																	EquipmentSlot
+																			.HEAD),
+													Raid.getLeaderBannerInstance()));
+			ResourceLocation biomeId =
+					level.registryAccess()
+							.registryOrThrow(
+									Registry.BIOME_REGISTRY)
+							.getKey(level.getBiome(centre)
+									.value());
+			boolean literalOutpostEligible =
+					level.getBiome(centre).is(
+							net.minecraft.tags.BiomeTags
+									.HAS_PILLAGER_OUTPOST);
+			BlockPos nearestVillage =
+					level.findNearestMapFeature(
+							GingerbreadVillageFeature
+									.STRUCTURE_TAG,
+							centre, 256, false);
+			int villageChunkDistance =
+					nearestVillage == null
+							? Integer.MAX_VALUE
+							: Math.max(
+									Math.abs(
+											Math.floorDiv(
+													nearestVillage
+															.getX(),
+													16)
+													- startChunk.x),
+									Math.abs(
+											Math.floorDiv(
+													nearestVillage
+															.getZ(),
+													16)
+													- startChunk.z));
+			for (int chunkX = minimumChunkX;
+					chunkX <= maximumChunkX;
+					chunkX++) {
+				for (int chunkZ = minimumChunkZ;
+						chunkZ <= maximumChunkZ;
+						chunkZ++) {
+					level.setChunkForced(
+							chunkX, chunkZ, false);
+				}
+			}
+
+			LOGGER.info("Focused Biscuit Bandit Lookout audit: locate={}, centre={}, bounds={}, biome={}, palette={}, bandits={}, persistent={}, captains={}, captainBanner={}, nearestVillage={}, villageChunkDistance={}",
+					located, centre, savedBounds,
+					biomeId, palette, bandits.size(),
+					persistentBandits, captains.size(),
+					captainBanner, nearestVillage,
+					villageChunkDistance);
+			require(helper, chestPos != null,
+					"The natural Biscuit Bandit Lookout produced no tower supply chest");
+			require(helper,
+					id("cookie_forest").equals(biomeId)
+							&& level.getBiome(centre).is(
+									BiscuitBanditLookoutFeature
+											.GENERATES_IN)
+							&& !literalOutpostEligible,
+					"Biscuit Bandit Lookout generated outside its Cookie-Forest-only contract or enabled a literal vanilla Outpost");
+			require(helper,
+					savedBounds.isInside(
+							centre.offset(-12, 0, -12))
+							&& savedBounds.isInside(
+									centre.offset(
+											12, 20, 12)),
+					"The saved Lookout bounds do not contain its complete 25x21x25 layout");
+			require(helper,
+					palette.getOrDefault(
+							CakeWorldBlocks
+									.BISCUIT_STONE
+									.get(), 0) >= 350
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.WAFER_BLOCK
+											.get(), 0) >= 450
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.CANDY_CANE_PILLAR
+											.get(), 0) >= 90
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.RASPBERRY_GUMMY_BLOCK
+											.get(), 0) == 81
+							&& palette.getOrDefault(
+									Blocks.TARGET, 0) == 3
+							&& palette.getOrDefault(
+									Blocks.CAMPFIRE, 0) == 1
+							&& palette.getOrDefault(
+									Blocks.IRON_BARS, 0) >= 40,
+					"The natural Lookout lost its edible tower, camp, cage or target-range signature");
+			require(helper,
+					BiscuitBanditLookoutFeature.LOOT_ID
+							.toString().equals(
+									chestState.getString(
+											"LootTable")),
+					"The natural Lookout chest lost its saved supply loot role");
+			require(helper,
+					persistentBandits >= 4
+							&& !captains.isEmpty()
+							&& captainBanner
+							&& bandits.stream().allMatch(
+									BiscuitBandit
+											::canJoinRaid),
+					"The natural Lookout lost its saved bandits, Bad-Omen captain or raid eligibility");
+			require(helper,
+					villageChunkDistance > 10,
+					"The Biscuit Bandit Lookout violated its ten-chunk Gingerbread Village exclusion");
 			helper.succeed();
 		});
 	}

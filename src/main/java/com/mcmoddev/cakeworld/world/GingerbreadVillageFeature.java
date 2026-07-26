@@ -68,6 +68,11 @@ public final class GingerbreadVillageFeature
 			id("gingerbread_village");
 	public static final ResourceLocation STRUCTURE_SET_ID =
 			id("gingerbread_villages");
+	public static final ResourceKey<StructureSet>
+			STRUCTURE_SET_KEY =
+			ResourceKey.create(
+					Registry.STRUCTURE_SET_REGISTRY,
+					STRUCTURE_SET_ID);
 	public static final ResourceLocation LIBRARY_LOOT =
 			id("chests/gingerbread_village_library");
 	public static final TagKey<net.minecraft.world.level.biome.Biome>

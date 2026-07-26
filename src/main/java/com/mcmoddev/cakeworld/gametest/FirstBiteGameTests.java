@@ -150,6 +150,8 @@ import com.mcmoddev.cakeworld.world.CakeWorldZombieHorseReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldZombieVillagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldZombifiedPiglinReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldZoglinReplacement;
+import com.mcmoddev.cakeworld.world.BiscuitBanditLookoutFeature;
+import com.mcmoddev.cakeworld.world.CakeWorldFeaturePoolElement;
 import com.mcmoddev.cakeworld.world.GingerbreadVillageFeature;
 import com.mcmoddev.cakeworld.world.CakeWorldPillagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldRavagerReplacement;
@@ -33361,6 +33363,256 @@ public final class FirstBiteGameTests {
 				"Gingerbread Village lost its four professions or Jawbreaker defender");
 		folk.forEach(GingerbreadFolk::discard);
 		guardians.forEach(JawbreakerGuardian::discard);
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, batch = "struct002",
+			timeoutTicks = 500)
+	public static void biscuitBanditLookoutKeepsOutpostAndRaidHooks(
+			GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						BiscuitBanditLookoutFeature
+								.STRUCTURE_ID);
+		Registry<net.minecraft.world.level.levelgen.structure.StructureSet>
+				structureSets =
+				level.registryAccess().registryOrThrow(
+						Registry.STRUCTURE_SET_REGISTRY);
+		net.minecraft.world.level.levelgen.structure.StructureSet
+				structureSet =
+				structureSets.get(
+						BiscuitBanditLookoutFeature
+								.STRUCTURE_SET_ID);
+		boolean ownTag = structures.getTag(
+						BiscuitBanditLookoutFeature
+								.STRUCTURE_TAG)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		StructureSpawnOverride override =
+				configured == null ? null
+						: configured.spawnOverrides.get(
+								MobCategory.MONSTER);
+		MobSpawnSettings.SpawnerData spawn =
+				override == null ? null
+						: override.spawns().unwrap()
+								.stream()
+								.filter(entry ->
+										entry.type
+												== CakeWorldEntities
+														.BISCUIT_BANDIT
+														.get())
+								.findFirst()
+								.orElse(null);
+		require(helper,
+				configured != null
+						&& configured.feature
+								== BiscuitBanditLookoutFeature
+										.STRUCTURE_FEATURE
+						&& structureSet != null
+						&& structureSet.structures().size()
+								== 1
+						&& structureSet.structures().get(0)
+								.structure().value()
+								== configured
+						&& ownTag
+						&& override != null
+						&& override.boundingBox()
+								== StructureSpawnOverride
+										.BoundingBoxType
+										.STRUCTURE
+						&& spawn != null
+						&& spawn.getWeight().asInt() == 1
+						&& spawn.minCount == 1
+						&& spawn.maxCount == 1,
+				"Biscuit Bandit Lookout lost its configured structure, set, locate tag or custom-family 1/1-1 spawn override");
+
+		net.minecraft.world.level.levelgen.structure.placement
+				.RandomSpreadStructurePlacement placement =
+				(net.minecraft.world.level.levelgen.structure
+						.placement.RandomSpreadStructurePlacement)
+						structureSet.placement();
+		require(helper,
+				placement.spacing() == 32
+						&& placement.separation() == 8
+						&& placement.salt() == 1978002,
+				"Biscuit Bandit Lookout lost its explicit independent spacing contract");
+
+		net.minecraft.world.level.levelgen.structure.pools
+				.StructurePoolElement element =
+				BiscuitBanditLookoutFeature.pool().value()
+						.getRandomTemplate(
+								new Random(1978002L));
+		net.minecraft.world.level.levelgen.structure.BoundingBox
+				pieceBounds =
+				element.getBoundingBox(
+						level.getStructureManager(),
+						BlockPos.ZERO,
+						net.minecraft.world.level.block
+								.Rotation.NONE);
+		require(helper,
+				element
+						instanceof CakeWorldFeaturePoolElement
+						&& Registry.STRUCTURE_POOL_ELEMENT
+								.get(CakeWorldFeaturePoolElement
+										.TYPE_ID)
+								== element.getType()
+						&& pieceBounds.getXSpan() == 25
+						&& pieceBounds.getYSpan() == 21
+						&& pieceBounds.getZSpan() == 25,
+				"Biscuit Bandit Lookout lost its serializable 25x21x25 structure-wide bounds");
+
+		BlockPos column =
+				helper.absolutePos(new BlockPos(4, 4, 4));
+		BlockPos centre = new BlockPos(
+				column.getX(),
+				level.getMaxBuildHeight() - 32,
+				column.getZ());
+		level.getEntitiesOfClass(
+				BiscuitBandit.class,
+				new AABB(centre).inflate(32.0D))
+				.forEach(BiscuitBandit::discard);
+		require(helper,
+				BiscuitBanditLookoutFeature.buildAt(
+						level, new Random(1978002L),
+						centre),
+				"Biscuit Bandit Lookout refused a prepared safe site");
+
+		Map<Block, Integer> palette =
+				new java.util.HashMap<>();
+		for (int x = -12; x <= 12; x++) {
+			for (int y = 0; y <= 20; y++) {
+				for (int z = -12; z <= 12; z++) {
+					Block block = level.getBlockState(
+							centre.offset(x, y, z))
+							.getBlock();
+					palette.merge(block, 1,
+							Integer::sum);
+				}
+			}
+		}
+		require(helper,
+				palette.getOrDefault(
+						CakeWorldBlocks
+								.BISCUIT_STONE
+								.get(), 0) >= 350
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.WAFER_BLOCK
+										.get(), 0) >= 450
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CANDY_CANE_PILLAR
+										.get(), 0) >= 90
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CANDY_GLASS
+										.get(), 0) >= 20
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.RASPBERRY_GUMMY_BLOCK
+										.get(), 0) == 81
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.ICING_LAYER
+										.get(), 0) >= 80
+						&& palette.getOrDefault(
+								Blocks.LADDER, 0) == 15
+						&& palette.getOrDefault(
+								Blocks.TARGET, 0) == 3
+						&& palette.getOrDefault(
+								Blocks.CAMPFIRE, 0) == 1
+						&& palette.getOrDefault(
+								Blocks.IRON_BARS, 0) >= 40
+						&& palette.getOrDefault(
+								Blocks.CHEST, 0) == 1,
+				"Biscuit Bandit Lookout lost its edible tower, camp, cage, range or supply chest: "
+						+ palette);
+
+		BlockEntity chest =
+				level.getBlockEntity(
+						centre.offset(0, 17, 0));
+		CompoundTag chestState = chest == null
+				? new CompoundTag()
+				: chest.saveWithoutMetadata();
+		require(helper,
+				BiscuitBanditLookoutFeature.LOOT_ID
+						.toString().equals(
+								chestState.getString(
+										"LootTable")),
+				"Biscuit Bandit Lookout chest lost its supply loot table");
+
+		List<BiscuitBandit> bandits =
+				level.getEntitiesOfClass(
+						BiscuitBandit.class,
+						new AABB(centre).inflate(32.0D));
+		List<BiscuitBandit> captains =
+				bandits.stream()
+						.filter(BiscuitBandit
+								::isPatrolLeader)
+						.toList();
+		BiscuitBandit captain =
+				captains.size() == 1
+						? captains.get(0) : null;
+		require(helper,
+				bandits.size() == 4
+						&& bandits.stream().allMatch(
+								BiscuitBandit
+										::isPersistenceRequired)
+						&& bandits.stream().allMatch(
+								BiscuitBandit
+										::canJoinRaid)
+						&& bandits.stream().allMatch(
+								bandit -> bandit
+										.getMainHandItem()
+										.is(Items.CROSSBOW))
+						&& captain != null
+						&& captain.hasPatrolTarget()
+						&& captain.getPatrolTarget()
+								.equals(centre)
+						&& ItemStack.isSameItemSameTags(
+								captain.getItemBySlot(
+										EquipmentSlot.HEAD),
+								Raid.getLeaderBannerInstance()),
+				"Biscuit Bandit Lookout lost its persistent crossbow bandits, raid eligibility or Bad-Omen captain: bandits="
+						+ bandits.size()
+						+ ", persistent="
+						+ bandits.stream().filter(
+								BiscuitBandit
+										::isPersistenceRequired)
+								.count()
+						+ ", raidEligible="
+						+ bandits.stream().filter(
+								BiscuitBandit
+										::canJoinRaid)
+								.count()
+						+ ", crossbows="
+						+ bandits.stream().filter(
+								bandit -> bandit
+										.getMainHandItem()
+										.is(Items.CROSSBOW))
+								.count()
+						+ ", captains="
+						+ captains.size()
+						+ ", patrolTarget="
+						+ (captain == null ? null
+								: captain
+										.getPatrolTarget())
+						+ ", expectedTarget="
+						+ centre
+						+ ", banner="
+						+ (captain == null ? ItemStack.EMPTY
+								: captain.getItemBySlot(
+										EquipmentSlot
+												.HEAD)));
+		bandits.forEach(BiscuitBandit::discard);
 		helper.succeed();
 	}
 
