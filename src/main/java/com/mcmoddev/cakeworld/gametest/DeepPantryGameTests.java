@@ -27,6 +27,7 @@ import com.mcmoddev.cakeworld.init.CakeWorldEntities;
 import com.mcmoddev.cakeworld.world.BiscuitBanditLookoutFeature;
 import com.mcmoddev.cakeworld.world.GingerbreadVillageFeature;
 import com.mcmoddev.cakeworld.world.GrandGingerbreadManorFeature;
+import com.mcmoddev.cakeworld.world.GummyShrineFeature;
 import com.mcmoddev.cakeworld.world.WaferMineFeature;
 import com.mcmoddev.orespawn.api.CompiledOrePattern;
 import com.mcmoddev.orespawn.api.GeologyColumn;
@@ -59,6 +60,8 @@ import net.minecraft.world.entity.raid.Raid;
 import net.minecraft.world.entity.vehicle.MinecartChest;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.alchemy.PotionUtils;
+import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.crafting.Recipe;
@@ -67,6 +70,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RedStoneOreBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.DispenserBlockEntity;
 import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.biome.Biome;
@@ -2145,6 +2149,280 @@ public final class DeepPantryGameTests {
 							+ sourSorcerers
 							+ ", bitterBakers="
 							+ bitterBakers);
+			helper.succeed();
+		});
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 7200)
+	public static void focusedGummyShrineStructureAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean(
+				"cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed Gummy Shrine audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						GummyShrineFeature.STRUCTURE_ID);
+		require(helper, configured != null,
+				"Gummy Shrine configured structure was absent from the live registry");
+		boolean tagged = structures.getTag(
+						GummyShrineFeature.STRUCTURE_TAG)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		require(helper, tagged,
+				"Gummy Shrine lost its public locate tag");
+
+		BlockPos located = level.findNearestMapFeature(
+				GummyShrineFeature.STRUCTURE_TAG,
+				helper.absolutePos(new BlockPos(4, 4, 4)),
+				512, false);
+		require(helper, located != null,
+				"The fixed-seed CakeWorld contained no locatable Gummy Shrine within 512 chunks");
+		net.minecraft.world.level.ChunkPos startChunk =
+				new net.minecraft.world.level.ChunkPos(
+						located);
+		net.minecraft.world.level.chunk.LevelChunk
+				startLevelChunk =
+				level.getChunk(startChunk.x,
+						startChunk.z);
+		net.minecraft.world.level.levelgen.structure.StructureStart
+				start =
+				startLevelChunk.getStartForFeature(
+						configured);
+		require(helper,
+				start != null && start.isValid()
+						&& start.getFeature() == configured
+						&& start.getPieces().size() == 1,
+				"The located Gummy Shrine lost its saved surface-structure start");
+		net.minecraft.world.level.levelgen.structure.BoundingBox
+				savedBounds = start.getBoundingBox();
+		require(helper,
+				savedBounds.getXSpan() == 15
+						&& savedBounds.getYSpan() == 12
+						&& savedBounds.getZSpan() == 15,
+				"The saved Gummy Shrine collapsed its exact 15x12x15 piece bounds: "
+						+ savedBounds);
+
+		int minimumChunkX =
+				Math.floorDiv(savedBounds.minX(), 16);
+		int maximumChunkX =
+				Math.floorDiv(savedBounds.maxX(), 16);
+		int minimumChunkZ =
+				Math.floorDiv(savedBounds.minZ(), 16);
+		int maximumChunkZ =
+				Math.floorDiv(savedBounds.maxZ(), 16);
+		for (int chunkX = minimumChunkX;
+				chunkX <= maximumChunkX; chunkX++) {
+			for (int chunkZ = minimumChunkZ;
+					chunkZ <= maximumChunkZ; chunkZ++) {
+				level.setChunkForced(
+						chunkX, chunkZ, true);
+			}
+		}
+
+		helper.runAfterDelay(40, () -> {
+			BlockPos centre = new BlockPos(
+					savedBounds.minX() + 7,
+					savedBounds.minY(),
+					savedBounds.minZ() + 7);
+			Map<Block, Integer> palette =
+					new LinkedHashMap<>();
+			for (int x = -7; x <= 7; x++) {
+				for (int y = 0; y <= 11; y++) {
+					for (int z = -7; z <= 7;
+							z++) {
+						Block block =
+								level.getBlockState(
+										centre.offset(
+												x, y,
+												z))
+										.getBlock();
+						palette.merge(block, 1,
+								Integer::sum);
+					}
+				}
+			}
+			int gummyBlocks =
+					palette.getOrDefault(
+							CakeWorldBlocks
+									.GUMMY_BLOCK
+									.get(), 0)
+					+ palette.getOrDefault(
+							CakeWorldBlocks
+									.RASPBERRY_GUMMY_BLOCK
+									.get(), 0)
+					+ palette.getOrDefault(
+							CakeWorldBlocks
+									.BLUEBERRY_GUMMY_BLOCK
+									.get(), 0)
+					+ palette.getOrDefault(
+							CakeWorldBlocks
+									.GRAPE_GUMMY_BLOCK
+									.get(), 0);
+			boolean attachedTraps = true;
+			for (int z : new int[] {-2, 2}) {
+				for (int x : new int[] {-3, 3}) {
+					BlockState hook =
+							level.getBlockState(
+									centre.offset(
+											x, 1,
+											z));
+					attachedTraps &=
+							hook.is(Blocks
+									.TRIPWIRE_HOOK)
+							&& hook.getValue(
+									net.minecraft
+											.world.level
+											.block
+											.TripWireHookBlock
+											.ATTACHED);
+				}
+			}
+			boolean stockedTraps = true;
+			for (BlockPos position : List.of(
+					centre.offset(-4, 1, -2),
+					centre.offset(4, 1, 2))) {
+				BlockEntity blockEntity =
+						level.getBlockEntity(
+								position);
+				if (!(blockEntity
+						instanceof DispenserBlockEntity)) {
+					stockedTraps = false;
+					continue;
+				}
+				DispenserBlockEntity dispenser =
+						(DispenserBlockEntity)
+								blockEntity;
+				for (int slot = 0; slot < 3;
+						slot++) {
+					stockedTraps &=
+							PotionUtils.getPotion(
+									dispenser.getItem(
+											slot))
+									== Potions.SLOWNESS;
+				}
+			}
+			BlockEntity ordinaryChest =
+					level.getBlockEntity(
+							centre.offset(3, 1, 3));
+			BlockEntity hiddenChest =
+					level.getBlockEntity(
+							centre.offset(0, 1, 5));
+			CompoundTag ordinaryState =
+					ordinaryChest == null
+							? new CompoundTag()
+							: ordinaryChest
+									.saveWithoutMetadata();
+			CompoundTag hiddenState =
+					hiddenChest == null
+							? new CompoundTag()
+							: hiddenChest
+									.saveWithoutMetadata();
+			ResourceLocation biomeId =
+					level.registryAccess()
+							.registryOrThrow(
+									Registry.BIOME_REGISTRY)
+							.getKey(level.getBiome(
+									centre)
+									.value());
+			boolean literalTempleEligible =
+					level.getBiome(centre).is(
+							BiomeTags
+									.HAS_JUNGLE_TEMPLE);
+
+			for (int chunkX = minimumChunkX;
+					chunkX <= maximumChunkX;
+					chunkX++) {
+				for (int chunkZ = minimumChunkZ;
+						chunkZ <= maximumChunkZ;
+						chunkZ++) {
+					level.setChunkForced(
+							chunkX, chunkZ, false);
+				}
+			}
+
+			LOGGER.info("Focused Gummy Shrine audit: locate={}, centre={}, bounds={}, biome={}, palette={}, attachedTraps={}, stockedTraps={}, ordinaryLoot={}, hiddenLoot={}",
+					located, centre, savedBounds,
+					biomeId, palette,
+					attachedTraps, stockedTraps,
+					ordinaryState.getString(
+							"LootTable"),
+					hiddenState.getString(
+							"LootTable"));
+			require(helper,
+					CakeWorldBiomes.COOKIE_FOREST
+							.getId().equals(biomeId)
+							&& !literalTempleEligible,
+					"The natural Gummy Shrine lost its temporary Cookie Forest home or leaked literal Jungle Temple eligibility: biome="
+							+ biomeId
+							+ ", literalTempleEligible="
+							+ literalTempleEligible);
+			require(helper,
+					palette.getOrDefault(
+							CakeWorldBlocks
+									.BISCUIT_STONE
+									.get(), 0) >= 150
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.GINGERBREAD_BRICKS
+											.get(), 0)
+									>= 180
+							&& gummyBlocks >= 470
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.CANDY_GLASS
+											.get(), 0)
+									== 12
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.CANDY_CANE_PILLAR
+											.get(), 0)
+									== 29
+							&& palette.getOrDefault(
+									Blocks.TRIPWIRE_HOOK,
+									0) == 4
+							&& palette.getOrDefault(
+									Blocks.TRIPWIRE, 0)
+									== 10
+							&& palette.getOrDefault(
+									Blocks.DISPENSER, 0)
+									== 2
+							&& palette.getOrDefault(
+									Blocks.LEVER, 0)
+									== 3
+							&& palette.getOrDefault(
+									Blocks.STICKY_PISTON,
+									0) == 3
+							&& palette.getOrDefault(
+									Blocks.CHEST, 0)
+									== 2
+							&& attachedTraps
+							&& stockedTraps,
+					"The natural Gummy Shrine lost its edible ruin, elastic approach, sticky traps, flavour clue or caches: "
+							+ palette);
+			require(helper,
+					GummyShrineFeature.LOOT_ID
+							.toString()
+							.equals(ordinaryState
+									.getString(
+											"LootTable"))
+							&& GummyShrineFeature
+									.HIDDEN_LOOT_ID
+									.toString()
+									.equals(hiddenState
+											.getString(
+													"LootTable")),
+					"The natural Gummy Shrine lost its ordinary or hidden loot table");
 			helper.succeed();
 		});
 	}

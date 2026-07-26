@@ -38,6 +38,20 @@ public final class CakeWorldLandmarks {
 							.TOP_LAYER_MODIFICATION)
 					.add(manorRepair);
 		}
+		Holder<PlacedFeature> shrineRepair =
+				GummyShrineRepairFeature
+						.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(
+						biome.getNamespace())
+				&& isCurrentOverworldBiome(
+						biome.getPath())
+				&& shrineRepair != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration
+							.TOP_LAYER_MODIFICATION)
+					.add(shrineRepair);
+		}
 	}
 
 	private static boolean isCurrentOverworldBiome(

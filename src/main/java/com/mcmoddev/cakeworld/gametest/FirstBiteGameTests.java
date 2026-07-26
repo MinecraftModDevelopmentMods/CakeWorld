@@ -156,6 +156,8 @@ import com.mcmoddev.cakeworld.world.GingerbreadVillageFeature;
 import com.mcmoddev.cakeworld.world.GrandGingerbreadManorFeature;
 import com.mcmoddev.cakeworld.world.GrandGingerbreadManorRepairFeature;
 import com.mcmoddev.cakeworld.world.GrandGingerbreadManorStructureFeature;
+import com.mcmoddev.cakeworld.world.GummyShrineFeature;
+import com.mcmoddev.cakeworld.world.GummyShrineRepairFeature;
 import com.mcmoddev.cakeworld.world.WaferMineFeature;
 import com.mcmoddev.cakeworld.world.WaferMineStructureFeature;
 import com.mcmoddev.cakeworld.world.CakeWorldPillagerReplacement;
@@ -369,6 +371,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.WitherSkullBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.DispenserBlockEntity;
 import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
 import net.minecraft.world.level.block.entity.SkullBlockEntity;
 import net.minecraft.world.level.block.CarrotBlock;
@@ -34040,6 +34043,292 @@ public final class FirstBiteGameTests {
 						&& pieceBounds.getYSpan() == 30
 						&& pieceBounds.getZSpan() == 49,
 				"Grand Gingerbread Manor lost its serializable 49x30x49 structure bounds");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, batch = "struct005",
+			timeoutTicks = 500)
+	public static void gummyShrineKeepsJungleTempleHooks(
+			GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						GummyShrineFeature.STRUCTURE_ID);
+		Registry<net.minecraft.world.level.levelgen.structure.StructureSet>
+				structureSets =
+				level.registryAccess().registryOrThrow(
+						Registry.STRUCTURE_SET_REGISTRY);
+		net.minecraft.world.level.levelgen.structure.StructureSet
+				structureSet =
+				structureSets.get(
+						GummyShrineFeature
+								.STRUCTURE_SET_ID);
+		boolean ownTag = structures.getTag(
+						GummyShrineFeature
+								.STRUCTURE_TAG)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		Set<ResourceLocation> eligibleBiomes =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.getTag(GummyShrineFeature
+								.GENERATES_IN)
+						.map(tag -> tag.stream()
+								.map(holder -> holder
+										.unwrapKey()
+										.orElseThrow()
+										.location())
+								.collect(
+										java.util.stream
+												.Collectors
+												.toSet()))
+						.orElse(Set.of());
+		Biome cookieForest =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.get(CakeWorldBiomes
+								.COOKIE_FOREST.getId());
+		boolean repairInstalled = false;
+		if (cookieForest != null) {
+			for (Holder<PlacedFeature> feature
+					: cookieForest.getGenerationSettings()
+							.features().get(
+									GenerationStep.Decoration
+											.TOP_LAYER_MODIFICATION
+											.ordinal())) {
+				if (feature.unwrapKey().map(key -> key.location()
+						.equals(GummyShrineRepairFeature.ID))
+						.orElse(false)) {
+					repairInstalled = true;
+					break;
+				}
+			}
+		}
+		require(helper,
+				configured != null
+						&& configured.feature
+								== GummyShrineFeature
+										.STRUCTURE_FEATURE
+						&& !configured.adaptNoise
+						&& GummyShrineFeature
+								.STRUCTURE_FEATURE.step()
+								== GenerationStep
+										.Decoration
+										.SURFACE_STRUCTURES
+						&& structureSet != null
+						&& structureSet.structures().size()
+								== 1
+						&& structureSet.structures().get(0)
+								.structure().value()
+								== configured
+						&& ownTag
+						&& GummyShrineRepairFeature
+								.placedFeature() != null
+						&& repairInstalled
+						&& eligibleBiomes.equals(Set.of(
+								CakeWorldBiomes
+										.COOKIE_FOREST
+										.getId())),
+				"Gummy Shrine lost its configured structure, locate tag, surface step, installed late repair or temporary Cookie Forest contract: eligible="
+						+ eligibleBiomes
+						+ ", repairInstalled="
+						+ repairInstalled);
+
+		net.minecraft.world.level.levelgen.structure.placement
+				.RandomSpreadStructurePlacement placement =
+				(net.minecraft.world.level.levelgen.structure
+						.placement.RandomSpreadStructurePlacement)
+						structureSet.placement();
+		require(helper,
+				placement.spacing() == 32
+						&& placement.separation() == 8
+						&& placement.spreadType()
+								== net.minecraft.world.level
+										.levelgen.structure
+										.placement
+										.RandomSpreadType
+										.LINEAR
+						&& placement.salt() == 14357619,
+				"Gummy Shrine lost vanilla Jungle Temple's exact 32/8 linear placement contract");
+
+		net.minecraft.world.level.levelgen.structure.pools
+				.StructurePoolElement element =
+				GummyShrineFeature.pool().value()
+						.getRandomTemplate(
+								new Random(14357619L));
+		net.minecraft.world.level.levelgen.structure.BoundingBox
+				pieceBounds =
+				element.getBoundingBox(
+						level.getStructureManager(),
+						BlockPos.ZERO,
+						Rotation.NONE);
+		require(helper,
+				element
+						instanceof CakeWorldFeaturePoolElement
+						&& pieceBounds.getXSpan() == 15
+						&& pieceBounds.getYSpan() == 12
+						&& pieceBounds.getZSpan() == 15,
+				"Gummy Shrine lost its serializable 15x12x15 structure bounds");
+
+		BlockPos column =
+				helper.absolutePos(new BlockPos(4, 4, 4));
+		BlockPos centre = new BlockPos(
+				column.getX(),
+				level.getMaxBuildHeight() - 32,
+				column.getZ());
+		require(helper,
+				GummyShrineFeature.buildAt(
+						level,
+						new Random(14357619L),
+						centre),
+				"Gummy Shrine refused a prepared safe site");
+
+		Map<Block, Integer> palette =
+				new java.util.HashMap<>();
+		for (int x = -7; x <= 7; x++) {
+			for (int y = 0; y <= 11; y++) {
+				for (int z = -7; z <= 7; z++) {
+					Block block = level.getBlockState(
+							centre.offset(x, y, z))
+							.getBlock();
+					palette.merge(block, 1,
+							Integer::sum);
+				}
+			}
+		}
+		int gummyBlocks =
+				palette.getOrDefault(
+						CakeWorldBlocks.GUMMY_BLOCK
+								.get(), 0)
+				+ palette.getOrDefault(
+						CakeWorldBlocks
+								.RASPBERRY_GUMMY_BLOCK
+								.get(), 0)
+				+ palette.getOrDefault(
+						CakeWorldBlocks
+								.BLUEBERRY_GUMMY_BLOCK
+								.get(), 0)
+				+ palette.getOrDefault(
+						CakeWorldBlocks
+								.GRAPE_GUMMY_BLOCK
+								.get(), 0);
+		require(helper,
+				palette.getOrDefault(
+						CakeWorldBlocks.BISCUIT_STONE
+								.get(), 0) >= 160
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.GINGERBREAD_BRICKS
+										.get(), 0) >= 180
+						&& gummyBlocks >= 480
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CANDY_GLASS
+										.get(), 0) == 12
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CANDY_CANE_PILLAR
+										.get(), 0) == 29
+						&& palette.getOrDefault(
+								Blocks.TRIPWIRE_HOOK,
+								0) == 4
+						&& palette.getOrDefault(
+								Blocks.TRIPWIRE, 0)
+								== 10
+						&& palette.getOrDefault(
+								Blocks.DISPENSER, 0)
+								== 2
+						&& palette.getOrDefault(
+								Blocks.LEVER, 0) == 3
+						&& palette.getOrDefault(
+								Blocks.STICKY_PISTON,
+								0) == 3
+						&& palette.getOrDefault(
+								Blocks.CHEST, 0) == 2,
+				"Gummy Shrine lost its edible ruin, elastic approach, sticky traps, flavour clue or caches: "
+						+ palette);
+
+		for (int z : new int[] {-2, 2}) {
+			for (int x : new int[] {-3, 3}) {
+				BlockState hook =
+						level.getBlockState(
+								centre.offset(
+										x, 1, z));
+				require(helper,
+						hook.is(Blocks.TRIPWIRE_HOOK)
+								&& hook.getValue(
+										net.minecraft
+												.world.level
+												.block
+												.TripWireHookBlock
+												.ATTACHED),
+						"Gummy Shrine trap line was not saved attached at "
+								+ centre.offset(
+										x, 1, z));
+			}
+		}
+		for (BlockPos position : List.of(
+				centre.offset(-4, 1, -2),
+				centre.offset(4, 1, 2))) {
+			BlockEntity blockEntity =
+					level.getBlockEntity(position);
+			require(helper,
+					blockEntity
+							instanceof DispenserBlockEntity,
+					"Gummy Shrine lost a sticky-splash dispenser at "
+							+ position);
+			DispenserBlockEntity dispenser =
+					(DispenserBlockEntity)blockEntity;
+			require(helper,
+					PotionUtils.getPotion(
+							dispenser.getItem(0))
+							== Potions.SLOWNESS
+							&& PotionUtils.getPotion(
+									dispenser.getItem(1))
+									== Potions.SLOWNESS
+							&& PotionUtils.getPotion(
+									dispenser.getItem(2))
+									== Potions.SLOWNESS,
+					"Gummy Shrine dispenser lost its three harmless Slowness splashes at "
+							+ position);
+		}
+
+		BlockEntity ordinaryChest =
+				level.getBlockEntity(
+						centre.offset(3, 1, 3));
+		BlockEntity hiddenChest =
+				level.getBlockEntity(
+						centre.offset(0, 1, 5));
+		CompoundTag ordinaryState =
+				ordinaryChest == null
+						? new CompoundTag()
+						: ordinaryChest
+								.saveWithoutMetadata();
+		CompoundTag hiddenState =
+				hiddenChest == null
+						? new CompoundTag()
+						: hiddenChest
+								.saveWithoutMetadata();
+		require(helper,
+				GummyShrineFeature.LOOT_ID.toString()
+						.equals(ordinaryState.getString(
+								"LootTable"))
+						&& GummyShrineFeature
+								.HIDDEN_LOOT_ID
+								.toString().equals(
+										hiddenState
+												.getString(
+														"LootTable")),
+				"Gummy Shrine lost its ordinary or hidden loot role");
 		helper.succeed();
 	}
 

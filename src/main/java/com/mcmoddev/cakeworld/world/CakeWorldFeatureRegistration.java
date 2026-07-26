@@ -26,6 +26,10 @@ public final class CakeWorldFeatureRegistration {
 				GrandGingerbreadManorFeature.FEATURE);
 		event.getRegistry().register(
 				GrandGingerbreadManorRepairFeature.FEATURE);
+		event.getRegistry().register(
+				GummyShrineFeature.FEATURE);
+		event.getRegistry().register(
+				GummyShrineRepairFeature.FEATURE);
 	}
 
 	@SubscribeEvent
@@ -39,6 +43,8 @@ public final class CakeWorldFeatureRegistration {
 		event.getRegistry().register(
 				GrandGingerbreadManorFeature
 						.STRUCTURE_FEATURE);
+		event.getRegistry().register(
+				GummyShrineFeature.STRUCTURE_FEATURE);
 	}
 
 	@SubscribeEvent
@@ -51,6 +57,9 @@ public final class CakeWorldFeatureRegistration {
 			WaferMineFeature.registerWorldgen();
 			GrandGingerbreadManorFeature.registerWorldgen();
 			GrandGingerbreadManorRepairFeature
+					.registerConfiguredFeature();
+			GummyShrineFeature.registerWorldgen();
+			GummyShrineRepairFeature
 					.registerConfiguredFeature();
 		});
 	}

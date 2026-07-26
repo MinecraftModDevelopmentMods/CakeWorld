@@ -416,7 +416,7 @@ specification gives them a clear CakeWorld purpose.
 | STRUCT-002 | `minecraft:pillager_outpost` | Biscuit Bandit Lookout | Functional first Cookie Forest variant: a tall Wafer and Candy-Cane watchtower with gummy-and-icing roof, ladder, supply chest, biscuit paths, gingerbread camp, holding cage, target range, four persistent crossbow bandits, and a banner captain. It has a dedicated saved structure/set/tag, correctly bounded structure-wide custom-bandit spawn override, vanilla's one-in-five candidate gate, and ten-chunk avoidance of both vanilla and Gingerbread village sets. Layout variation, original presentation, and hands-on Bad Omen/raid play remain. |
 | STRUCT-003 | `minecraft:mineshaft` | Wafer Mine | Functional first underground variant: a saved, locatable and exactly bounded `41 x 13 x 41` branching mine with fragile Wafer floors and beams, Candy-Cane support frames, a continuous 41-block rail, themed minecart loot, a Deep Liquorice Weaver spawner, cobweb nest, lighting, and exposed CakeWorld ore faces. It retains vanilla's every-chunk candidate, `0.004` probability and non-adapted noise contract while remaining eligible in all four current CakeWorld Overworld biomes; those biomes do not gain literal vanilla-Mineshaft eligibility. A wider random piece graph, corridor variation, original presentation, and hands-on exploration/balance play remain. |
 | STRUCT-004 | `minecraft:mansion` | Grand Gingerbread Manor | Functional first Cookie Forest variant: a saved, locatable and exactly bounded `49 x 30 x 49` three-storey manor with Gingerbread masonry, Wafer floors, Candy-Glass windows, Candy-Cane supports, tiered gummy-and-icing roofs, two kitchens, dining hall, Cookbook library and kiosk, ordinary cache, sealed secret kitchen and guaranteed rare Cookbook cache. Five Rolling-Pin Raiders, two Sour Sorcerers and one Bitter Baker form its persistent non-raid household. It retains the Woodland Mansion's `80/20` triangular placement, terrain-height gate and Woodland Explorer Map role without granting literal vanilla-Mansion eligibility. Room/layout variation, Liquorice Darkwood placement, original presentation and hands-on exploration/balance remain. |
-| STRUCT-005 | `minecraft:jungle_pyramid` | Gummy Shrine | Elastic traps, jungle clues, and themed treasure. |
+| STRUCT-005 | `minecraft:jungle_pyramid` | Gummy Shrine | Functional first Cookie Forest variant: a saved, locatable and exactly bounded `15 x 12 x 15` gummy-roofed Gingerbread ruin with a broad elastic approach, two attached tripwire lanes, two dispensers holding six harmless Slowness splashes, a three-flavour lever-and-piston clue, ordinary cache and hidden guaranteed-Cookbook cache. It retains the Jungle Temple's surface and terrain checks plus exact `32/8/14357619` linear placement without granting literal vanilla-Jungle-Temple eligibility. Gummy Jungle placement, random rotation/layout variation, original presentation and hands-on clue/trap play remain. |
 | STRUCT-006 | `minecraft:desert_pyramid` | Sherbet Pyramid | Powder traps, fizzy fossils, and buried sweet jars. |
 | STRUCT-007 | `minecraft:igloo` | Ice-Cream Parlour | Tundra shelter retaining the hidden-curing discovery role. |
 | STRUCT-008 | `minecraft:ruined_portal` | Burnt-Sugar Arch | Clearly recognisable portal ruin using scorched confectionery materials. |
@@ -485,6 +485,24 @@ entities. The current Cookie Forest home is an available proving ground;
 Liquorice Darkwood becomes the thematic primary home when that biome exists.
 The prototype does not rewrite vanilla or third-party Mansions and does not
 claim vanilla's full procedural room graph.
+
+The `STRUCT-005` prototype owns a dedicated configured structure, set, biome
+tag and public locate identity rather than recolouring vanilla Jungle Temple
+pieces. It preserves the vanilla surface-structure step, top-biome and
+above-sea-level terrain checks, exact spacing `32`, separation `8`, linear
+spread and salt `14357619`, without adding the literal
+`#minecraft:has_structure/jungle_temple` biome tag. Its first fixed
+`15 x 12 x 15` plan keeps the recognisable two-tripwire, two-dispenser and
+hidden-treasure progression, but substitutes sticky Slowness splashes for
+damaging arrows and adds an elastic gummy approach plus a visible
+three-flavour lever-and-piston clue. A final CakeWorld biome-decoration pass
+restores only the shrine's bounded block slices after later forest surface and
+vegetation features; it resolves the configured structure from the active
+world registry and creates no entities. Cookie Forest is an available proving
+ground until Gummy Jungle becomes the thematic primary home. The prototype
+does not rewrite vanilla or third-party Jungle Temples and does not yet claim
+random orientation, layout variation, finished clue logic, or hands-on
+balance and accessibility proof.
 
 ## Original Structure Additions
 
