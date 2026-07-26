@@ -5,6 +5,7 @@ import com.mcmoddev.cakeworld.entity.BiscuitBandit;
 import com.mcmoddev.cakeworld.entity.BitterBaker;
 import com.mcmoddev.cakeworld.entity.BonbonBat;
 import com.mcmoddev.cakeworld.entity.BrittleBiscuitSteed;
+import com.mcmoddev.cakeworld.entity.BurntSugarTempest;
 import com.mcmoddev.cakeworld.entity.CandyCaneArcher;
 import com.mcmoddev.cakeworld.entity.CandyflossSheep;
 import com.mcmoddev.cakeworld.entity.CinnamonPuffProjectile;
@@ -130,6 +131,7 @@ import net.minecraft.world.entity.monster.Vex;
 import net.minecraft.world.entity.monster.Vindicator;
 import net.minecraft.world.entity.monster.Witch;
 import net.minecraft.world.entity.monster.Zombie;
+import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.world.entity.monster.hoglin.Hoglin;
 import net.minecraft.world.entity.monster.piglin.Piglin;
 import net.minecraft.world.entity.monster.piglin.PiglinBrute;
@@ -327,6 +329,16 @@ public final class CakeWorldEntities {
 									MobCategory.MONSTER)
 									.sized(0.6F, 1.95F)
 									.clientTrackingRange(8));
+	public static final RegistryObject<EntityType<BurntSugarTempest>>
+			BURNT_SUGAR_TEMPEST =
+					entity("burnt_sugar_tempest",
+							EntityType.Builder.of(
+									BurntSugarTempest::new,
+									MobCategory.MONSTER)
+									.fireImmune()
+									.immuneTo(Blocks.WITHER_ROSE)
+									.sized(0.9F, 3.5F)
+									.clientTrackingRange(10));
 	public static final RegistryObject<EntityType<VanillaIceBear>>
 			VANILLA_ICE_BEAR = entity("vanilla_ice_bear",
 					EntityType.Builder.of(VanillaIceBear::new,
@@ -659,6 +671,8 @@ public final class CakeWorldEntities {
 				Vindicator.createAttributes().build());
 		event.put(BITTER_BAKER.get(),
 				Witch.createAttributes().build());
+		event.put(BURNT_SUGAR_TEMPEST.get(),
+				WitherBoss.createAttributes().build());
 		event.put(VANILLA_ICE_BEAR.get(),
 				PolarBear.createAttributes().build());
 		event.put(GUMMY_BUNNY.get(),
@@ -834,6 +848,11 @@ public final class CakeWorldEntities {
 					Monster::checkMonsterSpawnRules);
 			SpawnPlacements.register(
 					BITTER_BAKER.get(),
+					SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					Monster::checkMonsterSpawnRules);
+			SpawnPlacements.register(
+					BURNT_SUGAR_TEMPEST.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					Monster::checkMonsterSpawnRules);

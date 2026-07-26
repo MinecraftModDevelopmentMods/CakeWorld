@@ -35,6 +35,8 @@ import com.mcmoddev.cakeworld.compat.VanillaRoleAdvancements;
 import com.mcmoddev.cakeworld.entity.BiscuitBandit;
 import com.mcmoddev.cakeworld.entity.BitterBaker;
 import com.mcmoddev.cakeworld.entity.BrittleBiscuitSteed;
+import com.mcmoddev.cakeworld.entity.BurntSugarTempest;
+import com.mcmoddev.cakeworld.entity.BurntSugarTempestSafety;
 import com.mcmoddev.cakeworld.entity.CandyflossSheep;
 import com.mcmoddev.cakeworld.entity.CandyflossSheepGrazeGoal;
 import com.mcmoddev.cakeworld.entity.CandyCaneArcher;
@@ -131,6 +133,7 @@ import com.mcmoddev.cakeworld.world.CakeWorldVillagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldVindicatorReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldWanderingTraderReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldWitchReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldWitherReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldPillagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldRavagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldShulkerReplacement;
@@ -285,6 +288,7 @@ import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.monster.ZombifiedPiglin;
 import net.minecraft.world.entity.monster.Zoglin;
 import net.minecraft.world.entity.monster.WitherSkeleton;
+import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.world.entity.monster.hoglin.Hoglin;
 import net.minecraft.world.entity.monster.piglin.AbstractPiglin;
 import net.minecraft.world.entity.monster.piglin.Piglin;
@@ -300,6 +304,7 @@ import net.minecraft.world.entity.projectile.SmallFireball;
 import net.minecraft.world.entity.projectile.Snowball;
 import net.minecraft.world.entity.projectile.ThrownTrident;
 import net.minecraft.world.entity.projectile.ThrownPotion;
+import net.minecraft.world.entity.projectile.WitherSkull;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.food.FoodProperties;
@@ -328,11 +333,15 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.NaturalSpawner;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.WitherSkullBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.SkullBlockEntity;
 import net.minecraft.world.level.block.CarrotBlock;
 import net.minecraft.world.level.block.FallingBlock;
 import net.minecraft.world.level.block.InfestedBlock;
@@ -381,6 +390,7 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.event.world.BiomeLoadingEvent;
+import net.minecraftforge.event.world.ExplosionEvent;
 import com.mcmoddev.cakeworld.world.StarterPicnicFeature;
 import com.mcmoddev.cakeworld.world.CakeWorldDrownedReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldElderGuardianReplacement;
@@ -26190,6 +26200,917 @@ public final class FirstBiteGameTests {
 			vanilla.discard();
 			helper.succeed();
 		});
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 240)
+	public static void burntSugarTempestKeepsWitherProgressionAndSafeStorms(
+			GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		BlockPos anchor = helper.absolutePos(
+				new BlockPos(5, 4, 5));
+		AABB localArea = new AABB(anchor)
+				.inflate(24.0D);
+		level.getEntitiesOfClass(
+				WitherBoss.class, localArea)
+				.forEach(WitherBoss::discard);
+		level.getEntitiesOfClass(
+				WitherSkull.class, localArea)
+				.forEach(WitherSkull::discard);
+
+		BurntSugarTempestProbe tempest =
+				new BurntSugarTempestProbe(level);
+		VanillaWitherProbe vanilla =
+				new VanillaWitherProbe(level);
+		tempest.setPos(anchor.getX() + 0.5D,
+				anchor.getY(),
+				anchor.getZ() + 0.5D);
+		tempest.setNoAi(true);
+		tempest.setPersistenceRequired();
+		level.addFreshEntity(tempest);
+		require(helper,
+				tempest instanceof WitherBoss
+						&& tempest.getType()
+								== CakeWorldEntities
+										.BURNT_SUGAR_TEMPEST
+										.get()
+						&& tempest.getType()
+								.getCategory()
+								== MobCategory.MONSTER
+						&& close(tempest.getMaxHealth(),
+								300.0D)
+						&& close(tempest
+								.getAttributeValue(
+										Attributes
+												.MOVEMENT_SPEED),
+								0.6D)
+						&& close(tempest
+								.getAttributeValue(
+										Attributes
+												.FLYING_SPEED),
+								0.6D)
+						&& close(tempest
+								.getAttributeValue(
+										Attributes
+												.FOLLOW_RANGE),
+								40.0D)
+						&& close(tempest
+								.getAttributeValue(
+										Attributes.ARMOR),
+								4.0D)
+						&& close(tempest.getDimensions(
+								Pose.STANDING).width,
+								0.9D)
+						&& close(tempest.getDimensions(
+								Pose.STANDING).height,
+								3.5D)
+						&& tempest.getType()
+								.clientTrackingRange()
+								== 10
+						&& tempest.getType()
+								.fireImmune()
+						&& !tempest.getType()
+								.isBlockDangerous(
+										Blocks
+												.WITHER_ROSE
+												.defaultBlockState())
+						&& tempest.getNavigation()
+								instanceof FlyingPathNavigation
+						&& tempest.getMoveControl()
+								.getClass()
+								== vanilla
+										.getMoveControl()
+										.getClass()
+						&& tempest.experienceReward()
+								== 50,
+				"Burnt-Sugar Tempest lost the exact Wither body, attributes, movement, fire/rose immunity or XP");
+		require(helper,
+				tempest.goalSignatures().equals(
+								vanilla
+										.goalSignatures())
+						&& tempest.targetGoalSignatures()
+								.equals(vanilla
+										.targetGoalSignatures())
+						&& tempest.getMobType()
+								== MobType.UNDEAD
+						&& tempest.ambientSound()
+								== SoundEvents
+										.WITHER_AMBIENT
+						&& tempest.hurtSound()
+								== SoundEvents
+										.WITHER_HURT
+						&& tempest.deathSound()
+								== SoundEvents
+										.WITHER_DEATH
+						&& tempest.getLootTableId()
+								.equals(new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/burnt_sugar_tempest")),
+				"Burnt-Sugar Tempest lost Wither goals, undead role, sounds or loot identity");
+
+		tempest.makeInvulnerable();
+		require(helper,
+				tempest.getInvulnerableTicks()
+								== 220
+						&& close(tempest.getHealth(),
+								100.0D),
+				"Burnt-Sugar Tempest lost the exact Wither summoning charge");
+		tempest.tickCount = 10;
+		tempest.runServerAiStep();
+		require(helper,
+				tempest.getInvulnerableTicks()
+								== 219
+						&& close(tempest.getHealth(),
+								110.0D),
+				"Burnt-Sugar Tempest lost ten-tick charge healing or countdown");
+
+		Difficulty originalDifficulty =
+				level.getDifficulty();
+		BlockPos protectedBlock =
+				anchor.offset(2, 0, 0);
+		ItemEntity protectedItem = null;
+		try {
+			level.getServer().setDifficulty(
+					Difficulty.NORMAL, true);
+			Pig protectedTarget =
+					EntityType.PIG.create(level);
+			require(helper, protectedTarget != null,
+					"Could not create protected Tempest target");
+			protectedTarget.setPos(
+					tempest.getX() + 4.0D,
+					tempest.getY(),
+					tempest.getZ());
+			protectedTarget.setNoAi(true);
+			protectedTarget.setSecondsOnFire(5);
+			protectedTarget.fallDistance = 12.0F;
+			level.addFreshEntity(protectedTarget);
+			LivingHurtEvent protectedHit =
+					new LivingHurtEvent(
+							protectedTarget,
+							DamageSource
+									.mobAttack(tempest),
+							8.0F);
+			BurntSugarTempestSafety
+					.applyDamagePolicy(
+							protectedHit,
+							Difficulty.NORMAL);
+			require(helper,
+					protectedHit.isCanceled()
+							&& close(protectedTarget
+									.getHealth(),
+									protectedTarget
+											.getMaxHealth())
+							&& !protectedTarget.isOnFire()
+							&& close(protectedTarget
+									.fallDistance,
+									0.0D)
+							&& protectedTarget
+									.hasEffect(
+											MobEffects
+													.MOVEMENT_SLOWDOWN)
+							&& protectedTarget
+									.hasEffect(
+											MobEffects
+													.GLOWING)
+							&& protectedTarget
+									.hasEffect(
+											MobEffects
+													.SLOW_FALLING)
+							&& protectedTarget
+									.hasEffect(
+											MobEffects
+													.FIRE_RESISTANCE)
+							&& protectedTarget
+									.getEffect(
+											MobEffects
+													.DAMAGE_RESISTANCE)
+									.getAmplifier()
+									== 4,
+					"Normal Tempest contact lost its harmless visible gust and rescue envelope");
+			LivingHurtEvent hardHit =
+					new LivingHurtEvent(
+							protectedTarget,
+							DamageSource
+									.mobAttack(tempest),
+							8.0F);
+			BurntSugarTempestSafety
+					.applyDamagePolicy(
+							hardHit,
+							Difficulty.HARD);
+			require(helper,
+					!hardHit.isCanceled(),
+					"Hard Tempest contact was incorrectly softened");
+
+			Explosion tempestExplosion =
+					new Explosion(level, tempest,
+							tempest.getX(),
+							tempest.getY(),
+							tempest.getZ(),
+							7.0F);
+			ExplosionEvent.Start safeExplosion =
+					new ExplosionEvent.Start(
+							level,
+							tempestExplosion);
+			BurntSugarTempestSafety
+					.applyExplosionPolicy(
+							safeExplosion,
+							Difficulty.NORMAL);
+			ExplosionEvent.Start hardExplosion =
+					new ExplosionEvent.Start(
+							level,
+							tempestExplosion);
+			BurntSugarTempestSafety
+					.applyExplosionPolicy(
+							hardExplosion,
+							Difficulty.HARD);
+			EntityMobGriefingEvent safeGrief =
+					new EntityMobGriefingEvent(
+							tempest);
+			BurntSugarTempestSafety
+					.applyGriefingPolicy(
+							safeGrief,
+							Difficulty.NORMAL);
+			EntityMobGriefingEvent hardGrief =
+					new EntityMobGriefingEvent(
+							tempest);
+			BurntSugarTempestSafety
+					.applyGriefingPolicy(
+							hardGrief,
+							Difficulty.HARD);
+			require(helper,
+					safeExplosion.isCanceled()
+							&& !hardExplosion
+									.isCanceled()
+							&& safeGrief
+									.getResult()
+									== Event.Result.DENY
+							&& hardGrief
+									.getResult()
+									== Event.Result.DEFAULT,
+					"Tempest explosion/grief safety did not stop below Hard and release on Hard");
+
+			level.setBlock(protectedBlock,
+					Blocks.BRICKS
+							.defaultBlockState(),
+					3);
+			protectedItem = new ItemEntity(
+					level,
+					protectedBlock.getX() + 0.5D,
+					protectedBlock.getY() + 0.5D,
+					protectedBlock.getZ() + 0.5D,
+					new ItemStack(
+							Items.DIAMOND));
+			level.addFreshEntity(protectedItem);
+			tempest.setInvulnerableTicks(1);
+			tempest.tickCount = 11;
+			tempest.runServerAiStep();
+			require(helper,
+					tempest.getInvulnerableTicks()
+								== 0
+							&& level.getBlockState(
+									protectedBlock)
+									.is(Blocks.BRICKS)
+							&& protectedItem.isAlive(),
+					"Actual Normal charge-completion explosion destroyed a block or possession");
+
+			WitherSkullProbe safeSkull =
+					new WitherSkullProbe(level);
+			safeSkull.setOwner(tempest);
+			safeSkull.setPos(
+					protectedTarget.getX() - 1.0D,
+					protectedTarget.getEyeY(),
+					protectedTarget.getZ());
+			level.addFreshEntity(safeSkull);
+			protectedTarget.setHealth(
+					protectedTarget.getMaxHealth());
+			protectedTarget.removeAllEffects();
+			safeSkull.finishHit(
+					protectedTarget);
+			require(helper,
+					close(protectedTarget.getHealth(),
+							protectedTarget
+									.getMaxHealth())
+							&& !protectedTarget
+									.hasEffect(
+											MobEffects
+													.WITHER)
+							&& protectedTarget
+									.hasEffect(
+											MobEffects
+													.SLOW_FALLING)
+							&& safeSkull.isRemoved()
+							&& level.getBlockState(
+									protectedBlock)
+									.is(Blocks.BRICKS)
+							&& protectedItem.isAlive(),
+					"Actual Normal owned skull caused health, Wither, explosion or possession damage: health="
+							+ protectedTarget.getHealth()
+							+ ", wither="
+							+ protectedTarget.hasEffect(
+									MobEffects.WITHER)
+							+ ", slowFalling="
+							+ protectedTarget.hasEffect(
+									MobEffects.SLOW_FALLING)
+							+ ", skullRemoved="
+							+ safeSkull.isRemoved()
+							+ ", block="
+							+ level.getBlockState(
+									protectedBlock)
+							+ ", itemAlive="
+							+ protectedItem.isAlive());
+
+			level.getServer().setDifficulty(
+					Difficulty.HARD, true);
+			Pig hardTarget =
+					EntityType.PIG.create(level);
+			require(helper, hardTarget != null,
+					"Could not create Hard Tempest target");
+			hardTarget.setPos(
+					tempest.getX() + 4.0D,
+					tempest.getY(),
+					tempest.getZ() + 2.0D);
+			hardTarget.setNoAi(true);
+			level.addFreshEntity(hardTarget);
+			WitherSkullProbe hardSkull =
+					new WitherSkullProbe(level);
+			hardSkull.setOwner(tempest);
+			hardSkull.hitEntity(hardTarget);
+			require(helper,
+					close(hardTarget.getHealth(),
+							2.0D)
+							&& hardTarget.hasEffect(
+									MobEffects.WITHER)
+							&& hardTarget.getEffect(
+									MobEffects.WITHER)
+									.getDuration()
+									== 800,
+					"Hard owned skull lost vanilla eight-damage and forty-second Wither peril");
+			hardSkull.discard();
+			hardTarget.discard();
+			protectedTarget.discard();
+		} finally {
+			level.getServer().setDifficulty(
+					originalDifficulty, true);
+			level.setBlock(protectedBlock,
+					Blocks.AIR.defaultBlockState(),
+					3);
+			if (protectedItem != null) {
+				protectedItem.discard();
+			}
+		}
+
+		tempest.setInvulnerableTicks(0);
+		tempest.setHealth(150.0F);
+		Arrow arrow = EntityType.ARROW.create(level);
+		require(helper, arrow != null,
+				"Could not create Tempest phase arrow");
+		boolean powered = tempest.isPowered();
+		boolean poweredArrowAccepted =
+				tempest.hurt(
+						DamageSource.arrow(
+								arrow, null),
+						5.0F);
+		require(helper,
+				powered
+						&& !poweredArrowAccepted,
+				"Powered Tempest lost half-health phase or arrow immunity");
+		tempest.setHealth(151.0F);
+		boolean unpowered = !tempest.isPowered();
+		boolean unpoweredArrowAccepted =
+				tempest.hurt(
+						DamageSource.arrow(
+								arrow, null),
+						5.0F);
+		float healthAfterArrow =
+				tempest.getHealth();
+		boolean drownAccepted =
+				tempest.hurt(
+						DamageSource.DROWN,
+						5.0F);
+		boolean witherAccepted =
+				tempest.hurt(
+						DamageSource
+								.mobAttack(vanilla),
+						5.0F);
+		boolean effectAccepted =
+				tempest.addEffect(
+						new MobEffectInstance(
+								MobEffects.POISON,
+								100));
+		boolean fallAccepted =
+				tempest.causeFallDamage(
+						20.0F, 1.0F,
+						DamageSource.FALL);
+		boolean dimensionChange =
+				tempest.canChangeDimensions();
+		vanilla.setInvulnerableTicks(0);
+		vanilla.setHealth(151.0F);
+		boolean vanillaArrowAccepted =
+				vanilla.hurt(
+						DamageSource.arrow(
+								arrow, null),
+						5.0F);
+		float vanillaHealthAfterArrow =
+				vanilla.getHealth();
+		require(helper,
+				unpowered
+						&& unpoweredArrowAccepted
+						&& vanillaArrowAccepted
+						&& close(healthAfterArrow,
+								vanillaHealthAfterArrow)
+						&& close(tempest.getHealth(),
+								healthAfterArrow)
+						&& !drownAccepted
+						&& !witherAccepted
+						&& !effectAccepted
+						&& !fallAccepted
+						&& !dimensionChange,
+				"Tempest lost Wither powered transition, damage/effect/fall immunity or dimension lock: unpowered="
+						+ unpowered
+						+ ", arrowAccepted="
+						+ unpoweredArrowAccepted
+						+ ", healthAfterArrow="
+						+ healthAfterArrow
+						+ ", finalHealth="
+						+ tempest.getHealth()
+						+ ", vanillaArrowAccepted="
+						+ vanillaArrowAccepted
+						+ ", vanillaHealthAfterArrow="
+						+ vanillaHealthAfterArrow
+						+ ", drownAccepted="
+						+ drownAccepted
+						+ ", witherAccepted="
+						+ witherAccepted
+						+ ", effectAccepted="
+						+ effectAccepted
+						+ ", fallAccepted="
+						+ fallAccepted
+						+ ", dimensionChange="
+						+ dimensionChange);
+		Boat forbiddenVehicle =
+				EntityType.BOAT.create(level);
+		require(helper,
+				forbiddenVehicle != null
+						&& !tempest.startRiding(
+								forbiddenVehicle),
+				"Tempest incorrectly gained vehicle riding");
+		arrow.discard();
+		forbiddenVehicle.discard();
+
+		level.getEntitiesOfClass(ItemEntity.class,
+				localArea,
+				item -> item.getItem()
+						.is(Items.NETHER_STAR))
+				.forEach(ItemEntity::discard);
+		tempest.dropBossLoot();
+		List<ItemEntity> stars =
+				level.getEntitiesOfClass(
+						ItemEntity.class,
+						localArea,
+						item -> item.getItem()
+								.is(Items.NETHER_STAR));
+		CompoundTag starData = stars.size() == 1
+				? stars.get(0).saveWithoutId(
+						new CompoundTag())
+				: new CompoundTag();
+		require(helper,
+				stars.size() == 1
+						&& starData.getShort("Age")
+								== -6000
+						&& level.getRecipeManager()
+								.getAllRecipesFor(
+										net.minecraft.world.item.crafting.RecipeType
+												.CRAFTING)
+								.stream()
+								.filter(recipe -> recipe
+										.getId()
+										.equals(new ResourceLocation(
+												"minecraft",
+												"beacon")))
+								.anyMatch(recipe -> {
+									for (net.minecraft.world.item.crafting.Ingredient ingredient :
+											recipe
+													.getIngredients()) {
+										for (ItemStack stack :
+												ingredient
+														.getItems()) {
+											if (stack.is(
+													Items.NETHER_STAR)) {
+												return true;
+											}
+										}
+									}
+									return false;
+								}),
+				"Tempest lost its exact extended-life Nether Star or vanilla Beacon recipe progression");
+		stars.forEach(ItemEntity::discard);
+
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS.getId())) {
+			Biome biome = level.registryAccess()
+					.registryOrThrow(
+							Registry.BIOME_REGISTRY)
+					.get(biomeId);
+			require(helper, biome != null,
+					"Missing Tempest ecology-audit biome "
+							+ biomeId);
+			for (MobSpawnSettings.SpawnerData spawn :
+					biome.getMobSettings()
+							.getMobs(
+									MobCategory
+											.MONSTER)
+							.unwrap()) {
+				require(helper,
+						spawn.type
+								!= CakeWorldEntities
+										.BURNT_SUGAR_TEMPEST
+										.get()
+								&& spawn.type
+										!= EntityType.WITHER,
+						"Boss leaked into natural ecology in "
+								+ biomeId);
+			}
+		}
+		require(helper,
+				CakeWorldItems
+						.BURNT_SUGAR_TEMPEST_SPAWN_EGG
+						.isPresent()
+						&& SpawnPlacements
+								.getPlacementType(
+										CakeWorldEntities
+												.BURNT_SUGAR_TEMPEST
+												.get())
+								== SpawnPlacements
+										.getPlacementType(
+												EntityType
+														.WITHER)
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+												.BURNT_SUGAR_TEMPEST
+												.get())
+								== SpawnPlacements
+										.getHeightmapType(
+												EntityType
+														.WITHER)
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+												.BURNT_SUGAR_TEMPEST
+												.get())
+								== SoundEvents
+										.PARROT_IMITATE_WITHER,
+				"Tempest lost testing egg, exact Wither placement or Lorikeet mimic");
+		ServerPlayer advancementPlayer =
+				new ServerPlayer(level.getServer(), level,
+						new GameProfile(
+								UUID.fromString(
+										"1978feed-feed-4bad-babe-1978feed2066"),
+								"CakeWorldTempestRoleTest"));
+		VanillaRoleAdvancements
+				.creditKilledWitherRole(
+						advancementPlayer);
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:adventure/kill_all_mobs",
+				"minecraft:wither");
+
+		BlockPos cakeWorldPos =
+				findCakeWorldBiomePosition(helper,
+						anchor.offset(16, 0, 16),
+						256);
+		require(helper, cakeWorldPos != null,
+				"Could not locate CakeWorld terrain for Wither summon/conversion");
+		WitherBoss literal =
+				EntityType.WITHER.create(level);
+		Pig conversionTarget =
+				EntityType.PIG.create(level);
+		Chicken passenger =
+				EntityType.CHICKEN.create(level);
+		require(helper,
+				literal != null
+						&& conversionTarget != null
+						&& passenger != null,
+				"Could not create Tempest direct-conversion fixtures");
+		conversionTarget.setPos(
+				cakeWorldPos.getX() + 4.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		conversionTarget.setNoAi(true);
+		level.addFreshEntity(conversionTarget);
+		literal.setPos(
+				cakeWorldPos.getX() + 0.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		literal.setCustomName(
+				new TextComponent(
+						"Burnt Crown"));
+		literal.setNoAi(true);
+		literal.setPersistenceRequired();
+		literal.setHealth(123.0F);
+		literal.invulnerableTime = 29;
+		literal.setInvulnerableTicks(47);
+		literal.setTarget(conversionTarget);
+		literal.setLastHurtByMob(
+				conversionTarget);
+		level.addFreshEntity(literal);
+		literal.setAlternativeTarget(
+				0, conversionTarget.getId());
+		literal.setAlternativeTarget(
+				1, conversionTarget.getId());
+		literal.setAlternativeTarget(
+				2, conversionTarget.getId());
+		passenger.startRiding(literal, true);
+		BurntSugarTempest converted =
+				CakeWorldWitherReplacement
+						.replaceIfInCakeWorldBiome(
+								level, literal);
+		require(helper,
+				converted != null
+						&& literal.isRemoved()
+						&& close(converted.getHealth(),
+								123.0D)
+						&& "Burnt Crown".equals(
+								converted.getName()
+										.getString())
+						&& converted.isNoAi()
+						&& converted
+								.isPersistenceRequired()
+						&& converted.invulnerableTime
+								== 29
+						&& converted
+								.getInvulnerableTicks()
+								== 47
+						&& converted.getTarget()
+								== conversionTarget
+						&& converted.getLastHurtByMob()
+								== conversionTarget
+						&& converted
+								.getAlternativeTarget(0)
+								== conversionTarget
+										.getId()
+						&& converted
+								.getAlternativeTarget(1)
+								== conversionTarget
+										.getId()
+						&& converted
+								.getAlternativeTarget(2)
+								== conversionTarget
+										.getId()
+						&& converted.getPassengers()
+								.contains(passenger),
+				"Fresh literal Wither conversion lost charge, NBT, target heads or passenger state");
+		require(helper,
+				CakeWorldWitherReplacement
+						.replaceIfInCakeWorldBiome(
+								level, tempest)
+						== null
+						&& !tempest.isRemoved(),
+				"Wither source conversion touched a non-literal entity type");
+		passenger.discard();
+		converted.discard();
+		conversionTarget.discard();
+
+		BlockPos patternBase =
+				cakeWorldPos.offset(8, 0, 0);
+		for (int x = -2; x <= 2; x++) {
+			for (int y = 0; y <= 3; y++) {
+				for (int z = -1; z <= 1; z++) {
+					level.setBlock(
+							patternBase.offset(
+									x, y, z),
+							Blocks.AIR
+									.defaultBlockState(),
+							3);
+				}
+			}
+		}
+		level.setBlock(patternBase,
+				Blocks.SOUL_SAND
+						.defaultBlockState(), 3);
+		for (int x = -1; x <= 1; x++) {
+			level.setBlock(
+					patternBase.offset(x, 1, 0),
+					Blocks.SOUL_SAND
+							.defaultBlockState(),
+					3);
+			level.setBlock(
+					patternBase.offset(x, 2, 0),
+					Blocks.WITHER_SKELETON_SKULL
+							.defaultBlockState(),
+					3);
+		}
+		BlockPos middleSkull =
+				patternBase.offset(0, 2, 0);
+		BlockEntity skullEntity =
+				level.getBlockEntity(middleSkull);
+		require(helper,
+				skullEntity
+						instanceof SkullBlockEntity,
+				"Actual Wither pattern did not create a skull block entity");
+		WitherSkullBlock.checkSpawn(
+				level, middleSkull,
+				(SkullBlockEntity)skullEntity);
+		AABB patternArea =
+				new AABB(patternBase)
+						.inflate(8.0D);
+		List<WitherBoss> literalSummons =
+				level.getEntitiesOfClass(
+						WitherBoss.class,
+						patternArea,
+						boss -> boss.getType()
+								== EntityType.WITHER);
+		require(helper,
+				literalSummons.size() == 1
+						&& literalSummons.get(0)
+								.getInvulnerableTicks()
+								== 220
+						&& close(literalSummons
+								.get(0).getHealth(),
+								100.0D)
+						&& level.getBlockState(
+								patternBase)
+								.isAir(),
+				"Vanilla Soul Sand/skull pattern did not remain the authoritative literal Wither source");
+		CriteriaTriggers.SUMMONED_ENTITY
+				.trigger(advancementPlayer,
+						literalSummons.get(0));
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:nether/summon_wither",
+				"summoned");
+
+		helper.runAfterDelay(5, () -> {
+			List<BurntSugarTempest> emitted =
+					level.getEntitiesOfClass(
+							BurntSugarTempest.class,
+							patternArea);
+			BurntSugarTempest eventTempest =
+					emitted.size() == 1
+							? emitted.get(0)
+							: null;
+			require(helper,
+					literalSummons.get(0)
+								.isRemoved()
+							&& eventTempest != null
+							&& eventTempest
+									.getInvulnerableTicks()
+									> 210
+							&& eventTempest
+									.getInvulnerableTicks()
+									< 220
+							&& close(eventTempest
+									.getHealth(),
+									100.0D),
+					"Actual summoned literal Wither did not defer-convert with its boss charge intact: emitted="
+							+ emitted.size()
+							+ ", invul="
+							+ (eventTempest == null
+									? -1
+									: eventTempest
+											.getInvulnerableTicks()));
+			emitted.forEach(
+					BurntSugarTempest::discard);
+
+			Difficulty beforePeaceful =
+					level.getDifficulty();
+			level.getServer().setDifficulty(
+					Difficulty.PEACEFUL, true);
+			BurntSugarTempestProbe peaceful =
+					new BurntSugarTempestProbe(level);
+			peaceful.checkDespawn();
+			require(helper,
+					peaceful.isRemoved()
+							&& peaceful
+									.despawnsInPeaceful(),
+					"Peaceful Tempest lost vanilla Monster removal");
+			level.getServer().setDifficulty(
+					beforePeaceful, true);
+			tempest.discard();
+			vanilla.discard();
+			helper.succeed();
+		});
+	}
+
+	private static class BurntSugarTempestProbe
+			extends BurntSugarTempest {
+		private BurntSugarTempestProbe(Level level) {
+			super(CakeWorldEntities
+					.BURNT_SUGAR_TEMPEST
+					.get(), level);
+		}
+
+		private int experienceReward() {
+			return getExperienceReward(null);
+		}
+
+		private void runServerAiStep() {
+			customServerAiStep();
+		}
+
+		private void dropBossLoot() {
+			dropCustomDeathLoot(
+					DamageSource.GENERIC,
+					0, true);
+		}
+
+		private boolean despawnsInPeaceful() {
+			return shouldDespawnInPeaceful();
+		}
+
+		private ResourceLocation getLootTableId() {
+			return getLootTable();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				ambientSound() {
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				hurtSound() {
+			return getHurtSound(
+					DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				deathSound() {
+			return getDeathSound();
+		}
+
+		private List<String> goalSignatures() {
+			return goalSelector.getAvailableGoals()
+					.stream()
+					.map(wrapped ->
+							wrapped.getPriority() + ":"
+									+ wrapped.getGoal()
+											.getClass()
+											.getSimpleName())
+					.sorted().toList();
+		}
+
+		private List<String>
+				targetGoalSignatures() {
+			return targetSelector
+					.getAvailableGoals().stream()
+					.map(wrapped ->
+							wrapped.getPriority() + ":"
+									+ wrapped.getGoal()
+											.getClass()
+											.getSimpleName())
+					.sorted().toList();
+		}
+	}
+
+	private static final class VanillaWitherProbe
+			extends WitherBoss {
+		private VanillaWitherProbe(Level level) {
+			super(EntityType.WITHER, level);
+		}
+
+		private List<String> goalSignatures() {
+			return goalSelector.getAvailableGoals()
+					.stream()
+					.map(wrapped ->
+							wrapped.getPriority() + ":"
+									+ wrapped.getGoal()
+											.getClass()
+											.getSimpleName())
+					.sorted().toList();
+		}
+
+		private List<String>
+				targetGoalSignatures() {
+			return targetSelector
+					.getAvailableGoals().stream()
+					.map(wrapped ->
+							wrapped.getPriority() + ":"
+									+ wrapped.getGoal()
+											.getClass()
+											.getSimpleName())
+					.sorted().toList();
+		}
+	}
+
+	private static final class WitherSkullProbe
+			extends WitherSkull {
+		private WitherSkullProbe(Level level) {
+			super(EntityType.WITHER_SKULL,
+					level);
+		}
+
+		private void hitEntity(
+				Entity target) {
+			onHitEntity(
+					new EntityHitResult(target));
+		}
+
+		private void finishHit(
+				Entity target) {
+			onHit(new EntityHitResult(target));
+		}
 	}
 
 	private static final class BitterBakerProbe

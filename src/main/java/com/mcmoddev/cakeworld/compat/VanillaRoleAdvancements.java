@@ -175,6 +175,11 @@ public final class VanillaRoleAdvancements {
 		award(player, KILL_ALL, "minecraft:zombie");
 	}
 
+	public static void creditKilledWitherRole(
+			ServerPlayer player) {
+		award(player, KILL_ALL, "minecraft:wither");
+	}
+
 	public static void creditRodeStriderRole(
 			ServerPlayer player) {
 		award(player, RIDE_STRIDER,
@@ -453,6 +458,11 @@ public final class VanillaRoleAdvancements {
 		}
 		if (type == CakeWorldEntities.BITTER_BAKER.get()) {
 			return "minecraft:witch";
+		}
+		if (type
+				== CakeWorldEntities.BURNT_SUGAR_TEMPEST
+						.get()) {
+			return "minecraft:wither";
 		}
 		if (type
 				== CakeWorldEntities.GINGERBREAD_STOMPER.get()) {
