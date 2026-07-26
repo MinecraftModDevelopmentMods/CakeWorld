@@ -111,6 +111,7 @@ import com.mcmoddev.cakeworld.entity.SourSprite;
 import com.mcmoddev.cakeworld.entity.SprinkleLlama;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
 import com.mcmoddev.cakeworld.entity.StaleCrumblerReinforcements;
+import com.mcmoddev.cakeworld.entity.StaleGingerbreadSteed;
 import com.mcmoddev.cakeworld.entity.StaleCrumblerSafety;
 import com.mcmoddev.cakeworld.entity.StaleFudgeBoar;
 import com.mcmoddev.cakeworld.entity.SugarBee;
@@ -143,6 +144,7 @@ import com.mcmoddev.cakeworld.world.CakeWorldWitherReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldWitherSkeletonReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldWolfReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldZombieReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldZombieHorseReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldZoglinReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldPillagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldRavagerReplacement;
@@ -258,6 +260,7 @@ import net.minecraft.world.entity.animal.horse.Llama;
 import net.minecraft.world.entity.animal.horse.Markings;
 import net.minecraft.world.entity.animal.horse.Mule;
 import net.minecraft.world.entity.animal.horse.SkeletonHorse;
+import net.minecraft.world.entity.animal.horse.ZombieHorse;
 import net.minecraft.world.entity.animal.horse.SkeletonTrapGoal;
 import net.minecraft.world.entity.animal.horse.TraderLlama;
 import net.minecraft.world.entity.animal.horse.Variant;
@@ -18703,6 +18706,683 @@ public final class FirstBiteGameTests {
 		});
 	}
 
+	@GameTest(template = EMPTY, timeoutTicks = 260)
+	public static void
+			staleGingerbreadSteedsKeepTheCommandOnlyZombieHorseRole(
+					GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		StaleGingerbreadSteedProbe steed =
+				new StaleGingerbreadSteedProbe(level);
+		require(helper,
+				steed instanceof ZombieHorse
+						&& steed.getType()
+								== CakeWorldEntities
+										.STALE_GINGERBREAD_STEED
+										.get()
+						&& steed.getType().getCategory()
+								== MobCategory.CREATURE
+						&& close(steed.getMaxHealth(),
+								15.0D)
+						&& close(steed.getAttributeValue(
+								Attributes
+										.MOVEMENT_SPEED),
+								0.2D)
+						&& close(steed.getAttributeValue(
+								Attributes
+										.JUMP_STRENGTH),
+								0.7D)
+						&& steed.getAttribute(
+								Attributes.ATTACK_DAMAGE)
+								== null
+						&& close(steed.getDimensions(
+								Pose.STANDING).width,
+								1.3964844D)
+						&& close(steed.getDimensions(
+								Pose.STANDING).height,
+								1.6D)
+						&& close(steed
+								.standingEyeHeight(),
+								1.52D)
+						&& steed.getType()
+								.clientTrackingRange() == 10
+						&& steed.getMaxSpawnClusterSize()
+								== 6
+						&& steed.getMobType()
+								== MobType.UNDEAD
+						&& steed.getMaxTemper() == 100
+						&& steed.inventorySize() == 2,
+				"Stale Gingerbread Steed lost the exact Zombie Horse body, attributes, dimensions, tracking, group, undead, temper or inventory contract");
+		steed.seedRandom(1978L);
+		int experience = steed.experienceReward();
+		require(helper,
+				experience >= 1 && experience <= 3
+						&& steed.goalPriority(
+								"PanicGoal") == 1
+						&& steed.goalPriority(
+								"RunAroundLikeCrazyGoal")
+								== 1
+						&& steed.goalPriority(
+								"BreedGoal") == 2
+						&& steed.goalPriority(
+								"FollowParentGoal") == 4
+						&& steed.goalPriority(
+								"WaterAvoidingRandomStrollGoal")
+								== 6
+						&& steed.goalPriority(
+								"LookAtPlayerGoal") == 7
+						&& steed.goalPriority(
+								"RandomLookAroundGoal")
+								== 8
+						&& steed.goalPriority(
+								"FloatGoal") == -1
+						&& steed.goalPriority(
+								"TemptGoal") == -1
+						&& steed.targetGoalCount() == 0
+						&& steed.getNavigation()
+								instanceof GroundPathNavigation,
+				"Stale Gingerbread Steed lost exact dry-land Horse goals, no-target role or navigation");
+		require(helper,
+				steed.ambientSound()
+								== SoundEvents
+										.ZOMBIE_HORSE_AMBIENT
+						&& steed.hurtSound()
+								== SoundEvents
+										.ZOMBIE_HORSE_HURT
+						&& steed.deathSound()
+								== SoundEvents
+										.ZOMBIE_HORSE_DEATH
+						&& steed.eatingSound() == null
+						&& steed.getAmbientSoundInterval()
+								== 400
+						&& close(steed.soundVolume(),
+								0.8D)
+						&& !steed.canBeAffected(
+								new MobEffectInstance(
+										MobEffects
+												.POISON))
+						&& !steed.canBeAffected(
+								new MobEffectInstance(
+										MobEffects
+												.REGENERATION)),
+				"Stale Gingerbread Steed lost Zombie Horse sounds or undead effect semantics");
+
+		StaleGingerbreadSteedProbe finalized =
+				new StaleGingerbreadSteedProbe(level);
+		finalized.seedRandom(1978L);
+		finalized.finalizeSpawn(level,
+				level.getCurrentDifficultyAt(
+						finalized.blockPosition()),
+				MobSpawnType.COMMAND, null, null);
+		require(helper,
+				close(finalized.getMaxHealth(), 15.0D)
+						&& close(finalized
+								.getAttributeValue(
+										Attributes
+												.MOVEMENT_SPEED),
+								0.2D)
+						&& finalized.getAttributeValue(
+								Attributes.JUMP_STRENGTH)
+								>= 0.4D
+						&& finalized.getAttributeValue(
+								Attributes.JUMP_STRENGTH)
+								<= 1.0D,
+				"Zombie Horse finalization changed fixed health/speed or lost randomized jump strength");
+
+		Player untamedPlayer = helper.makeMockPlayer();
+		untamedPlayer.setItemInHand(
+				InteractionHand.MAIN_HAND,
+				ItemStack.EMPTY);
+		steed.setTamed(false);
+		require(helper,
+				steed.mobInteract(untamedPlayer,
+						InteractionHand.MAIN_HAND)
+								== InteractionResult.PASS
+						&& untamedPlayer.getVehicle()
+								== null,
+				"Untamed Stale Gingerbread Steed no longer requires command-set tame state");
+
+		StaleGingerbreadSteedProbe baby =
+				new StaleGingerbreadSteedProbe(level);
+		baby.setTamed(true);
+		baby.setAge(-24000);
+		baby.setHealth(10.0F);
+		Player babyFeeder = helper.makeMockPlayer();
+		ItemStack wheat = new ItemStack(Items.WHEAT);
+		babyFeeder.setItemInHand(
+				InteractionHand.MAIN_HAND, wheat);
+		InteractionResult babyFoodResult =
+				baby.mobInteract(babyFeeder,
+						InteractionHand.MAIN_HAND);
+		require(helper,
+				babyFoodResult.consumesAction()
+						&& wheat.isEmpty()
+						&& close(baby.getHealth(),
+								10.0D)
+						&& baby.getAge() > -24000
+						&& baby.getTemper() == 0,
+				"Tamed baby Stale Gingerbread Steed lost exact Animal-level Wheat growth without Horse healing or temper");
+
+		StaleGingerbreadSteedProbe adult =
+				new StaleGingerbreadSteedProbe(level);
+		adult.setTamed(true);
+		adult.setHealth(10.0F);
+		Player adultFoodPlayer =
+				helper.makeMockPlayer();
+		ItemStack adultWheat =
+				new ItemStack(Items.WHEAT);
+		adultFoodPlayer.setItemInHand(
+				InteractionHand.MAIN_HAND,
+				adultWheat);
+		InteractionResult adultFoodResult =
+				adult.mobInteract(adultFoodPlayer,
+						InteractionHand.MAIN_HAND);
+		require(helper,
+				adultFoodResult.consumesAction()
+						&& adultWheat.getCount() == 1
+						&& close(adult.getHealth(),
+								10.0D)
+						&& adultFoodPlayer.getVehicle()
+								== adult,
+				"Adult Zombie Horse interaction no longer rides instead of consuming ordinary Horse food");
+		adultFoodPlayer.stopRiding();
+
+		Player rider = helper.makeMockPlayer();
+		rider.setItemInHand(
+				InteractionHand.MAIN_HAND,
+				ItemStack.EMPTY);
+		steed.setTamed(true);
+		require(helper,
+				steed.isSaddleable()
+						&& steed.getSlot(400).set(
+								new ItemStack(
+										Items.SADDLE))
+						&& steed.isSaddled()
+						&& steed.mobInteract(rider,
+								InteractionHand
+										.MAIN_HAND)
+								.consumesAction()
+						&& rider.getVehicle() == steed
+						&& steed.hasPassenger(rider)
+						&& steed.canBeControlledByRider()
+						&& steed.canJump()
+						&& steed.canBeLeashed(rider)
+						&& !steed.canWearArmor()
+						&& !steed.isArmor(
+								new ItemStack(
+										Items
+											.DIAMOND_HORSE_ARMOR))
+						&& !steed.getSlot(401).set(
+								new ItemStack(
+										Items
+											.DIAMOND_HORSE_ARMOR)),
+				"Tamed Stale Gingerbread Steed lost saddle, riding, jumping, leash or no-armour roles");
+		rider.stopRiding();
+
+		UUID owner = UUID.fromString(
+				"1978feed-feed-4bad-babe-1978feed2071");
+		steed.setOwnerUUID(owner);
+		steed.setTemper(42);
+		steed.setAge(-1234);
+		CompoundTag saved = steed.saveWithoutId(
+				new CompoundTag());
+		StaleGingerbreadSteedProbe restored =
+				new StaleGingerbreadSteedProbe(level);
+		restored.load(saved);
+		require(helper,
+				saved.getBoolean("Tame")
+						&& saved.getInt("Temper") == 42
+						&& saved.hasUUID("Owner")
+						&& saved.contains("SaddleItem")
+						&& restored.isTamed()
+						&& owner.equals(
+								restored.getOwnerUUID())
+						&& restored.getTemper() == 42
+						&& restored.getAge() == -1234
+						&& restored.isSaddled(),
+				"Stale Gingerbread Steed lost tame, owner, temper, age or saddle NBT");
+
+		StaleGingerbreadSteed mate =
+				CakeWorldEntities
+						.STALE_GINGERBREAD_STEED
+						.get().create(level);
+		require(helper, mate != null,
+				"Could not create Stale Gingerbread Steed factory fixture");
+		AgeableMob commandOffspring =
+				steed.getBreedOffspring(level, mate);
+		require(helper,
+				!steed.canMate(mate)
+						&& commandOffspring
+								instanceof StaleGingerbreadSteed
+						&& commandOffspring.getType()
+								== CakeWorldEntities
+										.STALE_GINGERBREAD_STEED
+										.get(),
+				"Stale Gingerbread Steed lost vanilla sterility or leaked a literal command-offspring type");
+
+		BlockPos anchor = helper.absolutePos(
+				new BlockPos(2, 3, 2));
+		StaleGingerbreadSteedProbe falling =
+				new StaleGingerbreadSteedProbe(level);
+		Pig fallRider = EntityType.PIG.create(level);
+		require(helper, fallRider != null,
+				"Could not create Zombie Horse fall fixture");
+		falling.setPos(anchor.getX() + 0.5D,
+				anchor.getY(), anchor.getZ() + 0.5D);
+		fallRider.setPos(falling.getX(),
+				falling.getY(), falling.getZ());
+		level.addFreshEntity(falling);
+		level.addFreshEntity(fallRider);
+		fallRider.startRiding(falling, true);
+		require(helper,
+				falling.fallDamage(6.0F, 1.0F) == 0
+						&& falling.fallDamage(
+								10.0F, 1.0F) == 2
+						&& falling.causeFallDamage(
+								10.0F, 1.0F,
+								DamageSource.FALL)
+						&& close(falling.getHealth(),
+								13.0D)
+						&& close(fallRider.getHealth(),
+								8.0D),
+				"Stale Gingerbread Steed lost exact Horse fall formula or mounted-passenger peril");
+		fallRider.discard();
+		falling.discard();
+
+		StaleGingerbreadSteedProbe dropper =
+				new StaleGingerbreadSteedProbe(level);
+		dropper.setPos(anchor.getX() + 4.5D,
+				anchor.getY(), anchor.getZ() + 0.5D);
+		dropper.setTamed(true);
+		dropper.getSlot(400).set(
+				new ItemStack(Items.SADDLE));
+		level.addFreshEntity(dropper);
+		AABB dropArea = dropper.getBoundingBox()
+				.inflate(2.0D);
+		dropper.dropEquipmentForTest();
+		List<ItemEntity> saddleDrops =
+				level.getEntitiesOfClass(
+						ItemEntity.class, dropArea,
+						item -> item.getItem()
+								.is(Items.SADDLE));
+		require(helper, saddleDrops.size() == 1,
+				"Stale Gingerbread Steed no longer drops its non-vanishing saddle inventory");
+		saddleDrops.forEach(ItemEntity::discard);
+		dropper.discard();
+
+		BlockPos placementPos = anchor.offset(8, 0, 0);
+		level.setBlock(placementPos.below(),
+				Blocks.GRASS_BLOCK.defaultBlockState(),
+				3);
+		level.setBlock(placementPos,
+				Blocks.AIR.defaultBlockState(), 3);
+		level.setBlock(placementPos.above(),
+				Blocks.AIR.defaultBlockState(), 3);
+		require(helper,
+				SpawnPlacements.getPlacementType(
+								CakeWorldEntities
+										.STALE_GINGERBREAD_STEED
+										.get())
+								== SpawnPlacements
+										.getPlacementType(
+												EntityType
+														.ZOMBIE_HORSE)
+						&& SpawnPlacements.getHeightmapType(
+								CakeWorldEntities
+										.STALE_GINGERBREAD_STEED
+										.get())
+								== SpawnPlacements
+										.getHeightmapType(
+												EntityType
+														.ZOMBIE_HORSE)
+						&& StaleGingerbreadSteed
+								.checkStaleGingerbreadSteedSpawnRules(
+										CakeWorldEntities
+												.STALE_GINGERBREAD_STEED
+												.get(),
+										level,
+										MobSpawnType
+												.COMMAND,
+										placementPos,
+										new Random(
+												1978L))
+								== Animal
+										.checkAnimalSpawnRules(
+												CakeWorldEntities
+													.STALE_GINGERBREAD_STEED
+													.get(),
+												level,
+												MobSpawnType
+													.COMMAND,
+												placementPos,
+												new Random(
+													1978L)),
+				"Stale Gingerbread Steed lost exact Zombie Horse placement metadata or Animal predicate");
+
+		Registry<Biome> biomes = level.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY);
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS.getId())) {
+			Biome biome = biomes.get(biomeId);
+			require(helper,
+					biome != null
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory
+													.CREATURE)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType
+															.ZOMBIE_HORSE
+											|| spawn.type
+													== CakeWorldEntities
+															.STALE_GINGERBREAD_STEED
+															.get()),
+					"Zombie Horse role leaked into ordinary biome spawning in "
+							+ biomeId);
+		}
+
+		Advancement monstersHunted = level.getServer()
+				.getAdvancements().getAdvancement(
+						new ResourceLocation(
+								"minecraft",
+								"adventure/kill_all_mobs"));
+		Advancement bredAll = level.getServer()
+				.getAdvancements().getAdvancement(
+						new ResourceLocation(
+								"minecraft",
+								"husbandry/bred_all_animals"));
+		net.minecraft.world.item.SpawnEggItem egg =
+				(net.minecraft.world.item.SpawnEggItem)
+						CakeWorldItems
+								.STALE_GINGERBREAD_STEED_SPAWN_EGG
+								.get();
+		require(helper,
+				egg.getColor(0) == 0x315234
+						&& egg.getColor(1) == 0x97C284
+						&& steed.getLootTableId()
+								.equals(
+										new ResourceLocation(
+												CakeWorld.MODID,
+												"entities/stale_gingerbread_steed"))
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+												.STALE_GINGERBREAD_STEED
+												.get())
+								== null
+						&& monstersHunted != null
+						&& !monstersHunted.getCriteria()
+								.containsKey(
+										"minecraft:zombie_horse")
+						&& bredAll != null
+						&& !bredAll.getCriteria()
+								.containsKey(
+										"minecraft:zombie_horse"),
+				"Stale Gingerbread Steed lost exact egg colors, loot identity, no-mimic or no-invented-advancement contract");
+
+		Difficulty originalDifficulty =
+				level.getDifficulty();
+		try {
+			level.getServer().setDifficulty(
+					Difficulty.PEACEFUL, true);
+			StaleGingerbreadSteed peaceful =
+					CakeWorldEntities
+							.STALE_GINGERBREAD_STEED
+							.get().create(level);
+			require(helper, peaceful != null,
+					"Could not create Peaceful Zombie Horse fixture");
+			peaceful.checkDespawn();
+			require(helper, !peaceful.isRemoved(),
+					"Passive Stale Gingerbread Steed was removed in Peaceful");
+		} finally {
+			level.getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		BlockPos cakeWorldPos =
+				findCakeWorldBiomePosition(
+						helper,
+						anchor.offset(20, 0, 20),
+						256);
+		require(helper, cakeWorldPos != null,
+				"Could not locate CakeWorld terrain for Zombie Horse conversion");
+		ZombieHorse literal =
+				EntityType.ZOMBIE_HORSE.create(level);
+		Boat vehicle = EntityType.BOAT.create(level);
+		Pig passenger = EntityType.PIG.create(level);
+		Pig leashHolder = EntityType.PIG.create(level);
+		Pig attacker = EntityType.PIG.create(level);
+		require(helper,
+				literal != null && vehicle != null
+						&& passenger != null
+						&& leashHolder != null
+						&& attacker != null,
+				"Could not create literal Zombie Horse state fixtures");
+		literal.setPos(cakeWorldPos.getX() + 0.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		vehicle.setPos(literal.getX(), literal.getY(),
+				literal.getZ());
+		passenger.setPos(literal.getX(),
+				literal.getY(), literal.getZ());
+		leashHolder.setPos(literal.getX() + 1.0D,
+				literal.getY(), literal.getZ());
+		attacker.setPos(literal.getX() + 2.0D,
+				literal.getY(), literal.getZ());
+		literal.setTamed(true);
+		literal.setOwnerUUID(owner);
+		literal.setTemper(37);
+		literal.getSlot(400).set(
+				new ItemStack(Items.SADDLE));
+		literal.setHealth(8.0F);
+		literal.setCustomName(new TextComponent(
+				"Stale Command Mount"));
+		literal.setPersistenceRequired();
+		literal.setNoAi(true);
+		literal.invulnerableTime = 41;
+		level.addFreshEntity(vehicle);
+		level.addFreshEntity(literal);
+		level.addFreshEntity(passenger);
+		level.addFreshEntity(leashHolder);
+		level.addFreshEntity(attacker);
+		literal.startRiding(vehicle, true);
+		passenger.startRiding(literal, true);
+		literal.setLeashedTo(leashHolder, true);
+		literal.setTarget(attacker);
+		literal.setLastHurtByMob(attacker);
+		require(helper,
+				literal.getVehicle() == null
+						&& literal.getLeashHolder()
+								== leashHolder,
+				"Vanilla Zombie Horse fixture no longer drops its outer vehicle when leashed");
+		StaleGingerbreadSteed converted =
+				CakeWorldZombieHorseReplacement
+						.replaceIfInCakeWorldBiome(
+								level, literal);
+		require(helper,
+				converted != null,
+				"Fresh literal Zombie Horse conversion did not emit a Stale Gingerbread Steed");
+		require(helper,
+				converted.getType()
+								== CakeWorldEntities
+										.STALE_GINGERBREAD_STEED
+										.get()
+						&& close(converted.getHealth(),
+								8.0D)
+						&& converted.isTamed()
+						&& owner.equals(
+								converted.getOwnerUUID())
+						&& converted.getTemper() == 37
+						&& converted.isSaddled()
+						&& converted.isNoAi()
+						&& converted
+								.isPersistenceRequired()
+						&& converted.invulnerableTime
+								== 41
+						&& "Stale Command Mount".equals(
+								converted.getName()
+										.getString()),
+				"Fresh literal Zombie Horse conversion lost body or saved state: type="
+						+ converted.getType()
+						+ ", health=" + converted.getHealth()
+						+ ", tame=" + converted.isTamed()
+						+ ", owner="
+						+ converted.getOwnerUUID()
+						+ ", temper="
+						+ converted.getTemper()
+						+ ", saddle="
+						+ converted.isSaddled()
+						+ ", noAi=" + converted.isNoAi()
+						+ ", persistent="
+						+ converted
+								.isPersistenceRequired()
+						+ ", invulnerableTime="
+						+ converted.invulnerableTime
+						+ ", name="
+						+ converted.getName()
+								.getString());
+		require(helper,
+				converted.getVehicle() == null
+						&& converted.getPassengers()
+								.contains(passenger)
+						&& converted.getLeashHolder()
+								== leashHolder
+						&& converted.getTarget()
+								== attacker
+						&& converted.getLastHurtByMob()
+								== attacker,
+				"Fresh literal Zombie Horse conversion lost leash, passenger or combat relationships: vehicle="
+						+ converted.getVehicle()
+						+ ", passengerCount="
+						+ converted.getPassengers()
+								.size()
+						+ ", leashHolder="
+						+ converted.getLeashHolder()
+						+ ", target="
+						+ converted.getTarget()
+						+ ", lastHurtBy="
+						+ converted.getLastHurtByMob());
+		require(helper,
+				literal.isRemoved()
+						&& CakeWorldZombieHorseReplacement
+								.replaceIfInCakeWorldBiome(
+										level,
+										converted)
+								== null,
+				"Zombie Horse conversion lost source removal or exact-type recursion guard");
+		passenger.discard();
+		converted.discard();
+		vehicle.discard();
+		leashHolder.discard();
+		attacker.discard();
+
+		ZombieHorse ridingLiteral =
+				EntityType.ZOMBIE_HORSE.create(level);
+		Boat ridingVehicle =
+				EntityType.BOAT.create(level);
+		require(helper,
+				ridingLiteral != null
+						&& ridingVehicle != null,
+				"Could not create Zombie Horse riding-conversion fixtures");
+		ridingLiteral.setPos(
+				cakeWorldPos.getX() + 0.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		ridingVehicle.setPos(
+				ridingLiteral.getX(),
+				ridingLiteral.getY(),
+				ridingLiteral.getZ());
+		ridingLiteral.setCustomName(
+				new TextComponent(
+						"Riding Stale Steed"));
+		ridingLiteral.setNoAi(true);
+		level.addFreshEntity(ridingVehicle);
+		level.addFreshEntity(ridingLiteral);
+		require(helper,
+				ridingLiteral.startRiding(
+								ridingVehicle, true)
+						&& ridingLiteral.getVehicle()
+								== ridingVehicle,
+				"Could not establish literal Zombie Horse vehicle fixture");
+		StaleGingerbreadSteed ridingConverted =
+				CakeWorldZombieHorseReplacement
+						.replaceIfInCakeWorldBiome(
+								level,
+								ridingLiteral);
+		require(helper,
+				ridingConverted != null
+						&& ridingLiteral.isRemoved()
+						&& ridingConverted.getVehicle()
+								== ridingVehicle
+						&& ridingVehicle
+								.getPassengers()
+								.contains(
+										ridingConverted)
+						&& "Riding Stale Steed".equals(
+								ridingConverted.getName()
+										.getString()),
+				"Fresh literal Zombie Horse conversion lost its legitimate outer vehicle");
+		ridingConverted.discard();
+		ridingVehicle.discard();
+
+		BlockPos eventPos =
+				findCakeWorldBiomePosition(
+						helper,
+						cakeWorldPos.offset(12, 0, 0),
+						64);
+		require(helper, eventPos != null,
+				"Could not locate CakeWorld terrain for deferred Zombie Horse conversion");
+		ZombieHorse eventLiteral =
+				EntityType.ZOMBIE_HORSE.create(level);
+		require(helper, eventLiteral != null,
+				"Could not create deferred Zombie Horse fixture");
+		eventLiteral.setPos(
+				eventPos.getX() + 0.5D,
+				eventPos.getY(),
+				eventPos.getZ() + 0.5D);
+		eventLiteral.setCustomName(
+				new TextComponent(
+						"Deferred Stale Steed"));
+		eventLiteral.setNoAi(true);
+		eventLiteral.setTamed(true);
+		eventLiteral.setAge(-200);
+		eventLiteral.getSlot(400).set(
+				new ItemStack(Items.SADDLE));
+		level.addFreshEntity(eventLiteral);
+		AABB eventArea =
+				new AABB(eventPos).inflate(3.0D);
+		helper.runAfterDelay(5, () -> {
+			List<StaleGingerbreadSteed> emitted =
+					level.getEntitiesOfClass(
+							StaleGingerbreadSteed.class,
+							eventArea,
+							entity ->
+									"Deferred Stale Steed"
+											.equals(
+													entity
+														.getName()
+														.getString()));
+			require(helper,
+					eventLiteral.isRemoved()
+							&& emitted.size() == 1
+							&& emitted.get(0).isNoAi()
+							&& emitted.get(0).isTamed()
+							&& emitted.get(0).isBaby()
+							&& emitted.get(0)
+									.isSaddled(),
+					"Fresh literal Zombie Horse did not defer-convert with finalized command state");
+			emitted.forEach(
+					StaleGingerbreadSteed::discard);
+			helper.succeed();
+		});
+	}
+
 	@GameTest(template = EMPTY, timeoutTicks = 200)
 	public static void jellyBlobsKeepSlimeEcologySplitsAndSafeElasticContact(
 			GameTestHelper helper) {
@@ -27867,10 +28547,14 @@ public final class FirstBiteGameTests {
 				prey != null && sheep != null
 						&& fox != null,
 				"Could not create Hound prey-role fixtures");
-		prey.setPos(hound.getX() + 2.0D,
+		prey.setPos(hound.getX(),
 				hound.getY(), hound.getZ());
 		prey.setNoAi(true);
 		level.addFreshEntity(prey);
+		hound.seedRandom(1978L);
+		boolean preyGoalStarted =
+				hound.startTargetGoalNamed(
+						"CakeWorldPreyGoal");
 		require(helper,
 				GingerSnapHound
 						.isCakeWorldPrey(prey)
@@ -27878,10 +28562,43 @@ public final class FirstBiteGameTests {
 								.isCakeWorldPrey(sheep)
 						&& GingerSnapHound
 								.isCakeWorldPrey(fox)
-						&& hound.startTargetGoalNamed(
-								"CakeWorldPreyGoal")
-						&& hound.getTarget() == prey,
-				"Wild Hound did not retain the Sheep, Rabbit and Fox pack-hunting roles through CakeWorld types");
+						&& preyGoalStarted
+						&& hound.getTarget() != null
+						&& GingerSnapHound
+								.isCakeWorldPrey(
+										hound.getTarget()),
+				"Wild Hound did not retain the Sheep, Rabbit and Fox pack-hunting roles through CakeWorld types: started="
+						+ preyGoalStarted
+						+ ", tame=" + hound.isTame()
+						+ ", preyAlive="
+						+ prey.isAlive()
+						+ ", distanceSquared="
+						+ hound.distanceToSqr(prey)
+						+ ", canAttack="
+						+ hound.canAttack(prey)
+						+ ", canAttackType="
+						+ hound.canAttackType(
+								prey.getType())
+						+ ", allied="
+						+ hound.isAlliedTo(prey)
+						+ ", lineOfSight="
+						+ hound.getSensing()
+								.hasLineOfSight(prey)
+						+ ", nearbyAnimalsContainPrey="
+						+ level.getEntitiesOfClass(
+								Animal.class,
+								hound.getBoundingBox()
+										.inflate(
+												hound.getAttributeValue(
+														Attributes
+																.FOLLOW_RANGE),
+												4.0D,
+												hound.getAttributeValue(
+														Attributes
+																.FOLLOW_RANGE)))
+								.contains(prey)
+						+ ", target="
+						+ hound.getTarget());
 		hound.setTarget(null);
 		prey.discard();
 		sheep.discard();
@@ -27989,7 +28706,7 @@ public final class FirstBiteGameTests {
 		Pig attacker = EntityType.PIG.create(level);
 		require(helper, attacker != null,
 				"Could not create Hound owner-defence fixture");
-		attacker.setPos(hound.getX() + 3.0D,
+		attacker.setPos(hound.getX(),
 				hound.getY(), hound.getZ());
 		attacker.setNoAi(true);
 		level.addFreshEntity(attacker);
@@ -33432,6 +34149,85 @@ public final class FirstBiteGameTests {
 
 		private float waterSlowDown() {
 			return getWaterSlowDown();
+		}
+
+		private int goalPriority(String name) {
+			return goalSelector.getAvailableGoals()
+					.stream()
+					.filter(wrapped -> name.equals(
+							wrapped.getGoal()
+									.getClass()
+									.getSimpleName()))
+					.mapToInt(WrappedGoal::getPriority)
+					.findFirst().orElse(-1);
+		}
+
+		private int targetGoalCount() {
+			return targetSelector.getAvailableGoals()
+					.size();
+		}
+	}
+
+	private static final class StaleGingerbreadSteedProbe
+			extends StaleGingerbreadSteed {
+		private StaleGingerbreadSteedProbe(Level level) {
+			super(CakeWorldEntities
+					.STALE_GINGERBREAD_STEED.get(),
+					level);
+		}
+
+		private int experienceReward() {
+			return getExperienceReward(null);
+		}
+
+		private void seedRandom(long seed) {
+			random.setSeed(seed);
+		}
+
+		private ResourceLocation getLootTableId() {
+			return getLootTable();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				ambientSound() {
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent hurtSound() {
+			return getHurtSound(DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent deathSound() {
+			return getDeathSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				eatingSound() {
+			return getEatingSound();
+		}
+
+		private float soundVolume() {
+			return getSoundVolume();
+		}
+
+		private float standingEyeHeight() {
+			return getStandingEyeHeight(
+					Pose.STANDING,
+					getDimensions(Pose.STANDING));
+		}
+
+		private int inventorySize() {
+			return getInventorySize();
+		}
+
+		private int fallDamage(
+				float distance, float multiplier) {
+			return calculateFallDamage(
+					distance, multiplier);
+		}
+
+		private void dropEquipmentForTest() {
+			dropEquipment();
 		}
 
 		private int goalPriority(String name) {

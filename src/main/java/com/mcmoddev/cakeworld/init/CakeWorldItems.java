@@ -352,6 +352,11 @@ public final class CakeWorldItems {
 					CakeWorldEntities.BRITTLE_BISCUIT_STEED,
 					0xD9B57A, 0xF5E0B7);
 	public static final RegistryObject<Item>
+			STALE_GINGERBREAD_STEED_SPAWN_EGG =
+			spawnEgg("stale_gingerbread_steed_spawn_egg",
+					CakeWorldEntities.STALE_GINGERBREAD_STEED,
+					0x315234, 0x97C284);
+	public static final RegistryObject<Item>
 			JELLY_BLOB_SPAWN_EGG =
 			spawnEgg("jelly_blob_spawn_egg",
 					CakeWorldEntities.JELLY_BLOB,

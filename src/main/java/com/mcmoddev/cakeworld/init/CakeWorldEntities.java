@@ -66,6 +66,7 @@ import com.mcmoddev.cakeworld.entity.SourSprite;
 import com.mcmoddev.cakeworld.entity.SprinkleLlama;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
 import com.mcmoddev.cakeworld.entity.StaleFudgeBoar;
+import com.mcmoddev.cakeworld.entity.StaleGingerbreadSteed;
 import com.mcmoddev.cakeworld.entity.SugarBee;
 import com.mcmoddev.cakeworld.entity.SugarMite;
 import com.mcmoddev.cakeworld.entity.TaffyTallwalker;
@@ -110,6 +111,7 @@ import net.minecraft.world.entity.animal.horse.AbstractChestedHorse;
 import net.minecraft.world.entity.animal.horse.AbstractHorse;
 import net.minecraft.world.entity.animal.horse.Llama;
 import net.minecraft.world.entity.animal.horse.SkeletonHorse;
+import net.minecraft.world.entity.animal.horse.ZombieHorse;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.monster.AbstractSkeleton;
 import net.minecraft.world.entity.monster.Blaze;
@@ -495,6 +497,15 @@ public final class CakeWorldEntities {
 							MobCategory.CREATURE)
 							.sized(1.3964844F, 1.6F)
 							.clientTrackingRange(10));
+	public static final RegistryObject<
+			EntityType<StaleGingerbreadSteed>>
+			STALE_GINGERBREAD_STEED =
+			entity("stale_gingerbread_steed",
+					EntityType.Builder.of(
+							StaleGingerbreadSteed::new,
+							MobCategory.CREATURE)
+							.sized(1.3964844F, 1.6F)
+							.clientTrackingRange(10));
 	public static final RegistryObject<EntityType<JellyBlob>>
 			JELLY_BLOB = entity("jelly_blob",
 					EntityType.Builder.of(JellyBlob::new,
@@ -745,6 +756,8 @@ public final class CakeWorldEntities {
 				Strider.createAttributes().build());
 		event.put(BRITTLE_BISCUIT_STEED.get(),
 				SkeletonHorse.createAttributes().build());
+		event.put(STALE_GINGERBREAD_STEED.get(),
+				ZombieHorse.createAttributes().build());
 		event.put(JELLY_BLOB.get(),
 				Monster.createMonsterAttributes().build());
 		event.put(ICE_CREAM_GOLEM.get(),
@@ -980,6 +993,12 @@ public final class CakeWorldEntities {
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					BrittleBiscuitSteed
 							::checkBrittleBiscuitSteedSpawnRules);
+			SpawnPlacements.register(
+					STALE_GINGERBREAD_STEED.get(),
+					SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					StaleGingerbreadSteed
+							::checkStaleGingerbreadSteedSpawnRules);
 			SpawnPlacements.register(
 					JELLY_BLOB.get(),
 					SpawnPlacements.Type.ON_GROUND,

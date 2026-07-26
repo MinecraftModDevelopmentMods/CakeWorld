@@ -223,6 +223,10 @@ public final class CakeWorldClientEvents {
 						.get(),
 				BrittleBiscuitSteedRenderer::new);
 		event.registerEntityRenderer(
+				CakeWorldEntities.STALE_GINGERBREAD_STEED
+						.get(),
+				StaleGingerbreadSteedRenderer::new);
+		event.registerEntityRenderer(
 				CakeWorldEntities.JELLY_BLOB.get(),
 				SlimeRenderer::new);
 		event.registerEntityRenderer(
