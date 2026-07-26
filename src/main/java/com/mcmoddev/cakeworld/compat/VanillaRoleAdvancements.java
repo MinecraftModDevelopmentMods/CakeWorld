@@ -489,6 +489,11 @@ public final class VanillaRoleAdvancements {
 			return "minecraft:zoglin";
 		}
 		if (type
+				== CakeWorldEntities.STALE_FUDGE_FOLK
+						.get()) {
+			return "minecraft:zombified_piglin";
+		}
+		if (type
 				== CakeWorldEntities.GINGERBREAD_STOMPER.get()) {
 			return "minecraft:ravager";
 		}

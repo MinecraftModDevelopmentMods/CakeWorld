@@ -58,6 +58,7 @@ import net.minecraft.client.renderer.entity.SquidRenderer;
 import net.minecraft.client.renderer.entity.ZombieRenderer;
 import net.minecraft.client.renderer.entity.ZombieVillagerRenderer;
 import net.minecraft.client.renderer.entity.ZoglinRenderer;
+import net.minecraft.client.renderer.entity.PiglinRenderer;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.client.renderer.entity.ThrownTridentRenderer;
 import net.minecraft.client.renderer.entity.TropicalFishRenderer;
@@ -147,6 +148,16 @@ public final class CakeWorldClientEvents {
 				FudgeFolkRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.FUDGE_BRUTE.get(),
 				FudgeBruteRenderer::new);
+		event.registerEntityRenderer(
+				CakeWorldEntities.STALE_FUDGE_FOLK.get(),
+				context -> new PiglinRenderer(
+						context,
+						ModelLayers.ZOMBIFIED_PIGLIN,
+						ModelLayers
+								.ZOMBIFIED_PIGLIN_INNER_ARMOR,
+						ModelLayers
+								.ZOMBIFIED_PIGLIN_OUTER_ARMOR,
+						true));
 		event.registerEntityRenderer(
 				CakeWorldEntities.BISCUIT_BANDIT.get(),
 				PillagerRenderer::new);

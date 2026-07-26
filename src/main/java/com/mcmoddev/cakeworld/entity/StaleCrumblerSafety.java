@@ -130,6 +130,7 @@ public final class StaleCrumblerSafety {
 	private static boolean isProtectedZombie(
 			Zombie zombie) {
 		return zombie instanceof StaleCrumbler
+				|| zombie instanceof StaleFudgeFolk
 				|| zombie
 						instanceof CrumbledGingerbreadFolk;
 	}

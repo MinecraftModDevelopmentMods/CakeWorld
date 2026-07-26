@@ -112,6 +112,7 @@ import com.mcmoddev.cakeworld.entity.SourSprite;
 import com.mcmoddev.cakeworld.entity.SprinkleLlama;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
 import com.mcmoddev.cakeworld.entity.StaleCrumblerReinforcements;
+import com.mcmoddev.cakeworld.entity.StaleFudgeFolk;
 import com.mcmoddev.cakeworld.entity.StaleGingerbreadSteed;
 import com.mcmoddev.cakeworld.entity.StaleCrumblerSafety;
 import com.mcmoddev.cakeworld.entity.StaleFudgeBoar;
@@ -147,6 +148,7 @@ import com.mcmoddev.cakeworld.world.CakeWorldWolfReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldZombieReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldZombieHorseReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldZombieVillagerReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldZombifiedPiglinReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldZoglinReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldPillagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldRavagerReplacement;
@@ -10085,16 +10087,27 @@ public final class FirstBiteGameTests {
 		try {
 			helper.getLevel().getServer().setDifficulty(
 					Difficulty.NORMAL, true);
+			BlockPos lightningPos =
+					findCakeWorldBiomePosition(
+							helper,
+							foragePos.offset(
+									6, 0, 0),
+							64);
 			TrufflePig struck =
 					CakeWorldEntities.TRUFFLE_PIG.get()
 							.create(helper.getLevel());
 			LightningBolt bolt =
 					EntityType.LIGHTNING_BOLT.create(
 							helper.getLevel());
-			require(helper, struck != null && bolt != null,
+			require(helper,
+					lightningPos != null
+							&& struck != null
+							&& bolt != null,
 					"Could not create Truffle Pig lightning fixtures");
-			struck.setPos(foragePos.getX() + 6.0D,
-					foragePos.getY(), foragePos.getZ());
+			struck.setPos(
+					lightningPos.getX() + 0.5D,
+					lightningPos.getY(),
+					lightningPos.getZ() + 0.5D);
 			struck.setAge(-24000);
 			struck.setNoAi(true);
 			struck.setCustomName(new TextComponent(
@@ -10111,9 +10124,24 @@ public final class FirstBiteGameTests {
 									struck.getY() + 2.0D,
 									struck.getZ() + 2.0D))
 					.stream().findFirst().orElse(null);
+			if (lightningResult != null) {
+				StaleFudgeFolk themed =
+						CakeWorldZombifiedPiglinReplacement
+								.replaceIfInCakeWorldBiome(
+										helper.getLevel(),
+										lightningResult);
+				if (themed != null) {
+					lightningResult = themed;
+				}
+			}
 			require(helper,
 					struck.isRemoved()
 							&& lightningResult != null
+							&& lightningResult
+									.getType()
+									== CakeWorldEntities
+											.STALE_FUDGE_FOLK
+											.get()
 							&& lightningResult.isBaby()
 							&& lightningResult.isNoAi()
 							&& lightningResult
@@ -10124,7 +10152,7 @@ public final class FirstBiteGameTests {
 							&& "Thunder Truffle".equals(
 									lightningResult.getName()
 											.getString()),
-					"Truffle Pig lost the staged vanilla lightning-conversion state for MOB-073");
+					"Truffle Pig lost the finalized Stale Fudge Folk lightning conversion");
 
 			helper.getLevel().getServer().setDifficulty(
 					Difficulty.PEACEFUL, true);
@@ -10138,13 +10166,15 @@ public final class FirstBiteGameTests {
 					peacefulStruck != null
 							&& peacefulBolt != null,
 					"Could not create Peaceful lightning fixtures");
-			peacefulStruck.setPos(foragePos.getX() + 9.0D,
-					foragePos.getY(), foragePos.getZ());
+			peacefulStruck.setPos(
+					lightningPos.getX() + 3.5D,
+					lightningPos.getY(),
+					lightningPos.getZ() + 0.5D);
 			peacefulStruck.thunderHit(helper.getLevel(),
 					peacefulBolt);
 			require(helper,
 					!peacefulStruck.isRemoved(),
-					"Peaceful Truffle Pig incorrectly transformed into the future Stale Fudge Folk role");
+					"Peaceful Truffle Pig incorrectly transformed into Stale Fudge Folk");
 		} finally {
 			helper.getLevel().getServer().setDifficulty(
 					originalDifficulty, true);
@@ -10606,6 +10636,10 @@ public final class FirstBiteGameTests {
 			require(helper,
 					converting.isRemoved()
 							&& conversion != null
+							&& conversion.getType()
+									== CakeWorldEntities
+											.STALE_FUDGE_FOLK
+											.get()
 							&& conversion
 									.isPersistenceRequired()
 							&& conversion.getMainHandItem()
@@ -10615,7 +10649,7 @@ public final class FirstBiteGameTests {
 											.getString())
 							&& conversion.hasEffect(
 									MobEffects.CONFUSION),
-					"Fudge Brute lost staged vanilla zombification for MOB-073");
+					"Fudge Brute lost finalized Stale Fudge Folk zombification");
 		} finally {
 			helper.getLevel().getServer().setDifficulty(
 					originalDifficulty, true);
@@ -22945,6 +22979,10 @@ public final class FirstBiteGameTests {
 			require(helper,
 					converting.isRemoved()
 							&& conversion != null
+							&& conversion.getType()
+									== CakeWorldEntities
+											.STALE_FUDGE_FOLK
+											.get()
 							&& conversion.isBaby()
 							&& conversion
 									.isPersistenceRequired()
@@ -22955,7 +22993,7 @@ public final class FirstBiteGameTests {
 											.getString())
 							&& conversion.hasEffect(
 									MobEffects.CONFUSION),
-					"Fudge Folk lost the staged vanilla zombification state for MOB-073");
+					"Fudge Folk lost finalized Stale Fudge Folk zombification");
 		} finally {
 			helper.getLevel().getServer().setDifficulty(
 					originalDifficulty, true);
@@ -32322,6 +32360,933 @@ public final class FirstBiteGameTests {
 					StaleCrumbler::discard);
 			helper.succeed();
 		});
+	}
+
+	@GameTest(template = EMPTY, batch = "mob073",
+			timeoutTicks = 320)
+	public static void
+			staleFudgeFolkKeepTheCompleteZombifiedPiglinRole(
+					GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		BlockPos anchor = helper.absolutePos(
+				new BlockPos(5, 3, 5));
+		StaleFudgeFolkProbe stale =
+				new StaleFudgeFolkProbe(level);
+		VanillaZombifiedPiglinProbe vanilla =
+				new VanillaZombifiedPiglinProbe(level);
+		require(helper,
+				stale instanceof ZombifiedPiglin
+						&& stale instanceof NeutralMob
+						&& stale.getType()
+								== CakeWorldEntities
+										.STALE_FUDGE_FOLK
+										.get()
+						&& stale.getType().getCategory()
+								== MobCategory.MONSTER
+						&& stale.getType().fireImmune()
+						&& close(stale.getMaxHealth(),
+								20.0D)
+						&& close(stale
+								.getAttributeValue(
+										Attributes
+												.FOLLOW_RANGE),
+								35.0D)
+						&& close(stale
+								.getAttributeValue(
+										Attributes
+												.MOVEMENT_SPEED),
+								0.23D)
+						&& close(stale
+								.getAttributeValue(
+										Attributes
+												.ATTACK_DAMAGE),
+								5.0D)
+						&& close(stale
+								.getAttributeValue(
+										Attributes.ARMOR),
+								2.0D)
+						&& close(stale
+								.getAttributeValue(
+										Attributes
+												.SPAWN_REINFORCEMENTS_CHANCE),
+								0.0D)
+						&& close(stale.getDimensions(
+								Pose.STANDING).width,
+								0.6D)
+						&& close(stale.getDimensions(
+								Pose.STANDING).height,
+								1.95D)
+						&& close(stale
+								.standingEyeHeight(),
+								vanilla
+										.standingEyeHeight())
+						&& stale.getType()
+								.clientTrackingRange() == 8
+						&& stale.getMobType()
+								== MobType.UNDEAD
+						&& stale.baseExperienceReward()
+								== 5
+						&& stale.experienceReward()
+								>= 5
+						&& close(stale
+								.getPathfindingMalus(
+										net.minecraft
+												.world.level
+												.pathfinder
+												.BlockPathTypes
+												.LAVA),
+								8.0D),
+				"Stale Fudge Folk lost the exact Zombified Piglin body, attributes, dimensions, tracking, fireproofing, navigation or XP contract");
+		require(helper,
+				stale.goalSignatures()
+								.equals(vanilla
+										.goalSignatures())
+						&& stale
+								.targetGoalSignatures()
+								.equals(vanilla
+										.targetGoalSignatures())
+						&& !stale
+								.convertsInWaterRole(),
+				"Stale Fudge Folk lost exact Zombified Piglin goals, targets or no-water-conversion role");
+		require(helper,
+				stale.ambientSound()
+								== SoundEvents
+										.ZOMBIFIED_PIGLIN_AMBIENT
+						&& stale.hurtSound()
+								== SoundEvents
+										.ZOMBIFIED_PIGLIN_HURT
+						&& stale.deathSound()
+								== SoundEvents
+										.ZOMBIFIED_PIGLIN_DEATH
+						&& stale.skullItem().isEmpty(),
+				"Stale Fudge Folk lost exact neutral sounds or deliberate no-skull role");
+
+		stale.seedRandom(1978L);
+		vanilla.seedRandom(1978L);
+		DifficultyInstance equipmentDifficulty =
+				level.getCurrentDifficultyAt(anchor);
+		stale.populateEquipment(
+				equipmentDifficulty);
+		vanilla.populateEquipment(
+				equipmentDifficulty);
+		require(helper,
+				stale.getMainHandItem()
+								.is(Items.GOLDEN_SWORD)
+						&& vanilla
+								.getMainHandItem()
+								.is(Items.GOLDEN_SWORD)
+						&& stale.wantsToPickUp(
+								new ItemStack(
+										Items
+												.DIAMOND_SWORD))
+								== vanilla
+										.wantsToPickUp(
+												new ItemStack(
+														Items
+																.DIAMOND_SWORD)),
+				"Stale Fudge Folk lost exact Golden Sword equipment or pickup preference");
+		stale.setItemSlot(
+				EquipmentSlot.MAINHAND,
+				ItemStack.EMPTY);
+		vanilla.setItemSlot(
+				EquipmentSlot.MAINHAND,
+				ItemStack.EMPTY);
+		require(helper,
+				close(stale.getMyRidingOffset(),
+								-0.45D),
+				"Adult Stale Fudge Folk lost exact riding offset");
+		stale.setBaby(true);
+		vanilla.setBaby(true);
+		require(helper,
+				close(stale.getMyRidingOffset(),
+								-0.05D)
+						&& close(stale
+								.standingEyeHeight(),
+								vanilla
+										.standingEyeHeight())
+						&& stale.experienceReward()
+								>= 5,
+				"Baby Stale Fudge Folk lost exact body, riding-offset or XP behavior");
+		stale.setBaby(false);
+		vanilla.setBaby(false);
+
+		ServerPlayer rolePlayer =
+				new ServerPlayer(
+						level.getServer(), level,
+						new GameProfile(
+								UUID.fromString(
+										"1978feed-feed-4bad-babe-1978feed2073"),
+								"CakeWorldStaleFudgeFolkTest"));
+		rolePlayer.connection =
+				new ServerGamePacketListenerImpl(
+						level.getServer(),
+						new Connection(
+								PacketFlow.CLIENTBOUND),
+						rolePlayer);
+		StaleFudgeFolkProbe alerted =
+				new StaleFudgeFolkProbe(level);
+		Pig angerSource =
+				EntityType.PIG.create(level);
+		require(helper, angerSource != null,
+				"Could not create neutral-anger source");
+		stale.setPos(anchor.getX() + 0.5D,
+				anchor.getY(),
+				anchor.getZ() + 0.5D);
+		alerted.setPos(stale.getX() + 2.0D,
+				stale.getY(), stale.getZ());
+		angerSource.setPos(stale.getX() + 1.0D,
+				stale.getY(), stale.getZ());
+		stale.setItemSlot(
+				EquipmentSlot.MAINHAND,
+				ItemStack.EMPTY);
+		alerted.setItemSlot(
+				EquipmentSlot.MAINHAND,
+				ItemStack.EMPTY);
+		level.addFreshEntity(stale);
+		level.addFreshEntity(alerted);
+		level.addFreshEntity(angerSource);
+		stale.tickCount = 20;
+		stale.setLastHurtByMob(
+				angerSource);
+		require(helper,
+				stale.runTargetGoal(
+								"HurtByTargetGoal")
+						&& stale.getTarget()
+								== angerSource
+						&& alerted.getTarget()
+								== angerSource,
+				"Stale Fudge Folk lost exact same-family hurt alerting");
+		stale.startPersistentAngerTimer();
+		require(helper,
+				stale.getRemainingPersistentAngerTime()
+								>= 400
+						&& stale
+								.getRemainingPersistentAngerTime()
+								<= 780,
+				"Stale Fudge Folk lost the exact 20-39 second anger-timer range");
+		stale.stopBeingAngry();
+		stale.setTarget(angerSource);
+		stale.runServerAiStep();
+		require(helper,
+				stale.getPersistentAngerTarget()
+								.equals(
+										angerSource
+												.getUUID())
+						&& stale
+								.getRemainingPersistentAngerTime()
+								>= 399
+						&& stale
+								.getRemainingPersistentAngerTime()
+								<= 779,
+				"Stale Fudge Folk did not establish persistent anger on the first target-processing step");
+		stale.runServerAiStep();
+		require(helper,
+				stale.getPersistentAngerTarget()
+								.equals(
+										angerSource
+												.getUUID())
+						&& stale
+								.getRemainingPersistentAngerTime()
+								>= 398
+						&& stale
+								.getRemainingPersistentAngerTime()
+								<= 778
+						&& close(stale
+								.getAttributeValue(
+										Attributes
+												.MOVEMENT_SPEED),
+								0.28D)
+						&& stale.ambientSound()
+								== SoundEvents
+										.ZOMBIFIED_PIGLIN_ANGRY,
+				"Stale Fudge Folk lost persistent anger, attacking speed or angry sound");
+		stale.setPersistentAngerTarget(
+				rolePlayer.getUUID());
+		stale.setRemainingPersistentAngerTime(
+				555);
+		require(helper,
+				stale.isAngryAt(rolePlayer)
+						&& stale
+								.isPreventingPlayerRest(
+										rolePlayer),
+				"Stale Fudge Folk lost targeted-player anger or bed prevention");
+		CompoundTag angerState =
+				stale.saveWithoutId(
+						new CompoundTag());
+		StaleFudgeFolk restoredAnger =
+				CakeWorldEntities.STALE_FUDGE_FOLK
+						.get().create(level);
+		require(helper,
+				restoredAnger != null,
+				"Could not create persisted anger fixture");
+		restoredAnger.load(angerState);
+		require(helper,
+				restoredAnger
+								.getRemainingPersistentAngerTime()
+								== 555
+						&& rolePlayer.getUUID()
+								.equals(restoredAnger
+										.getPersistentAngerTarget()),
+				"Stale Fudge Folk lost AngerTime or AngryAt NBT");
+		stale.stopBeingAngry();
+		stale.runServerAiStep();
+		require(helper,
+				close(stale.getAttributeValue(
+								Attributes
+										.MOVEMENT_SPEED),
+								0.23D)
+						&& !stale.isAngry(),
+				"Stale Fudge Folk did not remove the anger speed modifier");
+
+		Difficulty originalDifficulty =
+				level.getDifficulty();
+		StaleFudgeFolkProbe contact =
+				new StaleFudgeFolkProbe(level);
+		Pig contactTarget =
+				EntityType.PIG.create(level);
+		require(helper, contactTarget != null,
+				"Could not create Stale Fudge Folk contact fixture");
+		contact.setPos(anchor.getX() + 4.5D,
+				anchor.getY(), anchor.getZ());
+		contactTarget.setPos(
+				contact.getX() + 1.0D,
+				contact.getY(), contact.getZ());
+		level.addFreshEntity(contact);
+		level.addFreshEntity(contactTarget);
+		for (Difficulty safeDifficulty :
+				new Difficulty[] {
+						Difficulty.EASY,
+						Difficulty.NORMAL}) {
+			level.getServer().setDifficulty(
+					safeDifficulty, true);
+			contactTarget.removeAllEffects();
+			contactTarget.setHealth(10.0F);
+			contactTarget.invulnerableTime = 0;
+			contactTarget.setSecondsOnFire(5);
+			contactTarget.fallDistance = 12.0F;
+			require(helper,
+					contact.doHurtTarget(
+								contactTarget)
+							&& close(contactTarget
+									.getHealth(),
+									10.0D)
+							&& !contactTarget
+									.isOnFire()
+							&& close(contactTarget
+									.fallDistance,
+									0.0D)
+							&& contactTarget
+									.hasEffect(
+											MobEffects
+													.MOVEMENT_SLOWDOWN)
+							&& contactTarget
+									.hasEffect(
+											MobEffects
+													.GLOWING)
+							&& contactTarget
+									.hasEffect(
+											MobEffects
+													.SLOW_FALLING)
+							&& contactTarget
+									.hasEffect(
+											MobEffects
+													.FIRE_RESISTANCE)
+							&& contactTarget
+									.getEffect(
+											MobEffects
+													.DAMAGE_RESISTANCE)
+									.getAmplifier()
+									== 4,
+					safeDifficulty
+							+ " Stale Fudge Folk contact caused health, fire or landing peril");
+			EntityMobGriefingEvent grief =
+					new EntityMobGriefingEvent(
+							contact);
+			StaleCrumblerSafety
+					.applyGriefPolicy(
+							grief,
+							safeDifficulty);
+			require(helper,
+					grief.getResult()
+							== Event.Result.DENY,
+					safeDifficulty
+							+ " Stale Fudge Folk retained destructive item pickup");
+		}
+		level.getServer().setDifficulty(
+				Difficulty.HARD, true);
+		contactTarget.removeAllEffects();
+		contactTarget.setHealth(10.0F);
+		contactTarget.invulnerableTime = 0;
+		require(helper,
+				contact.doHurtTarget(
+								contactTarget)
+						&& close(contactTarget
+								.getHealth(),
+								5.0D),
+				"Hard Stale Fudge Folk lost the exact five-point attack");
+		EntityMobGriefingEvent hardGrief =
+				new EntityMobGriefingEvent(contact);
+		StaleCrumblerSafety.applyGriefPolicy(
+				hardGrief, Difficulty.HARD);
+		require(helper,
+				hardGrief.getResult()
+						== Event.Result.DEFAULT,
+				"Hard Stale Fudge Folk did not restore ordinary mob-griefing policy");
+		level.getServer().setDifficulty(
+				Difficulty.PEACEFUL, true);
+		StaleFudgeFolkProbe peaceful =
+				new StaleFudgeFolkProbe(level);
+		peaceful.checkDespawnRole();
+		require(helper,
+				peaceful.isRemoved()
+						&& peaceful
+								.despawnsInPeaceful(),
+				"Peaceful Stale Fudge Folk lost Monster removal");
+		level.getServer().setDifficulty(
+				originalDifficulty, true);
+
+		BlockPos spawnPos = anchor.offset(
+				10, 0, 0);
+		BlockState previousSpawnFloor =
+				level.getBlockState(
+						spawnPos.below());
+		level.setBlock(spawnPos.below(),
+				CakeWorldBlocks.FUDGE_ROCK.get()
+						.defaultBlockState(), 3);
+		level.getServer().setDifficulty(
+				Difficulty.NORMAL, true);
+		require(helper,
+				StaleFudgeFolk
+								.checkStaleFudgeFolkSpawnRules(
+										CakeWorldEntities
+												.STALE_FUDGE_FOLK
+												.get(),
+										level,
+										MobSpawnType.NATURAL,
+										spawnPos,
+										new Random(
+												1978L))
+						&& SpawnPlacements
+								.getPlacementType(
+										CakeWorldEntities
+												.STALE_FUDGE_FOLK
+												.get())
+								== SpawnPlacements.Type
+										.ON_GROUND
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+												.STALE_FUDGE_FOLK
+												.get())
+								== Heightmap.Types
+										.MOTION_BLOCKING_NO_LEAVES,
+				"Stale Fudge Folk rejected valid ground placement");
+		level.setBlock(spawnPos.below(),
+				Blocks.NETHER_WART_BLOCK
+						.defaultBlockState(), 3);
+		require(helper,
+				!StaleFudgeFolk
+						.checkStaleFudgeFolkSpawnRules(
+								CakeWorldEntities
+										.STALE_FUDGE_FOLK
+										.get(),
+								level,
+								MobSpawnType.NATURAL,
+								spawnPos,
+								new Random(1978L)),
+				"Stale Fudge Folk lost the exact Nether-wart spawn exclusion");
+		level.setBlock(spawnPos.below(),
+				previousSpawnFloor, 3);
+		level.getServer().setDifficulty(
+				originalDifficulty, true);
+
+		Registry<Biome> biomes =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY);
+		Biome fudgeWastes =
+				biomes.get(CakeWorldBiomes
+						.FUDGE_WASTES.getId());
+		require(helper, fudgeWastes != null,
+				"Missing Fudge Wastes");
+		List<MobSpawnSettings.SpawnerData>
+				fudgeProfiles =
+				fudgeWastes.getMobSettings()
+						.getMobs(
+								MobCategory.MONSTER)
+						.unwrap().stream()
+						.filter(spawn ->
+								spawn.type
+										== CakeWorldEntities
+												.STALE_FUDGE_FOLK
+												.get())
+						.toList();
+		require(helper,
+				fudgeProfiles.size() == 1
+						&& fudgeProfiles.get(0)
+								.getWeight()
+								.asInt() == 100
+						&& fudgeProfiles.get(0)
+								.minCount == 4
+						&& fudgeProfiles.get(0)
+								.maxCount == 4
+						&& fudgeWastes
+								.getMobSettings()
+								.getMobs(
+										MobCategory
+												.MONSTER)
+								.unwrap().stream()
+								.noneMatch(spawn ->
+										spawn.type
+												== EntityType
+														.ZOMBIFIED_PIGLIN),
+				"Stale Fudge Folk lost exact inherited Nether Wastes 100 / 4-4 ecology");
+		for (ResourceLocation biomeId :
+				List.of(
+						CakeWorldBiomes
+								.CANDY_PLAINS.getId(),
+						CakeWorldBiomes
+								.COOKIE_FOREST.getId(),
+						CakeWorldBiomes
+								.MARSHMALLOW_PEAKS
+								.getId(),
+						CakeWorldBiomes
+								.SODA_OCEAN.getId(),
+						CakeWorldBiomes
+								.MERINGUE_ISLANDS
+								.getId())) {
+			Biome biome = biomes.get(biomeId);
+			require(helper,
+					biome != null
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory
+													.MONSTER)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType
+															.ZOMBIFIED_PIGLIN
+											|| spawn.type
+													== CakeWorldEntities
+															.STALE_FUDGE_FOLK
+															.get()),
+					"Zombified Piglin ecology was invented in "
+							+ biomeId);
+		}
+
+		net.minecraft.world.item.SpawnEggItem egg =
+				(net.minecraft.world.item.SpawnEggItem)
+						CakeWorldItems
+								.STALE_FUDGE_FOLK_SPAWN_EGG
+								.get();
+		require(helper,
+				stale.getLootTableId().equals(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/stale_fudge_folk"))
+						&& egg.getColor(0)
+								== 0xEA9393
+						&& egg.getColor(1)
+								== 0x4C7129
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+												.STALE_FUDGE_FOLK
+												.get())
+								== null,
+				"Stale Fudge Folk lost exact loot, vanilla egg colors or the deliberate no-mimic role");
+		StaleFudgeFolk progressionTarget =
+				CakeWorldEntities.STALE_FUDGE_FOLK
+						.get().create(level);
+		require(helper,
+				progressionTarget != null,
+				"Could not create Stale Fudge Folk progression fixture");
+		VanillaRoleAdvancements.onDeath(
+				new LivingDeathEvent(
+						progressionTarget,
+						DamageSource.playerAttack(
+								rolePlayer)));
+		requireCriterion(helper, rolePlayer,
+				"minecraft:adventure/kill_all_mobs",
+				"minecraft:zombified_piglin");
+
+		BlockPos cakeWorldPos =
+				findCakeWorldBiomePosition(
+						helper,
+						anchor.offset(20, 0, 20),
+						256);
+		require(helper, cakeWorldPos != null,
+				"Could not locate CakeWorld terrain for Zombified Piglin conversion");
+		ZombifiedPiglin literal =
+				EntityType.ZOMBIFIED_PIGLIN
+						.create(level);
+		Boat vehicle =
+				EntityType.BOAT.create(level);
+		Pig directPassenger =
+				EntityType.PIG.create(level);
+		require(helper,
+				literal != null && vehicle != null
+						&& directPassenger != null,
+				"Could not create stateful literal Zombified Piglin fixtures");
+		literal.setPos(
+				cakeWorldPos.getX() + 0.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		vehicle.setPos(literal.getX(),
+				literal.getY(), literal.getZ());
+		directPassenger.setPos(
+				literal.getX(), literal.getY(),
+				literal.getZ());
+		literal.setBaby(true);
+		literal.setHealth(9.0F);
+		literal.setNoAi(true);
+		literal.setCustomName(
+				new TextComponent(
+						"Stateful Stale Fudge"));
+		literal.setPersistenceRequired();
+		literal.setItemSlot(
+				EquipmentSlot.MAINHAND,
+				new ItemStack(Items.GOLDEN_AXE));
+		literal.setPersistentAngerTarget(
+				angerSource.getUUID());
+		literal.setRemainingPersistentAngerTime(
+				432);
+		literal.setTarget(angerSource);
+		literal.setLastHurtByMob(
+				angerSource);
+		literal.addEffect(
+				new MobEffectInstance(
+						MobEffects.CONFUSION,
+						200));
+		literal.invulnerableTime = 17;
+		level.addFreshEntity(vehicle);
+		level.addFreshEntity(literal);
+		level.addFreshEntity(
+				directPassenger);
+		literal.startRiding(vehicle, true);
+		directPassenger.startRiding(
+				literal, true);
+		StaleFudgeFolk direct =
+				CakeWorldZombifiedPiglinReplacement
+						.replaceIfInCakeWorldBiome(
+								level, literal);
+		require(helper,
+				literal.isRemoved()
+						&& direct != null
+						&& direct.getType()
+								== CakeWorldEntities
+										.STALE_FUDGE_FOLK
+										.get()
+						&& direct.isBaby()
+						&& close(direct.getHealth(),
+								9.0D)
+						&& direct.isNoAi()
+						&& direct
+								.isPersistenceRequired()
+						&& direct.getMainHandItem()
+								.is(Items.GOLDEN_AXE)
+						&& direct
+								.getRemainingPersistentAngerTime()
+								== 432
+						&& angerSource.getUUID()
+								.equals(direct
+										.getPersistentAngerTarget())
+						&& direct.getTarget()
+								== angerSource
+						&& direct
+								.getLastHurtByMob()
+								== angerSource
+						&& direct.hasEffect(
+								MobEffects.CONFUSION)
+						&& direct.invulnerableTime
+								== 17
+						&& direct.getVehicle()
+								== vehicle
+						&& direct.getPassengers()
+								.contains(
+										directPassenger),
+				"Stateful literal replacement lost identity, body, equipment, anger, combat, effect or attachment state");
+		require(helper,
+				CakeWorldZombifiedPiglinReplacement
+						.replaceIfInCakeWorldBiome(
+								level, direct)
+								== null,
+				"Zombified Piglin replacement did not exclude its own or third-party subtype boundary");
+
+		directPassenger.discard();
+		direct.discard();
+		vehicle.discard();
+		restoredAnger.discard();
+		progressionTarget.discard();
+		contactTarget.discard();
+		contact.discard();
+		alerted.discard();
+		stale.discard();
+		angerSource.discard();
+
+		level.getServer().setDifficulty(
+				Difficulty.NORMAL, true);
+		ZombifiedPiglin deferred =
+				EntityType.ZOMBIFIED_PIGLIN
+						.create(level);
+		TrufflePig lightningSource =
+				CakeWorldEntities.TRUFFLE_PIG
+						.get().create(level);
+		LightningBolt lightning =
+				EntityType.LIGHTNING_BOLT
+						.create(level);
+		require(helper,
+				deferred != null
+						&& lightningSource != null
+						&& lightning != null,
+				"Could not create deferred Stale Fudge Folk sources");
+		deferred.setPos(
+				cakeWorldPos.getX() + 4.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		deferred.setCustomName(
+				new TextComponent(
+						"Deferred Stale Fudge"));
+		deferred.setNoAi(true);
+		deferred.setRemainingPersistentAngerTime(
+				411);
+		lightningSource.setPos(
+				cakeWorldPos.getX() + 8.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		lightningSource.setAge(-24000);
+		lightningSource.setNoAi(true);
+		lightningSource.setCustomName(
+				new TextComponent(
+						"Lightning Stale Fudge"));
+		level.addFreshEntity(deferred);
+		level.addFreshEntity(
+				lightningSource);
+		lightningSource.thunderHit(
+				level, lightning);
+		AABB deferredArea =
+				new AABB(cakeWorldPos)
+						.inflate(16.0D);
+		helper.runAfterDelay(5, () -> {
+			List<StaleFudgeFolk>
+					deferredOutputs =
+					level.getEntitiesOfClass(
+							StaleFudgeFolk.class,
+							deferredArea,
+							entity ->
+									"Deferred Stale Fudge"
+											.equals(entity
+													.getName()
+													.getString()));
+			List<StaleFudgeFolk>
+					lightningOutputs =
+					level.getEntitiesOfClass(
+							StaleFudgeFolk.class,
+							deferredArea,
+							entity ->
+									"Lightning Stale Fudge"
+											.equals(entity
+													.getName()
+													.getString()));
+			boolean accepted =
+					deferred.isRemoved()
+							&& deferredOutputs.size()
+									== 1
+							&& deferredOutputs.get(0)
+									.isNoAi()
+							&& deferredOutputs.get(0)
+									.getRemainingPersistentAngerTime()
+									== 411
+							&& lightningSource
+									.isRemoved()
+							&& lightningOutputs.size()
+									== 1
+							&& lightningOutputs.get(0)
+									.isBaby()
+							&& lightningOutputs.get(0)
+									.isNoAi()
+							&& lightningOutputs.get(0)
+									.isPersistenceRequired()
+							&& lightningOutputs.get(0)
+									.getMainHandItem()
+									.is(Items.GOLDEN_SWORD);
+			level.getServer().setDifficulty(
+					originalDifficulty, true);
+			deferredOutputs.forEach(
+					StaleFudgeFolk::discard);
+			lightningOutputs.forEach(
+					StaleFudgeFolk::discard);
+			require(helper, accepted,
+					"Fresh literal or actual Truffle-Pig lightning source did not defer-convert with exact finalized state");
+			helper.succeed();
+		});
+	}
+
+	private static final class StaleFudgeFolkProbe
+			extends StaleFudgeFolk {
+		private StaleFudgeFolkProbe(Level level) {
+			super(CakeWorldEntities
+					.STALE_FUDGE_FOLK.get(),
+					level);
+		}
+
+		private void seedRandom(long seed) {
+			random.setSeed(seed);
+		}
+
+		private int baseExperienceReward() {
+			return xpReward;
+		}
+
+		private int experienceReward() {
+			return getExperienceReward(null);
+		}
+
+		private float standingEyeHeight() {
+			return getStandingEyeHeight(
+					Pose.STANDING,
+					getDimensions(Pose.STANDING));
+		}
+
+		private boolean convertsInWaterRole() {
+			return convertsInWater();
+		}
+
+		private void populateEquipment(
+				DifficultyInstance difficulty) {
+			populateDefaultEquipmentSlots(
+					difficulty);
+		}
+
+		private boolean despawnsInPeaceful() {
+			return shouldDespawnInPeaceful();
+		}
+
+		private void checkDespawnRole() {
+			checkDespawn();
+		}
+
+		private void runServerAiStep() {
+			customServerAiStep();
+		}
+
+		private boolean runTargetGoal(
+				String simpleName) {
+			net.minecraft.world.entity.ai.goal.Goal
+					goal =
+					targetSelector.getAvailableGoals()
+							.stream()
+							.map(WrappedGoal::getGoal)
+							.filter(candidate ->
+									simpleName.equals(
+											candidate
+													.getClass()
+													.getSimpleName()))
+							.findFirst()
+							.orElse(null);
+			if (goal == null || !goal.canUse()) {
+				return false;
+			}
+			goal.start();
+			return true;
+		}
+
+		private ResourceLocation getLootTableId() {
+			return getLootTable();
+		}
+
+		private ItemStack skullItem() {
+			return getSkull();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				ambientSound() {
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				hurtSound() {
+			return getHurtSound(
+					DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				deathSound() {
+			return getDeathSound();
+		}
+
+		private List<String> goalSignatures() {
+			return goalSelector.getAvailableGoals()
+					.stream()
+					.map(wrapped ->
+							wrapped.getPriority() + ":"
+									+ wrapped.getGoal()
+											.getClass()
+											.getSimpleName())
+					.sorted().toList();
+		}
+
+		private List<String>
+				targetGoalSignatures() {
+			return targetSelector
+					.getAvailableGoals().stream()
+					.map(wrapped ->
+							wrapped.getPriority() + ":"
+									+ wrapped.getGoal()
+											.getClass()
+											.getSimpleName())
+					.sorted().toList();
+		}
+	}
+
+	private static final class
+			VanillaZombifiedPiglinProbe
+			extends ZombifiedPiglin {
+		private VanillaZombifiedPiglinProbe(
+				Level level) {
+			super(EntityType.ZOMBIFIED_PIGLIN,
+					level);
+		}
+
+		private void seedRandom(long seed) {
+			random.setSeed(seed);
+		}
+
+		private float standingEyeHeight() {
+			return getStandingEyeHeight(
+					Pose.STANDING,
+					getDimensions(Pose.STANDING));
+		}
+
+		private void populateEquipment(
+				DifficultyInstance difficulty) {
+			populateDefaultEquipmentSlots(
+					difficulty);
+		}
+
+		private List<String> goalSignatures() {
+			return goalSelector.getAvailableGoals()
+					.stream()
+					.map(wrapped ->
+							wrapped.getPriority() + ":"
+									+ wrapped.getGoal()
+											.getClass()
+											.getSimpleName())
+					.sorted().toList();
+		}
+
+		private List<String>
+				targetGoalSignatures() {
+			return targetSelector
+					.getAvailableGoals().stream()
+					.map(wrapped ->
+							wrapped.getPriority() + ":"
+									+ wrapped.getGoal()
+											.getClass()
+											.getSimpleName())
+					.sorted().toList();
+		}
 	}
 
 	private static final class MirageConfectionerProbe

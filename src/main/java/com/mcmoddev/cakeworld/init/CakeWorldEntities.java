@@ -66,6 +66,7 @@ import com.mcmoddev.cakeworld.entity.SourSorcerer;
 import com.mcmoddev.cakeworld.entity.SourSprite;
 import com.mcmoddev.cakeworld.entity.SprinkleLlama;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
+import com.mcmoddev.cakeworld.entity.StaleFudgeFolk;
 import com.mcmoddev.cakeworld.entity.StaleFudgeBoar;
 import com.mcmoddev.cakeworld.entity.StaleGingerbreadSteed;
 import com.mcmoddev.cakeworld.entity.SugarBee;
@@ -139,6 +140,7 @@ import net.minecraft.world.entity.monster.Vex;
 import net.minecraft.world.entity.monster.Vindicator;
 import net.minecraft.world.entity.monster.Witch;
 import net.minecraft.world.entity.monster.Zombie;
+import net.minecraft.world.entity.monster.ZombifiedPiglin;
 import net.minecraft.world.entity.monster.Zoglin;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.world.entity.monster.hoglin.Hoglin;
@@ -325,6 +327,15 @@ public final class CakeWorldEntities {
 							MobCategory.MONSTER)
 							.sized(0.6F, 1.95F)
 							.clientTrackingRange(8));
+	public static final RegistryObject<EntityType<StaleFudgeFolk>>
+			STALE_FUDGE_FOLK =
+					entity("stale_fudge_folk",
+							EntityType.Builder.of(
+									StaleFudgeFolk::new,
+									MobCategory.MONSTER)
+									.fireImmune()
+									.sized(0.6F, 1.95F)
+									.clientTrackingRange(8));
 	public static final RegistryObject<EntityType<BiscuitBandit>>
 			BISCUIT_BANDIT = entity("biscuit_bandit",
 					EntityType.Builder.of(BiscuitBandit::new,
@@ -721,6 +732,8 @@ public final class CakeWorldEntities {
 				Piglin.createAttributes().build());
 		event.put(FUDGE_BRUTE.get(),
 				PiglinBrute.createAttributes().build());
+		event.put(STALE_FUDGE_FOLK.get(),
+				ZombifiedPiglin.createAttributes().build());
 		event.put(BISCUIT_BANDIT.get(),
 				Pillager.createAttributes().build());
 		event.put(ROLLING_PIN_RAIDER.get(),
@@ -900,6 +913,12 @@ public final class CakeWorldEntities {
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					FudgeFolk::checkFudgeFolkSpawnRules);
+			SpawnPlacements.register(
+					STALE_FUDGE_FOLK.get(),
+					SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					StaleFudgeFolk
+							::checkStaleFudgeFolkSpawnRules);
 			SpawnPlacements.register(BISCUIT_BANDIT.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
