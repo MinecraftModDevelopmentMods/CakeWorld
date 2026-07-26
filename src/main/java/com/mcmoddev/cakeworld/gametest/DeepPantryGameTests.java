@@ -26,6 +26,7 @@ import com.mcmoddev.cakeworld.init.CakeWorldFluids;
 import com.mcmoddev.cakeworld.init.CakeWorldEntities;
 import com.mcmoddev.cakeworld.world.BiscuitBanditLookoutFeature;
 import com.mcmoddev.cakeworld.world.GingerbreadVillageFeature;
+import com.mcmoddev.cakeworld.world.GrandGingerbreadManorFeature;
 import com.mcmoddev.cakeworld.world.WaferMineFeature;
 import com.mcmoddev.orespawn.api.CompiledOrePattern;
 import com.mcmoddev.orespawn.api.GeologyColumn;
@@ -49,6 +50,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.BiomeTags;
+import net.minecraft.tags.ConfiguredStructureTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -1783,6 +1786,365 @@ public final class DeepPantryGameTests {
 											-12)),
 					"The natural Wafer Mine lost its single saved cave-loot minecart: "
 							+ lootMinecarts.size());
+			helper.succeed();
+		});
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 7200)
+	public static void focusedGrandGingerbreadManorStructureAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean(
+				"cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed Grand Gingerbread Manor audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						GrandGingerbreadManorFeature
+								.STRUCTURE_ID);
+		require(helper, configured != null,
+				"Grand Gingerbread Manor configured structure was absent from the live registry");
+		boolean tagged = structures.getTag(
+						GrandGingerbreadManorFeature
+								.STRUCTURE_TAG)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		boolean mapped = structures.getTag(
+						ConfiguredStructureTags
+								.ON_WOODLAND_EXPLORER_MAPS)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		require(helper, tagged && mapped,
+				"Grand Gingerbread Manor lost its locate or Woodland Explorer Map tag");
+
+		BlockPos located = level.findNearestMapFeature(
+				GrandGingerbreadManorFeature
+						.STRUCTURE_TAG,
+				helper.absolutePos(new BlockPos(4, 4, 4)),
+				512, false);
+		require(helper, located != null,
+				"The fixed-seed CakeWorld contained no locatable Grand Gingerbread Manor within 512 chunks");
+		net.minecraft.world.level.ChunkPos startChunk =
+				new net.minecraft.world.level.ChunkPos(
+						located);
+		net.minecraft.world.level.chunk.LevelChunk
+				startLevelChunk =
+				level.getChunk(startChunk.x,
+						startChunk.z);
+		net.minecraft.world.level.levelgen.structure.StructureStart
+				start =
+				startLevelChunk.getStartForFeature(
+						configured);
+		require(helper,
+				start != null && start.isValid()
+						&& start.getFeature() == configured
+						&& start.getPieces().size() == 1,
+				"The located Grand Gingerbread Manor lost its saved surface-structure start");
+		net.minecraft.world.level.levelgen.structure.BoundingBox
+				savedBounds = start.getBoundingBox();
+		require(helper,
+				savedBounds.getXSpan() == 49
+						&& savedBounds.getYSpan() == 30
+						&& savedBounds.getZSpan() == 49,
+				"The saved Grand Gingerbread Manor collapsed its exact 49x30x49 piece bounds: "
+						+ savedBounds);
+
+		int minimumChunkX =
+				Math.floorDiv(savedBounds.minX(), 16);
+		int maximumChunkX =
+				Math.floorDiv(savedBounds.maxX(), 16);
+		int minimumChunkZ =
+				Math.floorDiv(savedBounds.minZ(), 16);
+		int maximumChunkZ =
+				Math.floorDiv(savedBounds.maxZ(), 16);
+		for (int chunkX = minimumChunkX;
+				chunkX <= maximumChunkX; chunkX++) {
+			for (int chunkZ = minimumChunkZ;
+					chunkZ <= maximumChunkZ; chunkZ++) {
+				level.setChunkForced(
+						chunkX, chunkZ, true);
+			}
+		}
+
+		helper.runAfterDelay(40, () -> {
+			BlockPos centre = new BlockPos(
+					savedBounds.minX() + 24,
+					savedBounds.minY(),
+					savedBounds.minZ() + 24);
+			Map<Block, Integer> palette =
+					new LinkedHashMap<>();
+			for (int x = -24; x <= 24; x++) {
+				for (int y = 0; y <= 29; y++) {
+					for (int z = -24; z <= 24;
+							z++) {
+						Block block =
+								level.getBlockState(
+										centre.offset(
+												x, y,
+												z))
+										.getBlock();
+						palette.merge(block, 1,
+								Integer::sum);
+					}
+				}
+			}
+			int gummyRoof =
+					palette.getOrDefault(
+							CakeWorldBlocks
+									.RASPBERRY_GUMMY_BLOCK
+									.get(), 0)
+					+ palette.getOrDefault(
+							CakeWorldBlocks
+									.BLUEBERRY_GUMMY_BLOCK
+									.get(), 0)
+					+ palette.getOrDefault(
+							CakeWorldBlocks
+									.GRAPE_GUMMY_BLOCK
+									.get(), 0);
+			boolean traversableFloors = true;
+			Map<Integer, Integer> missingRouteByFloor =
+					new LinkedHashMap<>();
+			List<BlockPos> firstMissingRouteBlocks =
+					new java.util.ArrayList<>();
+			for (int floorY : new int[] {0, 8, 16}) {
+				for (int x = -4; x <= 4; x++) {
+					for (int z = -17; z <= 3; z++) {
+						BlockPos routePosition =
+								centre.offset(
+										x, floorY, z);
+						boolean wafer =
+								level.getBlockState(
+										routePosition)
+										.is(CakeWorldBlocks
+												.WAFER_BLOCK
+												.get());
+						traversableFloors &= wafer;
+						if (!wafer) {
+							missingRouteByFloor.merge(
+									floorY, 1,
+									Integer::sum);
+							if (firstMissingRouteBlocks
+									.size() < 12) {
+								firstMissingRouteBlocks
+										.add(routePosition);
+							}
+						}
+					}
+				}
+			}
+			boolean sealedSecretKitchen = true;
+			for (int y = 17; y <= 23; y++) {
+				for (int z = 4; z <= 17; z++) {
+					sealedSecretKitchen &=
+							level.getBlockState(
+									centre.offset(
+											-6, y, z))
+									.is(CakeWorldBlocks
+											.GINGERBREAD_BRICKS
+											.get());
+				}
+			}
+			BlockEntity ordinaryChest =
+					level.getBlockEntity(
+							centre.offset(
+									14, 1, 11));
+			BlockEntity secretChest =
+					level.getBlockEntity(
+							centre.offset(
+									-13, 17, 9));
+			CompoundTag ordinaryState =
+					ordinaryChest == null
+							? new CompoundTag()
+							: ordinaryChest
+									.saveWithoutMetadata();
+			CompoundTag secretState =
+					secretChest == null
+							? new CompoundTag()
+							: secretChest
+									.saveWithoutMetadata();
+			List<net.minecraft.world.entity.raid.Raider>
+					inhabitants =
+					level.getEntitiesOfClass(
+							net.minecraft.world.entity.raid
+									.Raider.class,
+							new AABB(centre)
+									.inflate(48.0D));
+			long rollingPinRaiders =
+					inhabitants.stream()
+							.filter(entity ->
+									entity.getType()
+											== CakeWorldEntities
+													.ROLLING_PIN_RAIDER
+													.get())
+							.count();
+			long sourSorcerers =
+					inhabitants.stream()
+							.filter(entity ->
+									entity.getType()
+											== CakeWorldEntities
+													.SOUR_SORCERER
+													.get())
+							.count();
+			long bitterBakers =
+					inhabitants.stream()
+							.filter(entity ->
+									entity.getType()
+											== CakeWorldEntities
+													.BITTER_BAKER
+													.get())
+							.count();
+			ResourceLocation biomeId =
+					level.registryAccess()
+							.registryOrThrow(
+									Registry.BIOME_REGISTRY)
+							.getKey(level.getBiome(
+									centre)
+									.value());
+			boolean literalMansionEligible =
+					level.getBiome(centre).is(
+							BiomeTags
+									.HAS_WOODLAND_MANSION);
+
+			for (int chunkX = minimumChunkX;
+					chunkX <= maximumChunkX;
+					chunkX++) {
+				for (int chunkZ = minimumChunkZ;
+						chunkZ <= maximumChunkZ;
+						chunkZ++) {
+					level.setChunkForced(
+							chunkX, chunkZ, false);
+				}
+			}
+
+			LOGGER.info("Focused Grand Gingerbread Manor audit: locate={}, centre={}, bounds={}, biome={}, palette={}, traversableFloors={}, missingRouteByFloor={}, firstMissingRouteBlocks={}, sealedSecretKitchen={}, rollingPinRaiders={}, sourSorcerers={}, bitterBakers={}, ordinaryLoot={}, secretLoot={}",
+					located, centre, savedBounds,
+					biomeId, palette,
+					traversableFloors,
+					missingRouteByFloor,
+					firstMissingRouteBlocks,
+					sealedSecretKitchen,
+					rollingPinRaiders,
+					sourSorcerers,
+					bitterBakers,
+					ordinaryState.getString(
+							"LootTable"),
+					secretState.getString(
+							"LootTable"));
+			require(helper,
+					level.getBiome(centre).is(
+							GrandGingerbreadManorFeature
+									.GENERATES_IN)
+							&& CakeWorldBiomes
+									.COOKIE_FOREST
+									.getId()
+									.equals(biomeId)
+							&& !literalMansionEligible,
+					"Grand Gingerbread Manor generated outside Cookie Forest or enabled a literal vanilla Mansion: "
+							+ biomeId);
+			require(helper,
+					palette.getOrDefault(
+							CakeWorldBlocks
+									.GINGERBREAD_BRICKS
+									.get(), 0) >= 2500
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.WAFER_BLOCK
+											.get(), 0)
+									>= 3500
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.CANDY_CANE_PILLAR
+											.get(), 0)
+									>= 80
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.CANDY_GLASS
+											.get(), 0)
+									>= 100
+							&& gummyRoof >= 2500
+							&& palette.getOrDefault(
+									CakeWorldBlocks.OVEN
+											.get(), 0)
+									== 2
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.MIXING_BOWL
+											.get(), 0)
+									== 2
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.COOLING_RACK
+											.get(), 0)
+									== 2
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.CANDY_COOKER
+											.get(), 0)
+									== 2
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.COOKBOOK_LIBRARY
+											.get(), 0)
+									== 3
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.COOKBOOK_KIOSK
+											.get(), 0)
+									== 1
+							&& palette.getOrDefault(
+									Blocks.CHEST, 0)
+									== 2
+							&& traversableFloors
+							&& sealedSecretKitchen,
+					"The natural Grand Gingerbread Manor lost its edible floors, kitchens, Cookbook rooms, roof or caches");
+			require(helper,
+					GrandGingerbreadManorFeature
+							.LOOT_ID.toString()
+							.equals(ordinaryState
+									.getString(
+											"LootTable"))
+							&& GrandGingerbreadManorFeature
+									.SECRET_LOOT_ID
+									.toString()
+									.equals(secretState
+											.getString(
+													"LootTable")),
+					"The natural Grand Gingerbread Manor lost its ordinary or secret loot table");
+			require(helper,
+					inhabitants.size() == 8
+							&& rollingPinRaiders == 5
+							&& sourSorcerers == 2
+							&& bitterBakers == 1
+							&& inhabitants.stream()
+									.allMatch(
+											net.minecraft.world
+													.entity.raid
+													.Raider
+													::isPersistenceRequired)
+							&& inhabitants.stream()
+									.allMatch(
+											raider -> raider
+													.getCurrentRaid()
+													== null),
+					"The natural Grand Gingerbread Manor lost its persistent non-raid household: total="
+							+ inhabitants.size()
+							+ ", rollingPinRaiders="
+							+ rollingPinRaiders
+							+ ", sourSorcerers="
+							+ sourSorcerers
+							+ ", bitterBakers="
+							+ bitterBakers);
 			helper.succeed();
 		});
 	}

@@ -153,6 +153,9 @@ import com.mcmoddev.cakeworld.world.CakeWorldZoglinReplacement;
 import com.mcmoddev.cakeworld.world.BiscuitBanditLookoutFeature;
 import com.mcmoddev.cakeworld.world.CakeWorldFeaturePoolElement;
 import com.mcmoddev.cakeworld.world.GingerbreadVillageFeature;
+import com.mcmoddev.cakeworld.world.GrandGingerbreadManorFeature;
+import com.mcmoddev.cakeworld.world.GrandGingerbreadManorRepairFeature;
+import com.mcmoddev.cakeworld.world.GrandGingerbreadManorStructureFeature;
 import com.mcmoddev.cakeworld.world.WaferMineFeature;
 import com.mcmoddev.cakeworld.world.WaferMineStructureFeature;
 import com.mcmoddev.cakeworld.world.CakeWorldPillagerReplacement;
@@ -196,6 +199,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.ConfiguredStructureTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
@@ -17463,17 +17467,29 @@ public final class FirstBiteGameTests {
 		WanderingTrader trader =
 				EntityType.WANDERING_TRADER
 						.create(helper.getLevel());
-		Pig attacker =
-				EntityType.PIG.create(
-						helper.getLevel());
+		TrufflePig attacker =
+				CakeWorldEntities.TRUFFLE_PIG.get()
+						.create(helper.getLevel());
 		SprinkleLlamaProbe traderBound =
 				new SprinkleLlamaProbe(
 						helper.getLevel());
 		require(helper,
 				trader != null && attacker != null,
 				"Could not create trader-defence fixtures");
-		trader.setPos(anchor.getX() + 8.0D,
-				anchor.getY(), anchor.getZ());
+		for (int x = 3; x <= 8; x++) {
+			for (int y = 5; y <= 9; y++) {
+				for (int z = 3; z <= 7; z++) {
+					helper.setBlock(
+							new BlockPos(x, y, z),
+							Blocks.AIR);
+				}
+			}
+		}
+		BlockPos defenceAnchor = helper.absolutePos(
+				new BlockPos(5, 6, 5));
+		trader.setPos(defenceAnchor.getX(),
+				defenceAnchor.getY(),
+				defenceAnchor.getZ());
 		attacker.setPos(trader.getX() + 2.0D,
 				trader.getY(), trader.getZ());
 		traderBound.setPos(trader.getX() + 1.0D,
@@ -17500,10 +17516,30 @@ public final class FirstBiteGameTests {
 						.getSimpleName().equals(
 								"TraderLlamaDefendWanderingTraderGoal"))
 				.findFirst().orElse(null);
+		boolean defendCanUse =
+				defendGoal != null && defendGoal.canUse();
 		require(helper,
-				defendGoal != null
-						&& defendGoal.canUse(),
-				"Sprinkle Llama did not notice its leashed trader's attacker");
+				defendCanUse,
+				"Sprinkle Llama did not notice its leashed trader's attacker: leashed="
+						+ traderBound.isLeashed()
+						+ ", holderIsTrader="
+						+ (traderBound.getLeashHolder()
+								== trader)
+						+ ", rememberedAttacker="
+						+ (trader.getLastHurtByMob()
+								== attacker)
+						+ ", timestamp="
+						+ trader.getLastHurtByMobTimestamp()
+						+ ", attackerAlive="
+						+ attacker.isAlive()
+						+ ", attackerInvulnerable="
+						+ attacker.isInvulnerable()
+						+ ", canAttack="
+						+ traderBound.canAttack(attacker)
+						+ ", lineOfSight="
+						+ traderBound.getSensing()
+								.hasLineOfSight(
+										attacker));
 		defendGoal.start();
 		require(helper,
 				traderBound.getTarget() == attacker,
@@ -33861,6 +33897,149 @@ public final class FirstBiteGameTests {
 				"Wafer Mine lost its single saved cave-loot minecart: "
 						+ lootMinecarts.size());
 		lootMinecarts.forEach(MinecartChest::discard);
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, batch = "struct004",
+			timeoutTicks = 900)
+	public static void grandGingerbreadManorKeepsMansionHooks(
+			GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						GrandGingerbreadManorFeature
+								.STRUCTURE_ID);
+		Registry<net.minecraft.world.level.levelgen.structure.StructureSet>
+				structureSets =
+				level.registryAccess().registryOrThrow(
+						Registry.STRUCTURE_SET_REGISTRY);
+		net.minecraft.world.level.levelgen.structure.StructureSet
+				structureSet =
+				structureSets.get(
+						GrandGingerbreadManorFeature
+								.STRUCTURE_SET_ID);
+		boolean ownTag = structures.getTag(
+						GrandGingerbreadManorFeature
+								.STRUCTURE_TAG)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		boolean explorerMapTag = structures.getTag(
+						ConfiguredStructureTags
+								.ON_WOODLAND_EXPLORER_MAPS)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		Set<ResourceLocation> eligibleBiomes =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.getTag(
+								GrandGingerbreadManorFeature
+										.GENERATES_IN)
+						.map(tag -> tag.stream()
+								.map(holder -> holder
+										.unwrapKey()
+										.orElseThrow()
+										.location())
+								.collect(
+										java.util.stream
+												.Collectors
+												.toSet()))
+						.orElse(Set.of());
+		Biome cookieForest = level.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY)
+				.get(CakeWorldBiomes.COOKIE_FOREST.getId());
+		boolean repairInstalled = false;
+		if (cookieForest != null) {
+			for (Holder<PlacedFeature> feature
+					: cookieForest.getGenerationSettings()
+							.features().get(
+									GenerationStep.Decoration
+											.TOP_LAYER_MODIFICATION
+											.ordinal())) {
+				if (feature.unwrapKey().map(key -> key.location()
+						.equals(GrandGingerbreadManorRepairFeature
+								.ID)).orElse(false)) {
+					repairInstalled = true;
+					break;
+				}
+			}
+		}
+		require(helper,
+				configured != null
+						&& configured.feature
+								== GrandGingerbreadManorFeature
+										.STRUCTURE_FEATURE
+						&& !configured.adaptNoise
+						&& GrandGingerbreadManorFeature
+								.STRUCTURE_FEATURE.step()
+								== GenerationStep
+										.Decoration
+										.SURFACE_STRUCTURES
+						&& GrandGingerbreadManorStructureFeature
+								.MINIMUM_TERRAIN_Y == 60
+						&& structureSet != null
+						&& structureSet.structures().size()
+								== 1
+						&& structureSet.structures().get(0)
+								.structure().value()
+								== configured
+						&& ownTag
+						&& explorerMapTag
+						&& GrandGingerbreadManorRepairFeature
+								.placedFeature() != null
+						&& repairInstalled
+						&& eligibleBiomes.equals(Set.of(
+								CakeWorldBiomes
+										.COOKIE_FOREST
+										.getId())),
+				"Grand Gingerbread Manor lost its configured structure, map tag, surface step, terrain floor, installed late repair or Cookie Forest contract: eligible="
+						+ eligibleBiomes + ", repairInstalled="
+						+ repairInstalled);
+
+		net.minecraft.world.level.levelgen.structure.placement
+				.RandomSpreadStructurePlacement placement =
+				(net.minecraft.world.level.levelgen.structure
+						.placement.RandomSpreadStructurePlacement)
+						structureSet.placement();
+		require(helper,
+				placement.spacing() == 80
+						&& placement.separation() == 20
+						&& placement.spreadType()
+								== net.minecraft.world.level
+										.levelgen.structure
+										.placement
+										.RandomSpreadType
+										.TRIANGULAR
+						&& placement.salt() == 10387319,
+				"Grand Gingerbread Manor lost vanilla Woodland Mansion's exact 80/20 triangular placement contract");
+
+		net.minecraft.world.level.levelgen.structure.pools
+				.StructurePoolElement element =
+				GrandGingerbreadManorFeature.pool()
+						.value().getRandomTemplate(
+								new Random(10387319L));
+		net.minecraft.world.level.levelgen.structure.BoundingBox
+				pieceBounds =
+				element.getBoundingBox(
+						level.getStructureManager(),
+						BlockPos.ZERO,
+						Rotation.NONE);
+		require(helper,
+				element
+						instanceof CakeWorldFeaturePoolElement
+						&& pieceBounds.getXSpan() == 49
+						&& pieceBounds.getYSpan() == 30
+						&& pieceBounds.getZSpan() == 49,
+				"Grand Gingerbread Manor lost its serializable 49x30x49 structure bounds");
 		helper.succeed();
 	}
 

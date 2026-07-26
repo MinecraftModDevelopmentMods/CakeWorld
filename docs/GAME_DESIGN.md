@@ -415,7 +415,7 @@ specification gives them a clear CakeWorld purpose.
 | STRUCT-001 | `minecraft:village` | Gingerbread Villages | Functional first variant: a Candy Plains village with candy-cane and biscuit roads, three gumdrop-roof gingerbread houses, real beds, profession workstations, a farm, meeting bell, Cookbook library and loot, Wafer Windmill, four employed Gingerbread Folk, and a Jawbreaker Guardian. It is a genuine saved and locatable `VILLAGE` structure with occupied POIs and village/raid-location semantics. Hearthlands and other biome variants, expanding multi-piece layouts, presentation, and hands-on raid play remain. |
 | STRUCT-002 | `minecraft:pillager_outpost` | Biscuit Bandit Lookout | Functional first Cookie Forest variant: a tall Wafer and Candy-Cane watchtower with gummy-and-icing roof, ladder, supply chest, biscuit paths, gingerbread camp, holding cage, target range, four persistent crossbow bandits, and a banner captain. It has a dedicated saved structure/set/tag, correctly bounded structure-wide custom-bandit spawn override, vanilla's one-in-five candidate gate, and ten-chunk avoidance of both vanilla and Gingerbread village sets. Layout variation, original presentation, and hands-on Bad Omen/raid play remain. |
 | STRUCT-003 | `minecraft:mineshaft` | Wafer Mine | Functional first underground variant: a saved, locatable and exactly bounded `41 x 13 x 41` branching mine with fragile Wafer floors and beams, Candy-Cane support frames, a continuous 41-block rail, themed minecart loot, a Deep Liquorice Weaver spawner, cobweb nest, lighting, and exposed CakeWorld ore faces. It retains vanilla's every-chunk candidate, `0.004` probability and non-adapted noise contract while remaining eligible in all four current CakeWorld Overworld biomes; those biomes do not gain literal vanilla-Mineshaft eligibility. A wider random piece graph, corridor variation, original presentation, and hands-on exploration/balance play remain. |
-| STRUCT-004 | `minecraft:mansion` | Grand Gingerbread Manor | Sour Sorcerers, secret kitchens, rare recipes, and raid-role compatibility. |
+| STRUCT-004 | `minecraft:mansion` | Grand Gingerbread Manor | Functional first Cookie Forest variant: a saved, locatable and exactly bounded `49 x 30 x 49` three-storey manor with Gingerbread masonry, Wafer floors, Candy-Glass windows, Candy-Cane supports, tiered gummy-and-icing roofs, two kitchens, dining hall, Cookbook library and kiosk, ordinary cache, sealed secret kitchen and guaranteed rare Cookbook cache. Five Rolling-Pin Raiders, two Sour Sorcerers and one Bitter Baker form its persistent non-raid household. It retains the Woodland Mansion's `80/20` triangular placement, terrain-height gate and Woodland Explorer Map role without granting literal vanilla-Mansion eligibility. Room/layout variation, Liquorice Darkwood placement, original presentation and hands-on exploration/balance remain. |
 | STRUCT-005 | `minecraft:jungle_pyramid` | Gummy Shrine | Elastic traps, jungle clues, and themed treasure. |
 | STRUCT-006 | `minecraft:desert_pyramid` | Sherbet Pyramid | Powder traps, fizzy fossils, and buried sweet jars. |
 | STRUCT-007 | `minecraft:igloo` | Ice-Cream Parlour | Tundra shelter retaining the hidden-curing discovery role. |
@@ -467,6 +467,24 @@ Mineshafts; current CakeWorld biomes select the Wafer Mine instead of joining
 vanilla's Mineshaft biome tags. Like vanilla normal Mineshafts, it does not
 adapt surrounding terrain noise, so saved bounds remain exactly
 `41 x 13 x 41`.
+
+The `STRUCT-004` prototype similarly owns a dedicated configured structure,
+set, biome tag and public locate identity rather than recolouring vanilla
+Mansion templates. It preserves vanilla's surface-structure step, minimum
+terrain height of `60`, exact spacing `80`, separation `20`, triangular
+spread and salt `10387319`, and joins
+`#minecraft:on_woodland_explorer_maps`. The first fixed plan provides three
+connected floors, ordinary and secret-room loot roles, Cookbook facilities
+and a persistent CakeWorld raider household without inventing an ambient
+structure spawn override. Cookie Forest vegetation normally decorates after
+surface structures, so a final CakeWorld biome-decoration pass restores only
+the manor's bounded block slices; it resolves the configured structure from
+the active world registry and deliberately does not respawn inhabitants.
+This keeps routes readable without unsafe far-chunk writes or duplicate
+entities. The current Cookie Forest home is an available proving ground;
+Liquorice Darkwood becomes the thematic primary home when that biome exists.
+The prototype does not rewrite vanilla or third-party Mansions and does not
+claim vanilla's full procedural room graph.
 
 ## Original Structure Additions
 

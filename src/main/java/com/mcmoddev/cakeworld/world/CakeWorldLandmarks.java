@@ -24,5 +24,27 @@ public final class CakeWorldLandmarks {
 			event.getGeneration().getFeatures(
 					GenerationStep.Decoration.SURFACE_STRUCTURES).add(picnic);
 		}
+		Holder<PlacedFeature> manorRepair =
+				GrandGingerbreadManorRepairFeature
+						.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(
+						biome.getNamespace())
+				&& isCurrentOverworldBiome(
+						biome.getPath())
+				&& manorRepair != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration
+							.TOP_LAYER_MODIFICATION)
+					.add(manorRepair);
+		}
+	}
+
+	private static boolean isCurrentOverworldBiome(
+			String path) {
+		return "candy_plains".equals(path)
+				|| "cookie_forest".equals(path)
+				|| "marshmallow_peaks".equals(path)
+				|| "soda_ocean".equals(path);
 	}
 }
