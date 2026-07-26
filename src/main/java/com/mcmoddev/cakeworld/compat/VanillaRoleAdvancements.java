@@ -237,6 +237,10 @@ public final class VanillaRoleAdvancements {
 		award(player, KILL_ALL, "minecraft:evoker");
 	}
 
+	public static void creditKilledVexRole(ServerPlayer player) {
+		award(player, KILL_ALL, "minecraft:vex");
+	}
+
 	public static void creditKilledGhastRole(ServerPlayer player) {
 		award(player, KILL_ALL, "minecraft:ghast");
 	}
@@ -411,6 +415,9 @@ public final class VanillaRoleAdvancements {
 		}
 		if (type == CakeWorldEntities.SOUR_SORCERER.get()) {
 			return "minecraft:evoker";
+		}
+		if (type == CakeWorldEntities.SOUR_SPRITE.get()) {
+			return "minecraft:vex";
 		}
 		if (type == CakeWorldEntities.MALLOW_FLOATER.get()) {
 			return "minecraft:ghast";

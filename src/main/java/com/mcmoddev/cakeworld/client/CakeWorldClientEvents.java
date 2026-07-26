@@ -60,6 +60,7 @@ import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.client.renderer.entity.ThrownTridentRenderer;
 import net.minecraft.client.renderer.entity.TropicalFishRenderer;
 import net.minecraft.client.renderer.entity.TurtleRenderer;
+import net.minecraft.client.renderer.entity.VexRenderer;
 import net.minecraft.client.model.SquidModel;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraftforge.api.distmarker.Dist;
@@ -213,6 +214,8 @@ public final class CakeWorldClientEvents {
 				EndermiteRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.SOUR_SORCERER.get(),
 				EvokerRenderer::new);
+		event.registerEntityRenderer(CakeWorldEntities.SOUR_SPRITE.get(),
+				VexRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.PEPPERMINT_FOX.get(),
 				FoxRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.MALLOW_FLOATER.get(),

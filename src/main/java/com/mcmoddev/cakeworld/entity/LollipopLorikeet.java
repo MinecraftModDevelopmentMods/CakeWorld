@@ -66,6 +66,8 @@ public class LollipopLorikeet extends Parrot {
 							SoundEvents.PARROT_IMITATE_ENDERMITE),
 					mimic("sour_sorcerer",
 							SoundEvents.PARROT_IMITATE_EVOKER),
+					mimic("sour_sprite",
+							SoundEvents.PARROT_IMITATE_VEX),
 					mimic("mallow_floater",
 							SoundEvents.PARROT_IMITATE_GHAST),
 					mimic("gumball_guardian",

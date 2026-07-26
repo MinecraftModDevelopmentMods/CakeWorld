@@ -56,6 +56,7 @@ import com.mcmoddev.cakeworld.entity.SoggyTridentProjectile;
 import com.mcmoddev.cakeworld.entity.SherbetOcelot;
 import com.mcmoddev.cakeworld.entity.SherbetSalmon;
 import com.mcmoddev.cakeworld.entity.SourSorcerer;
+import com.mcmoddev.cakeworld.entity.SourSprite;
 import com.mcmoddev.cakeworld.entity.SprinkleLlama;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
 import com.mcmoddev.cakeworld.entity.SugarBee;
@@ -121,6 +122,7 @@ import net.minecraft.world.entity.monster.Silverfish;
 import net.minecraft.world.entity.monster.Skeleton;
 import net.minecraft.world.entity.monster.Spider;
 import net.minecraft.world.entity.monster.Strider;
+import net.minecraft.world.entity.monster.Vex;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.monster.hoglin.Hoglin;
 import net.minecraft.world.entity.monster.piglin.Piglin;
@@ -476,6 +478,13 @@ public final class CakeWorldEntities {
 							MobCategory.MONSTER)
 							.sized(0.6F, 1.95F)
 							.clientTrackingRange(8));
+	public static final RegistryObject<EntityType<SourSprite>>
+			SOUR_SPRITE = entity("sour_sprite",
+					EntityType.Builder.of(SourSprite::new,
+							MobCategory.MONSTER)
+							.fireImmune()
+							.sized(0.4F, 0.8F)
+							.clientTrackingRange(8));
 	public static final RegistryObject<EntityType<PeppermintFox>>
 			PEPPERMINT_FOX = entity("peppermint_fox",
 					EntityType.Builder.of(PeppermintFox::new,
@@ -654,6 +663,8 @@ public final class CakeWorldEntities {
 				Endermite.createAttributes().build());
 		event.put(SOUR_SORCERER.get(),
 				Evoker.createAttributes().build());
+		event.put(SOUR_SPRITE.get(),
+				Vex.createAttributes().build());
 		event.put(PEPPERMINT_FOX.get(),
 				Fox.createAttributes().build());
 		event.put(MALLOW_FLOATER.get(),

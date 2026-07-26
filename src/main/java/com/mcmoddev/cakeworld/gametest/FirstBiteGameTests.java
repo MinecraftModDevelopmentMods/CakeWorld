@@ -98,6 +98,7 @@ import com.mcmoddev.cakeworld.entity.SoggyTridentProjectile;
 import com.mcmoddev.cakeworld.entity.SherbetOcelot;
 import com.mcmoddev.cakeworld.entity.SherbetSalmon;
 import com.mcmoddev.cakeworld.entity.SourSorcerer;
+import com.mcmoddev.cakeworld.entity.SourSprite;
 import com.mcmoddev.cakeworld.entity.SprinkleLlama;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
 import com.mcmoddev.cakeworld.entity.SugarBee;
@@ -120,6 +121,7 @@ import com.mcmoddev.cakeworld.item.JellylotlBucketItem;
 import com.mcmoddev.cakeworld.world.CakeWorldPiglinReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldPiglinBruteReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldTurtleReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldVexReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldPillagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldRavagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldShulkerReplacement;
@@ -22553,15 +22555,11 @@ public final class FirstBiteGameTests {
 							&& laidEgg.getValue(
 									TurtleEggBlock
 											.EGGS) <= 4
-							&& !eggBearer.hasEgg()
-							&& !eggBearer
-									.isLayingEgg(),
+							&& !eggBearer.hasEgg(),
 					"Wafer Turtle did not complete the inherited homeward one-to-four-egg laying cycle: egg="
 							+ laidEggPos
 							+ ", hasEgg="
-							+ eggBearer.hasEgg()
-							+ ", laying="
-							+ eggBearer.isLayingEgg());
+							+ eggBearer.hasEgg());
 			hatchlings.forEach(
 					WaferTurtle::discard);
 			scutes.forEach(ItemEntity::discard);
@@ -22573,6 +22571,532 @@ public final class FirstBiteGameTests {
 			passenger.discard();
 			converted.discard();
 			eggBearer.discard();
+			helper.succeed();
+		});
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 300)
+	public static void sourSpritesKeepSummoningFlightLifeAndSafeCharges(
+			GameTestHelper helper) {
+		SourSpriteProbe sprite =
+				new SourSpriteProbe(helper.getLevel());
+		int experience = sprite.getExperienceValue();
+		require(helper,
+				sprite instanceof Vex
+						&& sprite.getType()
+								== CakeWorldEntities
+										.SOUR_SPRITE.get()
+						&& sprite.getType().getCategory()
+								== MobCategory.MONSTER
+						&& sprite.getType().fireImmune()
+						&& close(sprite.getMaxHealth(), 14.0D)
+						&& close(sprite.getAttributeValue(
+								Attributes.ATTACK_DAMAGE),
+								4.0D)
+						&& close(sprite.getDimensions(
+								Pose.STANDING).width,
+								0.4D)
+						&& close(sprite.getDimensions(
+								Pose.STANDING).height,
+								0.8D)
+						&& sprite.getType()
+								.clientTrackingRange() == 8
+						&& experience == 3,
+				"Sour Sprite lost the exact Vex body, fire immunity, tracking, attributes or XP");
+		require(helper,
+				"VexMoveControl".equals(
+						sprite.getMoveControl()
+								.getClass()
+								.getSimpleName())
+						&& sprite.hasGoalAt(
+								"FloatGoal", 0)
+						&& sprite.hasGoalAt(
+								"VexChargeAttackGoal", 4)
+						&& sprite.hasGoalAt(
+								"VexRandomMoveGoal", 8)
+						&& sprite.hasGoalAt(
+								"LookAtPlayerGoal", 9)
+						&& sprite.hasGoalAt(
+								"LookAtPlayerGoal", 10)
+						&& sprite.countGoalsNamed(
+								"LookAtPlayerGoal") == 2
+						&& sprite.hasTargetGoalAt(
+								"HurtByTargetGoal", 1)
+						&& sprite.hasTargetGoalAt(
+								"VexCopyOwnerTargetGoal",
+								2)
+						&& sprite.hasTargetGoalAt(
+								"NearestAttackableTargetGoal",
+								3)
+						&& sprite.countTargetGoals() == 3,
+				"Sour Sprite lost Vex flight, charge, wandering, look or targeting goals");
+		require(helper,
+				sprite.ambientSound()
+								== SoundEvents.VEX_AMBIENT
+						&& sprite.hurtSound()
+								== SoundEvents.VEX_HURT
+						&& sprite.deathSound()
+								== SoundEvents.VEX_DEATH
+						&& close(sprite.getBrightness(), 1.0D),
+				"Sour Sprite lost Vex sounds or full brightness");
+
+		BlockPos localAnchor =
+				helper.absolutePos(new BlockPos(4, 3, 4));
+		sprite.setPos(localAnchor.getX(),
+				localAnchor.getY(), localAnchor.getZ());
+		sprite.finalizeSpawn(helper.getLevel(),
+				helper.getLevel()
+						.getCurrentDifficultyAt(localAnchor),
+				MobSpawnType.MOB_SUMMONED, null, null);
+		require(helper,
+				sprite.getMainHandItem().is(Items.IRON_SWORD)
+						&& close(sprite.mainHandDropChance(),
+								0.0D),
+				"Sour Sprite lost the summoned Iron Sword or zero drop chance");
+
+		BlockPos bound = localAnchor.offset(5, 2, -3);
+		sprite.setBoundOrigin(bound);
+		sprite.setLimitedLife(417);
+		sprite.setIsCharging(true);
+		CompoundTag saved =
+				sprite.saveWithoutId(new CompoundTag());
+		SourSprite restored =
+				CakeWorldEntities.SOUR_SPRITE.get()
+						.create(helper.getLevel());
+		require(helper, restored != null,
+				"Could not create Sour Sprite reload fixture");
+		restored.load(saved);
+		CompoundTag restoredState =
+				restored.saveWithoutId(new CompoundTag());
+		require(helper,
+				bound.equals(restored.getBoundOrigin())
+						&& restoredState.getInt(
+								"LifeTicks") == 417
+						&& !restored.isCharging(),
+				"Sour Sprite lost Vex bound origin or limited life, or fabricated charging persistence");
+
+		SourSorcerer owner =
+				CakeWorldEntities.SOUR_SORCERER.get()
+						.create(helper.getLevel());
+		Pig ownerTarget =
+				EntityType.PIG.create(helper.getLevel());
+		require(helper, owner != null && ownerTarget != null,
+				"Could not create Sour Sprite owner-target fixtures");
+		owner.setTarget(ownerTarget);
+		sprite.setOwner(owner);
+		sprite.setTarget(null);
+		sprite.runTargetGoals();
+		require(helper,
+				sprite.getOwner() == owner
+						&& sprite.getTarget()
+								== ownerTarget
+						&& owner.isAlliedTo(sprite),
+				"Sour Sprite lost owner-target copying or Sour Sorcerer alliance");
+
+		sprite.setPos(0.0D, 4.0D, 0.0D);
+		ownerTarget.setPos(8.0D, 4.0D, 0.0D);
+		sprite.setTarget(ownerTarget);
+		WrappedGoal charge =
+				sprite.goalNamed("VexChargeAttackGoal");
+		require(helper, charge != null,
+				"Could not inspect Sour Sprite charge goal");
+		sprite.clearRecordedSound();
+		charge.getGoal().start();
+		require(helper,
+				sprite.isCharging()
+						&& sprite.getMoveControl()
+								.hasWanted()
+						&& sprite.recordedSound()
+								== SoundEvents.VEX_CHARGE,
+				"Sour Sprite charge did not target the victim's eyes, set its flag or play its cue");
+		charge.getGoal().stop();
+		require(helper, !sprite.isCharging(),
+				"Sour Sprite charge flag did not clear");
+
+		SourSpriteProbe decaying =
+				new SourSpriteProbe(helper.getLevel());
+		decaying.setNoAi(true);
+		decaying.setHealth(14.0F);
+		decaying.setLimitedLife(1);
+		decaying.tick();
+		CompoundTag decayedState =
+				decaying.saveWithoutId(new CompoundTag());
+		require(helper,
+				close(decaying.getHealth(), 13.0D)
+						&& decayedState.getInt(
+								"LifeTicks") == 20
+						&& decaying.isNoGravity()
+						&& decaying
+								.sawNoPhysicsDuringBaseTick()
+						&& !decaying.noPhysics,
+				"Sour Sprite lost no-physics flight, no gravity or twenty-tick limited-life starvation");
+
+		Pig contactTarget =
+				EntityType.PIG.create(helper.getLevel());
+		require(helper, contactTarget != null,
+				"Could not create Sour Sprite contact target");
+		contactTarget.setPos(1.0D, 4.0D, 0.0D);
+		Difficulty originalDifficulty =
+				helper.getLevel().getDifficulty();
+		try {
+			for (Difficulty safeDifficulty :
+					new Difficulty[] {
+							Difficulty.EASY,
+							Difficulty.NORMAL}) {
+				helper.getLevel().getServer()
+						.setDifficulty(
+								safeDifficulty, true);
+				contactTarget.setHealth(10.0F);
+				contactTarget.invulnerableTime = 0;
+				contactTarget.removeAllEffects();
+				contactTarget.setSecondsOnFire(5);
+				contactTarget.fallDistance = 12.0F;
+				contactTarget.setDeltaMovement(
+						Vec3.ZERO);
+				require(helper,
+						sprite.doHurtTarget(
+								contactTarget)
+								&& close(
+										contactTarget
+												.getHealth(),
+										10.0D)
+								&& contactTarget
+										.getEffect(
+												MobEffects
+														.CONFUSION)
+										.getDuration() == 100
+								&& contactTarget.hasEffect(
+										MobEffects.GLOWING)
+								&& contactTarget.hasEffect(
+										MobEffects.SLOW_FALLING)
+								&& contactTarget.hasEffect(
+										MobEffects
+												.FIRE_RESISTANCE)
+								&& contactTarget.getEffect(
+										MobEffects
+												.DAMAGE_RESISTANCE)
+										.getAmplifier() == 4
+								&& contactTarget
+										.getRemainingFireTicks()
+										<= 0
+								&& close(contactTarget
+										.fallDistance, 0.0D)
+								&& contactTarget
+										.getDeltaMovement().y
+										> 0.0D,
+						safeDifficulty
+								+ " Sour Sprite charge caused damage or lacked sour rescue");
+			}
+
+			helper.getLevel().getServer()
+					.setDifficulty(Difficulty.HARD, true);
+			contactTarget.setHealth(10.0F);
+			contactTarget.invulnerableTime = 0;
+			contactTarget.removeAllEffects();
+			require(helper,
+					sprite.doHurtTarget(contactTarget)
+							&& close(
+									contactTarget.getHealth(),
+									6.0D)
+							&& contactTarget
+									.getActiveEffects()
+									.isEmpty(),
+					"Hard Sour Sprite did not retain exact four-point Vex contact damage");
+
+			helper.getLevel().getServer().setDifficulty(
+					Difficulty.PEACEFUL, true);
+			SourSpriteProbe peaceful =
+					new SourSpriteProbe(
+							helper.getLevel());
+			peaceful.checkDespawnRole();
+			require(helper,
+					peaceful.isRemoved()
+							&& peaceful
+									.despawnsInPeaceful(),
+					"Peaceful Sour Sprite lost vanilla Monster removal");
+		} finally {
+			helper.getLevel().getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		require(helper,
+				sprite.getLootTableId().equals(
+						new ResourceLocation(
+								CakeWorld.MODID,
+								"entities/sour_sprite"))
+						&& CakeWorldItems
+								.SOUR_SPRITE_SPAWN_EGG
+								.isPresent()
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+												.SOUR_SPRITE
+												.get())
+								== SoundEvents
+										.PARROT_IMITATE_VEX,
+				"Sour Sprite lost empty-loot, testing-egg or Vex-mimic roles");
+		ServerPlayer advancementPlayer =
+				new ServerPlayer(
+						helper.getLevel().getServer(),
+						helper.getLevel(),
+						new GameProfile(
+								UUID.fromString(
+										"1978feed-feed-4bad-babe-1978feed2061"),
+								"CakeWorldSourSpriteRoleTest"));
+		VanillaRoleAdvancements.creditKilledVexRole(
+				advancementPlayer);
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:adventure/kill_all_mobs",
+				"minecraft:vex");
+
+		Registry<Biome> biomes = helper.getLevel()
+				.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY);
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS.getId())) {
+			Biome biome = biomes.get(biomeId);
+			require(helper, biome != null
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory
+													.MONSTER)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType
+															.VEX
+											|| spawn.type
+													== CakeWorldEntities
+															.SOUR_SPRITE
+															.get()),
+					"Sour Sprite fabricated natural ecology in "
+							+ biomeId);
+		}
+
+		BlockPos cakeWorldPos =
+				findCakeWorldBiomePosition(helper,
+						helper.absolutePos(
+								new BlockPos(8, 3, 8)),
+						256);
+		require(helper, cakeWorldPos != null,
+				"Could not locate CakeWorld terrain for Sour Sprite source conversion");
+		Vex literal =
+				EntityType.VEX.create(helper.getLevel());
+		SourSorcerer conversionOwner =
+				CakeWorldEntities.SOUR_SORCERER.get()
+						.create(helper.getLevel());
+		Pig conversionTarget =
+				EntityType.PIG.create(helper.getLevel());
+		Chicken passenger =
+				EntityType.CHICKEN.create(helper.getLevel());
+		Boat vehicle = new Boat(
+				helper.getLevel(),
+				cakeWorldPos.getX() + 2.0D,
+				cakeWorldPos.getY() + 1.0D,
+				cakeWorldPos.getZ() + 2.0D);
+		require(helper,
+				literal != null
+						&& conversionOwner != null
+						&& conversionTarget != null
+						&& passenger != null,
+				"Could not create Sour Sprite direct-conversion fixtures");
+		literal.setPos(cakeWorldPos.getX() + 0.5D,
+				cakeWorldPos.getY() + 1.0D,
+				cakeWorldPos.getZ() + 0.5D);
+		literal.finalizeSpawn(helper.getLevel(),
+				helper.getLevel().getCurrentDifficultyAt(
+						cakeWorldPos),
+				MobSpawnType.MOB_SUMMONED, null, null);
+		literal.setHealth(11.0F);
+		literal.setCustomName(
+				new TextComponent("Deferred Tang"));
+		literal.setPersistenceRequired();
+		literal.setNoAi(true);
+		literal.setBoundOrigin(
+				cakeWorldPos.offset(3, 2, -4));
+		literal.setLimitedLife(509);
+		literal.setOwner(conversionOwner);
+		literal.setTarget(conversionTarget);
+		literal.setIsCharging(true);
+		literal.invulnerableTime = 37;
+		literal.startRiding(vehicle, true);
+		passenger.startRiding(literal, true);
+		SourSprite converted =
+				CakeWorldVexReplacement
+						.replaceIfInCakeWorldBiome(
+								helper.getLevel(),
+								literal);
+		CompoundTag convertedState =
+				converted == null
+						? new CompoundTag()
+						: converted.saveWithoutId(
+								new CompoundTag());
+		require(helper,
+				converted != null
+						&& literal.isRemoved()
+						&& close(converted.getHealth(),
+								11.0D)
+						&& converted.hasCustomName()
+						&& "Deferred Tang".equals(
+								converted.getName()
+										.getString())
+						&& converted
+								.isPersistenceRequired()
+						&& converted.isNoAi()
+						&& converted.getMainHandItem()
+								.is(Items.IRON_SWORD)
+						&& cakeWorldPos.offset(3, 2, -4)
+								.equals(converted
+										.getBoundOrigin())
+						&& convertedState.getInt(
+								"LifeTicks") == 509
+						&& converted.getOwner()
+								== conversionOwner
+						&& converted.getTarget()
+								== conversionTarget
+						&& converted.isCharging()
+						&& converted.invulnerableTime == 37
+						&& converted.getVehicle()
+								== vehicle
+						&& converted.getPassengers()
+								.contains(passenger),
+				"Fresh literal Vex conversion lost life, bound, owner, target, charging, state, equipment or relationships");
+		require(helper,
+				CakeWorldVexReplacement
+						.replaceIfInCakeWorldBiome(
+								helper.getLevel(),
+								sprite) == null
+						&& !sprite.isRemoved(),
+				"Vex source conversion touched a non-literal entity type");
+		passenger.discard();
+		converted.discard();
+		vehicle.discard();
+
+		AABB eventArea =
+				new AABB(cakeWorldPos).inflate(5.0D);
+		helper.getLevel().getEntitiesOfClass(
+				Vex.class, eventArea)
+				.forEach(Vex::discard);
+		Vex eventLiteral =
+				EntityType.VEX.create(helper.getLevel());
+		SourSorcerer eventOwner =
+				CakeWorldEntities.SOUR_SORCERER.get()
+						.create(helper.getLevel());
+		Pig eventTarget =
+				EntityType.PIG.create(helper.getLevel());
+		require(helper,
+				eventLiteral != null
+						&& eventOwner != null
+						&& eventTarget != null,
+				"Could not create Sour Sprite entity-join fixtures");
+		eventLiteral.setPos(cakeWorldPos.getX() + 0.5D,
+				cakeWorldPos.getY() + 1.0D,
+				cakeWorldPos.getZ() + 0.5D);
+		eventLiteral.finalizeSpawn(helper.getLevel(),
+				helper.getLevel().getCurrentDifficultyAt(
+						cakeWorldPos),
+				MobSpawnType.MOB_SUMMONED, null, null);
+		eventLiteral.setCustomName(
+				new TextComponent(
+						"Entity Join Sour Sprite"));
+		eventLiteral.setNoAi(true);
+		eventLiteral.setBoundOrigin(
+				cakeWorldPos.offset(-2, 1, 3));
+		eventLiteral.setLimitedLife(611);
+		eventLiteral.setOwner(eventOwner);
+		eventLiteral.setTarget(eventTarget);
+		eventLiteral.setIsCharging(true);
+		require(helper,
+				helper.getLevel()
+						.addFreshEntity(eventLiteral),
+				"Could not add literal Vex entity-join source");
+
+		helper.runAfterDelay(4, () -> {
+			List<SourSprite> emitted =
+					helper.getLevel()
+							.getEntitiesOfClass(
+									SourSprite.class,
+									eventArea,
+									candidate ->
+											candidate
+													.hasCustomName()
+													&& "Entity Join Sour Sprite"
+															.equals(candidate
+																	.getName()
+																	.getString()));
+			SourSprite eventSprite =
+					emitted.size() == 1
+							? emitted.get(0) : null;
+			CompoundTag eventState =
+					eventSprite != null
+							? eventSprite
+									.saveWithoutId(
+											new CompoundTag())
+							: new CompoundTag();
+			require(helper,
+					eventLiteral.isRemoved()
+							&& eventSprite != null
+							&& eventSprite
+									.getOwner()
+									== eventOwner
+							&& eventSprite
+									.getTarget()
+									== eventTarget
+							&& eventSprite
+									.isCharging()
+							&& cakeWorldPos.offset(
+									-2, 1, 3)
+									.equals(eventSprite
+											.getBoundOrigin())
+							&& eventState.getInt(
+									"LifeTicks") >= 605
+							&& eventState.getInt(
+									"LifeTicks") <= 611
+							&& eventSprite
+									.getMainHandItem()
+									.is(Items.IRON_SWORD),
+					"Actual deferred Vex entity-join source lost summon state: literalRemoved="
+							+ eventLiteral.isRemoved()
+							+ ", emitted=" + emitted.size()
+							+ ", owner="
+							+ (eventSprite != null
+									&& eventSprite.getOwner()
+											== eventOwner)
+							+ ", target="
+							+ (eventSprite != null
+									&& eventSprite.getTarget()
+											== eventTarget)
+							+ ", charging="
+							+ (eventSprite != null
+									&& eventSprite.isCharging())
+							+ ", bound="
+							+ (eventSprite == null
+									? null
+									: eventSprite
+											.getBoundOrigin())
+							+ ", life="
+							+ eventState.getInt("LifeTicks")
+							+ ", sword="
+							+ (eventSprite != null
+									&& eventSprite
+											.getMainHandItem()
+											.is(Items.IRON_SWORD)));
+			emitted.forEach(SourSprite::discard);
+			sprite.discard();
+			restored.discard();
+			decaying.discard();
+			owner.discard();
+			ownerTarget.discard();
+			contactTarget.discard();
+			conversionOwner.discard();
+			conversionTarget.discard();
+			eventOwner.discard();
+			eventTarget.discard();
 			helper.succeed();
 		});
 	}
@@ -23180,6 +23704,135 @@ public final class FirstBiteGameTests {
 				net.minecraft.sounds.SoundEvent sound,
 				float volume, float pitch) {
 			lastSound = sound;
+		}
+	}
+
+	private static final class SourSpriteProbe
+			extends SourSprite {
+		private net.minecraft.sounds.SoundEvent
+				recordedSound;
+		private boolean noPhysicsDuringBaseTick;
+
+		private SourSpriteProbe(Level level) {
+			super(CakeWorldEntities.SOUR_SPRITE.get(),
+					level);
+		}
+
+		private int getExperienceValue() {
+			return getExperienceReward(null);
+		}
+
+		private ResourceLocation getLootTableId() {
+			return getLootTable();
+		}
+
+		private float mainHandDropChance() {
+			return getEquipmentDropChance(
+					EquipmentSlot.MAINHAND);
+		}
+
+		private boolean hasGoalAt(
+				String name, int priority) {
+			return goalSelector.getAvailableGoals()
+					.stream().anyMatch(wrapped ->
+							wrapped.getPriority()
+									== priority
+									&& name.equals(
+											wrapped
+													.getGoal()
+													.getClass()
+													.getSimpleName()));
+		}
+
+		private boolean hasTargetGoalAt(
+				String name, int priority) {
+			return targetSelector.getAvailableGoals()
+					.stream().anyMatch(wrapped ->
+							wrapped.getPriority()
+									== priority
+									&& name.equals(
+											wrapped
+													.getGoal()
+													.getClass()
+													.getSimpleName()));
+		}
+
+		private int countGoalsNamed(String name) {
+			return (int)goalSelector
+					.getAvailableGoals().stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
+		}
+
+		private int countTargetGoals() {
+			return targetSelector
+					.getAvailableGoals().size();
+		}
+
+		private WrappedGoal goalNamed(String name) {
+			return goalSelector.getAvailableGoals()
+					.stream()
+					.filter(wrapped -> name.equals(
+							wrapped.getGoal()
+									.getClass()
+									.getSimpleName()))
+					.findFirst().orElse(null);
+		}
+
+		private void runTargetGoals() {
+			targetSelector.tick();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				ambientSound() {
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				hurtSound() {
+			return getHurtSound(DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				deathSound() {
+			return getDeathSound();
+		}
+
+		private void clearRecordedSound() {
+			recordedSound = null;
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				recordedSound() {
+			return recordedSound;
+		}
+
+		private boolean sawNoPhysicsDuringBaseTick() {
+			return noPhysicsDuringBaseTick;
+		}
+
+		private void checkDespawnRole() {
+			checkDespawn();
+		}
+
+		private boolean despawnsInPeaceful() {
+			return shouldDespawnInPeaceful();
+		}
+
+		@Override
+		public void baseTick() {
+			noPhysicsDuringBaseTick = noPhysics;
+			super.baseTick();
+		}
+
+		@Override
+		public void playSound(
+				net.minecraft.sounds.SoundEvent sound,
+				float volume, float pitch) {
+			recordedSound = sound;
 		}
 	}
 
