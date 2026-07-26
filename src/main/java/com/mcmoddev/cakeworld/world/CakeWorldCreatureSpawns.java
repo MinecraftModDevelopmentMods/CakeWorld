@@ -38,6 +38,9 @@ public final class CakeWorldCreatureSpawns {
 		replaceExisting(event, MobCategory.CREATURE,
 				EntityType.SHEEP,
 				CakeWorldEntities.CANDYFLOSS_SHEEP);
+		replaceExisting(event, MobCategory.CREATURE,
+				EntityType.WOLF,
+				CakeWorldEntities.GINGER_SNAP_HOUND);
 		replaceExisting(event, MobCategory.MONSTER,
 				EntityType.SKELETON,
 				CakeWorldEntities.CANDY_CANE_ARCHER);

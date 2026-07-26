@@ -28,6 +28,7 @@ import com.mcmoddev.cakeworld.entity.FudgeSkater;
 import com.mcmoddev.cakeworld.entity.GingerbreadFolk;
 import com.mcmoddev.cakeworld.entity.GingerbreadPony;
 import com.mcmoddev.cakeworld.entity.GingerbreadStomper;
+import com.mcmoddev.cakeworld.entity.GingerSnapHound;
 import com.mcmoddev.cakeworld.entity.GrandGumballGuardian;
 import com.mcmoddev.cakeworld.entity.GiantStaleCrumbler;
 import com.mcmoddev.cakeworld.entity.GlowJelly;
@@ -101,6 +102,7 @@ import net.minecraft.world.entity.animal.Sheep;
 import net.minecraft.world.entity.animal.SnowGolem;
 import net.minecraft.world.entity.animal.Squid;
 import net.minecraft.world.entity.animal.Turtle;
+import net.minecraft.world.entity.animal.Wolf;
 import net.minecraft.world.entity.animal.AbstractFish;
 import net.minecraft.world.entity.animal.goat.Goat;
 import net.minecraft.world.entity.animal.horse.AbstractChestedHorse;
@@ -554,6 +556,14 @@ public final class CakeWorldEntities {
 							MobCategory.CREATURE)
 							.sized(0.6F, 0.7F)
 							.clientTrackingRange(8));
+	public static final RegistryObject<EntityType<GingerSnapHound>>
+			GINGER_SNAP_HOUND =
+					entity("ginger_snap_hound",
+							EntityType.Builder.of(
+									GingerSnapHound::new,
+									MobCategory.CREATURE)
+									.sized(0.6F, 0.85F)
+									.clientTrackingRange(10));
 	public static final RegistryObject<EntityType<MallowFloater>>
 			MALLOW_FLOATER = entity("mallow_floater",
 					EntityType.Builder.of(MallowFloater::new,
@@ -742,6 +752,8 @@ public final class CakeWorldEntities {
 				Mob.createMobAttributes().build());
 		event.put(PEPPERMINT_FOX.get(),
 				Fox.createAttributes().build());
+		event.put(GINGER_SNAP_HOUND.get(),
+				Wolf.createAttributes().build());
 		event.put(MALLOW_FLOATER.get(),
 				Ghast.createAttributes().build());
 		event.put(GIANT_STALE_CRUMBLER.get(),
@@ -985,6 +997,12 @@ public final class CakeWorldEntities {
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					PeppermintFox::checkPeppermintFoxSpawnRules);
+			SpawnPlacements.register(
+					GINGER_SNAP_HOUND.get(),
+					SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					GingerSnapHound
+							::checkGingerSnapHoundSpawnRules);
 			SpawnPlacements.register(MALLOW_FLOATER.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,

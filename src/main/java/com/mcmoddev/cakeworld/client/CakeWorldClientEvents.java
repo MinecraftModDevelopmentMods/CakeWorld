@@ -67,6 +67,7 @@ import net.minecraft.client.renderer.entity.WanderingTraderRenderer;
 import net.minecraft.client.renderer.entity.WitchRenderer;
 import net.minecraft.client.renderer.entity.WitherBossRenderer;
 import net.minecraft.client.renderer.entity.WitherSkeletonRenderer;
+import net.minecraft.client.renderer.entity.WolfRenderer;
 import net.minecraft.client.model.SquidModel;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraftforge.api.distmarker.Dist;
@@ -247,6 +248,9 @@ public final class CakeWorldClientEvents {
 				WanderingTraderRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.PEPPERMINT_FOX.get(),
 				FoxRenderer::new);
+		event.registerEntityRenderer(
+				CakeWorldEntities.GINGER_SNAP_HOUND.get(),
+				WolfRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.MALLOW_FLOATER.get(),
 				GhastRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.MALLOW_PUFF.get(),

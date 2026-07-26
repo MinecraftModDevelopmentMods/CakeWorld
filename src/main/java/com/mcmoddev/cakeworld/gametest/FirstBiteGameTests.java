@@ -81,6 +81,7 @@ import com.mcmoddev.cakeworld.entity.GingerbreadPony;
 import com.mcmoddev.cakeworld.entity.GingerbreadStomper;
 import com.mcmoddev.cakeworld.entity.GingerbreadStomperDamageSafety;
 import com.mcmoddev.cakeworld.entity.GingerbreadStomperGriefSafety;
+import com.mcmoddev.cakeworld.entity.GingerSnapHound;
 import com.mcmoddev.cakeworld.entity.HotFudgeBlob;
 import com.mcmoddev.cakeworld.entity.HotFudgeBlobDamageSafety;
 import com.mcmoddev.cakeworld.entity.IceCreamGolem;
@@ -137,6 +138,7 @@ import com.mcmoddev.cakeworld.world.CakeWorldWanderingTraderReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldWitchReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldWitherReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldWitherSkeletonReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldWolfReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldPillagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldRavagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldShulkerReplacement;
@@ -14644,8 +14646,31 @@ public final class FirstBiteGameTests {
 
 		Difficulty originalDifficulty =
 				helper.getLevel().getDifficulty();
-		BlockPos duplicateOrigin =
+		BlockPos duplicateColumn =
 				helper.absolutePos(new BlockPos(4, 4, 4));
+		BlockPos selectedOrigin = null;
+		for (int y = helper.getLevel()
+						.getMaxBuildHeight() - 20;
+				y >= helper.getLevel()
+						.getMinBuildHeight() + 20;
+				y -= 24) {
+			BlockPos candidate = new BlockPos(
+					duplicateColumn.getX(), y,
+					duplicateColumn.getZ());
+			if (helper.getLevel().getEntitiesOfClass(
+							Shulker.class,
+							new AABB(candidate)
+									.inflate(16.0D),
+							Entity::isAlive)
+					.isEmpty()) {
+				selectedOrigin = candidate;
+				break;
+			}
+		}
+		require(helper, selectedOrigin != null,
+				"Could not find an isolated vertical slot for the Macaron duplication fixture");
+		final BlockPos duplicateOrigin =
+				selectedOrigin;
 		MacaronClamProbe duplicateTarget =
 				new MacaronClamProbe(helper.getLevel());
 		MacaronClam projectileOwner =
@@ -14705,7 +14730,10 @@ public final class FirstBiteGameTests {
 											.get()
 							&& child.getColor()
 									== DyeColor.LIME,
-					"Open projectile hit did not create one colour-preserving Macaron Clam at the pre-teleport position");
+					"Open projectile hit did not create one colour-preserving Macaron Clam at the pre-teleport position: before="
+							+ before + ", after="
+							+ duplicated.size()
+							+ ", child=" + child);
 
 			BlockPos crowdedOrigin =
 					duplicateOrigin.offset(40, 0, 0);
@@ -27667,6 +27695,939 @@ public final class FirstBiteGameTests {
 		});
 	}
 
+	@GameTest(template = EMPTY, timeoutTicks = 220)
+	public static void gingerSnapHoundsKeepWolfCompanionshipAndSafePackRoles(
+			GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		BlockPos anchor = helper.absolutePos(
+				new BlockPos(5, 4, 5));
+		AABB localArea = new AABB(anchor)
+				.inflate(40.0D);
+		level.getEntitiesOfClass(
+				Wolf.class, localArea)
+				.forEach(Wolf::discard);
+
+		GingerSnapHoundProbe hound =
+				new GingerSnapHoundProbe(level);
+		VanillaWolfProbe vanilla =
+				new VanillaWolfProbe(level);
+		hound.setPos(anchor.getX() + 0.5D,
+				anchor.getY(),
+				anchor.getZ() + 0.5D);
+		hound.setNoAi(true);
+		level.addFreshEntity(hound);
+
+		require(helper,
+				hound instanceof Wolf
+						&& hound instanceof NeutralMob
+						&& hound.getType()
+								== CakeWorldEntities
+										.GINGER_SNAP_HOUND
+										.get()
+						&& hound.getType().getCategory()
+								== MobCategory.CREATURE
+						&& close(hound.getMaxHealth(),
+								8.0D)
+						&& close(hound
+								.getAttributeValue(
+										Attributes
+												.MOVEMENT_SPEED),
+								0.3D)
+						&& close(hound
+								.getAttributeValue(
+										Attributes
+												.ATTACK_DAMAGE),
+								4.0D)
+						&& close(hound.getDimensions(
+								Pose.STANDING).width,
+								0.6D)
+						&& close(hound.getDimensions(
+								Pose.STANDING).height,
+								0.85D)
+						&& close(hound
+								.standingEyeHeight(),
+								0.68D)
+						&& hound.getType()
+								.clientTrackingRange()
+								== 10
+						&& hound.getMaxSpawnClusterSize()
+								== 8
+						&& close(hound
+								.getPathfindingMalus(
+										net.minecraft.world.level.pathfinder.BlockPathTypes
+												.POWDER_SNOW),
+								-1.0D)
+						&& close(hound
+								.getPathfindingMalus(
+										net.minecraft.world.level.pathfinder.BlockPathTypes
+												.DANGER_POWDER_SNOW),
+								-1.0D)
+						&& !hound
+								.despawnsInPeaceful(),
+				"Ginger-Snap Hound lost exact Wolf type, body, attributes, tracking, pack size or powder-snow movement");
+		require(helper,
+				hound.goalSignatures().equals(
+								vanilla.goalSignatures())
+						&& hound
+								.vanillaTargetGoalSignatures()
+								.equals(vanilla
+										.targetGoalSignatures())
+						&& hound.countTargetGoalsNamed(
+								"CakeWorldPreyGoal")
+								== 1
+						&& hound.targetGoalPriority(
+								"CakeWorldPreyGoal")
+								== 5
+						&& hound.targetGoalPriority(
+								"OwnerHurtByTargetGoal")
+								== 1
+						&& hound.targetGoalPriority(
+								"OwnerHurtTargetGoal")
+								== 2
+						&& hound.targetGoalPriority(
+								"HurtByTargetGoal")
+								== 3
+						&& hound.targetGoalPriority(
+								"ResetUniversalAngerTargetGoal")
+								== 8,
+				"Ginger-Snap Hound lost exact Wolf goals or its one literal-prey repair:"
+						+ " goals="
+						+ hound.goalSignatures()
+						+ ", vanillaGoals="
+						+ vanilla.goalSignatures()
+						+ ", targets="
+						+ hound.targetGoalSignatures()
+						+ ", vanillaTargets="
+						+ vanilla.targetGoalSignatures());
+
+		hound.setRemainingPersistentAngerTime(20);
+		require(helper,
+				hound.ambientSound()
+								== SoundEvents.WOLF_GROWL
+						&& hound.hurtSound()
+								== SoundEvents.WOLF_HURT
+						&& hound.deathSound()
+								== SoundEvents.WOLF_DEATH
+						&& close(hound.soundVolume(),
+								0.4D),
+				"Ginger-Snap Hound lost angry, hurt, death or volume sounds");
+		hound.setRemainingPersistentAngerTime(0);
+		hound.clearLastSound();
+		hound.playStep();
+		require(helper,
+				hound.lastSound()
+								== SoundEvents.WOLF_STEP
+						&& hound.getLootTableId()
+								.equals(new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/ginger_snap_hound")),
+				"Ginger-Snap Hound lost Wolf step sound or empty-loot identity");
+
+		GummyBunny prey =
+				CakeWorldEntities.GUMMY_BUNNY.get()
+						.create(level);
+		CandyflossSheep sheep =
+				CakeWorldEntities.CANDYFLOSS_SHEEP
+						.get().create(level);
+		PeppermintFox fox =
+				CakeWorldEntities.PEPPERMINT_FOX
+						.get().create(level);
+		require(helper,
+				prey != null && sheep != null
+						&& fox != null,
+				"Could not create Hound prey-role fixtures");
+		prey.setPos(hound.getX() + 2.0D,
+				hound.getY(), hound.getZ());
+		prey.setNoAi(true);
+		level.addFreshEntity(prey);
+		require(helper,
+				GingerSnapHound
+						.isCakeWorldPrey(prey)
+						&& GingerSnapHound
+								.isCakeWorldPrey(sheep)
+						&& GingerSnapHound
+								.isCakeWorldPrey(fox)
+						&& hound.startTargetGoalNamed(
+								"CakeWorldPreyGoal")
+						&& hound.getTarget() == prey,
+				"Wild Hound did not retain the Sheep, Rabbit and Fox pack-hunting roles through CakeWorld types");
+		hound.setTarget(null);
+		prey.discard();
+		sheep.discard();
+		fox.discard();
+
+		ServerPlayer owner =
+				new ServerPlayer(level.getServer(), level,
+						new GameProfile(
+								UUID.fromString(
+										"1978feed-feed-4bad-babe-1978feed2068"),
+								"CakeWorldHoundRoleTest"));
+		owner.connection =
+				new ServerGamePacketListenerImpl(
+						level.getServer(),
+						new Connection(
+								PacketFlow.CLIENTBOUND),
+						owner);
+		owner.setPos(hound.getX() + 4.0D,
+				hound.getY(), hound.getZ());
+		testLevelPlayers(level).add(owner);
+		ItemStack bones =
+				new ItemStack(Items.BONE, 2);
+		owner.setItemInHand(
+				InteractionHand.MAIN_HAND,
+				bones);
+		long tamingSeed = 0L;
+		while (new Random(tamingSeed)
+				.nextInt(3) != 0) {
+			tamingSeed++;
+		}
+		hound.seedRandom(tamingSeed);
+		InteractionResult tameResult =
+				hound.mobInteract(owner,
+						InteractionHand.MAIN_HAND);
+		require(helper,
+				tameResult.consumesAction()
+						&& hound.isTame()
+						&& hound.isOwnedBy(owner)
+						&& hound.isOrderedToSit()
+						&& close(hound
+								.getMaxHealth(),
+								20.0D)
+						&& close(hound.getHealth(),
+								20.0D)
+						&& bones.getCount() == 1,
+				"Bone taming lost ownership, sitting, twenty-health or item-consumption behavior");
+		requireCriterion(helper, owner,
+				"minecraft:husbandry/tame_an_animal",
+				"tamed_animal");
+
+		ItemStack blueDye =
+				new ItemStack(Items.BLUE_DYE);
+		owner.setItemInHand(
+				InteractionHand.MAIN_HAND,
+				blueDye);
+		InteractionResult dyeResult =
+				hound.mobInteract(owner,
+						InteractionHand.MAIN_HAND);
+		require(helper,
+				dyeResult.consumesAction()
+						&& hound.getCollarColor()
+								== DyeColor.BLUE
+						&& blueDye.isEmpty(),
+				"Hound lost owner-only collar dyeing");
+
+		hound.setHealth(14.0F);
+		ItemStack biscuit =
+				new ItemStack(
+						CakeWorldItems.SIMPLE_BISCUIT
+								.get());
+		owner.setItemInHand(
+				InteractionHand.MAIN_HAND,
+				biscuit);
+		InteractionResult feedResult =
+				hound.mobInteract(owner,
+						InteractionHand.MAIN_HAND);
+		require(helper,
+				hound.isFood(new ItemStack(
+								Items.COOKED_BEEF))
+						&& hound.isFood(new ItemStack(
+								CakeWorldItems
+										.SIMPLE_BISCUIT
+										.get()))
+						&& !hound.isFood(
+								new ItemStack(
+										Items.BONE))
+						&& feedResult
+								.consumesAction()
+						&& close(hound.getHealth(),
+								18.0D)
+						&& biscuit.isEmpty(),
+				"Hound lost vanilla meat or additive biscuit healing");
+		owner.setItemInHand(
+				InteractionHand.MAIN_HAND,
+				ItemStack.EMPTY);
+		InteractionResult sitResult =
+				hound.mobInteract(owner,
+						InteractionHand.MAIN_HAND);
+		require(helper,
+				sitResult.consumesAction()
+						&& !hound.isOrderedToSit(),
+				"Hound lost owner sit/follow toggling");
+
+		hound.setNoAi(false);
+		Pig attacker = EntityType.PIG.create(level);
+		require(helper, attacker != null,
+				"Could not create Hound owner-defence fixture");
+		attacker.setPos(hound.getX() + 3.0D,
+				hound.getY(), hound.getZ());
+		attacker.setNoAi(true);
+		level.addFreshEntity(attacker);
+		owner.tickCount = 20;
+		owner.setLastHurtByMob(attacker);
+		hound.setTarget(null);
+		require(helper,
+				hound.startTargetGoalNamed(
+								"OwnerHurtByTargetGoal")
+						&& hound.getTarget()
+								== attacker,
+				"Hound lost owner-defence targeting");
+		hound.setTarget(null);
+		owner.tickCount = 21;
+		owner.setLastHurtMob(attacker);
+		require(helper,
+				hound.startTargetGoalNamed(
+								"OwnerHurtTargetGoal")
+						&& hound.getTarget()
+								== attacker,
+				"Hound lost owner-assisted targeting");
+		hound.setTarget(null);
+		Creeper creeper =
+				EntityType.CREEPER.create(level);
+		Zombie ordinaryHostile =
+				EntityType.ZOMBIE.create(level);
+		require(helper,
+				creeper != null
+						&& ordinaryHostile != null
+						&& !hound.wantsToAttack(
+								creeper, owner)
+						&& hound.wantsToAttack(
+								ordinaryHostile,
+								owner),
+				"Hound lost the Wolf exclusions for Creepers/Ghasts or ordinary owner defence");
+		creeper.discard();
+		ordinaryHostile.discard();
+
+		GingerSnapHound partner =
+				CakeWorldEntities.GINGER_SNAP_HOUND
+						.get().create(level);
+		require(helper, partner != null,
+				"Could not create Hound breeding partner");
+		partner.setOwnerUUID(owner.getUUID());
+		partner.setTame(true);
+		partner.setOrderedToSit(false);
+		hound.setOrderedToSit(false);
+		hound.setInLove(owner);
+		partner.setInLove(owner);
+		GingerSnapHound child =
+				hound.getBreedOffspring(level, partner);
+		require(helper,
+				hound.canMate(partner)
+						&& child != null
+						&& child.getType()
+								== CakeWorldEntities
+										.GINGER_SNAP_HOUND
+										.get()
+						&& child.isTame()
+						&& owner.getUUID().equals(
+								child.getOwnerUUID())
+						&& close(child.getMaxHealth(),
+								20.0D)
+						&& child.getCollarColor()
+								== DyeColor.RED,
+				"Hound breeding lost same-type child, inherited owner, tame health or default collar");
+		VanillaRoleAdvancements.creditBredRole(
+				owner, child.getType());
+		requireCriterion(helper, owner,
+				"minecraft:husbandry/bred_all_animals",
+				"minecraft:wolf");
+		Advancement monstersHunted =
+				level.getServer().getAdvancements()
+						.getAdvancement(
+								new ResourceLocation(
+										"minecraft",
+										"adventure/kill_all_mobs"));
+		require(helper,
+				monstersHunted != null
+						&& owner.getAdvancements()
+								.getOrStartProgress(
+										monstersHunted)
+								.getCriterion(
+										"minecraft:wolf")
+								== null,
+				"Vanilla 1.18.2 unexpectedly assigned Wolf a Monsters Hunted criterion");
+		testLevelPlayers(level).remove(owner);
+		partner.discard();
+		child.discard();
+
+		for (Difficulty safeDifficulty : List.of(
+				Difficulty.PEACEFUL,
+				Difficulty.EASY,
+				Difficulty.NORMAL)) {
+			Pig safeTarget =
+					EntityType.PIG.create(level);
+			require(helper, safeTarget != null,
+					"Could not create safe Hound target");
+			safeTarget.setPos(
+					hound.getX() + 5.0D,
+					hound.getY(),
+					hound.getZ()
+							+ safeDifficulty.getId());
+			safeTarget.setNoAi(true);
+			safeTarget.setSecondsOnFire(5);
+			safeTarget.fallDistance = 9.0F;
+			level.addFreshEntity(safeTarget);
+			boolean accepted =
+					hound.doHurtTargetForDifficulty(
+							safeTarget,
+							safeDifficulty);
+			require(helper,
+					accepted
+							&& close(safeTarget
+									.getHealth(),
+									safeTarget
+											.getMaxHealth())
+							&& !safeTarget.isOnFire()
+							&& close(safeTarget
+									.fallDistance,
+									0.0D)
+							&& safeTarget.hasEffect(
+									MobEffects
+											.MOVEMENT_SLOWDOWN)
+							&& safeTarget.hasEffect(
+									MobEffects.GLOWING)
+							&& safeTarget.hasEffect(
+									MobEffects.SLOW_FALLING)
+							&& safeTarget.hasEffect(
+									MobEffects
+											.FIRE_RESISTANCE)
+							&& safeTarget.getEffect(
+									MobEffects
+											.DAMAGE_RESISTANCE)
+									.getAmplifier()
+									== 4,
+					safeDifficulty
+							+ " Hound bite caused health, fire, fall or follow-on harm");
+			safeTarget.discard();
+		}
+		Pig hardTarget =
+				EntityType.PIG.create(level);
+		require(helper, hardTarget != null,
+				"Could not create Hard Hound target");
+		hardTarget.setPos(hound.getX() + 5.0D,
+				hound.getY(), hound.getZ() + 6.0D);
+		hardTarget.setNoAi(true);
+		level.addFreshEntity(hardTarget);
+		boolean hardAccepted =
+				hound.doHurtTargetForDifficulty(
+						hardTarget,
+						Difficulty.HARD);
+		require(helper,
+				hardAccepted
+						&& close(hardTarget
+								.getHealth(),
+								6.0D)
+						&& !hardTarget.hasEffect(
+								MobEffects
+										.MOVEMENT_SLOWDOWN),
+				"Hard Hound lost exact four-point Wolf bite");
+		hardTarget.discard();
+
+		GingerSnapHoundProbe hurtProbe =
+				new GingerSnapHoundProbe(level);
+		hurtProbe.setHealth(8.0F);
+		boolean reducedHurt = hurtProbe.hurt(
+				DamageSource.mobAttack(attacker),
+				5.0F);
+		require(helper,
+				reducedHurt
+						&& close(hurtProbe.getHealth(),
+								5.0D)
+						&& !hurtProbe
+								.isOrderedToSit(),
+				"Hound lost Wolf's non-player/non-arrow damage reduction or hurt sit reset");
+		hurtProbe.discard();
+
+		Biome cookieForest =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.get(CakeWorldBiomes
+								.COOKIE_FOREST.getId());
+		MobSpawnSettings.SpawnerData cookiePack =
+				cookieForest == null
+						? null
+						: cookieForest
+								.getMobSettings()
+								.getMobs(
+										MobCategory
+												.CREATURE)
+								.unwrap().stream()
+								.filter(spawn ->
+										spawn.type
+												== CakeWorldEntities
+														.GINGER_SNAP_HOUND
+														.get())
+								.findFirst()
+								.orElse(null);
+		require(helper,
+				cookiePack != null
+						&& cookiePack.getWeight()
+								.asInt() == 5
+						&& cookiePack.minCount == 4
+						&& cookiePack.maxCount == 4,
+				"Cookie Forest lost the inherited vanilla Forest Wolf 5/4-4 pack profile");
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS.getId())) {
+			Biome biome = level.registryAccess()
+					.registryOrThrow(
+							Registry.BIOME_REGISTRY)
+					.get(biomeId);
+			require(helper,
+					biome != null
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory
+													.CREATURE)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType.WOLF),
+					"Literal Wolf leaked into CakeWorld ecology in "
+							+ biomeId);
+		}
+		require(helper,
+				CakeWorldItems
+						.GINGER_SNAP_HOUND_SPAWN_EGG
+						.isPresent()
+						&& SpawnPlacements
+								.getPlacementType(
+										CakeWorldEntities
+												.GINGER_SNAP_HOUND
+												.get())
+								== SpawnPlacements
+										.getPlacementType(
+												EntityType.WOLF)
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+												.GINGER_SNAP_HOUND
+												.get())
+								== SpawnPlacements
+										.getHeightmapType(
+												EntityType.WOLF)
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+												.GINGER_SNAP_HOUND
+												.get())
+								== null,
+				"Hound lost testing egg, exact Wolf placement or deliberate no-mimic boundary");
+
+		BlockPos cakeWorldPos =
+				findCakeWorldBiomePosition(helper,
+						anchor.offset(16, 0, 16),
+						256);
+		require(helper, cakeWorldPos != null,
+				"Could not locate CakeWorld terrain for Wolf conversion");
+		Wolf literal = EntityType.WOLF.create(level);
+		Pig conversionTarget =
+				EntityType.PIG.create(level);
+		Pig leashHolder =
+				EntityType.PIG.create(level);
+		Boat vehicle =
+				EntityType.BOAT.create(level);
+		Chicken passenger =
+				EntityType.CHICKEN.create(level);
+		require(helper,
+				literal != null
+						&& conversionTarget != null
+						&& leashHolder != null
+						&& vehicle != null
+						&& passenger != null,
+				"Could not create Hound direct-conversion fixtures");
+		literal.setPos(cakeWorldPos.getX() + 0.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		literal.setCustomName(
+				new TextComponent("Biscuit Scout"));
+		literal.setPersistenceRequired();
+		literal.setNoAi(true);
+		literal.setOwnerUUID(owner.getUUID());
+		literal.setTame(true);
+		literal.setOrderedToSit(true);
+		literal.setCollarColor(DyeColor.BLUE);
+		literal.setHealth(13.0F);
+		literal.setRemainingPersistentAngerTime(321);
+		UUID angerTarget = UUID.fromString(
+				"1978feed-feed-4bad-babe-1978feed3068");
+		literal.setPersistentAngerTarget(
+				angerTarget);
+		literal.invulnerableTime = 19;
+		conversionTarget.setPos(
+				literal.getX() + 4.0D,
+				literal.getY(), literal.getZ());
+		conversionTarget.setNoAi(true);
+		leashHolder.setPos(literal.getX(),
+				literal.getY(), literal.getZ() + 2.0D);
+		leashHolder.setNoAi(true);
+		vehicle.setPos(literal.getX(),
+				literal.getY(), literal.getZ());
+		passenger.setPos(literal.getX(),
+				literal.getY(), literal.getZ());
+		level.addFreshEntity(conversionTarget);
+		level.addFreshEntity(leashHolder);
+		level.addFreshEntity(vehicle);
+		level.addFreshEntity(literal);
+		level.addFreshEntity(passenger);
+		literal.setTarget(conversionTarget);
+		literal.setLastHurtByMob(
+				conversionTarget);
+		literal.setLeashedTo(
+				leashHolder, true);
+		passenger.startRiding(literal, true);
+		GingerSnapHound converted =
+				CakeWorldWolfReplacement
+						.replaceIfInCakeWorldBiome(
+								level, literal);
+		require(helper,
+				converted != null
+						&& literal.isRemoved()
+						&& converted.isTame()
+						&& owner.getUUID().equals(
+								converted
+										.getOwnerUUID())
+						&& converted
+								.isOrderedToSit()
+						&& converted
+								.getCollarColor()
+								== DyeColor.BLUE
+						&& close(converted.getHealth(),
+								13.0D)
+						&& converted
+								.getRemainingPersistentAngerTime()
+								== 321
+						&& angerTarget.equals(
+								converted
+										.getPersistentAngerTarget())
+						&& "Biscuit Scout".equals(
+								converted.getName()
+										.getString())
+						&& converted.isNoAi()
+						&& converted
+								.isPersistenceRequired()
+						&& converted.invulnerableTime
+								== 19
+						&& converted.getTarget()
+								== conversionTarget
+						&& converted.getLastHurtByMob()
+								== conversionTarget
+						&& converted
+								.getPassengers()
+								.contains(passenger)
+						&& converted
+								.getLeashHolder()
+								== leashHolder,
+				"Fresh literal Wolf conversion lost owner, collar, sitting, anger, NBT, combat, leash or riding state:"
+						+ " tame=" + converted.isTame()
+						+ ", owner="
+						+ converted.getOwnerUUID()
+						+ ", sitting="
+						+ converted.isOrderedToSit()
+						+ ", collar="
+						+ converted.getCollarColor()
+						+ ", health="
+						+ converted.getHealth()
+						+ ", angerTime="
+						+ converted
+								.getRemainingPersistentAngerTime()
+						+ ", angerTarget="
+						+ converted
+								.getPersistentAngerTarget()
+						+ ", name="
+						+ converted.getName()
+								.getString()
+						+ ", noAi="
+						+ converted.isNoAi()
+						+ ", persistent="
+						+ converted
+								.isPersistenceRequired()
+						+ ", invulnerableTime="
+						+ converted.invulnerableTime
+						+ ", target="
+						+ converted.getTarget()
+						+ ", lastHurtBy="
+						+ converted
+								.getLastHurtByMob()
+						+ ", vehicle="
+						+ converted.getVehicle()
+						+ ", passengers="
+						+ converted.getPassengers()
+						+ ", leash="
+						+ converted.getLeashHolder());
+		require(helper,
+				CakeWorldWolfReplacement
+						.replaceIfInCakeWorldBiome(
+								level, converted)
+						== null
+						&& !converted.isRemoved(),
+				"Wolf source conversion touched a non-literal entity type");
+		passenger.discard();
+		conversionTarget.discard();
+		leashHolder.discard();
+		converted.discard();
+
+		Wolf mountedLiteral =
+				EntityType.WOLF.create(level);
+		require(helper, mountedLiteral != null,
+				"Could not create mounted Wolf conversion fixture");
+		mountedLiteral.setPos(
+				cakeWorldPos.getX() + 1.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		mountedLiteral.setCustomName(
+				new TextComponent("Mounted Hound"));
+		level.addFreshEntity(mountedLiteral);
+		mountedLiteral.startRiding(vehicle, true);
+		GingerSnapHound mountedConverted =
+				CakeWorldWolfReplacement
+						.replaceIfInCakeWorldBiome(
+								level,
+								mountedLiteral);
+		require(helper,
+				mountedConverted != null
+						&& mountedLiteral.isRemoved()
+						&& mountedConverted.getVehicle()
+								== vehicle
+						&& "Mounted Hound".equals(
+								mountedConverted
+										.getName()
+										.getString()),
+				"Fresh literal Wolf conversion lost its vehicle relationship");
+		mountedConverted.discard();
+		vehicle.discard();
+
+		BlockPos eventPos =
+				findCakeWorldBiomePosition(helper,
+						cakeWorldPos.offset(12, 0, 0),
+						64);
+		require(helper, eventPos != null,
+				"Could not locate CakeWorld terrain for deferred Wolf conversion");
+		Wolf eventLiteral =
+				EntityType.WOLF.create(level);
+		require(helper, eventLiteral != null,
+				"Could not create deferred Wolf fixture");
+		eventLiteral.setPos(
+				eventPos.getX() + 0.5D,
+				eventPos.getY(),
+				eventPos.getZ() + 0.5D);
+		eventLiteral.setCustomName(
+				new TextComponent("Deferred Hound"));
+		eventLiteral.setNoAi(true);
+		level.addFreshEntity(eventLiteral);
+		AABB eventArea =
+				new AABB(eventPos).inflate(3.0D);
+		helper.runAfterDelay(5, () -> {
+			List<GingerSnapHound> emitted =
+					level.getEntitiesOfClass(
+							GingerSnapHound.class,
+							eventArea,
+							entity -> "Deferred Hound"
+									.equals(entity
+											.getName()
+											.getString()));
+			require(helper,
+					eventLiteral.isRemoved()
+							&& emitted.size() == 1
+							&& emitted.get(0)
+									.isNoAi()
+							&& !emitted.get(0)
+									.isTame(),
+					"Fresh literal Wolf did not defer-convert with finalized Hound state");
+			emitted.forEach(
+					GingerSnapHound::discard);
+			testLevelPlayers(level)
+					.remove(owner);
+			attacker.discard();
+			hound.discard();
+			helper.succeed();
+		});
+	}
+
+	private static final class GingerSnapHoundProbe
+			extends GingerSnapHound {
+		private net.minecraft.sounds.SoundEvent
+				lastSound;
+
+		private GingerSnapHoundProbe(Level level) {
+			super(CakeWorldEntities
+					.GINGER_SNAP_HOUND.get(),
+					level);
+		}
+
+		private void seedRandom(long seed) {
+			random.setSeed(seed);
+		}
+
+		private float standingEyeHeight() {
+			return getStandingEyeHeight(
+					Pose.STANDING,
+					getDimensions(Pose.STANDING));
+		}
+
+		private boolean despawnsInPeaceful() {
+			return shouldDespawnInPeaceful();
+		}
+
+		private ResourceLocation getLootTableId() {
+			return getLootTable();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				ambientSound() {
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				hurtSound() {
+			return getHurtSound(
+					DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				deathSound() {
+			return getDeathSound();
+		}
+
+		private float soundVolume() {
+			return getSoundVolume();
+		}
+
+		private void playStep() {
+			playStepSound(blockPosition(),
+					Blocks.GRASS_BLOCK
+							.defaultBlockState());
+		}
+
+		private void clearLastSound() {
+			lastSound = null;
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				lastSound() {
+			return lastSound;
+		}
+
+		private List<String> goalSignatures() {
+			return goalSelector.getAvailableGoals()
+					.stream()
+					.map(wrapped ->
+							wrapped.getPriority() + ":"
+									+ wrapped.getGoal()
+											.getClass()
+											.getSimpleName())
+					.sorted().toList();
+		}
+
+		private List<String>
+				targetGoalSignatures() {
+			return targetSelector
+					.getAvailableGoals().stream()
+					.map(wrapped ->
+							wrapped.getPriority() + ":"
+									+ wrapped.getGoal()
+											.getClass()
+											.getSimpleName())
+					.sorted().toList();
+		}
+
+		private List<String>
+				vanillaTargetGoalSignatures() {
+			return targetGoalSignatures().stream()
+					.filter(signature ->
+							!signature.endsWith(
+									":CakeWorldPreyGoal"))
+					.toList();
+		}
+
+		private int countTargetGoalsNamed(
+				String name) {
+			return (int)targetSelector
+					.getAvailableGoals().stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
+		}
+
+		private int targetGoalPriority(
+				String name) {
+			return targetSelector
+					.getAvailableGoals().stream()
+					.filter(wrapped -> name.equals(
+							wrapped.getGoal()
+									.getClass()
+									.getSimpleName()))
+					.mapToInt(
+							WrappedGoal::getPriority)
+					.findFirst().orElse(-1);
+		}
+
+		private boolean startTargetGoalNamed(
+				String name) {
+			for (WrappedGoal wrapped :
+					targetSelector
+							.getAvailableGoals()) {
+				if (!name.equals(wrapped.getGoal()
+						.getClass()
+						.getSimpleName())) {
+					continue;
+				}
+				for (int attempt = 0;
+						attempt < 200;
+						attempt++) {
+					if (wrapped.canUse()) {
+						wrapped.start();
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
+		@Override
+		public void playSound(
+				net.minecraft.sounds.SoundEvent sound,
+				float volume, float pitch) {
+			lastSound = sound;
+		}
+	}
+
+	private static final class VanillaWolfProbe
+			extends Wolf {
+		private VanillaWolfProbe(Level level) {
+			super(EntityType.WOLF, level);
+		}
+
+		private List<String> goalSignatures() {
+			return goalSelector.getAvailableGoals()
+					.stream()
+					.map(wrapped ->
+							wrapped.getPriority() + ":"
+									+ wrapped.getGoal()
+											.getClass()
+											.getSimpleName())
+					.sorted().toList();
+		}
+
+		private List<String>
+				targetGoalSignatures() {
+			return targetSelector
+					.getAvailableGoals().stream()
+					.map(wrapped ->
+							wrapped.getPriority() + ":"
+									+ wrapped.getGoal()
+											.getClass()
+											.getSimpleName())
+					.sorted().toList();
+		}
+	}
+
 	private static class BurntCandyKnightProbe
 			extends BurntCandyKnight {
 		private BurntCandyKnightProbe(Level level) {
@@ -30930,10 +31891,27 @@ public final class FirstBiteGameTests {
 			String advancementId, String criterion) {
 		Advancement advancement = player.getServer().getAdvancements()
 				.getAdvancement(new ResourceLocation(advancementId));
-		require(helper, advancement != null
-						&& player.getAdvancements().getOrStartProgress(advancement)
-								.getCriterion(criterion).isDone(),
-				"Vanilla role criterion was not credited: " + criterion);
+		net.minecraft.advancements.AdvancementProgress progress =
+				advancement == null
+						? null
+						: player.getAdvancements()
+								.getOrStartProgress(
+										advancement);
+		net.minecraft.advancements.CriterionProgress
+				criterionProgress =
+						progress == null
+								? null
+								: progress.getCriterion(
+										criterion);
+		require(helper,
+				criterionProgress != null
+						&& criterionProgress.isDone(),
+				"Vanilla role criterion was not credited: "
+						+ criterion + " in "
+						+ advancementId
+						+ " (criterionExists="
+						+ (criterionProgress != null)
+						+ ")");
 	}
 
 	@SuppressWarnings("unchecked")

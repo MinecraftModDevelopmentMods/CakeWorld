@@ -165,6 +165,9 @@ public final class VanillaRoleAdvancements {
 		} else if (childType
 				== CakeWorldEntities.WAFER_TURTLE.get()) {
 			criterion = "minecraft:turtle";
+		} else if (childType
+				== CakeWorldEntities.GINGER_SNAP_HOUND.get()) {
+			criterion = "minecraft:wolf";
 		}
 		if (criterion != null) {
 			award(player, BRED_ALL, criterion);
