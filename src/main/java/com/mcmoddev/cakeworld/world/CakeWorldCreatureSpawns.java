@@ -148,6 +148,12 @@ public final class CakeWorldCreatureSpawns {
 					CakeWorldEntities.SHERBET_SALMON,
 					15, 1, 5);
 		}
+		if ("custard_coast".equals(biome.getPath())) {
+			replace(event, MobCategory.CREATURE,
+					EntityType.TURTLE,
+					CakeWorldEntities.WAFER_TURTLE,
+					5, 2, 5);
+		}
 		if ("candyfloss_cloudbanks".equals(
 				biome.getPath())) {
 			replace(event, MobCategory.CREATURE,

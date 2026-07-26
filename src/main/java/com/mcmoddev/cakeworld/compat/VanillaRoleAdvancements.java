@@ -162,6 +162,9 @@ public final class VanillaRoleAdvancements {
 		} else if (childType
 				== CakeWorldEntities.FUDGE_SKATER.get()) {
 			criterion = "minecraft:strider";
+		} else if (childType
+				== CakeWorldEntities.WAFER_TURTLE.get()) {
+			criterion = "minecraft:turtle";
 		}
 		if (criterion != null) {
 			award(player, BRED_ALL, criterion);

@@ -216,6 +216,10 @@ public final class CakeWorldItems {
 			spawnEgg("jellybean_fish_spawn_egg",
 					CakeWorldEntities.JELLYBEAN_FISH,
 					0xF06FB2, 0x67DCE5);
+	public static final RegistryObject<Item> WAFER_TURTLE_SPAWN_EGG =
+			spawnEgg("wafer_turtle_spawn_egg",
+					CakeWorldEntities.WAFER_TURTLE,
+					0xD8B77B, 0x78C9B5);
 	public static final RegistryObject<Item> SODA_DOLPHIN_SPAWN_EGG =
 			spawnEgg("soda_dolphin_spawn_egg",
 					CakeWorldEntities.SODA_DOLPHIN,

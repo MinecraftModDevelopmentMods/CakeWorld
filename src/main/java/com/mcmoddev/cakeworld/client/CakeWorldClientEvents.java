@@ -59,6 +59,7 @@ import net.minecraft.client.renderer.entity.ZombieRenderer;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.client.renderer.entity.ThrownTridentRenderer;
 import net.minecraft.client.renderer.entity.TropicalFishRenderer;
+import net.minecraft.client.renderer.entity.TurtleRenderer;
 import net.minecraft.client.model.SquidModel;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraftforge.api.distmarker.Dist;
@@ -108,6 +109,9 @@ public final class CakeWorldClientEvents {
 		event.registerEntityRenderer(
 				CakeWorldEntities.JELLYBEAN_FISH.get(),
 				TropicalFishRenderer::new);
+		event.registerEntityRenderer(
+				CakeWorldEntities.WAFER_TURTLE.get(),
+				TurtleRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.SODA_DOLPHIN.get(),
 				DolphinRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.DOUGH_DONKEY.get(),

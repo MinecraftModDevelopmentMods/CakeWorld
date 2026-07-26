@@ -106,6 +106,7 @@ import com.mcmoddev.cakeworld.entity.TaffyTallwalker;
 import com.mcmoddev.cakeworld.entity.TrufflePig;
 import com.mcmoddev.cakeworld.entity.VanillaIceBear;
 import com.mcmoddev.cakeworld.entity.VanillaIceBearDamageSafety;
+import com.mcmoddev.cakeworld.entity.WaferTurtle;
 import com.mcmoddev.cakeworld.entity.WaferWraith;
 import com.mcmoddev.cakeworld.effect.FizzyFeetEffect;
 import com.mcmoddev.cakeworld.init.CakeWorldBiomes;
@@ -118,6 +119,7 @@ import com.mcmoddev.cakeworld.init.CakeWorldSounds;
 import com.mcmoddev.cakeworld.item.JellylotlBucketItem;
 import com.mcmoddev.cakeworld.world.CakeWorldPiglinReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldPiglinBruteReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldTurtleReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldPillagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldRavagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldShulkerReplacement;
@@ -310,6 +312,7 @@ import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.TurtleEggBlock;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeGenerationSettings;
 import net.minecraft.world.level.biome.MobSpawnSettings;
@@ -4366,6 +4369,14 @@ public final class FirstBiteGameTests {
 	public static void starterPicnicBuildsAReadableCookbookLandmark(
 			GameTestHelper helper) {
 		BlockPos relativeCentre = new BlockPos(5, 20, 5);
+		BlockPos absoluteCentre =
+				helper.absolutePos(relativeCentre);
+		helper.getLevel()
+				.getEntitiesOfClass(
+						CustardCat.class,
+						new AABB(absoluteCentre)
+								.inflate(12.0D))
+				.forEach(CustardCat::discard);
 		for (int x = 1; x <= 9; x++) {
 			for (int z = 1; z <= 9; z++) {
 				helper.setBlock(new BlockPos(x, 19, z), Blocks.STONE);
@@ -4376,7 +4387,6 @@ public final class FirstBiteGameTests {
 				}
 			}
 		}
-		BlockPos absoluteCentre = helper.absolutePos(relativeCentre);
 		require(helper, StarterPicnicFeature.buildAt(helper.getLevel(),
 						new Random(1978L), absoluteCentre),
 				"The First Bite picnic refused a safe flat site");
@@ -10416,6 +10426,11 @@ public final class FirstBiteGameTests {
 					new FudgeBruteProbe(helper.getLevel());
 			converting.setPos(brute.getX() + 12.0D,
 					brute.getY(), brute.getZ());
+			helper.getLevel().getEntitiesOfClass(
+					ZombifiedPiglin.class,
+					converting.getBoundingBox()
+							.inflate(3.0D))
+					.forEach(ZombifiedPiglin::discard);
 			converting.setCustomName(new TextComponent(
 					"Staged Burnt Fudge Brute"));
 			converting.setPersistenceRequired();
@@ -10425,7 +10440,7 @@ public final class FirstBiteGameTests {
 					converting.saveWithoutId(
 							new CompoundTag());
 			convertingState.putInt(
-					"TimeInOverworld", 300);
+					"TimeInOverworld", 301);
 			converting.load(convertingState);
 			helper.getLevel().addFreshEntity(converting);
 			converting.runServerAiStep();
@@ -21823,6 +21838,745 @@ public final class FirstBiteGameTests {
 		});
 	}
 
+	@GameTest(template = EMPTY, timeoutTicks = 700)
+	public static void waferTurtlesKeepNestingHatchingAndShellProgression(
+			GameTestHelper helper) {
+		WaferTurtleProbe turtle =
+				new WaferTurtleProbe(helper.getLevel());
+		turtle.seedRandom(1978L);
+		int experience = turtle.getExperienceValue();
+		require(helper,
+				turtle instanceof Turtle
+						&& turtle.getType()
+								== CakeWorldEntities
+										.WAFER_TURTLE.get()
+						&& turtle.getType().getCategory()
+								== MobCategory.CREATURE
+						&& close(turtle.getMaxHealth(), 30.0D)
+						&& close(turtle.getAttributeValue(
+								Attributes.MOVEMENT_SPEED),
+								0.25D)
+						&& close(turtle.getDimensions(
+								Pose.STANDING).width,
+								1.2D)
+						&& close(turtle.getDimensions(
+								Pose.STANDING).height,
+								0.4D)
+						&& turtle.getType()
+								.clientTrackingRange() == 10
+						&& turtle.getMaxSpawnClusterSize() == 4
+						&& close(turtle.maxUpStep, 1.0D)
+						&& close(turtle.getPathfindingMalus(
+								net.minecraft.world.level
+										.pathfinder
+										.BlockPathTypes.WATER),
+								0.0D)
+						&& turtle.canBreatheUnderwater()
+						&& !turtle.isPushedByFluid()
+						&& turtle.getMobType() == MobType.WATER
+						&& turtle.getAmbientSoundInterval() == 200
+						&& !turtle.canBeLeashedRole()
+						&& experience >= 1
+						&& experience <= 3
+						&& turtle.getLootTableId().equals(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/wafer_turtle")),
+				"Wafer Turtle lost the exact Turtle body, movement, pathing, water, tracking, cluster, XP, no-leash or loot roles");
+		require(helper,
+				turtle.hasGoalAt("TurtlePanicGoal", 0)
+						&& turtle.hasGoalAt(
+								"TurtleBreedGoal", 1)
+						&& turtle.hasGoalAt(
+								"TurtleLayEggGoal", 1)
+						&& turtle.hasGoalAt(
+								"TemptGoal", 2)
+						&& turtle.hasGoalAt(
+								"TurtleGoToWaterGoal", 3)
+						&& turtle.hasGoalAt(
+								"TurtleGoHomeGoal", 4)
+						&& turtle.hasGoalAt(
+								"TurtleTravelGoal", 7)
+						&& turtle.hasGoalAt(
+								"LookAtPlayerGoal", 8)
+						&& turtle.hasGoalAt(
+								"TurtleRandomStrollGoal", 9)
+						&& turtle.countGoalsNamed(
+								"TurtlePanicGoal") == 1
+						&& turtle.countGoalsNamed(
+								"TurtleBreedGoal") == 1
+						&& turtle.countGoalsNamed(
+								"TurtleLayEggGoal") == 1
+						&& turtle.countGoalsNamed(
+								"TurtleGoToWaterGoal") == 1
+						&& turtle.countGoalsNamed(
+								"TurtleGoHomeGoal") == 1
+						&& turtle.countGoalsNamed(
+								"TurtleTravelGoal") == 1
+						&& turtle.countGoalsNamed(
+								"TurtleRandomStrollGoal") == 1
+						&& turtle.countTargetGoals() == 0
+						&& "TurtlePathNavigation".equals(
+								turtle.getNavigation()
+										.getClass()
+										.getSimpleName())
+						&& "TurtleMoveControl".equals(
+								turtle.getMoveControl()
+										.getClass()
+										.getSimpleName()),
+				"Wafer Turtle lost panic, breeding, nesting, water, home, travel, look, stroll, navigation or passive-goal priorities");
+		require(helper,
+				turtle.isFood(new ItemStack(
+								Blocks.SEAGRASS))
+						&& !turtle.isFood(new ItemStack(
+								Items.WHEAT))
+						&& turtle.adultLandAmbient()
+								== SoundEvents
+										.TURTLE_AMBIENT_LAND
+						&& turtle.adultHurtSound()
+								== SoundEvents.TURTLE_HURT
+						&& turtle.babyHurtSound()
+								== SoundEvents
+										.TURTLE_HURT_BABY
+						&& turtle.adultDeathSound()
+								== SoundEvents.TURTLE_DEATH
+						&& turtle.babyDeathSound()
+								== SoundEvents
+										.TURTLE_DEATH_BABY
+						&& turtle.swimSound()
+								== SoundEvents.TURTLE_SWIM
+						&& turtle.adultStepSound()
+								== SoundEvents.TURTLE_SHAMBLE
+						&& turtle.babyStepSound()
+								== SoundEvents
+										.TURTLE_SHAMBLE_BABY,
+				"Wafer Turtle lost Seagrass food or exact adult/baby land, swim, hurt, death and shamble sounds");
+		turtle.setAge(0);
+		require(helper, close(turtle.getScale(), 1.0D),
+				"Adult Wafer Turtle lost its full render scale");
+		turtle.setAge(-24000);
+		require(helper, close(turtle.getScale(), 0.3D)
+						&& Turtle.BABY_ON_LAND_SELECTOR
+								.test(turtle),
+				"Baby Wafer Turtle lost its scale or inherited land-predator role");
+		turtle.setAge(0);
+
+		BlockPos stateHome = helper.absolutePos(
+				new BlockPos(2, 3, 2));
+		BlockPos stateTravel = stateHome.offset(
+				137, -3, -211);
+		turtle.setHomePos(stateHome);
+		CompoundTag turtleState = new CompoundTag();
+		turtle.addAdditionalSaveData(turtleState);
+		turtleState.putBoolean("HasEgg", true);
+		turtleState.putInt("TravelPosX",
+				stateTravel.getX());
+		turtleState.putInt("TravelPosY",
+				stateTravel.getY());
+		turtleState.putInt("TravelPosZ",
+				stateTravel.getZ());
+		WaferTurtleProbe restored =
+				new WaferTurtleProbe(helper.getLevel());
+		restored.readAdditionalSaveData(turtleState);
+		CompoundTag restoredState = new CompoundTag();
+		restored.addAdditionalSaveData(restoredState);
+		require(helper,
+				restored.hasEgg()
+						&& restoredState.getInt("HomePosX")
+								== stateHome.getX()
+						&& restoredState.getInt("HomePosY")
+								== stateHome.getY()
+						&& restoredState.getInt("HomePosZ")
+								== stateHome.getZ()
+						&& restoredState.getInt("TravelPosX")
+								== stateTravel.getX()
+						&& restoredState.getInt("TravelPosY")
+								== stateTravel.getY()
+						&& restoredState.getInt("TravelPosZ")
+								== stateTravel.getZ(),
+				"Wafer Turtle lost home, travel or carried-egg state across NBT");
+
+		WaferTurtle offspring =
+				(WaferTurtle)turtle.getBreedOffspring(
+						helper.getLevel(), restored);
+		require(helper,
+				offspring != null
+						&& offspring.getType()
+								== CakeWorldEntities
+										.WAFER_TURTLE.get(),
+				"Wafer Turtle same-family factory leaked a literal Turtle");
+
+		ServerPlayer breedingPlayer =
+				new ServerPlayer(
+						helper.getLevel().getServer(),
+						helper.getLevel(),
+						new GameProfile(UUID.fromString(
+								"1978feed-feed-4bad-babe-1978feed2062"),
+								"CakeWorldWaferTurtleBreedTest"));
+		WaferTurtle tempted =
+				CakeWorldEntities.WAFER_TURTLE.get()
+						.create(helper.getLevel());
+		require(helper, tempted != null,
+				"Could not create Wafer Turtle interaction fixture");
+		breedingPlayer.setItemInHand(
+				InteractionHand.MAIN_HAND,
+				new ItemStack(Blocks.SEAGRASS, 2));
+		InteractionResult temptedResult =
+				breedingPlayer.interactOn(
+						tempted,
+						InteractionHand.MAIN_HAND);
+		require(helper,
+				temptedResult.consumesAction()
+						&& tempted.isInLove()
+						&& breedingPlayer
+								.getMainHandItem()
+								.getCount() == 1,
+				"Wafer Turtle did not consume Seagrass and enter its inherited breeding state");
+		CompoundTag eggBearerState =
+				new CompoundTag();
+		tempted.addAdditionalSaveData(
+				eggBearerState);
+		eggBearerState.putBoolean("HasEgg", true);
+		tempted.readAdditionalSaveData(
+				eggBearerState);
+		tempted.resetLove();
+		requireCriterion(helper, breedingPlayer,
+				"minecraft:husbandry/bred_all_animals",
+				"minecraft:turtle");
+
+		BlockPos spawnPos = new BlockPos(
+				helper.absolutePos(new BlockPos(3, 3, 3))
+						.getX(),
+				helper.getLevel().getSeaLevel() + 1,
+				helper.absolutePos(new BlockPos(3, 3, 3))
+						.getZ());
+		helper.getLevel().setBlock(
+				spawnPos.below(),
+				CakeWorldBlocks.BISCUIT_SAND.get()
+						.defaultBlockState(), 3);
+		for (int y = 0; y <= 3; y++) {
+			helper.getLevel().setBlock(
+					spawnPos.above(y),
+					Blocks.AIR.defaultBlockState(), 3);
+		}
+		helper.getLevel().setBlock(
+				spawnPos.offset(1, 0, 0),
+				Blocks.SEA_LANTERN
+						.defaultBlockState(), 3);
+		require(helper,
+				helper.getLevel().getBlockState(
+						spawnPos.below())
+						.is(BlockTags.SAND)
+						&& CakeWorldBlocks.BISCUIT_CRUMBS
+								.get()
+								.defaultBlockState()
+								.is(BlockTags.SAND),
+				"Biscuit Sand or Biscuit Crumbs lost the public nesting-surface tag");
+		boolean directSpawn =
+				WaferTurtle.checkWaferTurtleSpawnRules(
+						CakeWorldEntities.WAFER_TURTLE
+								.get(),
+						helper.getLevel(),
+						MobSpawnType.NATURAL,
+						spawnPos,
+						new Random(1978L));
+		boolean registeredSpawn =
+				SpawnPlacements.checkSpawnRules(
+						CakeWorldEntities.WAFER_TURTLE
+								.get(),
+						helper.getLevel(),
+						MobSpawnType.NATURAL,
+						spawnPos,
+						new Random(1979L));
+		require(helper,
+				directSpawn
+						&& registeredSpawn
+						&& SpawnPlacements
+								.getPlacementType(
+										CakeWorldEntities
+												.WAFER_TURTLE
+												.get())
+								== SpawnPlacements.Type
+										.ON_GROUND
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+												.WAFER_TURTLE
+												.get())
+								== Heightmap.Types
+										.MOTION_BLOCKING_NO_LEAVES
+						&& CakeWorldItems
+								.WAFER_TURTLE_SPAWN_EGG
+								.isPresent(),
+				"Wafer Turtle lost edible Beach-height bright spawning, registered placement or egg: direct="
+						+ directSpawn
+						+ ", registered="
+						+ registeredSpawn
+						+ ", rawBrightness="
+						+ helper.getLevel()
+								.getRawBrightness(
+										spawnPos, 0));
+		helper.getLevel().setBlock(
+				spawnPos.below(),
+				CakeWorldBlocks.CHOCOLATE_SPONGE
+						.get().defaultBlockState(), 3);
+		require(helper,
+				!WaferTurtle
+						.checkWaferTurtleSpawnRules(
+								CakeWorldEntities
+										.WAFER_TURTLE
+										.get(),
+								helper.getLevel(),
+								MobSpawnType.NATURAL,
+								spawnPos,
+								new Random(1980L))
+						&& !WaferTurtle
+								.checkWaferTurtleSpawnRules(
+										CakeWorldEntities
+												.WAFER_TURTLE
+												.get(),
+										helper.getLevel(),
+										MobSpawnType.NATURAL,
+										new BlockPos(
+												spawnPos
+														.getX(),
+												helper.getLevel()
+														.getSeaLevel()
+														+ 4,
+												spawnPos
+														.getZ()),
+										new Random(
+												1981L)),
+				"Wafer Turtle spawn rule accepted a non-sand surface or a position outside vanilla's sea-level-plus-four ceiling");
+
+		WaferTurtle growing =
+				CakeWorldEntities.WAFER_TURTLE.get()
+						.create(helper.getLevel());
+		require(helper, growing != null,
+				"Could not create Wafer Turtle growth fixture");
+		BlockPos growthPos = helper.absolutePos(
+				new BlockPos(7, 3, 3));
+		growing.setPos(growthPos.getX() + 0.5D,
+				growthPos.getY(),
+				growthPos.getZ() + 0.5D);
+		growing.setAge(-20);
+		helper.getLevel().addFreshEntity(growing);
+		growing.ageUp(1, true);
+		List<ItemEntity> scutes = helper.getLevel()
+				.getEntitiesOfClass(ItemEntity.class,
+						new AABB(growthPos).inflate(2.0D),
+						drop -> drop.getItem()
+								.is(Items.SCUTE));
+		require(helper,
+				!growing.isBaby()
+						&& scutes.size() == 1
+						&& helper.getLevel()
+								.getRecipeManager()
+								.byKey(new ResourceLocation(
+										"minecraft",
+										"turtle_helmet"))
+								.isPresent(),
+				"Wafer Turtle lost adult-growth Scute or vanilla Turtle-Shell recipe progression");
+
+		BlockPos protectedEggPos =
+				helper.absolutePos(
+						new BlockPos(10, 3, 3));
+		helper.getLevel().setBlock(
+				protectedEggPos.below(),
+				CakeWorldBlocks.BISCUIT_CRUMBS
+						.get().defaultBlockState(), 3);
+		helper.getLevel().setBlock(
+				protectedEggPos,
+				Blocks.TURTLE_EGG
+						.defaultBlockState()
+						.setValue(
+								TurtleEggBlock.EGGS, 4),
+				3);
+		for (int i = 0; i < 1000; i++) {
+			Blocks.TURTLE_EGG.stepOn(
+					helper.getLevel(),
+					protectedEggPos,
+					helper.getLevel()
+							.getBlockState(
+									protectedEggPos),
+					turtle);
+		}
+		require(helper,
+				helper.getLevel()
+						.getBlockState(
+								protectedEggPos)
+						.is(Blocks.TURTLE_EGG)
+						&& helper.getLevel()
+								.getBlockState(
+										protectedEggPos)
+								.getValue(
+										TurtleEggBlock
+												.EGGS)
+								== 4,
+				"Wafer Turtle failed the inherited Turtle/Turtle-Egg trampling exemption");
+
+		BlockPos cakeWorldPos =
+				findCakeWorldBiomePosition(
+						helper,
+						new BlockPos(0,
+								helper.getLevel()
+										.getSeaLevel(),
+								0),
+						64);
+		require(helper, cakeWorldPos != null,
+				"Could not locate a CakeWorld biome for Wafer Turtle source and hatch conversion");
+		BlockPos sourcePos =
+				cakeWorldPos.offset(0, 2, 0);
+		Turtle literal =
+				EntityType.TURTLE.create(
+						helper.getLevel());
+		Entity passenger =
+				EntityType.ARMOR_STAND.create(
+						helper.getLevel());
+		require(helper,
+				literal != null && passenger != null,
+				"Could not create Wafer Turtle source fixtures");
+		literal.setPos(sourcePos.getX() + 0.5D,
+				sourcePos.getY(),
+				sourcePos.getZ() + 0.5D);
+		literal.setAge(-1234);
+		literal.setHealth(17.0F);
+		literal.setNoAi(true);
+		literal.setCustomName(
+				new TextComponent("Homeward Wafer"));
+		literal.setHomePos(
+				sourcePos.offset(-4, -1, 7));
+		literal.invulnerableTime = 9;
+		CompoundTag literalState =
+				new CompoundTag();
+		literal.addAdditionalSaveData(
+				literalState);
+		literalState.putBoolean("HasEgg", true);
+		literalState.putInt("TravelPosX",
+				sourcePos.getX() + 71);
+		literalState.putInt("TravelPosY",
+				sourcePos.getY() - 3);
+		literalState.putInt("TravelPosZ",
+				sourcePos.getZ() - 43);
+		literal.readAdditionalSaveData(
+				literalState);
+		helper.getLevel().addFreshEntity(literal);
+		passenger.setPos(literal.getX(),
+				literal.getY(), literal.getZ());
+		helper.getLevel().addFreshEntity(
+				passenger);
+		passenger.startRiding(literal, true);
+		WaferTurtle converted =
+				CakeWorldTurtleReplacement
+						.replaceIfInCakeWorldBiome(
+								helper.getLevel(),
+								literal);
+		CompoundTag convertedState =
+				new CompoundTag();
+		require(helper, converted != null,
+				"Fresh literal Turtle did not convert in a CakeWorld biome");
+		converted.addAdditionalSaveData(
+				convertedState);
+		require(helper,
+				literal.isRemoved()
+						&& converted.getType()
+								== CakeWorldEntities
+										.WAFER_TURTLE.get()
+						&& converted.getAge() == -1234
+						&& close(converted.getHealth(), 17.0D)
+						&& converted.isNoAi()
+						&& converted.hasEgg()
+						&& converted.invulnerableTime == 9
+						&& "Homeward Wafer".equals(
+								converted.getName()
+										.getString())
+						&& convertedState.getInt(
+								"HomePosX")
+								== sourcePos.getX() - 4
+						&& convertedState.getInt(
+								"TravelPosX")
+								== sourcePos.getX() + 71
+						&& passenger.getVehicle()
+								== converted
+						&& converted.getPassengers()
+								.contains(passenger),
+				"Fresh literal Turtle conversion lost age, health, AI, egg, home, travel, name, invulnerability or passenger state");
+		WaferTurtle exactTypeGuard =
+				CakeWorldEntities.WAFER_TURTLE.get()
+						.create(helper.getLevel());
+		require(helper,
+				exactTypeGuard != null
+						&& CakeWorldTurtleReplacement
+								.replaceIfInCakeWorldBiome(
+										helper.getLevel(),
+										exactTypeGuard)
+								== null
+						&& !exactTypeGuard.isRemoved(),
+				"Turtle source conversion touched a non-literal entity type");
+		exactTypeGuard.discard();
+
+		Registry<Biome> biomes = helper.getLevel()
+				.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY);
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS
+						.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS
+						.getId())) {
+			Biome biome = biomes.get(biomeId);
+			require(helper,
+					biome != null
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory
+													.CREATURE)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType
+															.TURTLE
+											|| spawn.type
+													== CakeWorldEntities
+															.WAFER_TURTLE
+															.get()),
+					"Current pre-Custard-Coast biome leaked Turtle/Wafer Turtle ecology: "
+							+ biomeId);
+		}
+
+		WaferTurtle lightningTurtle =
+				CakeWorldEntities.WAFER_TURTLE.get()
+						.create(helper.getLevel());
+		LightningBolt lightning =
+				EntityType.LIGHTNING_BOLT.create(
+						helper.getLevel());
+		require(helper,
+				lightningTurtle != null
+						&& lightning != null,
+				"Could not create Wafer Turtle lightning fixture");
+		lightningTurtle.thunderHit(
+				helper.getLevel(), lightning);
+		require(helper,
+				!lightningTurtle.isAlive(),
+				"Wafer Turtle lost the inherited lethal lightning/Bowl-loot trigger");
+
+		BlockPos hatchPos =
+				sourcePos.offset(8, 0, 0);
+		helper.getLevel()
+				.getEntitiesOfClass(
+						Turtle.class,
+						new AABB(hatchPos)
+								.inflate(96.0D),
+						candidate ->
+								hasTurtleHome(
+										candidate,
+										hatchPos))
+				.forEach(Turtle::discard);
+		helper.getLevel().setBlock(
+				hatchPos.below(),
+				CakeWorldBlocks.BISCUIT_SAND.get()
+						.defaultBlockState(), 3);
+		helper.getLevel().setBlock(
+				hatchPos,
+				Blocks.TURTLE_EGG
+						.defaultBlockState()
+						.setValue(
+								TurtleEggBlock.HATCH, 2)
+						.setValue(
+								TurtleEggBlock.EGGS, 3),
+				3);
+		for (int attempt = 0;
+				attempt < 10000
+						&& helper.getLevel()
+								.getBlockState(hatchPos)
+								.is(Blocks.TURTLE_EGG);
+				attempt++) {
+			Blocks.TURTLE_EGG.randomTick(
+					helper.getLevel()
+							.getBlockState(hatchPos),
+					helper.getLevel(), hatchPos,
+					new Random(1982L + attempt));
+		}
+		require(helper,
+				helper.getLevel().isEmptyBlock(
+						hatchPos),
+				"Three fully cracked Turtle Eggs did not pass the vanilla random/moonlit hatch gate on tagged Biscuit Sand");
+		helper.runAfterDelay(5, () ->
+				helper.getLevel()
+						.getEntitiesOfClass(
+								WaferTurtle.class,
+								new AABB(hatchPos)
+										.inflate(16.0D),
+								candidate ->
+										candidate
+												.isBaby()
+										&& hasTurtleHome(
+												candidate,
+												hatchPos))
+						.forEach(candidate ->
+								candidate
+										.setNoAi(true)));
+
+		BlockPos laySurface =
+				helper.absolutePos(
+						new BlockPos(14, 3, 3));
+		for (int x = -2; x <= 2; x++) {
+			for (int z = -2; z <= 2; z++) {
+				BlockPos surface =
+						laySurface.offset(x, 0, z);
+				helper.getLevel().setBlock(
+						surface,
+						CakeWorldBlocks.BISCUIT_SAND
+								.get()
+								.defaultBlockState(),
+						3);
+				helper.getLevel().setBlock(
+						surface.above(),
+						Blocks.AIR
+								.defaultBlockState(),
+						3);
+			}
+		}
+		WaferTurtle eggBearer =
+				CakeWorldEntities.WAFER_TURTLE.get()
+						.create(helper.getLevel());
+		require(helper, eggBearer != null,
+				"Could not create Wafer Turtle egg-laying fixture");
+		eggBearer.setPos(
+				laySurface.getX() + 0.5D,
+				laySurface.getY() + 1.0D,
+				laySurface.getZ() + 0.5D);
+		eggBearer.setHomePos(
+				laySurface.above());
+		CompoundTag layingState =
+				new CompoundTag();
+		eggBearer.addAdditionalSaveData(
+				layingState);
+		layingState.putBoolean("HasEgg", true);
+		eggBearer.readAdditionalSaveData(
+				layingState);
+		helper.getLevel().addFreshEntity(
+				eggBearer);
+
+		helper.runAfterDelay(520, () -> {
+			List<WaferTurtle> hatchlings =
+					helper.getLevel()
+							.getEntitiesOfClass(
+									WaferTurtle.class,
+									new AABB(hatchPos)
+											.inflate(64.0D),
+									candidate ->
+											candidate
+													.isBaby()
+											&& hasTurtleHome(
+													candidate,
+													hatchPos));
+			List<Turtle> literalHatchlings =
+					helper.getLevel()
+							.getEntitiesOfClass(
+									Turtle.class,
+									new AABB(hatchPos)
+											.inflate(64.0D),
+									candidate ->
+											candidate
+													.getType()
+													== EntityType
+															.TURTLE
+											&& hasTurtleHome(
+													candidate,
+													hatchPos));
+			require(helper,
+					hatchlings.size() == 3
+							&& literalHatchlings.isEmpty(),
+					"Moonlit three-egg hatch did not defer-convert to exactly three Wafer Turtle babies: custom="
+							+ hatchlings.size()
+							+ " "
+							+ hatchlings.stream()
+									.map(Entity::blockPosition)
+									.toList()
+							+ ", literal="
+							+ literalHatchlings.size()
+							+ " "
+							+ literalHatchlings.stream()
+									.map(Entity::blockPosition)
+									.toList());
+			for (WaferTurtle hatchling :
+					hatchlings) {
+				CompoundTag hatchState =
+						new CompoundTag();
+				hatchling.addAdditionalSaveData(
+						hatchState);
+				require(helper,
+						hatchState.getInt(
+								"HomePosX")
+									== hatchPos
+											.getX()
+								&& hatchState.getInt(
+										"HomePosY")
+										== hatchPos
+												.getY()
+								&& hatchState.getInt(
+										"HomePosZ")
+										== hatchPos
+												.getZ(),
+						"Wafer Turtle hatchling lost its egg-site home position");
+			}
+			BlockState laidEgg = null;
+			BlockPos laidEggPos = null;
+			for (int x = -16;
+					x <= 16 && laidEgg == null; x++) {
+				for (int z = -16;
+						z <= 16; z++) {
+					BlockPos candidate =
+							laySurface.offset(
+									x, 1, z);
+					BlockState candidateState =
+							helper.getLevel()
+									.getBlockState(
+											candidate);
+					if (candidateState.is(
+							Blocks.TURTLE_EGG)) {
+						laidEgg = candidateState;
+						laidEggPos = candidate;
+						break;
+					}
+				}
+			}
+			require(helper,
+					laidEgg != null
+							&& laidEgg.getValue(
+									TurtleEggBlock
+											.EGGS) >= 1
+							&& laidEgg.getValue(
+									TurtleEggBlock
+											.EGGS) <= 4
+							&& !eggBearer.hasEgg()
+							&& !eggBearer
+									.isLayingEgg(),
+					"Wafer Turtle did not complete the inherited homeward one-to-four-egg laying cycle: egg="
+							+ laidEggPos
+							+ ", hasEgg="
+							+ eggBearer.hasEgg()
+							+ ", laying="
+							+ eggBearer.isLayingEgg());
+			hatchlings.forEach(
+					WaferTurtle::discard);
+			scutes.forEach(ItemEntity::discard);
+			growing.discard();
+			turtle.discard();
+			restored.discard();
+			offspring.discard();
+			tempted.discard();
+			passenger.discard();
+			converted.discard();
+			eggBearer.discard();
+			helper.succeed();
+		});
+	}
+
 	private static final class LollipopLorikeetProbe
 			extends LollipopLorikeet {
 		private LollipopLorikeetProbe(Level level) {
@@ -22310,6 +23064,123 @@ public final class FirstBiteGameTests {
 			random.setSeed(seed);
 		}
 
+	}
+
+	private static final class WaferTurtleProbe
+			extends WaferTurtle {
+		private net.minecraft.sounds.SoundEvent lastSound;
+
+		private WaferTurtleProbe(Level level) {
+			super(CakeWorldEntities.WAFER_TURTLE.get(),
+					level);
+		}
+
+		private void seedRandom(long seed) {
+			random.setSeed(seed);
+		}
+
+		private int getExperienceValue() {
+			return getExperienceReward(null);
+		}
+
+		private ResourceLocation getLootTableId() {
+			return getLootTable();
+		}
+
+		private boolean canBeLeashedRole() {
+			return canBeLeashed(null);
+		}
+
+		private boolean hasGoalAt(
+				String name, int priority) {
+			return goalSelector.getAvailableGoals()
+					.stream().anyMatch(wrapped ->
+							wrapped.getPriority()
+									== priority
+									&& name.equals(
+											wrapped
+													.getGoal()
+													.getClass()
+													.getSimpleName()));
+		}
+
+		private int countGoalsNamed(String name) {
+			return (int)goalSelector
+					.getAvailableGoals().stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
+		}
+
+		private int countTargetGoals() {
+			return targetSelector
+					.getAvailableGoals().size();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				adultLandAmbient() {
+			setAge(0);
+			onGround = true;
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				adultHurtSound() {
+			setAge(0);
+			return getHurtSound(
+					DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				babyHurtSound() {
+			setAge(-24000);
+			return getHurtSound(
+					DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				adultDeathSound() {
+			setAge(0);
+			return getDeathSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				babyDeathSound() {
+			setAge(-24000);
+			return getDeathSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				swimSound() {
+			return getSwimSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				adultStepSound() {
+			setAge(0);
+			lastSound = null;
+			playStepSound(blockPosition(),
+					Blocks.SAND.defaultBlockState());
+			return lastSound;
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				babyStepSound() {
+			setAge(-24000);
+			lastSound = null;
+			playStepSound(blockPosition(),
+					Blocks.SAND.defaultBlockState());
+			return lastSound;
+		}
+
+		@Override
+		public void playSound(
+				net.minecraft.sounds.SoundEvent sound,
+				float volume, float pitch) {
+			lastSound = sound;
+		}
 	}
 
 	private static final class GummyBunnyProbe
@@ -24117,6 +24988,18 @@ public final class FirstBiteGameTests {
 			}
 		}
 		return null;
+	}
+
+	private static boolean hasTurtleHome(
+			Turtle turtle, BlockPos expected) {
+		CompoundTag state = new CompoundTag();
+		turtle.addAdditionalSaveData(state);
+		return state.getInt("HomePosX")
+						== expected.getX()
+				&& state.getInt("HomePosY")
+						== expected.getY()
+				&& state.getInt("HomePosZ")
+						== expected.getZ();
 	}
 
 	private static void requireSpawnReplacement(GameTestHelper helper, Biome biome,

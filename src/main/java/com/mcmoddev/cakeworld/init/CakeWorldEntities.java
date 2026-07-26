@@ -63,6 +63,7 @@ import com.mcmoddev.cakeworld.entity.SugarMite;
 import com.mcmoddev.cakeworld.entity.TaffyTallwalker;
 import com.mcmoddev.cakeworld.entity.TrufflePig;
 import com.mcmoddev.cakeworld.entity.VanillaIceBear;
+import com.mcmoddev.cakeworld.entity.WaferTurtle;
 import com.mcmoddev.cakeworld.entity.WaferWraith;
 
 import net.minecraft.world.entity.EntityType;
@@ -92,6 +93,7 @@ import net.minecraft.world.entity.animal.Salmon;
 import net.minecraft.world.entity.animal.Sheep;
 import net.minecraft.world.entity.animal.SnowGolem;
 import net.minecraft.world.entity.animal.Squid;
+import net.minecraft.world.entity.animal.Turtle;
 import net.minecraft.world.entity.animal.AbstractFish;
 import net.minecraft.world.entity.animal.goat.Goat;
 import net.minecraft.world.entity.animal.horse.AbstractChestedHorse;
@@ -224,6 +226,12 @@ public final class CakeWorldEntities {
 							MobCategory.WATER_AMBIENT)
 							.sized(0.5F, 0.4F)
 							.clientTrackingRange(4));
+	public static final RegistryObject<EntityType<WaferTurtle>>
+			WAFER_TURTLE = entity("wafer_turtle",
+					EntityType.Builder.of(WaferTurtle::new,
+							MobCategory.CREATURE)
+							.sized(1.2F, 0.4F)
+							.clientTrackingRange(10));
 	public static final RegistryObject<EntityType<SodaDolphin>> SODA_DOLPHIN =
 			entity("soda_dolphin",
 					EntityType.Builder.of(SodaDolphin::new,
@@ -576,6 +584,8 @@ public final class CakeWorldEntities {
 				AbstractFish.createAttributes().build());
 		event.put(JELLYBEAN_FISH.get(),
 				AbstractFish.createAttributes().build());
+		event.put(WAFER_TURTLE.get(),
+				Turtle.createAttributes().build());
 		event.put(SODA_DOLPHIN.get(), Dolphin.createAttributes().build());
 		event.put(DOUGH_DONKEY.get(),
 				AbstractChestedHorse.createBaseChestedHorseAttributes()
@@ -722,6 +732,10 @@ public final class CakeWorldEntities {
 					SpawnPlacements.Type.IN_WATER,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					JellybeanFish::checkJellybeanFishSpawnRules);
+			SpawnPlacements.register(WAFER_TURTLE.get(),
+					SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					WaferTurtle::checkWaferTurtleSpawnRules);
 			SpawnPlacements.register(SODA_DOLPHIN.get(),
 					SpawnPlacements.Type.IN_WATER,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
