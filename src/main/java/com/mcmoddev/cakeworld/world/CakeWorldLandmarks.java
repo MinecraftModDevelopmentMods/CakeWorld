@@ -97,6 +97,20 @@ public final class CakeWorldLandmarks {
 							.TOP_LAYER_MODIFICATION)
 					.add(archRepair);
 		}
+		Holder<PlacedFeature> wreckRepair =
+				WaferWreckRepairFeature
+						.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(
+						biome.getNamespace())
+				&& "soda_ocean".equals(
+						biome.getPath())
+				&& wreckRepair != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration
+							.TOP_LAYER_MODIFICATION)
+					.add(wreckRepair);
+		}
 	}
 
 	private static boolean isCurrentOverworldBiome(

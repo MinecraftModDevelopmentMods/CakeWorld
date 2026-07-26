@@ -169,6 +169,8 @@ import com.mcmoddev.cakeworld.world.SherbetPyramidRepairFeature;
 import com.mcmoddev.cakeworld.world.SherbetPyramidStructureFeature;
 import com.mcmoddev.cakeworld.world.WaferMineFeature;
 import com.mcmoddev.cakeworld.world.WaferMineStructureFeature;
+import com.mcmoddev.cakeworld.world.WaferWreckFeature;
+import com.mcmoddev.cakeworld.world.WaferWreckRepairFeature;
 import com.mcmoddev.cakeworld.world.CakeWorldPillagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldRavagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldShulkerReplacement;
@@ -35409,6 +35411,358 @@ public final class FirstBiteGameTests {
 				"Burnt-Sugar Arch repair produced "
 						+ portalBlocks
 						+ " portal blocks instead of the exact 4x5 opening");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, batch = "struct009",
+			timeoutTicks = 1200)
+	public static void waferWreckKeepsShipwreckCargoAndDolphinRoles(
+			GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						WaferWreckFeature
+								.STRUCTURE_ID);
+		Registry<net.minecraft.world.level.levelgen.structure.StructureSet>
+				structureSets =
+				level.registryAccess().registryOrThrow(
+						Registry.STRUCTURE_SET_REGISTRY);
+		net.minecraft.world.level.levelgen.structure.StructureSet
+				structureSet =
+				structureSets.get(
+						WaferWreckFeature
+								.STRUCTURE_SET_ID);
+		boolean ownTag = structures.getTag(
+						WaferWreckFeature
+								.STRUCTURE_TAG)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		boolean vanillaShipwreckTag =
+				structures.getTag(
+						ConfiguredStructureTags
+								.SHIPWRECK)
+						.map(tag -> tag.stream()
+								.anyMatch(holder ->
+										holder.value()
+												== configured))
+						.orElse(false);
+		boolean dolphinTag =
+				structures.getTag(
+						ConfiguredStructureTags
+								.DOLPHIN_LOCATED)
+						.map(tag -> tag.stream()
+								.anyMatch(holder ->
+										holder.value()
+												== configured))
+						.orElse(false);
+		Set<ResourceLocation> eligibleBiomes =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.getTag(WaferWreckFeature
+								.GENERATES_IN)
+						.map(tag -> tag.stream()
+								.map(holder -> holder
+										.unwrapKey()
+										.orElseThrow()
+										.location())
+								.collect(
+										java.util.stream
+												.Collectors
+												.toSet()))
+						.orElse(Set.of());
+		boolean repairInstalled =
+				hasPlacedFeature(
+						level,
+						CakeWorldBiomes.SODA_OCEAN
+								.getId(),
+						GenerationStep.Decoration
+								.TOP_LAYER_MODIFICATION,
+						WaferWreckRepairFeature.ID);
+		require(helper,
+				configured != null
+						&& configured.feature
+								== WaferWreckFeature
+										.STRUCTURE_FEATURE
+						&& !configured.adaptNoise
+						&& WaferWreckFeature
+								.STRUCTURE_FEATURE.step()
+								== GenerationStep
+										.Decoration
+										.SURFACE_STRUCTURES
+						&& structureSet != null
+						&& structureSet.structures().size()
+								== 1
+						&& structureSet.structures().get(0)
+								.structure().value()
+								== configured
+						&& ownTag
+						&& vanillaShipwreckTag
+						&& dolphinTag
+						&& WaferWreckRepairFeature
+								.placedFeature() != null
+						&& repairInstalled
+						&& eligibleBiomes.equals(Set.of(
+								CakeWorldBiomes
+										.SODA_OCEAN
+										.getId())),
+				"Wafer Wreck lost its configured structure, Soda-Ocean repair, locate tag or vanilla Shipwreck/Dolphin role: eligible="
+						+ eligibleBiomes
+						+ ", ownTag=" + ownTag
+						+ ", shipwreckTag="
+						+ vanillaShipwreckTag
+						+ ", dolphinTag="
+						+ dolphinTag
+						+ ", repair="
+						+ repairInstalled);
+
+		net.minecraft.world.level.levelgen.structure.placement
+				.RandomSpreadStructurePlacement placement =
+				(net.minecraft.world.level.levelgen.structure
+						.placement.RandomSpreadStructurePlacement)
+						structureSet.placement();
+		require(helper,
+				placement.spacing() == 24
+						&& placement.separation() == 4
+						&& placement.spreadType()
+								== net.minecraft.world.level
+										.levelgen.structure
+										.placement
+										.RandomSpreadType
+										.LINEAR
+						&& placement.salt()
+								== 165745295,
+				"Wafer Wreck lost vanilla Shipwreck's exact 24/4/165745295 linear placement");
+
+		net.minecraft.world.level.levelgen.structure.pools
+				.StructurePoolElement element =
+				WaferWreckFeature.pool().value()
+						.getRandomTemplate(
+								new Random(
+										165745295L));
+		net.minecraft.world.level.levelgen.structure.BoundingBox
+				pieceBounds =
+				element.getBoundingBox(
+						level.getStructureManager(),
+						BlockPos.ZERO,
+						Rotation.NONE);
+		require(helper,
+				element
+						instanceof CakeWorldFeaturePoolElement
+						&& pieceBounds.getXSpan() == 33
+						&& pieceBounds.getYSpan() == 17
+						&& pieceBounds.getZSpan() == 33,
+				"Wafer Wreck lost its serializable 33x17x33 rotated envelope");
+
+		Set<Rotation> rotations =
+				new java.util.HashSet<>();
+		for (int index = 0;
+				index < 128
+						&& rotations.size() < 4;
+				index++) {
+			rotations.add(
+					WaferWreckFeature.orientation(
+							level.getSeed(),
+							new BlockPos(
+									index * 37,
+									48,
+									index * -53)));
+		}
+		require(helper, rotations.size() == 4,
+				"Wafer Wreck deterministic orientation contract did not expose all four cardinal rotations: "
+						+ rotations);
+
+		BlockPos centre = new BlockPos(
+				helper.absolutePos(
+						new BlockPos(4, 4, 4))
+						.getX(),
+				level.getMaxBuildHeight() - 80,
+				helper.absolutePos(
+						new BlockPos(4, 4, 4))
+						.getZ());
+		for (int x = -16; x <= 16; x++) {
+			for (int y = -4; y <= 13; y++) {
+				for (int z = -16; z <= 16; z++) {
+					level.setBlock(
+							centre.offset(x, y, z),
+							Blocks.AIR
+									.defaultBlockState(),
+							2);
+				}
+			}
+		}
+		require(helper,
+				WaferWreckFeature.buildAt(
+						level,
+						new Random(165745295L),
+						centre),
+				"Wafer Wreck refused a forced Soda-Ocean fixture");
+		Map<Block, Integer> palette =
+				scanBlockPalette(level, centre,
+						16, 4, 13);
+		require(helper,
+				palette.getOrDefault(
+						CakeWorldBlocks.WAFER_BLOCK
+								.get(), 0) >= 400
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CANDY_CANE_PILLAR
+										.get(),
+								0) >= 80
+						&& palette.getOrDefault(
+								CakeWorldBlocks.ICING
+										.get(),
+								0) >= 20
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CANDY_GLASS
+										.get(),
+								0) == 12
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.RASPBERRY_GUMMY_BLOCK
+										.get(),
+								0) == 1
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.BISCUIT_STONE
+										.get(),
+								0) == 3
+						&& palette.getOrDefault(
+								Blocks.CHEST, 0) == 3,
+				"Wafer Wreck lost its fragile hull, striped ribs, icing sail, windows, flag, ballast or three cargo holds: "
+						+ palette);
+
+		List<ResourceLocation> expectedLoot = List.of(
+				WaferWreckFeature.SUPPLY_LOOT_ID,
+				WaferWreckFeature.MAP_LOOT_ID,
+				WaferWreckFeature.TREASURE_LOOT_ID);
+		List<BlockPos> cargo =
+				WaferWreckFeature.lootPositions(
+						level.getSeed(), centre);
+		for (int index = 0;
+				index < cargo.size(); index++) {
+			BlockEntity chestEntity =
+					level.getBlockEntity(
+							cargo.get(index));
+			CompoundTag chestState =
+					chestEntity == null
+							? new CompoundTag()
+							: chestEntity
+									.saveWithoutMetadata();
+			require(helper,
+					expectedLoot.get(index)
+							.toString().equals(
+									chestState
+											.getString(
+													"LootTable")),
+					"Wafer Wreck cargo chest "
+							+ index
+							+ " lost loot identity "
+							+ expectedLoot.get(
+									index)
+							+ ": " + chestState);
+		}
+
+		LootContext lootContext =
+				new LootContext.Builder(level)
+						.withParameter(
+								LootContextParams.ORIGIN,
+								Vec3.atCenterOf(
+										cargo.get(1)))
+						.create(
+								LootContextParamSets.CHEST);
+		List<ItemStack> mapCargo =
+				level.getServer().getLootTables()
+						.get(WaferWreckFeature
+								.MAP_LOOT_ID)
+						.getRandomItems(lootContext);
+		ItemStack lostCargoMap = mapCargo.stream()
+				.filter(stack -> stack.is(
+						Items.FILLED_MAP))
+				.findFirst()
+				.orElse(ItemStack.EMPTY);
+		boolean namedMap =
+				!lostCargoMap.isEmpty()
+						&& lostCargoMap.getHoverName()
+								instanceof TranslatableComponent
+						&& "filled_map.cakeworld.wafer_wreck"
+								.equals(
+										((TranslatableComponent)
+												lostCargoMap
+														.getHoverName())
+																.getKey());
+		require(helper,
+				!lostCargoMap.isEmpty()
+						&& lostCargoMap.hasTag()
+						&& namedMap,
+				"Wafer Wreck map cargo did not produce a real named filled exploration map to another unvisited Wreck: "
+						+ mapCargo);
+
+		List<ItemStack> supplyCargo =
+				level.getServer().getLootTables()
+						.get(WaferWreckFeature
+								.SUPPLY_LOOT_ID)
+						.getRandomItems(
+								new LootContext.Builder(
+										level)
+												.withParameter(
+														LootContextParams
+																.ORIGIN,
+														Vec3.atCenterOf(
+																cargo.get(
+																		0)))
+												.create(
+														LootContextParamSets
+																.CHEST));
+		List<ItemStack> treasureCargo =
+				level.getServer().getLootTables()
+						.get(WaferWreckFeature
+								.TREASURE_LOOT_ID)
+						.getRandomItems(
+								new LootContext.Builder(
+										level)
+												.withParameter(
+														LootContextParams
+																.ORIGIN,
+														Vec3.atCenterOf(
+																cargo.get(
+																		2)))
+												.create(
+														LootContextParamSets
+																.CHEST));
+		require(helper,
+				!supplyCargo.isEmpty()
+						&& supplyCargo.stream()
+								.anyMatch(stack ->
+										stack.isEdible()
+												|| stack.is(
+														CakeWorldBlocks
+																.WAFER_BLOCK
+																.get()
+																.asItem()))
+						&& !treasureCargo.isEmpty()
+						&& treasureCargo.stream()
+								.anyMatch(stack ->
+										stack.is(
+												Items.IRON_INGOT)
+												|| stack.is(
+														Items.GOLD_INGOT)
+												|| stack.is(
+														Items.EMERALD)
+												|| stack.is(
+														Items.DIAMOND)),
+				"Wafer Wreck lost edible emergency supplies or the vanilla metal/gem treasure role: supply="
+						+ supplyCargo
+						+ ", treasure="
+						+ treasureCargo);
 		helper.succeed();
 	}
 

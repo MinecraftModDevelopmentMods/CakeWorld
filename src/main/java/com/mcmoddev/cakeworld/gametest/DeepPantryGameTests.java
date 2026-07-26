@@ -33,6 +33,7 @@ import com.mcmoddev.cakeworld.world.GummyShrineFeature;
 import com.mcmoddev.cakeworld.world.IceCreamParlourFeature;
 import com.mcmoddev.cakeworld.world.SherbetPyramidFeature;
 import com.mcmoddev.cakeworld.world.WaferMineFeature;
+import com.mcmoddev.cakeworld.world.WaferWreckFeature;
 import com.mcmoddev.orespawn.api.CompiledOrePattern;
 import com.mcmoddev.orespawn.api.GeologyColumn;
 import com.mcmoddev.orespawn.api.GeologyProfileView;
@@ -3175,6 +3176,162 @@ public final class DeepPantryGameTests {
 		});
 	}
 
+	@GameTest(template = EMPTY, timeoutTicks = 7200)
+	public static void focusedWaferWreckStructureAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean(
+				"cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed Wafer Wreck audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry
+										.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						WaferWreckFeature
+								.STRUCTURE_ID);
+		require(helper, configured != null,
+				"Wafer Wreck configured structure was absent from the live registry");
+		boolean locatedTag = structures.getTag(
+						WaferWreckFeature
+								.STRUCTURE_TAG)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		boolean shipwreckTag = structures.getTag(
+						ConfiguredStructureTags
+								.SHIPWRECK)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		boolean dolphinTag = structures.getTag(
+						ConfiguredStructureTags
+								.DOLPHIN_LOCATED)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		require(helper,
+				locatedTag && shipwreckTag
+						&& dolphinTag,
+				"Wafer Wreck lost its public locate, vanilla Shipwreck or Dolphin-located tag: own="
+						+ locatedTag
+						+ ", shipwreck="
+						+ shipwreckTag
+						+ ", dolphin="
+						+ dolphinTag);
+
+		LocatedWreck wreck = locateWaferWreck(
+				helper, level, configured,
+				new BlockPos(96, 64, 128));
+		setWreckChunksForced(level, wreck, true);
+		helper.runAfterDelay(60, () -> {
+			WreckWorldAudit audit =
+					auditWaferWreck(level, wreck);
+			setWreckChunksForced(level, wreck,
+					false);
+			LOGGER.info("Focused Wafer Wreck audit: locate={}, centre={}, bounds={}, biome={}, orientation={}, palette={}, loot={}, literalEligible={}",
+					wreck.located(),
+					wreck.centre(),
+					wreck.bounds(),
+					audit.biome(),
+					audit.orientation(),
+					audit.palette(),
+					audit.loot(),
+					audit.literalEligible());
+			require(helper,
+					CakeWorldBiomes.SODA_OCEAN
+							.getId().equals(
+									audit.biome())
+							&& !audit
+									.literalEligible(),
+					"Natural Wafer Wreck left Soda Ocean or leaked literal vanilla Shipwreck biome eligibility: biome="
+							+ audit.biome()
+							+ ", literal="
+							+ audit.literalEligible());
+			require(helper,
+					wreck.bounds().getXSpan()
+							== 33
+							&& wreck.bounds()
+									.getYSpan()
+									== 17
+							&& wreck.bounds()
+									.getZSpan()
+									== 33
+							&& wreck.centre()
+									.getY()
+									< level
+											.getSeaLevel(),
+					"Natural Wafer Wreck lost its exact saved rotated envelope or ocean-floor placement: "
+							+ wreck.bounds()
+							+ ", centre="
+							+ wreck.centre()
+							+ ", seaLevel="
+							+ level.getSeaLevel());
+			Map<Block, Integer> palette =
+					audit.palette();
+			require(helper,
+					palette.getOrDefault(
+							CakeWorldBlocks
+									.WAFER_BLOCK
+									.get(), 0)
+							== 700
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.CANDY_CANE_PILLAR
+											.get(),
+									0) == 94
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.ICING.get(),
+									0) == 21
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.CANDY_GLASS
+											.get(),
+									0) == 12
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.RASPBERRY_GUMMY_BLOCK
+											.get(),
+									0) == 1
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.BISCUIT_STONE
+											.get(),
+									0) == 3
+							&& palette.getOrDefault(
+									Blocks.CHEST, 0)
+									== 3
+							&& palette.getOrDefault(
+									CakeWorldFluids
+											.LEMONADE_BLOCK
+											.get(),
+									0) > 0
+							&& audit.loot()
+									.equals(Set.of(
+											WaferWreckFeature
+													.SUPPLY_LOOT_ID,
+											WaferWreckFeature
+													.MAP_LOOT_ID,
+											WaferWreckFeature
+													.TREASURE_LOOT_ID)),
+					"Natural Wafer Wreck lost its full damaged edible ship, surrounding Lemonade or three cargo identities: palette="
+							+ palette
+							+ ", loot="
+							+ audit.loot());
+			helper.succeed();
+		});
+	}
+
 	@GameTest(template = EMPTY, timeoutTicks = 1200)
 	public static void baseMetalsCounterpartsPreserveTagsRecipesAndGeneration(
 			GameTestHelper helper) {
@@ -4562,6 +4719,125 @@ public final class DeepPantryGameTests {
 						+ audit.repairable());
 	}
 
+	private static LocatedWreck locateWaferWreck(
+			GameTestHelper helper, ServerLevel level,
+			ConfiguredStructureFeature<?, ?> configured,
+			BlockPos origin) {
+		BlockPos located = level.findNearestMapFeature(
+				WaferWreckFeature.STRUCTURE_TAG,
+				origin, 512, false);
+		require(helper, located != null,
+				"The fixed-seed CakeWorld contained no locatable Wafer Wreck within 512 chunks of Soda Ocean");
+		net.minecraft.world.level.ChunkPos startChunk =
+				new net.minecraft.world.level.ChunkPos(
+						located);
+		net.minecraft.world.level.chunk.LevelChunk
+				startLevelChunk =
+				level.getChunk(startChunk.x,
+						startChunk.z);
+		net.minecraft.world.level.levelgen.structure.StructureStart
+				start =
+				startLevelChunk.getStartForFeature(
+						configured);
+		require(helper,
+				start != null && start.isValid()
+						&& start.getFeature() == configured
+						&& start.getPieces().size() == 1,
+				"The located Wafer Wreck lost its saved one-piece structure start");
+		net.minecraft.world.level.levelgen.structure.BoundingBox
+				bounds = start.getBoundingBox();
+		BlockPos centre = new BlockPos(
+				bounds.minX() + 16,
+				bounds.minY() + 4,
+				bounds.minZ() + 16);
+		return new LocatedWreck(
+				located, centre, bounds);
+	}
+
+	private static void setWreckChunksForced(
+			ServerLevel level, LocatedWreck wreck,
+			boolean forced) {
+		int minimumChunkX = Math.floorDiv(
+				wreck.bounds().minX(), 16);
+		int maximumChunkX = Math.floorDiv(
+				wreck.bounds().maxX(), 16);
+		int minimumChunkZ = Math.floorDiv(
+				wreck.bounds().minZ(), 16);
+		int maximumChunkZ = Math.floorDiv(
+				wreck.bounds().maxZ(), 16);
+		for (int chunkX = minimumChunkX;
+				chunkX <= maximumChunkX; chunkX++) {
+			for (int chunkZ = minimumChunkZ;
+					chunkZ <= maximumChunkZ;
+					chunkZ++) {
+				level.setChunkForced(
+						chunkX, chunkZ, forced);
+			}
+		}
+	}
+
+	private static WreckWorldAudit auditWaferWreck(
+			ServerLevel level, LocatedWreck wreck) {
+		Map<Block, Integer> palette =
+				new LinkedHashMap<>();
+		for (int x = -16; x <= 16; x++) {
+			for (int y = -4; y <= 12; y++) {
+				for (int z = -16; z <= 16; z++) {
+					Block block = level
+							.getBlockState(
+									wreck.centre()
+											.offset(
+													x,
+													y,
+													z))
+							.getBlock();
+					palette.merge(block, 1,
+							Integer::sum);
+				}
+			}
+		}
+		Set<ResourceLocation> loot =
+				new java.util.HashSet<>();
+		for (BlockPos position
+				: WaferWreckFeature
+						.lootPositions(
+								level.getSeed(),
+								wreck.centre())) {
+			BlockEntity chest =
+					level.getBlockEntity(position);
+			if (chest != null) {
+				CompoundTag saved =
+						chest.saveWithoutMetadata();
+				String lootId =
+						saved.getString("LootTable");
+				if (!lootId.isEmpty()) {
+					loot.add(new ResourceLocation(
+							lootId));
+				}
+			}
+		}
+		ResourceLocation biomeId =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.getKey(level.getBiome(
+								wreck.centre())
+								.value());
+		Holder<Biome> biome =
+				level.getBiome(wreck.centre());
+		boolean literalEligible =
+				biome.is(BiomeTags.HAS_SHIPWRECK)
+						|| biome.is(
+								BiomeTags
+										.HAS_SHIPWRECK_BEACHED);
+		return new WreckWorldAudit(
+				palette, biomeId, loot,
+				WaferWreckFeature.orientation(
+						level.getSeed(),
+						wreck.centre()),
+				literalEligible);
+	}
+
 	private static List<ItemStack> drops(GameTestHelper helper, Block block,
 			ItemStack tool, BlockPos origin) {
 		ResourceLocation blockId = Registry.BLOCK.getKey(block);
@@ -4641,6 +4917,21 @@ public final class DeepPantryGameTests {
 			Map<Block, Integer> palette,
 			ResourceLocation biome, boolean loot,
 			boolean repairable,
+			boolean literalEligible) {
+	}
+
+	private record LocatedWreck(
+			BlockPos located, BlockPos centre,
+			net.minecraft.world.level.levelgen.structure.BoundingBox
+					bounds) {
+	}
+
+	private record WreckWorldAudit(
+			Map<Block, Integer> palette,
+			ResourceLocation biome,
+			Set<ResourceLocation> loot,
+			net.minecraft.world.level.block.Rotation
+					orientation,
 			boolean literalEligible) {
 	}
 

@@ -42,6 +42,10 @@ public final class CakeWorldFeatureRegistration {
 				BurntSugarArchFeature.FEATURE);
 		event.getRegistry().register(
 				BurntSugarArchRepairFeature.FEATURE);
+		event.getRegistry().register(
+				WaferWreckFeature.FEATURE);
+		event.getRegistry().register(
+				WaferWreckRepairFeature.FEATURE);
 	}
 
 	@SubscribeEvent
@@ -63,6 +67,8 @@ public final class CakeWorldFeatureRegistration {
 				IceCreamParlourFeature.STRUCTURE_FEATURE);
 		event.getRegistry().register(
 				BurntSugarArchFeature.STRUCTURE_FEATURE);
+		event.getRegistry().register(
+				WaferWreckFeature.STRUCTURE_FEATURE);
 	}
 
 	@SubscribeEvent
@@ -87,6 +93,9 @@ public final class CakeWorldFeatureRegistration {
 					.registerConfiguredFeature();
 			BurntSugarArchFeature.registerWorldgen();
 			BurntSugarArchRepairFeature
+					.registerConfiguredFeature();
+			WaferWreckFeature.registerWorldgen();
+			WaferWreckRepairFeature
 					.registerConfiguredFeature();
 		});
 	}
