@@ -62,6 +62,10 @@ public final class CakeWorldCreatureSpawns {
 		replaceExisting(event, MobCategory.MONSTER,
 				EntityType.WITCH,
 				CakeWorldEntities.BITTER_BAKER);
+		replaceExisting(event, MobCategory.MONSTER,
+				EntityType.ZOMBIE_VILLAGER,
+				CakeWorldEntities
+						.CRUMBLED_GINGERBREAD_FOLK);
 		replaceExisting(event, MobCategory.WATER_CREATURE,
 				EntityType.SQUID,
 				CakeWorldEntities.LIQUORICE_SQUID);

@@ -30,6 +30,8 @@ public final class StaleCrumblerReinforcements {
 			ZombieEvent.SummonAidEvent event) {
 		if (!(event.getSummoner()
 						instanceof StaleCrumbler)
+				&& !(event.getSummoner()
+						instanceof CrumbledGingerbreadFolk)
 				|| event.getResult()
 						!= Event.Result.DEFAULT) {
 			return;

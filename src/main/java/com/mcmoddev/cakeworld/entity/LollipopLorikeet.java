@@ -119,7 +119,10 @@ public class LollipopLorikeet extends Parrot {
 					mimic("liquorice_weaver",
 							SoundEvents.PARROT_IMITATE_SPIDER),
 					mimic("stale_crumbler",
-							SoundEvents.PARROT_IMITATE_ZOMBIE));
+							SoundEvents.PARROT_IMITATE_ZOMBIE),
+					mimic("crumbled_gingerbread_folk",
+							SoundEvents
+									.PARROT_IMITATE_ZOMBIE_VILLAGER));
 
 	public LollipopLorikeet(
 			EntityType<? extends Parrot> type, Level level) {

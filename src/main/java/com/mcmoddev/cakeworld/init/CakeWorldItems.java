@@ -446,6 +446,12 @@ public final class CakeWorldItems {
 	public static final RegistryObject<Item> STALE_CRUMBLER_SPAWN_EGG =
 			spawnEgg("stale_crumbler_spawn_egg", CakeWorldEntities.STALE_CRUMBLER,
 					0x8B6A45, 0x5A3A28);
+	public static final RegistryObject<Item>
+			CRUMBLED_GINGERBREAD_FOLK_SPAWN_EGG =
+			spawnEgg("crumbled_gingerbread_folk_spawn_egg",
+					CakeWorldEntities
+							.CRUMBLED_GINGERBREAD_FOLK,
+					0x563C33, 0x799C65);
 
 	private CakeWorldItems() {
 	}

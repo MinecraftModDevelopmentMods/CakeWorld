@@ -48,6 +48,7 @@ import com.mcmoddev.cakeworld.entity.CocoaCow;
 import com.mcmoddev.cakeworld.entity.CupcakeCow;
 import com.mcmoddev.cakeworld.entity.CrumbMite;
 import com.mcmoddev.cakeworld.entity.CrumbMiteGriefSafety;
+import com.mcmoddev.cakeworld.entity.CrumbledGingerbreadFolk;
 import com.mcmoddev.cakeworld.entity.CinnamonPuffProjectile;
 import com.mcmoddev.cakeworld.entity.CinnamonSpark;
 import com.mcmoddev.cakeworld.entity.Jellylotl;
@@ -145,6 +146,7 @@ import com.mcmoddev.cakeworld.world.CakeWorldWitherSkeletonReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldWolfReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldZombieReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldZombieHorseReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldZombieVillagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldZoglinReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldPillagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldRavagerReplacement;
@@ -19383,6 +19385,1123 @@ public final class FirstBiteGameTests {
 		});
 	}
 
+	@GameTest(template = EMPTY, batch = "mob072",
+			timeoutTicks = 420)
+	public static void
+			crumbledGingerbreadFolkKeepTheCompleteZombieVillagerRole(
+					GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		BlockPos anchor = helper.absolutePos(
+				new BlockPos(5, 3, 5));
+		CrumbledGingerbreadFolkProbe crumbled =
+				new CrumbledGingerbreadFolkProbe(level);
+		VanillaZombieVillagerProbe vanilla =
+				new VanillaZombieVillagerProbe(level);
+		require(helper,
+				crumbled instanceof ZombieVillager
+						&& crumbled.getType()
+								== CakeWorldEntities
+										.CRUMBLED_GINGERBREAD_FOLK
+										.get()
+						&& crumbled.getType().getCategory()
+								== MobCategory.MONSTER
+						&& close(crumbled.getMaxHealth(),
+								20.0D)
+						&& close(crumbled
+								.getAttributeValue(
+										Attributes
+												.FOLLOW_RANGE),
+								35.0D)
+						&& close(crumbled
+								.getAttributeValue(
+										Attributes
+												.MOVEMENT_SPEED),
+								0.23D)
+						&& close(crumbled
+								.getAttributeValue(
+										Attributes
+												.ATTACK_DAMAGE),
+								3.0D)
+						&& close(crumbled
+								.getAttributeValue(
+										Attributes.ARMOR),
+								2.0D)
+						&& crumbled.getAttribute(
+								Attributes
+										.SPAWN_REINFORCEMENTS_CHANCE)
+								!= null
+						&& close(crumbled.getDimensions(
+								Pose.STANDING).width,
+								0.6D)
+						&& close(crumbled.getDimensions(
+								Pose.STANDING).height,
+								1.95D)
+						&& close(crumbled
+								.standingEyeHeight(),
+								1.74D)
+						&& crumbled.getType()
+								.clientTrackingRange() == 8
+						&& crumbled.getMobType()
+								== MobType.UNDEAD
+						&& crumbled.baseExperienceReward()
+								== 5,
+				"Crumbled Gingerbread Folk lost the exact Zombie Villager body, attributes, dimensions, tracking, undead or XP contract");
+		require(helper,
+				crumbled.goalSignatures()
+								.equals(vanilla
+										.goalSignatures())
+						&& crumbled
+								.targetGoalSignatures()
+								.equals(vanilla
+										.targetGoalSignatures())
+						&& crumbled.sunSensitive()
+						&& crumbled.supportsDoorBreaking()
+						&& !crumbled.convertsInWaterRole()
+						&& crumbled
+								.navigationOpensDoors()
+								== vanilla
+										.navigationOpensDoors(),
+				"Crumbled Gingerbread Folk lost exact Zombie Villager goals, targets, sunlight, door or no-water-conversion roles");
+		require(helper,
+				crumbled.ambientSound()
+								== SoundEvents
+										.ZOMBIE_VILLAGER_AMBIENT
+						&& crumbled.hurtSound()
+								== SoundEvents
+										.ZOMBIE_VILLAGER_HURT
+						&& crumbled.deathSound()
+								== SoundEvents
+										.ZOMBIE_VILLAGER_DEATH
+						&& crumbled.stepSound()
+								== SoundEvents
+										.ZOMBIE_VILLAGER_STEP
+						&& crumbled.skullItem().isEmpty(),
+				"Crumbled Gingerbread Folk lost Zombie Villager sounds or deliberate no-skull role");
+		crumbled.seedRandom(1978L);
+		vanilla.seedRandom(1978L);
+		require(helper,
+				close(crumbled.voicePitch(),
+								vanilla.voicePitch()),
+				"Adult Crumbled Gingerbread Folk voice pitch diverged from Zombie Villager");
+		crumbled.setBaby(true);
+		vanilla.setBaby(true);
+		crumbled.seedRandom(1978L);
+		vanilla.seedRandom(1978L);
+		require(helper,
+				close(crumbled
+								.standingEyeHeight(),
+								0.93D)
+						&& close(crumbled.voicePitch(),
+								vanilla.voicePitch())
+						&& crumbled
+								.experienceReward()
+								>= 5,
+				"Baby Crumbled Gingerbread Folk lost eye height, voice or Zombie XP behavior");
+		crumbled.setBaby(false);
+		vanilla.setBaby(false);
+
+		CrumbledGingerbreadFolkProbe finalized =
+				new CrumbledGingerbreadFolkProbe(level);
+		finalized.setPos(anchor.getX() + 0.5D,
+				anchor.getY(),
+				anchor.getZ() + 0.5D);
+		finalized.seedRandom(1978L);
+		finalized.finalizeSpawn(level,
+				level.getCurrentDifficultyAt(
+						finalized.blockPosition()),
+				MobSpawnType.COMMAND, null, null);
+		require(helper,
+				finalized.getVillagerData().getType()
+								== VillagerType.byBiome(
+										level.getBiome(
+												finalized
+														.blockPosition()))
+						&& finalized.getVillagerData()
+								.getLevel() == 1,
+				"Crumbled Gingerbread Folk finalization lost biome Villager type or level");
+
+		CrumbledGingerbreadFolkProbe farAway =
+				new CrumbledGingerbreadFolkProbe(level);
+		require(helper,
+				farAway.removeWhenFarAway(
+								Double.MAX_VALUE),
+				"Unconverted zero-XP Zombie Villager stopped using vanilla distance removal");
+		farAway.setVillagerXp(1);
+		require(helper,
+				!farAway.removeWhenFarAway(
+								Double.MAX_VALUE),
+				"Zombie Villager XP no longer preserves the entity at distance");
+
+		ServerPlayer curePlayer =
+				new ServerPlayer(level.getServer(),
+						level,
+						new GameProfile(
+								UUID.fromString(
+										"1978feed-feed-4bad-babe-1978feed2072"),
+								"CakeWorldZombieDoctorTest"));
+		curePlayer.connection =
+				new ServerGamePacketListenerImpl(
+						level.getServer(),
+						new Connection(
+								PacketFlow.CLIENTBOUND),
+						curePlayer);
+		testLevelPlayers(level).add(curePlayer);
+
+		BlockPos curePos = new BlockPos(
+				anchor.getX(), 300, anchor.getZ());
+		AABB cureFixtureArea =
+				new AABB(curePos).inflate(32.0D);
+		level.getEntitiesOfClass(
+				GingerbreadFolk.class,
+				cureFixtureArea,
+				entity ->
+						"Restorable Crumb"
+								.equals(entity
+										.getName()
+										.getString())
+						|| "Crumbled by Contact"
+								.equals(entity
+										.getName()
+										.getString()))
+				.forEach(Entity::discard);
+		level.getEntitiesOfClass(
+				CrumbledGingerbreadFolk.class,
+				cureFixtureArea,
+				entity ->
+						"Restorable Crumb"
+								.equals(entity
+										.getName()
+										.getString())
+						|| "Crumbled by Contact"
+								.equals(entity
+										.getName()
+										.getString()))
+				.forEach(Entity::discard);
+		level.getEntitiesOfClass(
+				ZombieVillager.class,
+				cureFixtureArea,
+				entity ->
+						"Restorable Crumb"
+								.equals(entity
+										.getName()
+										.getString())
+						|| "Crumbled by Contact"
+								.equals(entity
+										.getName()
+										.getString()))
+				.forEach(Entity::discard);
+		curePlayer.setPos(curePos.getX() + 2.0D,
+				curePos.getY(), curePos.getZ());
+		CrumbledGingerbreadFolkProbe curing =
+				new CrumbledGingerbreadFolkProbe(level);
+		curing.setPos(curePos.getX() + 0.5D,
+				curePos.getY(),
+				curePos.getZ() + 0.5D);
+		curing.setVillagerData(new VillagerData(
+				VillagerType.DESERT,
+				VillagerProfession.LIBRARIAN, 3));
+		MerchantOffers cureOffers =
+				new MerchantOffers();
+		cureOffers.add(new MerchantOffer(
+				new ItemStack(Items.EMERALD, 2),
+				new ItemStack(Items.BOOK),
+				8, 11, 0.2F));
+		curing.setTradeOffers(
+				cureOffers.createTag());
+		curing.setVillagerXp(73);
+		GingerbreadFolk gossipDonor =
+				CakeWorldEntities.GINGERBREAD_FOLK
+						.get().create(level);
+		require(helper, gossipDonor != null,
+				"Could not create cure-gossip fixture");
+		gossipDonor.onReputationEventFrom(
+				ReputationEventType.TRADE,
+				curePlayer);
+		CompoundTag gossipState =
+				gossipDonor.saveWithoutId(
+						new CompoundTag());
+		curing.setGossips(
+				gossipState.getList(
+						"Gossips", 10));
+		curing.setBaby(true);
+		curing.setCustomName(
+				new TextComponent(
+						"Restorable Crumb"));
+		curing.setNoAi(true);
+		curing.setPersistenceRequired();
+		ItemStack bindingHelmet =
+				new ItemStack(Items.IRON_HELMET);
+		bindingHelmet.enchant(
+				Enchantments.BINDING_CURSE, 1);
+		curing.setItemSlot(
+				EquipmentSlot.HEAD,
+				bindingHelmet);
+		Pig curePassenger =
+				EntityType.PIG.create(level);
+		Pig cureLeashHolder =
+				EntityType.PIG.create(level);
+		require(helper,
+				curePassenger != null
+						&& cureLeashHolder != null,
+				"Could not create cure attachment fixtures");
+		curePassenger.setPos(curing.getX(),
+				curing.getY(), curing.getZ());
+		cureLeashHolder.setPos(
+				curing.getX() + 1.0D,
+				curing.getY(), curing.getZ());
+		level.addFreshEntity(curing);
+		level.addFreshEntity(curePassenger);
+		level.addFreshEntity(cureLeashHolder);
+		curePassenger.startRiding(curing, true);
+		curing.setLeashedTo(
+				cureLeashHolder, true);
+		curing.addEffect(new MobEffectInstance(
+				MobEffects.WEAKNESS, 1200));
+		ItemStack goldenApple =
+				new ItemStack(
+						Items.GOLDEN_APPLE);
+		curePlayer.setItemInHand(
+				InteractionHand.MAIN_HAND,
+				goldenApple);
+		Difficulty originalDifficulty =
+				level.getDifficulty();
+		level.getServer().setDifficulty(
+				Difficulty.NORMAL, true);
+		InteractionResult cureStart =
+				curing.mobInteract(
+						curePlayer,
+						InteractionHand.MAIN_HAND);
+		CompoundTag startedState =
+				curing.saveWithoutId(
+						new CompoundTag());
+		require(helper,
+				cureStart.consumesAction()
+						&& goldenApple.isEmpty()
+						&& curing.isConverting()
+						&& !curing.hasEffect(
+								MobEffects.WEAKNESS)
+						&& curing.hasEffect(
+								MobEffects
+										.DAMAGE_BOOST)
+						&& startedState.getInt(
+								"ConversionTime")
+								>= 3600
+						&& startedState.getInt(
+								"ConversionTime")
+								<= 6000
+						&& startedState.getUUID(
+								"ConversionPlayer")
+								.equals(curePlayer
+										.getUUID())
+						&& !curing.removeWhenFarAway(
+								Double.MAX_VALUE),
+				"Weakness plus Golden Apple lost the exact Zombie Villager cure start, timer, player, strength or persistence contract");
+
+		startedState.putInt(
+				"ConversionTime", 2);
+		curing.load(startedState);
+		long acceleratorSeed = 0L;
+		while (true) {
+			Random sample =
+					new Random(acceleratorSeed);
+			if (sample.nextFloat() < 0.01F
+					&& sample.nextFloat()
+							< 0.3F) {
+				break;
+			}
+			acceleratorSeed++;
+		}
+		curing.seedRandom(acceleratorSeed);
+		BlockPos accelerator =
+				curePos.offset(-3, -3, -3);
+		BlockState priorAccelerator =
+				level.getBlockState(accelerator);
+		level.setBlock(accelerator,
+				Blocks.IRON_BARS
+						.defaultBlockState(),
+				3);
+		curing.tick();
+		level.setBlock(accelerator,
+				priorAccelerator, 3);
+		List<GingerbreadFolk> curedOutputs =
+				level.getEntitiesOfClass(
+						GingerbreadFolk.class,
+						new AABB(curePos)
+								.inflate(4.0D),
+						entity ->
+								"Restorable Crumb"
+										.equals(entity
+												.getName()
+												.getString()));
+		require(helper, curedOutputs.size() == 1,
+				"Accelerated cure emitted "
+						+ curedOutputs.size()
+						+ " named Gingerbread Folk instead of exactly one");
+		GingerbreadFolk cured =
+				curedOutputs.get(0);
+		require(helper,
+				curing.isRemoved()
+						&& cured.getType()
+								== CakeWorldEntities
+										.GINGERBREAD_FOLK
+										.get()
+						&& cured.getVillagerData()
+								.getType()
+								== VillagerType.DESERT
+						&& cured.getVillagerData()
+								.getProfession()
+								== VillagerProfession
+										.LIBRARIAN
+						&& cured.getVillagerData()
+								.getLevel() == 3
+						&& cured.getVillagerXp() == 73
+						&& cured.getOffers().size()
+								== 1
+						&& cured.getOffers().get(0)
+								.getResult()
+								.is(Items.BOOK)
+						&& cured.isBaby()
+						&& cured.isNoAi()
+						&& cured
+								.isPersistenceRequired(),
+				"Finalized cure lost identity or Villager state: sourceRemoved="
+						+ curing.isRemoved()
+						+ ", type=" + cured.getType()
+						+ ", data="
+						+ cured.getVillagerData()
+						+ ", xp="
+						+ cured.getVillagerXp()
+						+ ", offers="
+						+ cured.getOffers().size()
+						+ ", baby=" + cured.isBaby()
+						+ ", noAi=" + cured.isNoAi()
+						+ ", persistent="
+						+ cured
+								.isPersistenceRequired());
+		require(helper,
+				cured.getItemBySlot(
+								EquipmentSlot.HEAD)
+								.isEmpty()
+						&& cured.hasEffect(
+								MobEffects.CONFUSION)
+						&& cured
+								.getPlayerReputation(
+										curePlayer) > 0,
+				"Finalized cure diverged from vanilla's empty binding-equipment slot, confusion or reputation contract: head="
+						+ cured.getItemBySlot(
+								EquipmentSlot.HEAD)
+						+ ", confusion="
+						+ cured.hasEffect(
+								MobEffects.CONFUSION)
+						+ ", reputation="
+						+ cured.getPlayerReputation(
+								curePlayer));
+		require(helper,
+				cured.getLeashHolder()
+								== cureLeashHolder
+						&& cured.getPassengers()
+								.contains(
+										curePassenger),
+				"Finalized cure lost attachments: leash="
+						+ cured.getLeashHolder()
+						+ ", expectedLeash="
+						+ cureLeashHolder
+						+ ", passengers="
+						+ cured.getPassengers());
+		requireCriterion(helper, curePlayer,
+				"minecraft:story/cure_zombie_villager",
+				"cured_zombie");
+
+		BlockPos infectionPos =
+				curePos.offset(12, -10, 0);
+		GingerbreadFolk infectionSource =
+				CakeWorldEntities.GINGERBREAD_FOLK
+						.get().create(level);
+		StaleCrumbler infectionSourceZombie =
+				CakeWorldEntities.STALE_CRUMBLER
+						.get().create(level);
+		Pig infectionPassenger =
+				EntityType.PIG.create(level);
+		Pig infectionLeashHolder =
+				EntityType.PIG.create(level);
+		require(helper,
+				infectionSource != null
+						&& infectionSourceZombie
+								!= null
+						&& infectionPassenger != null
+						&& infectionLeashHolder
+								!= null,
+				"Could not create Gingerbread infection fixtures");
+		infectionSource.setPos(
+				infectionPos.getX() + 0.5D,
+				infectionPos.getY(),
+				infectionPos.getZ() + 0.5D);
+		infectionSourceZombie.setPos(
+				infectionSource.getX() + 1.0D,
+				infectionSource.getY(),
+				infectionSource.getZ());
+		infectionPassenger.setPos(
+				infectionSource.getX(),
+				infectionSource.getY(),
+				infectionSource.getZ());
+		infectionLeashHolder.setPos(
+				infectionSource.getX() - 1.0D,
+				infectionSource.getY(),
+				infectionSource.getZ());
+		infectionSource.setVillagerData(
+				new VillagerData(
+						VillagerType.SNOW,
+						VillagerProfession.FARMER,
+						2));
+		MerchantOffers infectedOffers =
+				new MerchantOffers();
+		infectedOffers.add(new MerchantOffer(
+				new ItemStack(Items.EMERALD),
+				new ItemStack(Items.BREAD, 4),
+				9, 7, 0.05F));
+		infectionSource.setOffers(
+				infectedOffers);
+		infectionSource.setVillagerXp(41);
+		infectionSource
+				.onReputationEventFrom(
+						ReputationEventType.TRADE,
+						curePlayer);
+		infectionSource.setAge(-24000);
+		infectionSource.setCustomName(
+				new TextComponent(
+						"Crumbled by Contact"));
+		infectionSource.setNoAi(true);
+		infectionSource
+				.setPersistenceRequired();
+		infectionSource.setHealth(1.0F);
+		level.addFreshEntity(
+				infectionSourceZombie);
+		level.addFreshEntity(
+				infectionSource);
+		level.addFreshEntity(
+				infectionPassenger);
+		level.addFreshEntity(
+				infectionLeashHolder);
+		infectionPassenger.startRiding(
+				infectionSource, true);
+		infectionSource.setLeashedTo(
+				infectionLeashHolder, true);
+		level.getServer().setDifficulty(
+				Difficulty.HARD, true);
+		require(helper,
+				infectionSourceZombie
+						.doHurtTarget(
+								infectionSource),
+				"Hard Stale Crumbler could not deliver the real Villager-infection hit");
+		List<CrumbledGingerbreadFolk>
+				infectedOutputs =
+				level.getEntitiesOfClass(
+						CrumbledGingerbreadFolk.class,
+						new AABB(infectionPos)
+								.inflate(4.0D),
+						entity ->
+								"Crumbled by Contact"
+										.equals(entity
+												.getName()
+												.getString()));
+		require(helper,
+				infectedOutputs.size() == 1,
+				"Hard Stale Crumbler kill emitted "
+						+ infectedOutputs.size()
+						+ " named Crumbled Gingerbread Folk instead of exactly one");
+		CrumbledGingerbreadFolk infected =
+				infectedOutputs.get(0);
+		CompoundTag infectedState =
+				infected.saveWithoutId(
+						new CompoundTag());
+		require(helper,
+				infectionSource.isRemoved()
+						&& infected.getType()
+								== CakeWorldEntities
+										.CRUMBLED_GINGERBREAD_FOLK
+										.get()
+						&& infected.getVillagerData()
+								.getType()
+								== VillagerType.SNOW
+						&& infected.getVillagerData()
+								.getProfession()
+								== VillagerProfession.FARMER
+						&& infected.getVillagerData()
+								.getLevel() == 2
+						&& infected.getVillagerXp()
+								== 41
+						&& infected.isBaby()
+						&& infected.isNoAi()
+						&& infected
+								.isPersistenceRequired()
+						&& infectedState.contains(
+								"Offers", 10)
+						&& infectedState.contains(
+								"Gossips", 9),
+				"Finalized infection lost identity or Villager state: sourceRemoved="
+						+ infectionSource.isRemoved()
+						+ ", type="
+						+ infected.getType()
+						+ ", data="
+						+ infected.getVillagerData()
+						+ ", xp="
+						+ infected.getVillagerXp()
+						+ ", baby="
+						+ infected.isBaby()
+						+ ", noAi="
+						+ infected.isNoAi()
+						+ ", persistent="
+						+ infected
+								.isPersistenceRequired()
+						+ ", offersTag="
+						+ infectedState.contains(
+								"Offers", 10)
+						+ ", gossipsTag="
+						+ infectedState.contains(
+								"Gossips", 9));
+		require(helper,
+				infected.getLeashHolder()
+								== infectionLeashHolder
+						&& infected.getPassengers()
+								.contains(
+										infectionPassenger),
+				"Finalized infection lost attachments: leash="
+						+ infected.getLeashHolder()
+						+ ", expectedLeash="
+						+ infectionLeashHolder
+						+ ", passengers="
+						+ infected.getPassengers());
+
+		CrumbledGingerbreadFolkProbe contact =
+				new CrumbledGingerbreadFolkProbe(level);
+		Pig contactTarget =
+				EntityType.PIG.create(level);
+		require(helper, contactTarget != null,
+				"Could not create Zombie Villager contact fixture");
+		contact.setPos(
+				anchor.getX() + 3.5D,
+				anchor.getY(), anchor.getZ());
+		contactTarget.setPos(
+				contact.getX() + 1.0D,
+				contact.getY(), contact.getZ());
+		level.addFreshEntity(contact);
+		level.addFreshEntity(contactTarget);
+		for (Difficulty safeDifficulty :
+				new Difficulty[] {
+						Difficulty.EASY,
+						Difficulty.NORMAL}) {
+			level.getServer().setDifficulty(
+					safeDifficulty, true);
+			contactTarget.removeAllEffects();
+			contactTarget.setHealth(10.0F);
+			contactTarget.invulnerableTime = 0;
+			contactTarget.setSecondsOnFire(5);
+			contactTarget.fallDistance = 12.0F;
+			contactTarget.setDeltaMovement(
+					Vec3.ZERO);
+			require(helper,
+					contact.doHurtTarget(
+								contactTarget)
+							&& close(contactTarget
+									.getHealth(),
+									10.0D)
+							&& !contactTarget
+									.isOnFire()
+							&& close(contactTarget
+									.fallDistance,
+									0.0D)
+							&& contactTarget
+									.hasEffect(
+											MobEffects
+													.MOVEMENT_SLOWDOWN)
+							&& contactTarget
+									.hasEffect(
+											MobEffects
+													.GLOWING)
+							&& contactTarget
+									.hasEffect(
+											MobEffects
+													.SLOW_FALLING)
+							&& contactTarget
+									.hasEffect(
+											MobEffects
+													.FIRE_RESISTANCE)
+							&& contactTarget
+									.getEffect(
+											MobEffects
+													.DAMAGE_RESISTANCE)
+									.getAmplifier()
+									== 4,
+					safeDifficulty
+							+ " Crumbled Gingerbread Folk contact caused health, fire or landing peril");
+			EntityMobGriefingEvent grief =
+					new EntityMobGriefingEvent(
+							contact);
+			StaleCrumblerSafety
+					.applyGriefPolicy(
+							grief,
+							safeDifficulty);
+			require(helper,
+					grief.getResult()
+							== Event.Result.DENY,
+					safeDifficulty
+							+ " Crumbled Gingerbread Folk retained destructive mob griefing");
+		}
+		level.getServer().setDifficulty(
+				Difficulty.HARD, true);
+		contactTarget.removeAllEffects();
+		contactTarget.setHealth(10.0F);
+		contactTarget.invulnerableTime = 0;
+		require(helper,
+				contact.doHurtTarget(
+								contactTarget)
+						&& close(contactTarget
+								.getHealth(),
+								7.0D),
+				"Hard Crumbled Gingerbread Folk lost the exact three-point Zombie attack");
+		EntityMobGriefingEvent hardGrief =
+				new EntityMobGriefingEvent(contact);
+		StaleCrumblerSafety.applyGriefPolicy(
+				hardGrief, Difficulty.HARD);
+		require(helper,
+				hardGrief.getResult()
+						== Event.Result.DEFAULT,
+				"Hard Crumbled Gingerbread Folk did not restore ordinary mob-griefing policy");
+		level.getServer().setDifficulty(
+				Difficulty.PEACEFUL, true);
+		CrumbledGingerbreadFolkProbe peaceful =
+				new CrumbledGingerbreadFolkProbe(
+						level);
+		peaceful.checkDespawnRole();
+		require(helper,
+				peaceful.isRemoved()
+						&& peaceful
+								.despawnsInPeaceful(),
+				"Peaceful Crumbled Gingerbread Folk lost Monster removal");
+		level.getServer().setDifficulty(
+				originalDifficulty, true);
+
+		Registry<Biome> biomes =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY);
+		for (ResourceLocation biomeId :
+				List.of(
+						CakeWorldBiomes
+								.CANDY_PLAINS.getId(),
+						CakeWorldBiomes
+								.COOKIE_FOREST.getId(),
+						CakeWorldBiomes
+								.MARSHMALLOW_PEAKS
+								.getId(),
+						CakeWorldBiomes
+								.SODA_OCEAN.getId())) {
+			Biome biome = biomes.get(biomeId);
+			require(helper, biome != null,
+					"Missing CakeWorld biome "
+							+ biomeId);
+			List<MobSpawnSettings.SpawnerData>
+					profiles =
+							biome.getMobSettings()
+									.getMobs(
+											MobCategory
+													.MONSTER)
+									.unwrap().stream()
+									.filter(spawn ->
+											spawn.type
+													== CakeWorldEntities
+															.CRUMBLED_GINGERBREAD_FOLK
+															.get())
+									.toList();
+			require(helper,
+					profiles.size() == 1
+							&& profiles.get(0)
+									.getWeight()
+									.asInt() == 5
+							&& profiles.get(0)
+									.minCount == 1
+							&& profiles.get(0)
+									.maxCount == 1
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory
+													.MONSTER)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType
+															.ZOMBIE_VILLAGER),
+					"Crumbled Gingerbread Folk did not replace the exact 5 / 1-1 Zombie Villager ecology in "
+							+ biomeId);
+		}
+		for (ResourceLocation biomeId :
+				List.of(
+						CakeWorldBiomes
+								.FUDGE_WASTES.getId(),
+						CakeWorldBiomes
+								.MERINGUE_ISLANDS
+								.getId())) {
+			Biome biome = biomes.get(biomeId);
+			require(helper,
+					biome != null
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory
+													.MONSTER)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType
+															.ZOMBIE_VILLAGER
+											|| spawn.type
+													== CakeWorldEntities
+															.CRUMBLED_GINGERBREAD_FOLK
+															.get()),
+					"Zombie Villager ecology was invented in "
+							+ biomeId);
+		}
+
+		net.minecraft.world.item.SpawnEggItem egg =
+				(net.minecraft.world.item.SpawnEggItem)
+						CakeWorldItems
+								.CRUMBLED_GINGERBREAD_FOLK_SPAWN_EGG
+								.get();
+		require(helper,
+				crumbled.getLootTableId()
+								.equals(
+										new ResourceLocation(
+												CakeWorld.MODID,
+												"entities/crumbled_gingerbread_folk"))
+						&& egg.getColor(0)
+								== 0x563C33
+						&& egg.getColor(1)
+								== 0x799C65
+						&& SpawnPlacements
+								.getPlacementType(
+										CakeWorldEntities
+												.CRUMBLED_GINGERBREAD_FOLK
+												.get())
+								== SpawnPlacements.Type
+										.ON_GROUND
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+												.CRUMBLED_GINGERBREAD_FOLK
+												.get())
+								== Heightmap.Types
+										.MOTION_BLOCKING_NO_LEAVES
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+												.CRUMBLED_GINGERBREAD_FOLK
+												.get())
+								== SoundEvents
+										.PARROT_IMITATE_ZOMBIE_VILLAGER,
+				"Crumbled Gingerbread Folk lost exact loot identity, egg colors, placement or Lorikeet mimic");
+		CrumbledGingerbreadFolk
+				progressionTarget =
+						CakeWorldEntities
+								.CRUMBLED_GINGERBREAD_FOLK
+								.get().create(level);
+		require(helper,
+				progressionTarget != null,
+				"Could not create Zombie Villager progression fixture");
+		VanillaRoleAdvancements.onDeath(
+				new LivingDeathEvent(
+						progressionTarget,
+						DamageSource
+								.playerAttack(
+										curePlayer)));
+		requireCriterion(helper, curePlayer,
+				"minecraft:adventure/kill_all_mobs",
+				"minecraft:zombie_villager");
+
+		BlockPos cakeWorldPos =
+				findCakeWorldBiomePosition(
+						helper,
+						anchor.offset(20, 0, 20),
+						256);
+		require(helper, cakeWorldPos != null,
+				"Could not locate CakeWorld terrain for Zombie Villager conversion");
+		AABB directArea =
+				new AABB(cakeWorldPos).inflate(4.0D);
+		level.getEntitiesOfClass(
+				ZombieVillager.class,
+				directArea,
+				entity ->
+						"Deferred Cure State"
+								.equals(entity
+										.getName()
+										.getString()))
+				.forEach(Entity::discard);
+		level.getEntitiesOfClass(
+				CrumbledGingerbreadFolk.class,
+				directArea,
+				entity ->
+						"Deferred Cure State"
+								.equals(entity
+										.getName()
+										.getString()))
+				.forEach(Entity::discard);
+		ZombieVillager literal =
+				EntityType.ZOMBIE_VILLAGER
+						.create(level);
+		Boat vehicle =
+				EntityType.BOAT.create(level);
+		Pig directPassenger =
+				EntityType.PIG.create(level);
+		Pig attacker =
+				EntityType.PIG.create(level);
+		require(helper,
+				literal != null && vehicle != null
+						&& directPassenger != null
+						&& attacker != null,
+				"Could not create literal Zombie Villager conversion fixtures");
+		literal.setPos(
+				cakeWorldPos.getX() + 0.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		vehicle.setPos(literal.getX(),
+				literal.getY(), literal.getZ());
+		directPassenger.setPos(
+				literal.getX(), literal.getY(),
+				literal.getZ());
+		attacker.setPos(literal.getX() + 2.0D,
+				literal.getY(), literal.getZ());
+		literal.setVillagerData(
+				new VillagerData(
+						VillagerType.TAIGA,
+						VillagerProfession.TOOLSMITH,
+						4));
+		literal.setTradeOffers(
+				cureOffers.createTag());
+		literal.setGossips(
+				gossipState.getList(
+						"Gossips", 10));
+		literal.setVillagerXp(88);
+		literal.setBaby(true);
+		literal.setHealth(9.0F);
+		literal.setCustomName(
+				new TextComponent(
+						"Deferred Cure State"));
+		literal.setNoAi(true);
+		literal.setPersistenceRequired();
+		literal.invulnerableTime = 37;
+		CompoundTag literalState =
+				literal.saveWithoutId(
+						new CompoundTag());
+		literalState.putInt(
+				"ConversionTime", 120);
+		literalState.putUUID(
+				"ConversionPlayer",
+				curePlayer.getUUID());
+		literal.load(literalState);
+		level.addFreshEntity(vehicle);
+		level.addFreshEntity(literal);
+		level.addFreshEntity(
+				directPassenger);
+		level.addFreshEntity(attacker);
+		literal.startRiding(vehicle, true);
+		directPassenger.startRiding(
+				literal, true);
+		literal.setTarget(attacker);
+		literal.setLastHurtByMob(attacker);
+		CrumbledGingerbreadFolk converted =
+				CakeWorldZombieVillagerReplacement
+						.replaceIfInCakeWorldBiome(
+								level, literal);
+		require(helper, converted != null,
+				"Literal Zombie Villager conversion did not emit Crumbled Gingerbread Folk");
+		CompoundTag convertedState =
+				converted.saveWithoutId(
+						new CompoundTag());
+		require(helper,
+				literal.isRemoved()
+						&& converted.getType()
+								== CakeWorldEntities
+										.CRUMBLED_GINGERBREAD_FOLK
+										.get()
+						&& close(converted.getHealth(),
+								9.0D)
+						&& converted.getVillagerData()
+								.getType()
+								== VillagerType.TAIGA
+						&& converted.getVillagerData()
+								.getProfession()
+								== VillagerProfession
+										.TOOLSMITH
+						&& converted.getVillagerData()
+								.getLevel() == 4
+						&& converted.getVillagerXp()
+								== 88
+						&& converted.isBaby()
+						&& converted.isNoAi()
+						&& converted
+								.isPersistenceRequired()
+						&& converted.invulnerableTime
+								== 37
+						&& converted.isConverting()
+						&& convertedState.getInt(
+								"ConversionTime")
+								== 120
+						&& convertedState.getUUID(
+								"ConversionPlayer")
+								.equals(curePlayer
+										.getUUID())
+						&& convertedState.contains(
+								"Offers", 10)
+						&& convertedState.contains(
+								"Gossips", 9)
+						&& converted.getVehicle()
+								== vehicle
+						&& converted
+								.getPassengers()
+								.contains(
+										directPassenger)
+						&& converted.getTarget()
+								== attacker
+						&& converted
+								.getLastHurtByMob()
+								== attacker
+						&& CakeWorldZombieVillagerReplacement
+								.replaceIfInCakeWorldBiome(
+										level,
+										converted)
+								== null,
+				"Fresh literal Zombie Villager conversion lost cure, Villager, health, runtime, riding or exact-type state");
+		directPassenger.discard();
+		converted.discard();
+		vehicle.discard();
+		attacker.discard();
+
+		BlockPos eventPos =
+				findCakeWorldBiomePosition(
+						helper,
+						cakeWorldPos.offset(
+								12, 0, 0),
+						64);
+		require(helper, eventPos != null,
+				"Could not locate CakeWorld terrain for deferred Zombie Villager conversion");
+		AABB eventArea =
+				new AABB(eventPos).inflate(3.0D);
+		level.getEntitiesOfClass(
+				ZombieVillager.class,
+				eventArea,
+				entity ->
+						"Entity Join Crumbled Folk"
+								.equals(entity
+										.getName()
+										.getString()))
+				.forEach(Entity::discard);
+		level.getEntitiesOfClass(
+				CrumbledGingerbreadFolk.class,
+				eventArea,
+				entity ->
+						"Entity Join Crumbled Folk"
+								.equals(entity
+										.getName()
+										.getString()))
+				.forEach(Entity::discard);
+		ZombieVillager eventLiteral =
+				EntityType.ZOMBIE_VILLAGER
+						.create(level);
+		require(helper, eventLiteral != null,
+				"Could not create deferred Zombie Villager fixture");
+		eventLiteral.setPos(
+				eventPos.getX() + 0.5D,
+				eventPos.getY(),
+				eventPos.getZ() + 0.5D);
+		eventLiteral.setCustomName(
+				new TextComponent(
+						"Entity Join Crumbled Folk"));
+		eventLiteral.setNoAi(true);
+		eventLiteral.setVillagerData(
+				new VillagerData(
+						VillagerType.JUNGLE,
+						VillagerProfession.CLERIC,
+						2));
+		CompoundTag eventState =
+				eventLiteral.saveWithoutId(
+						new CompoundTag());
+		eventState.putInt(
+				"ConversionTime", 80);
+		eventState.putUUID(
+				"ConversionPlayer",
+				curePlayer.getUUID());
+		eventLiteral.load(eventState);
+		level.addFreshEntity(eventLiteral);
+
+		curePassenger.discard();
+		cureLeashHolder.discard();
+		cured.discard();
+		gossipDonor.discard();
+		infectionPassenger.discard();
+		infectionLeashHolder.discard();
+		infected.discard();
+		infectionSourceZombie.discard();
+		contactTarget.discard();
+		contact.discard();
+		progressionTarget.discard();
+		finalized.discard();
+		farAway.discard();
+		crumbled.discard();
+		vanilla.discard();
+
+		helper.runAfterDelay(5, () -> {
+			List<CrumbledGingerbreadFolk>
+					emitted =
+							level.getEntitiesOfClass(
+									CrumbledGingerbreadFolk.class,
+									eventArea,
+									entity ->
+											"Entity Join Crumbled Folk"
+													.equals(
+															entity
+																	.getName()
+																	.getString()));
+			CrumbledGingerbreadFolk eventFolk =
+					emitted.size() == 1
+							? emitted.get(0)
+							: null;
+			CompoundTag emittedState =
+					eventFolk == null
+							? new CompoundTag()
+							: eventFolk
+									.saveWithoutId(
+											new CompoundTag());
+			require(helper,
+					eventLiteral.isRemoved()
+							&& eventFolk != null
+							&& eventFolk.isNoAi()
+							&& eventFolk
+									.isConverting()
+							&& eventFolk
+									.getVillagerData()
+									.getType()
+									== VillagerType.JUNGLE
+							&& eventFolk
+									.getVillagerData()
+									.getProfession()
+									== VillagerProfession
+											.CLERIC
+							&& eventFolk
+									.getVillagerData()
+									.getLevel() == 2
+							&& emittedState.getInt(
+									"ConversionTime")
+									> 0
+							&& emittedState.getInt(
+									"ConversionTime")
+									<= 80,
+					"Fresh literal Zombie Villager did not defer-convert with finalized cure and profession state");
+			emitted.forEach(
+					CrumbledGingerbreadFolk::discard);
+			testLevelPlayers(level)
+					.remove(curePlayer);
+			helper.succeed();
+		});
+	}
+
 	@GameTest(template = EMPTY, timeoutTicks = 200)
 	public static void jellyBlobsKeepSlimeEcologySplitsAndSafeElasticContact(
 			GameTestHelper helper) {
@@ -34244,6 +35363,166 @@ public final class FirstBiteGameTests {
 		private int targetGoalCount() {
 			return targetSelector.getAvailableGoals()
 					.size();
+		}
+	}
+
+	private static final class
+			CrumbledGingerbreadFolkProbe
+			extends CrumbledGingerbreadFolk {
+		private CrumbledGingerbreadFolkProbe(
+				Level level) {
+			super(CakeWorldEntities
+					.CRUMBLED_GINGERBREAD_FOLK
+					.get(), level);
+		}
+
+		private void seedRandom(long seed) {
+			random.setSeed(seed);
+		}
+
+		private int baseExperienceReward() {
+			return xpReward;
+		}
+
+		private int experienceReward() {
+			return getExperienceReward(null);
+		}
+
+		private float standingEyeHeight() {
+			return getStandingEyeHeight(
+					Pose.STANDING,
+					getDimensions(Pose.STANDING));
+		}
+
+		private boolean sunSensitive() {
+			return isSunSensitive();
+		}
+
+		private boolean supportsDoorBreaking() {
+			return supportsBreakDoorGoal();
+		}
+
+		private boolean convertsInWaterRole() {
+			return convertsInWater();
+		}
+
+		private boolean navigationOpensDoors() {
+			return getNavigation()
+						instanceof GroundPathNavigation
+								navigation
+					&& navigation.canOpenDoors();
+		}
+
+		private boolean despawnsInPeaceful() {
+			return shouldDespawnInPeaceful();
+		}
+
+		private void checkDespawnRole() {
+			checkDespawn();
+		}
+
+		private ResourceLocation getLootTableId() {
+			return getLootTable();
+		}
+
+		private ItemStack skullItem() {
+			return getSkull();
+		}
+
+		private float voicePitch() {
+			return getVoicePitch();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				ambientSound() {
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				hurtSound() {
+			return getHurtSound(
+					DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				deathSound() {
+			return getDeathSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				stepSound() {
+			return getStepSound();
+		}
+
+		private List<String> goalSignatures() {
+			return goalSelector.getAvailableGoals()
+					.stream()
+					.map(wrapped ->
+							wrapped.getPriority() + ":"
+									+ wrapped.getGoal()
+											.getClass()
+											.getSimpleName())
+					.sorted().toList();
+		}
+
+		private List<String>
+				targetGoalSignatures() {
+			return targetSelector
+					.getAvailableGoals().stream()
+					.map(wrapped ->
+							wrapped.getPriority() + ":"
+									+ wrapped.getGoal()
+											.getClass()
+											.getSimpleName())
+					.sorted().toList();
+		}
+	}
+
+	private static final class
+			VanillaZombieVillagerProbe
+			extends ZombieVillager {
+		private VanillaZombieVillagerProbe(
+				Level level) {
+			super(EntityType.ZOMBIE_VILLAGER,
+					level);
+		}
+
+		private void seedRandom(long seed) {
+			random.setSeed(seed);
+		}
+
+		private float voicePitch() {
+			return getVoicePitch();
+		}
+
+		private boolean navigationOpensDoors() {
+			return getNavigation()
+						instanceof GroundPathNavigation
+								navigation
+					&& navigation.canOpenDoors();
+		}
+
+		private List<String> goalSignatures() {
+			return goalSelector.getAvailableGoals()
+					.stream()
+					.map(wrapped ->
+							wrapped.getPriority() + ":"
+									+ wrapped.getGoal()
+											.getClass()
+											.getSimpleName())
+					.sorted().toList();
+		}
+
+		private List<String>
+				targetGoalSignatures() {
+			return targetSelector
+					.getAvailableGoals().stream()
+					.map(wrapped ->
+							wrapped.getPriority() + ":"
+									+ wrapped.getGoal()
+											.getClass()
+											.getSimpleName())
+					.sorted().toList();
 		}
 	}
 

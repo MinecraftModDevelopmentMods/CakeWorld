@@ -386,6 +386,11 @@ public final class VanillaRoleAdvancements {
 		if (type == CakeWorldEntities.STALE_CRUMBLER.get()) {
 			return "minecraft:zombie";
 		}
+		if (type
+				== CakeWorldEntities
+						.CRUMBLED_GINGERBREAD_FOLK.get()) {
+			return "minecraft:zombie_villager";
+		}
 		if (type == CakeWorldEntities.CINNAMON_SPARK.get()) {
 			return "minecraft:blaze";
 		}

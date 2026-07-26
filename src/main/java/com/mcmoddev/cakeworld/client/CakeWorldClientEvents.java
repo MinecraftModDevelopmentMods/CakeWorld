@@ -56,6 +56,7 @@ import net.minecraft.client.renderer.entity.StriderRenderer;
 import net.minecraft.client.renderer.entity.SpiderRenderer;
 import net.minecraft.client.renderer.entity.SquidRenderer;
 import net.minecraft.client.renderer.entity.ZombieRenderer;
+import net.minecraft.client.renderer.entity.ZombieVillagerRenderer;
 import net.minecraft.client.renderer.entity.ZoglinRenderer;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.client.renderer.entity.ThrownTridentRenderer;
@@ -289,6 +290,10 @@ public final class CakeWorldClientEvents {
 				SheepRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.STALE_CRUMBLER.get(),
 				ZombieRenderer::new);
+		event.registerEntityRenderer(
+				CakeWorldEntities
+						.CRUMBLED_GINGERBREAD_FOLK.get(),
+				ZombieVillagerRenderer::new);
 	}
 
 	@SubscribeEvent

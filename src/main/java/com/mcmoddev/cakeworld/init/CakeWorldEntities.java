@@ -15,6 +15,7 @@ import com.mcmoddev.cakeworld.entity.ChocolatePanda;
 import com.mcmoddev.cakeworld.entity.CocoaCow;
 import com.mcmoddev.cakeworld.entity.CupcakeCow;
 import com.mcmoddev.cakeworld.entity.CrumbMite;
+import com.mcmoddev.cakeworld.entity.CrumbledGingerbreadFolk;
 import com.mcmoddev.cakeworld.entity.CustardCat;
 import com.mcmoddev.cakeworld.entity.DeepLiquoriceWeaver;
 import com.mcmoddev.cakeworld.entity.DoughDonkey;
@@ -656,6 +657,15 @@ public final class CakeWorldEntities {
 			entity("stale_crumbler",
 					EntityType.Builder.of(StaleCrumbler::new, MobCategory.MONSTER)
 							.sized(0.6F, 1.95F).clientTrackingRange(8));
+	public static final RegistryObject<
+			EntityType<CrumbledGingerbreadFolk>>
+			CRUMBLED_GINGERBREAD_FOLK =
+			entity("crumbled_gingerbread_folk",
+					EntityType.Builder.of(
+							CrumbledGingerbreadFolk::new,
+							MobCategory.MONSTER)
+							.sized(0.6F, 1.95F)
+							.clientTrackingRange(8));
 
 	private CakeWorldEntities() {
 	}
@@ -798,6 +808,8 @@ public final class CakeWorldEntities {
 		event.put(TRUFFLE_PIG.get(), Pig.createAttributes().build());
 		event.put(CANDYFLOSS_SHEEP.get(), Sheep.createAttributes().build());
 		event.put(STALE_CRUMBLER.get(), Zombie.createAttributes().build());
+		event.put(CRUMBLED_GINGERBREAD_FOLK.get(),
+				Zombie.createAttributes().build());
 	}
 
 	private static void commonSetup(FMLCommonSetupEvent event) {
@@ -1072,6 +1084,11 @@ public final class CakeWorldEntities {
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					Animal::checkAnimalSpawnRules);
 			SpawnPlacements.register(STALE_CRUMBLER.get(), SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					Monster::checkMonsterSpawnRules);
+			SpawnPlacements.register(
+					CRUMBLED_GINGERBREAD_FOLK.get(),
+					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					Monster::checkMonsterSpawnRules);
 		});

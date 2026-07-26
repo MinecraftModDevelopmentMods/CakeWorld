@@ -7,6 +7,7 @@ import net.minecraft.world.Difficulty;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.entity.EntityMobGriefingEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
@@ -16,7 +17,8 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 /**
- * Keeps Stale Crumbler contact and world interaction safe below Hard.
+ * Keeps CakeWorld's Zombie family contact and world interaction safe below
+ * Hard.
  */
 @Mod.EventBusSubscriber(modid = CakeWorld.MODID,
 		bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -36,7 +38,8 @@ public final class StaleCrumblerSafety {
 	public static void onLivingAttack(
 			LivingAttackEvent event) {
 		if (!(event.getSource().getEntity()
-						instanceof StaleCrumbler crumbler)
+						instanceof Zombie crumbler)
+				|| !isProtectedZombie(crumbler)
 				|| event.getEntityLiving().level
 						.getDifficulty()
 						== Difficulty.HARD) {
@@ -52,7 +55,8 @@ public final class StaleCrumblerSafety {
 	public static void onLivingHurt(
 			LivingHurtEvent event) {
 		if (!(event.getSource().getEntity()
-						instanceof StaleCrumbler crumbler)
+						instanceof Zombie crumbler)
+				|| !isProtectedZombie(crumbler)
 				|| event.getEntityLiving().level
 						.getDifficulty()
 						== Difficulty.HARD) {
@@ -79,15 +83,15 @@ public final class StaleCrumblerSafety {
 	public static void applyGriefPolicy(
 			EntityMobGriefingEvent event,
 			Difficulty difficulty) {
-		if (event.getEntity()
-					instanceof StaleCrumbler
+		if (event.getEntity() instanceof Zombie zombie
+				&& isProtectedZombie(zombie)
 				&& difficulty != Difficulty.HARD) {
 			event.setResult(Event.Result.DENY);
 		}
 	}
 
 	public static void applyProtectedContact(
-			StaleCrumbler crumbler,
+			Zombie crumbler,
 			LivingEntity target) {
 		Vec3 away = target.position()
 				.subtract(crumbler.position());
@@ -121,5 +125,12 @@ public final class StaleCrumblerSafety {
 				0.8F,
 				0.8F + crumbler.getRandom()
 						.nextFloat() * 0.2F);
+	}
+
+	private static boolean isProtectedZombie(
+			Zombie zombie) {
+		return zombie instanceof StaleCrumbler
+				|| zombie
+						instanceof CrumbledGingerbreadFolk;
 	}
 }
