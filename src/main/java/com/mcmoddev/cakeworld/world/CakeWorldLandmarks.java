@@ -52,6 +52,20 @@ public final class CakeWorldLandmarks {
 							.TOP_LAYER_MODIFICATION)
 					.add(shrineRepair);
 		}
+		Holder<PlacedFeature> pyramidRepair =
+				SherbetPyramidRepairFeature
+						.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(
+						biome.getNamespace())
+				&& isCurrentOverworldBiome(
+						biome.getPath())
+				&& pyramidRepair != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration
+							.TOP_LAYER_MODIFICATION)
+					.add(pyramidRepair);
+		}
 	}
 
 	private static boolean isCurrentOverworldBiome(

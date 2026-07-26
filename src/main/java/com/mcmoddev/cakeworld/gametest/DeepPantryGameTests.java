@@ -28,6 +28,7 @@ import com.mcmoddev.cakeworld.world.BiscuitBanditLookoutFeature;
 import com.mcmoddev.cakeworld.world.GingerbreadVillageFeature;
 import com.mcmoddev.cakeworld.world.GrandGingerbreadManorFeature;
 import com.mcmoddev.cakeworld.world.GummyShrineFeature;
+import com.mcmoddev.cakeworld.world.SherbetPyramidFeature;
 import com.mcmoddev.cakeworld.world.WaferMineFeature;
 import com.mcmoddev.orespawn.api.CompiledOrePattern;
 import com.mcmoddev.orespawn.api.GeologyColumn;
@@ -2423,6 +2424,235 @@ public final class DeepPantryGameTests {
 											.getString(
 													"LootTable")),
 					"The natural Gummy Shrine lost its ordinary or hidden loot table");
+			helper.succeed();
+		});
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 7200)
+	public static void focusedSherbetPyramidStructureAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean(
+				"cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed Sherbet Pyramid audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						SherbetPyramidFeature
+								.STRUCTURE_ID);
+		require(helper, configured != null,
+				"Sherbet Pyramid configured structure was absent from the live registry");
+		boolean tagged = structures.getTag(
+						SherbetPyramidFeature
+								.STRUCTURE_TAG)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		require(helper, tagged,
+				"Sherbet Pyramid lost its public locate tag");
+
+		BlockPos located = level.findNearestMapFeature(
+				SherbetPyramidFeature.STRUCTURE_TAG,
+				helper.absolutePos(new BlockPos(4, 4, 4)),
+				512, false);
+		require(helper, located != null,
+				"The fixed-seed CakeWorld contained no locatable Sherbet Pyramid within 512 chunks");
+		net.minecraft.world.level.ChunkPos startChunk =
+				new net.minecraft.world.level.ChunkPos(
+						located);
+		net.minecraft.world.level.chunk.LevelChunk
+				startLevelChunk =
+				level.getChunk(startChunk.x,
+						startChunk.z);
+		net.minecraft.world.level.levelgen.structure.StructureStart
+				start =
+				startLevelChunk.getStartForFeature(
+						configured);
+		require(helper,
+				start != null && start.isValid()
+						&& start.getFeature() == configured
+						&& start.getPieces().size() == 1,
+				"The located Sherbet Pyramid lost its saved surface-structure start");
+		net.minecraft.world.level.levelgen.structure.BoundingBox
+				savedBounds = start.getBoundingBox();
+		require(helper,
+				savedBounds.getXSpan() == 21
+						&& savedBounds.getYSpan() == 25
+						&& savedBounds.getZSpan() == 21,
+				"The saved Sherbet Pyramid collapsed its exact 21x25x21 above-and-below-ground bounds: "
+						+ savedBounds);
+
+		int minimumChunkX =
+				Math.floorDiv(savedBounds.minX(), 16);
+		int maximumChunkX =
+				Math.floorDiv(savedBounds.maxX(), 16);
+		int minimumChunkZ =
+				Math.floorDiv(savedBounds.minZ(), 16);
+		int maximumChunkZ =
+				Math.floorDiv(savedBounds.maxZ(), 16);
+		for (int chunkX = minimumChunkX;
+				chunkX <= maximumChunkX; chunkX++) {
+			for (int chunkZ = minimumChunkZ;
+					chunkZ <= maximumChunkZ; chunkZ++) {
+				level.setChunkForced(
+						chunkX, chunkZ, true);
+			}
+		}
+
+		helper.runAfterDelay(40, () -> {
+			BlockPos centre = new BlockPos(
+					savedBounds.minX() + 10,
+					savedBounds.minY() + 14,
+					savedBounds.minZ() + 10);
+			Map<Block, Integer> palette =
+					new LinkedHashMap<>();
+			for (int x = -10; x <= 10; x++) {
+				for (int y = -14; y <= 10; y++) {
+					for (int z = -10; z <= 10;
+							z++) {
+						Block block =
+								level.getBlockState(
+										centre.offset(
+												x, y,
+												z))
+										.getBlock();
+						palette.merge(block, 1,
+								Integer::sum);
+					}
+				}
+			}
+			int gummyBlocks =
+					palette.getOrDefault(
+							CakeWorldBlocks
+									.GUMMY_BLOCK
+									.get(), 0)
+					+ palette.getOrDefault(
+							CakeWorldBlocks
+									.RASPBERRY_GUMMY_BLOCK
+									.get(), 0)
+					+ palette.getOrDefault(
+							CakeWorldBlocks
+									.BLUEBERRY_GUMMY_BLOCK
+									.get(), 0)
+					+ palette.getOrDefault(
+							CakeWorldBlocks
+									.GRAPE_GUMMY_BLOCK
+									.get(), 0);
+			boolean protectedLoot = true;
+			for (BlockPos position : List.of(
+					centre.offset(0, -11, -5),
+					centre.offset(0, -11, 5),
+					centre.offset(-5, -11, 0),
+					centre.offset(5, -11, 0))) {
+				BlockEntity blockEntity =
+						level.getBlockEntity(
+								position);
+				CompoundTag state =
+						blockEntity == null
+								? new CompoundTag()
+								: blockEntity
+										.saveWithoutMetadata();
+				protectedLoot &=
+						SherbetPyramidFeature
+								.LOOT_ID.toString()
+								.equals(state
+										.getString(
+												"LootTable"));
+			}
+			ResourceLocation biomeId =
+					level.registryAccess()
+							.registryOrThrow(
+									Registry.BIOME_REGISTRY)
+							.getKey(level.getBiome(
+									centre)
+									.value());
+			boolean literalPyramidEligible =
+					level.getBiome(centre).is(
+							BiomeTags
+									.HAS_DESERT_PYRAMID);
+
+			for (int chunkX = minimumChunkX;
+					chunkX <= maximumChunkX;
+					chunkX++) {
+				for (int chunkZ = minimumChunkZ;
+						chunkZ <= maximumChunkZ;
+						chunkZ++) {
+					level.setChunkForced(
+							chunkX, chunkZ, false);
+				}
+			}
+
+			LOGGER.info("Focused Sherbet Pyramid audit: locate={}, centre={}, bounds={}, biome={}, palette={}, protectedLoot={}",
+					located, centre, savedBounds,
+					biomeId, palette,
+					protectedLoot);
+			require(helper,
+					CakeWorldBiomes.CANDY_PLAINS
+							.getId().equals(biomeId)
+							&& !literalPyramidEligible,
+					"The natural Sherbet Pyramid lost its temporary Candy Plains home or leaked literal Desert Pyramid eligibility: biome="
+							+ biomeId
+							+ ", literalPyramidEligible="
+							+ literalPyramidEligible);
+			require(helper,
+					palette.getOrDefault(
+							CakeWorldBlocks
+									.BISCUIT_STONE
+									.get(), 0) >= 1300
+							&& gummyBlocks >= 40
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.WAFER_BLOCK
+											.get(), 0)
+									>= 55
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.MARSHMALLOW
+											.get(), 0)
+									== 16
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.CANDY_GLASS
+											.get(), 0)
+									== 9
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.FIZZY_PEARL
+											.get(), 0)
+									== 5
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.SPRINKLE_CLUSTER
+											.get(), 0)
+									== 6
+							&& palette.getOrDefault(
+									Blocks.BONE_BLOCK,
+									0) == 8
+							&& palette.getOrDefault(
+									Blocks.LADDER, 0)
+									>= 25
+							&& palette.getOrDefault(
+									Blocks.TNT, 0)
+									== 1
+							&& palette.getOrDefault(
+									Blocks
+											.STONE_PRESSURE_PLATE,
+									0) == 1
+							&& palette.getOrDefault(
+									Blocks.BARREL, 0)
+									== 4,
+					"The natural Sherbet Pyramid lost its pressed-sherbet shell, warning palette, fossils, recovery routes, reduced trap or buried jars: "
+							+ palette);
+			require(helper, protectedLoot,
+					"The natural Sherbet Pyramid lost one or more protected buried loot jars");
 			helper.succeed();
 		});
 	}

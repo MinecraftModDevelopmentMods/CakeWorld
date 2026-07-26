@@ -30,6 +30,10 @@ public final class CakeWorldFeatureRegistration {
 				GummyShrineFeature.FEATURE);
 		event.getRegistry().register(
 				GummyShrineRepairFeature.FEATURE);
+		event.getRegistry().register(
+				SherbetPyramidFeature.FEATURE);
+		event.getRegistry().register(
+				SherbetPyramidRepairFeature.FEATURE);
 	}
 
 	@SubscribeEvent
@@ -45,6 +49,8 @@ public final class CakeWorldFeatureRegistration {
 						.STRUCTURE_FEATURE);
 		event.getRegistry().register(
 				GummyShrineFeature.STRUCTURE_FEATURE);
+		event.getRegistry().register(
+				SherbetPyramidFeature.STRUCTURE_FEATURE);
 	}
 
 	@SubscribeEvent
@@ -60,6 +66,9 @@ public final class CakeWorldFeatureRegistration {
 					.registerConfiguredFeature();
 			GummyShrineFeature.registerWorldgen();
 			GummyShrineRepairFeature
+					.registerConfiguredFeature();
+			SherbetPyramidFeature.registerWorldgen();
+			SherbetPyramidRepairFeature
 					.registerConfiguredFeature();
 		});
 	}

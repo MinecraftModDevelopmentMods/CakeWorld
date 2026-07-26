@@ -417,7 +417,7 @@ specification gives them a clear CakeWorld purpose.
 | STRUCT-003 | `minecraft:mineshaft` | Wafer Mine | Functional first underground variant: a saved, locatable and exactly bounded `41 x 13 x 41` branching mine with fragile Wafer floors and beams, Candy-Cane support frames, a continuous 41-block rail, themed minecart loot, a Deep Liquorice Weaver spawner, cobweb nest, lighting, and exposed CakeWorld ore faces. It retains vanilla's every-chunk candidate, `0.004` probability and non-adapted noise contract while remaining eligible in all four current CakeWorld Overworld biomes; those biomes do not gain literal vanilla-Mineshaft eligibility. A wider random piece graph, corridor variation, original presentation, and hands-on exploration/balance play remain. |
 | STRUCT-004 | `minecraft:mansion` | Grand Gingerbread Manor | Functional first Cookie Forest variant: a saved, locatable and exactly bounded `49 x 30 x 49` three-storey manor with Gingerbread masonry, Wafer floors, Candy-Glass windows, Candy-Cane supports, tiered gummy-and-icing roofs, two kitchens, dining hall, Cookbook library and kiosk, ordinary cache, sealed secret kitchen and guaranteed rare Cookbook cache. Five Rolling-Pin Raiders, two Sour Sorcerers and one Bitter Baker form its persistent non-raid household. It retains the Woodland Mansion's `80/20` triangular placement, terrain-height gate and Woodland Explorer Map role without granting literal vanilla-Mansion eligibility. Room/layout variation, Liquorice Darkwood placement, original presentation and hands-on exploration/balance remain. |
 | STRUCT-005 | `minecraft:jungle_pyramid` | Gummy Shrine | Functional first Cookie Forest variant: a saved, locatable and exactly bounded `15 x 12 x 15` gummy-roofed Gingerbread ruin with a broad elastic approach, two attached tripwire lanes, two dispensers holding six harmless Slowness splashes, a three-flavour lever-and-piston clue, ordinary cache and hidden guaranteed-Cookbook cache. It retains the Jungle Temple's surface and terrain checks plus exact `32/8/14357619` linear placement without granting literal vanilla-Jungle-Temple eligibility. Gummy Jungle placement, random rotation/layout variation, original presentation and hands-on clue/trap play remain. |
-| STRUCT-006 | `minecraft:desert_pyramid` | Sherbet Pyramid | Powder traps, fizzy fossils, and buried sweet jars. |
+| STRUCT-006 | `minecraft:desert_pyramid` | Sherbet Pyramid | Functional first Candy Plains variant: a saved, locatable and exactly bounded `21 x 25 x 21` stepped Biscuit-Stone pyramid with gummy warning stripes, Wafer entrance and walkways, Candy-Glass windows, Fizzy-Pearl crown, two fizzy-fossil displays and four protected buried sweet jars. It preserves the Desert Pyramid's surface/terrain checks and exact `32/8/14357617` linear placement. Its recognisable central stone plate triggers one real TNT charge instead of nine; a bright gummy warning ring, marshmallow cushioning, Rock-Candy baffles and an independent 13-rung recovery shaft make the environmental peril legible and recoverable. It does not grant literal vanilla-Desert-Pyramid eligibility. Sherbet Dunes placement, random orientation/layout variation, original presentation and hands-on trap/balance play remain. |
 | STRUCT-007 | `minecraft:igloo` | Ice-Cream Parlour | Tundra shelter retaining the hidden-curing discovery role. |
 | STRUCT-008 | `minecraft:ruined_portal` | Burnt-Sugar Arch | Clearly recognisable portal ruin using scorched confectionery materials. |
 | STRUCT-009 | `minecraft:shipwreck` | Wafer Wreck | Fragile edible ship with map and treasure roles. |
@@ -503,6 +503,27 @@ ground until Gummy Jungle becomes the thematic primary home. The prototype
 does not rewrite vanilla or third-party Jungle Temples and does not yet claim
 random orientation, layout variation, finished clue logic, or hands-on
 balance and accessibility proof.
+
+The `STRUCT-006` prototype likewise owns a dedicated configured structure,
+set, biome tag and public locate identity rather than recolouring vanilla
+Desert Pyramid pieces. It preserves the vanilla surface-structure step,
+top-biome and `21 x 21` above-sea-level terrain checks, exact spacing `32`,
+separation `8`, linear spread and salt `14357617`, without adding the literal
+`#minecraft:has_structure/desert_pyramid` biome tag. Its first fixed
+`21 x 25 x 21` plan makes the buried chamber part of the saved bounds and
+keeps the recognisable stone-pressure-plate, TNT and four-cardinal-cache
+discovery. The trap is reduced from nine TNT blocks to one and surrounded by
+gummy warning colours, marshmallow cushioning and Rock-Candy baffles; all
+four sweet jars and a separate 13-rung recovery ladder remain outside its
+destructive path. Two above-ground fizzy-fossil displays provide the
+version-appropriate archaeology flavour: CakeWorld does not backport later
+suspicious-sand mechanics into Minecraft 1.18.2. A final CakeWorld
+biome-decoration pass restores only the pyramid's bounded block slices after
+later surface and vegetation features and creates no entities. Candy Plains
+is the available proving ground until Sherbet Dunes becomes the thematic
+primary home. The prototype does not rewrite vanilla or third-party Desert
+Pyramids and does not yet claim random rotation, layout variation, original
+art and sounds, or hands-on balance and accessibility proof.
 
 ## Original Structure Additions
 

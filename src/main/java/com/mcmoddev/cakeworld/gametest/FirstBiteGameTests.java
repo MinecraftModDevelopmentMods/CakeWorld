@@ -158,6 +158,9 @@ import com.mcmoddev.cakeworld.world.GrandGingerbreadManorRepairFeature;
 import com.mcmoddev.cakeworld.world.GrandGingerbreadManorStructureFeature;
 import com.mcmoddev.cakeworld.world.GummyShrineFeature;
 import com.mcmoddev.cakeworld.world.GummyShrineRepairFeature;
+import com.mcmoddev.cakeworld.world.SherbetPyramidFeature;
+import com.mcmoddev.cakeworld.world.SherbetPyramidRepairFeature;
+import com.mcmoddev.cakeworld.world.SherbetPyramidStructureFeature;
 import com.mcmoddev.cakeworld.world.WaferMineFeature;
 import com.mcmoddev.cakeworld.world.WaferMineStructureFeature;
 import com.mcmoddev.cakeworld.world.CakeWorldPillagerReplacement;
@@ -34185,6 +34188,16 @@ public final class FirstBiteGameTests {
 				column.getX(),
 				level.getMaxBuildHeight() - 32,
 				column.getZ());
+		for (int x = -7; x <= 7; x++) {
+			for (int y = 0; y <= 11; y++) {
+				for (int z = -7; z <= 7; z++) {
+					level.setBlock(
+							centre.offset(x, y, z),
+							Blocks.AIR.defaultBlockState(),
+							2);
+				}
+			}
+		}
 		require(helper,
 				GummyShrineFeature.buildAt(
 						level,
@@ -34330,6 +34343,307 @@ public final class FirstBiteGameTests {
 														"LootTable")),
 				"Gummy Shrine lost its ordinary or hidden loot role");
 		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, batch = "struct006",
+			timeoutTicks = 500)
+	public static void sherbetPyramidKeepsDesertTempleHooks(
+			GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						SherbetPyramidFeature
+								.STRUCTURE_ID);
+		Registry<net.minecraft.world.level.levelgen.structure.StructureSet>
+				structureSets =
+				level.registryAccess().registryOrThrow(
+						Registry.STRUCTURE_SET_REGISTRY);
+		net.minecraft.world.level.levelgen.structure.StructureSet
+				structureSet =
+				structureSets.get(
+						SherbetPyramidFeature
+								.STRUCTURE_SET_ID);
+		boolean ownTag = structures.getTag(
+						SherbetPyramidFeature
+								.STRUCTURE_TAG)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		Set<ResourceLocation> eligibleBiomes =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.getTag(SherbetPyramidFeature
+								.GENERATES_IN)
+						.map(tag -> tag.stream()
+								.map(holder -> holder
+										.unwrapKey()
+										.orElseThrow()
+										.location())
+								.collect(
+										java.util.stream
+												.Collectors
+												.toSet()))
+						.orElse(Set.of());
+		Biome candyPlains =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.get(CakeWorldBiomes
+								.CANDY_PLAINS.getId());
+		boolean repairInstalled = false;
+		if (candyPlains != null) {
+			for (Holder<PlacedFeature> feature
+					: candyPlains.getGenerationSettings()
+							.features().get(
+									GenerationStep.Decoration
+											.TOP_LAYER_MODIFICATION
+											.ordinal())) {
+				if (feature.unwrapKey().map(key -> key.location()
+						.equals(SherbetPyramidRepairFeature.ID))
+						.orElse(false)) {
+					repairInstalled = true;
+					break;
+				}
+			}
+		}
+		require(helper,
+				configured != null
+						&& configured.feature
+								== SherbetPyramidFeature
+										.STRUCTURE_FEATURE
+						&& !configured.adaptNoise
+						&& SherbetPyramidFeature
+								.STRUCTURE_FEATURE.step()
+								== GenerationStep
+										.Decoration
+										.SURFACE_STRUCTURES
+						&& SherbetPyramidStructureFeature
+								.BURIED_DEPTH == 14
+						&& structureSet != null
+						&& structureSet.structures().size()
+								== 1
+						&& structureSet.structures().get(0)
+								.structure().value()
+								== configured
+						&& ownTag
+						&& SherbetPyramidRepairFeature
+								.placedFeature() != null
+						&& repairInstalled
+						&& eligibleBiomes.equals(Set.of(
+								CakeWorldBiomes
+										.CANDY_PLAINS
+										.getId())),
+				"Sherbet Pyramid lost its configured structure, buried surface projection, locate tag, installed late repair or temporary Candy Plains contract: eligible="
+						+ eligibleBiomes
+						+ ", repairInstalled="
+						+ repairInstalled);
+
+		net.minecraft.world.level.levelgen.structure.placement
+				.RandomSpreadStructurePlacement placement =
+				(net.minecraft.world.level.levelgen.structure
+						.placement.RandomSpreadStructurePlacement)
+						structureSet.placement();
+		require(helper,
+				placement.spacing() == 32
+						&& placement.separation() == 8
+						&& placement.spreadType()
+								== net.minecraft.world.level
+										.levelgen.structure
+										.placement
+										.RandomSpreadType
+										.LINEAR
+						&& placement.salt() == 14357617,
+				"Sherbet Pyramid lost vanilla Desert Pyramid's exact 32/8 linear placement contract");
+
+		net.minecraft.world.level.levelgen.structure.pools
+				.StructurePoolElement element =
+				SherbetPyramidFeature.pool().value()
+						.getRandomTemplate(
+								new Random(14357617L));
+		net.minecraft.world.level.levelgen.structure.BoundingBox
+				pieceBounds =
+				element.getBoundingBox(
+						level.getStructureManager(),
+						BlockPos.ZERO,
+						Rotation.NONE);
+		require(helper,
+				element
+						instanceof CakeWorldFeaturePoolElement
+						&& pieceBounds.getXSpan() == 21
+						&& pieceBounds.getYSpan() == 25
+						&& pieceBounds.getZSpan() == 21,
+				"Sherbet Pyramid lost its serializable 21x25x21 above-and-below-ground bounds");
+
+		BlockPos column =
+				helper.absolutePos(new BlockPos(4, 4, 4));
+		BlockPos centre = new BlockPos(
+				column.getX(),
+				level.getMaxBuildHeight() - 64,
+				column.getZ());
+		for (int x = -10; x <= 10; x++) {
+			for (int y = -14; y <= 10; y++) {
+				for (int z = -10; z <= 10; z++) {
+					level.setBlock(
+							centre.offset(x, y, z),
+							Blocks.AIR.defaultBlockState(),
+							2);
+				}
+			}
+		}
+		require(helper,
+				SherbetPyramidFeature.buildAt(
+						level,
+						new Random(14357617L),
+						centre),
+				"Sherbet Pyramid refused a prepared safe site");
+
+		Map<Block, Integer> palette =
+				new java.util.HashMap<>();
+		for (int x = -10; x <= 10; x++) {
+			for (int y = -14; y <= 10; y++) {
+				for (int z = -10; z <= 10; z++) {
+					Block block = level.getBlockState(
+							centre.offset(x, y, z))
+							.getBlock();
+					palette.merge(block, 1,
+							Integer::sum);
+				}
+			}
+		}
+		int gummyBlocks =
+				palette.getOrDefault(
+						CakeWorldBlocks.GUMMY_BLOCK
+								.get(), 0)
+				+ palette.getOrDefault(
+						CakeWorldBlocks
+								.RASPBERRY_GUMMY_BLOCK
+								.get(), 0)
+				+ palette.getOrDefault(
+						CakeWorldBlocks
+								.BLUEBERRY_GUMMY_BLOCK
+								.get(), 0)
+				+ palette.getOrDefault(
+						CakeWorldBlocks
+								.GRAPE_GUMMY_BLOCK
+								.get(), 0);
+		require(helper,
+				palette.getOrDefault(
+						CakeWorldBlocks.BISCUIT_STONE
+								.get(), 0) >= 1300
+						&& gummyBlocks >= 40
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.WAFER_BLOCK
+										.get(), 0) >= 55
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.MARSHMALLOW
+										.get(), 0) == 16
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CANDY_GLASS
+										.get(), 0) == 9
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.FIZZY_PEARL
+										.get(), 0) == 5
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.SPRINKLE_CLUSTER
+										.get(), 0) == 6
+						&& palette.getOrDefault(
+								Blocks.BONE_BLOCK, 0)
+								== 8
+						&& palette.getOrDefault(
+								Blocks.LADDER, 0)
+								>= 25
+						&& palette.getOrDefault(
+								Blocks.TNT, 0) == 1
+						&& palette.getOrDefault(
+								Blocks
+										.STONE_PRESSURE_PLATE,
+								0) == 1
+						&& palette.getOrDefault(
+								Blocks.BARREL, 0)
+								== 4,
+				"Sherbet Pyramid lost its pressed-sherbet shell, warning palette, fossils, recovery routes, reduced trap or buried jars: "
+						+ palette);
+
+		for (BlockPos position : List.of(
+				centre.offset(0, -11, -5),
+				centre.offset(0, -11, 5),
+				centre.offset(-5, -11, 0),
+				centre.offset(5, -11, 0))) {
+			BlockEntity blockEntity =
+					level.getBlockEntity(position);
+			CompoundTag state =
+					blockEntity == null
+							? new CompoundTag()
+							: blockEntity
+									.saveWithoutMetadata();
+			require(helper,
+					SherbetPyramidFeature.LOOT_ID
+							.toString().equals(
+									state.getString(
+											"LootTable")),
+					"Sherbet Pyramid buried jar lost its loot identity at "
+							+ position);
+		}
+
+		BlockPos plate = centre.offset(0, -11, 0);
+		Player trigger = helper.makeMockPlayer();
+		trigger.setPos(
+				plate.getX() + 0.5D,
+				plate.getY() + 0.1D,
+				plate.getZ() + 0.5D);
+		level.addFreshEntity(trigger);
+		helper.runAfterDelay(10, () ->
+				require(helper,
+						!level.getEntitiesOfClass(
+								net.minecraft.world.entity
+										.item.PrimedTnt.class,
+								new AABB(plate)
+										.inflate(3.0D))
+								.isEmpty(),
+						"Sherbet Pyramid warning plate did not prime its single real environmental charge"));
+		helper.runAfterDelay(120, () -> {
+			long survivingJars = List.of(
+					centre.offset(0, -11, -5),
+					centre.offset(0, -11, 5),
+					centre.offset(-5, -11, 0),
+					centre.offset(5, -11, 0))
+					.stream()
+					.filter(position ->
+							level.getBlockState(position)
+									.is(Blocks.BARREL))
+					.count();
+			int recoveryLadders = 0;
+			for (int y = -10; y <= 2; y++) {
+				if (level.getBlockState(
+						centre.offset(5, y, 5))
+						.is(Blocks.LADDER)) {
+					recoveryLadders++;
+				}
+			}
+			require(helper,
+					!level.getBlockState(
+							centre.offset(0, -13, 0))
+							.is(Blocks.TNT)
+							&& survivingJars == 4
+							&& recoveryLadders == 13,
+					"Sherbet Pyramid's real warning blast destroyed protected treasure or the independent recovery shaft: jars="
+							+ survivingJars
+							+ ", recoveryLadders="
+							+ recoveryLadders);
+			helper.succeed();
+		});
 	}
 
 	private static final class StaleFudgeFolkProbe
