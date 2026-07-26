@@ -18,7 +18,9 @@ import com.mojang.authlib.GameProfile;
 import com.mcmoddev.cakeworld.CakeWorld;
 import com.mcmoddev.cakeworld.compat.VanillaResourceAdvancements;
 import com.mcmoddev.cakeworld.entity.BiscuitBandit;
+import com.mcmoddev.cakeworld.entity.BitterBaker;
 import com.mcmoddev.cakeworld.entity.CrumbledGingerbreadFolk;
+import com.mcmoddev.cakeworld.entity.CustardCat;
 import com.mcmoddev.cakeworld.entity.GingerbreadFolk;
 import com.mcmoddev.cakeworld.entity.JawbreakerGuardian;
 import com.mcmoddev.cakeworld.init.CakeWorldBiomes;
@@ -27,6 +29,7 @@ import com.mcmoddev.cakeworld.init.CakeWorldFluids;
 import com.mcmoddev.cakeworld.init.CakeWorldEntities;
 import com.mcmoddev.cakeworld.world.BiscuitBanditLookoutFeature;
 import com.mcmoddev.cakeworld.world.BurntSugarArchFeature;
+import com.mcmoddev.cakeworld.world.CaramelCottageFeature;
 import com.mcmoddev.cakeworld.world.GingerbreadVillageFeature;
 import com.mcmoddev.cakeworld.world.GrandGingerbreadManorFeature;
 import com.mcmoddev.cakeworld.world.GummyShrineFeature;
@@ -60,7 +63,9 @@ import net.minecraft.tags.BiomeTags;
 import net.minecraft.tags.ConfiguredStructureTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.Container;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.animal.Cat;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.VillagerType;
 import net.minecraft.world.entity.raid.Raid;
@@ -76,6 +81,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RedStoneOreBlock;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BrewingStandBlockEntity;
 import net.minecraft.world.level.block.entity.DispenserBlockEntity;
@@ -3332,6 +3338,195 @@ public final class DeepPantryGameTests {
 		});
 	}
 
+	@GameTest(template = EMPTY, batch = "struct010world",
+			timeoutTicks = 7200)
+	public static void focusedCaramelCottageStructureAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean(
+				"cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed Caramel Cottage audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry
+										.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						CaramelCottageFeature
+								.STRUCTURE_ID);
+		require(helper, configured != null,
+				"Caramel Cottage configured structure was absent from the live registry");
+		boolean locatedTag = structures.getTag(
+						CaramelCottageFeature
+								.STRUCTURE_TAG)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		require(helper, locatedTag,
+				"Caramel Cottage lost its public configured-structure locate tag");
+
+		LocatedCottage cottage =
+				locateCaramelCottage(
+						helper, level, configured,
+						new BlockPos(96, 64, 128));
+		setCottageChunksForced(level, cottage, true);
+		helper.runAfterDelay(80, () -> {
+			CottageWorldAudit audit =
+					auditCaramelCottage(
+							level, cottage);
+			setCottageChunksForced(level, cottage,
+					false);
+			LOGGER.info("Focused Caramel Cottage audit: locate={}, centre={}, bounds={}, biome={}, orientation={}, palette={}, persistentBakers={}, persistentCats={}, markerConsumed={}, literalEligible={}",
+					cottage.located(),
+					cottage.centre(),
+					cottage.bounds(),
+					audit.biome(),
+					audit.orientation(),
+					audit.palette(),
+					audit.persistentBakers(),
+					audit.persistentCats(),
+					audit.markerConsumed(),
+					audit.literalEligible());
+			require(helper,
+					CakeWorldBiomes.COOKIE_FOREST
+							.getId().equals(
+									audit.biome())
+							&& !audit
+									.literalEligible(),
+					"Natural Caramel Cottage left its temporary wet Cookie-Forest host or leaked literal vanilla Swamp-Hut biome eligibility: biome="
+							+ audit.biome()
+							+ ", literal="
+							+ audit.literalEligible());
+			require(helper,
+					cottage.bounds().getXSpan()
+							== 15
+							&& cottage.bounds()
+									.getYSpan()
+									== 12
+							&& cottage.bounds()
+									.getZSpan()
+									== 15
+							&& cottage.centre()
+									.getY()
+									>= level
+											.getSeaLevel()
+											- 4,
+					"Natural Caramel Cottage lost its exact saved PIECE envelope or average surface placement: "
+							+ cottage.bounds()
+							+ ", centre="
+							+ cottage.centre()
+							+ ", seaLevel="
+							+ level.getSeaLevel());
+			Map<Block, Integer> palette =
+					audit.palette();
+			require(helper,
+					palette.getOrDefault(
+							CakeWorldBlocks
+									.GINGERBREAD_BRICKS
+									.get(), 0)
+							>= 90
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.WAFER_BLOCK
+											.get(),
+									0) == 160
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.ICING.get(),
+									0) == 134
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.CANDY_CANE_PILLAR
+											.get(),
+									0) >= 28
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.CANDY_GLASS
+											.get(),
+									0) == 8
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.CANDY_SPROUT
+											.get(),
+									0) == 3
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.CHOCOLATE_SPONGE
+											.get(),
+									0) >= 5
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.SYRUP_PIPE
+											.get(),
+									0) == 2
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.OVEN.get(),
+									0) == 1
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.CANDY_COOKER
+											.get(),
+									0) == 1
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.MIXING_BOWL
+											.get(),
+									0) == 1
+							&& palette.getOrDefault(
+									Blocks.CAULDRON,
+									0) == 3
+							&& palette.getOrDefault(
+									Blocks.BARREL,
+									0) == 2
+							&& palette.getOrDefault(
+									Blocks.CRAFTING_TABLE,
+									0) == 1
+							&& palette.getOrDefault(
+									Blocks
+											.POTTED_RED_MUSHROOM,
+									0) == 1
+							&& palette.getOrDefault(
+									Blocks.CHEST, 0)
+									== 0
+							&& audit.syrupBuckets()
+									== 1
+							&& audit
+									.caramelBuckets()
+									== 2
+							&& !audit.randomLoot(),
+					"Natural Caramel Cottage lost its complete edible shell, kitchen, garden, caramel/syrup roles or no-invented-loot contract: "
+							+ palette
+							+ ", syrupBuckets="
+							+ audit.syrupBuckets()
+							+ ", caramelBuckets="
+							+ audit.caramelBuckets()
+							+ ", randomLoot="
+							+ audit.randomLoot());
+			require(helper,
+					audit.persistentBakers()
+							== 1
+							&& audit
+									.persistentCats()
+									== 1
+							&& audit
+									.raidCapableBaker()
+							&& audit
+									.allBlackCat()
+							&& audit
+									.markerConsumed(),
+					"Natural Caramel Cottage did not retain exactly one persistent raid-capable Bitter Baker, one persistent all-black Custard Cat and a consumed durable marker: "
+							+ audit);
+			helper.succeed();
+		});
+	}
+
 	@GameTest(template = EMPTY, timeoutTicks = 1200)
 	public static void baseMetalsCounterpartsPreserveTagsRecipesAndGeneration(
 			GameTestHelper helper) {
@@ -4838,6 +5033,189 @@ public final class DeepPantryGameTests {
 				literalEligible);
 	}
 
+	private static LocatedCottage locateCaramelCottage(
+			GameTestHelper helper, ServerLevel level,
+			ConfiguredStructureFeature<?, ?> configured,
+			BlockPos origin) {
+		BlockPos located = level.findNearestMapFeature(
+				CaramelCottageFeature.STRUCTURE_TAG,
+				origin, 512, false);
+		require(helper, located != null,
+				"The fixed-seed CakeWorld contained no locatable Caramel Cottage within 512 chunks of Cookie Forest");
+		net.minecraft.world.level.ChunkPos startChunk =
+				new net.minecraft.world.level.ChunkPos(
+						located);
+		net.minecraft.world.level.chunk.LevelChunk
+				startLevelChunk =
+				level.getChunk(startChunk.x,
+						startChunk.z);
+		net.minecraft.world.level.levelgen.structure.StructureStart
+				start =
+				startLevelChunk.getStartForFeature(
+						configured);
+		require(helper,
+				start != null && start.isValid()
+						&& start.getFeature() == configured
+						&& start.getPieces().size() == 1,
+				"The located Caramel Cottage lost its saved one-piece structure start");
+		net.minecraft.world.level.levelgen.structure.BoundingBox
+				bounds = start.getBoundingBox();
+		BlockPos centre = new BlockPos(
+				bounds.minX() + 7,
+				bounds.minY(),
+				bounds.minZ() + 7);
+		return new LocatedCottage(
+				located, centre, bounds);
+	}
+
+	private static void setCottageChunksForced(
+			ServerLevel level,
+			LocatedCottage cottage,
+			boolean forced) {
+		int minimumChunkX = Math.floorDiv(
+				cottage.bounds().minX(), 16);
+		int maximumChunkX = Math.floorDiv(
+				cottage.bounds().maxX(), 16);
+		int minimumChunkZ = Math.floorDiv(
+				cottage.bounds().minZ(), 16);
+		int maximumChunkZ = Math.floorDiv(
+				cottage.bounds().maxZ(), 16);
+		for (int chunkX = minimumChunkX;
+				chunkX <= maximumChunkX; chunkX++) {
+			for (int chunkZ = minimumChunkZ;
+					chunkZ <= maximumChunkZ;
+					chunkZ++) {
+				level.setChunkForced(
+						chunkX, chunkZ, forced);
+			}
+		}
+	}
+
+	private static CottageWorldAudit auditCaramelCottage(
+			ServerLevel level,
+			LocatedCottage cottage) {
+		Map<Block, Integer> palette =
+				new LinkedHashMap<>();
+		for (int x = -7; x <= 7; x++) {
+			for (int y = -12; y <= 11; y++) {
+				for (int z = -7; z <= 7; z++) {
+					Block block = level
+							.getBlockState(
+									cottage.centre()
+											.offset(
+													x,
+													y,
+													z))
+							.getBlock();
+					palette.merge(block, 1,
+							Integer::sum);
+				}
+			}
+		}
+		AABB residentArea = new AABB(
+				cottage.centre().offset(
+						-12, -4, -12),
+				cottage.centre().offset(
+						13, 16, 13));
+		List<BitterBaker> bakers =
+				level.getEntitiesOfClass(
+						BitterBaker.class,
+						residentArea).stream()
+						.filter(BitterBaker
+								::isPersistenceRequired)
+						.toList();
+		List<CustardCat> cats =
+				level.getEntitiesOfClass(
+						CustardCat.class,
+						residentArea).stream()
+						.filter(CustardCat
+								::isPersistenceRequired)
+						.toList();
+		Rotation rotation =
+				CaramelCottageFeature.orientation(
+						level.getSeed(),
+						cottage.centre());
+		boolean markerConsumed =
+				level.getBlockState(
+						CaramelCottageFeature
+								.residentMarker(
+										cottage.centre(),
+										rotation))
+						.is(CakeWorldBlocks
+								.GINGERBREAD_BRICKS
+								.get());
+		ResourceLocation biomeId =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.getKey(level.getBiome(
+								cottage.centre())
+								.value());
+		boolean literalEligible =
+				level.getBiome(cottage.centre())
+						.is(BiomeTags.HAS_SWAMP_HUT);
+		List<BlockPos> storage =
+				CaramelCottageFeature
+						.fluidStoragePositions(
+								level.getSeed(),
+								cottage.centre());
+		int syrupBuckets = 0;
+		int caramelBuckets = 0;
+		boolean randomLoot = false;
+		for (int index = 0;
+				index < storage.size(); index++) {
+			BlockEntity storageEntity =
+					level.getBlockEntity(
+							storage.get(index));
+			if (storageEntity != null) {
+				randomLoot |= storageEntity
+						.saveWithoutMetadata()
+						.contains("LootTable");
+			}
+			if (!(storageEntity
+					instanceof Container container)) {
+				continue;
+			}
+			for (int slot = 0;
+					slot < container
+							.getContainerSize(); slot++) {
+				ItemStack stack =
+						container.getItem(slot);
+				if (index == 0
+						&& stack.is(
+								CakeWorldFluids
+										.SYRUP_BUCKET
+										.get())) {
+					syrupBuckets += stack
+							.getCount();
+				}
+				if (index == 1
+						&& stack.is(
+								CakeWorldFluids
+										.CARAMEL_BUCKET
+										.get())) {
+					caramelBuckets += stack
+							.getCount();
+				}
+			}
+		}
+		return new CottageWorldAudit(
+				palette, biomeId, rotation,
+				bakers.size(), cats.size(),
+				bakers.size() == 1
+						&& bakers.get(0)
+								.canJoinRaid(),
+				cats.size() == 1
+						&& cats.get(0)
+								.getCatType()
+								== Cat.TYPE_ALL_BLACK,
+				markerConsumed,
+				literalEligible,
+				syrupBuckets,
+				caramelBuckets,
+				randomLoot);
+	}
+
 	private static List<ItemStack> drops(GameTestHelper helper, Block block,
 			ItemStack tool, BlockPos origin) {
 		ResourceLocation blockId = Registry.BLOCK.getKey(block);
@@ -4933,6 +5311,27 @@ public final class DeepPantryGameTests {
 			net.minecraft.world.level.block.Rotation
 					orientation,
 			boolean literalEligible) {
+	}
+
+	private record LocatedCottage(
+			BlockPos located, BlockPos centre,
+			net.minecraft.world.level.levelgen.structure.BoundingBox
+					bounds) {
+	}
+
+	private record CottageWorldAudit(
+			Map<Block, Integer> palette,
+			ResourceLocation biome,
+			Rotation orientation,
+			int persistentBakers,
+			int persistentCats,
+			boolean raidCapableBaker,
+			boolean allBlackCat,
+			boolean markerConsumed,
+			boolean literalEligible,
+			int syrupBuckets,
+			int caramelBuckets,
+			boolean randomLoot) {
 	}
 
 	private record GeomePlacementSurvey(

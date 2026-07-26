@@ -111,6 +111,20 @@ public final class CakeWorldLandmarks {
 							.TOP_LAYER_MODIFICATION)
 					.add(wreckRepair);
 		}
+		Holder<PlacedFeature> cottageRepair =
+				CaramelCottageRepairFeature
+						.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(
+						biome.getNamespace())
+				&& "cookie_forest".equals(
+						biome.getPath())
+				&& cottageRepair != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration
+							.TOP_LAYER_MODIFICATION)
+					.add(cottageRepair);
+		}
 	}
 
 	private static boolean isCurrentOverworldBiome(

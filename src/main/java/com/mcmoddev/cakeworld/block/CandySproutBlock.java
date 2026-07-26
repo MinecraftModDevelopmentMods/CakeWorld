@@ -1,6 +1,7 @@
 package com.mcmoddev.cakeworld.block;
 
 import com.mcmoddev.cakeworld.init.CakeWorldItems;
+import com.mcmoddev.cakeworld.init.CakeWorldBlocks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundEvents;
@@ -9,6 +10,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.CropBlock;
@@ -30,6 +32,13 @@ public final class CandySproutBlock extends CropBlock {
 	@Override
 	protected ItemLike getBaseSeedId() {
 		return CakeWorldItems.SPRINKLE_SEEDS.get();
+	}
+
+	@Override
+	protected boolean mayPlaceOn(BlockState state,
+			BlockGetter level, BlockPos position) {
+		return state.is(CakeWorldBlocks.CHOCOLATE_SPONGE.get())
+				|| super.mayPlaceOn(state, level, position);
 	}
 
 	@Override

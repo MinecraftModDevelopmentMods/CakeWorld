@@ -155,6 +155,8 @@ import com.mcmoddev.cakeworld.world.BurntSugarArchFeature;
 import com.mcmoddev.cakeworld.world.BurntSugarArchRepairFeature;
 import com.mcmoddev.cakeworld.world.BurntSugarArchStructureFeature;
 import com.mcmoddev.cakeworld.world.CakeWorldFeaturePoolElement;
+import com.mcmoddev.cakeworld.world.CaramelCottageFeature;
+import com.mcmoddev.cakeworld.world.CaramelCottageRepairFeature;
 import com.mcmoddev.cakeworld.world.GingerbreadVillageFeature;
 import com.mcmoddev.cakeworld.world.GrandGingerbreadManorFeature;
 import com.mcmoddev.cakeworld.world.GrandGingerbreadManorRepairFeature;
@@ -216,6 +218,7 @@ import net.minecraft.tags.ConfiguredStructureTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.Container;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
@@ -35763,6 +35766,471 @@ public final class FirstBiteGameTests {
 						+ supplyCargo
 						+ ", treasure="
 						+ treasureCargo);
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, batch = "struct010",
+			timeoutTicks = 1200)
+	public static void caramelCottageKeepsSwampHutResidentsAndSpawnRoles(
+			GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						CaramelCottageFeature
+								.STRUCTURE_ID);
+		Registry<net.minecraft.world.level.levelgen.structure.StructureSet>
+				structureSets =
+				level.registryAccess().registryOrThrow(
+						Registry.STRUCTURE_SET_REGISTRY);
+		net.minecraft.world.level.levelgen.structure.StructureSet
+				structureSet =
+				structureSets.get(
+						CaramelCottageFeature
+								.STRUCTURE_SET_ID);
+		boolean ownTag = structures.getTag(
+						CaramelCottageFeature
+								.STRUCTURE_TAG)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		Set<ResourceLocation> eligibleBiomes =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.getTag(CaramelCottageFeature
+								.GENERATES_IN)
+						.map(tag -> tag.stream()
+								.map(holder -> holder
+										.unwrapKey()
+										.orElseThrow()
+										.location())
+								.collect(
+										java.util.stream
+												.Collectors
+												.toSet()))
+						.orElse(Set.of());
+		StructureSpawnOverride bakerOverride =
+				configured == null ? null
+						: configured.spawnOverrides.get(
+								MobCategory.MONSTER);
+		StructureSpawnOverride catOverride =
+				configured == null ? null
+						: configured.spawnOverrides.get(
+								MobCategory.CREATURE);
+		MobSpawnSettings.SpawnerData bakerSpawn =
+				bakerOverride == null ? null
+						: bakerOverride.spawns().unwrap()
+								.stream()
+								.filter(entry -> entry.type
+										== CakeWorldEntities
+												.BITTER_BAKER
+												.get())
+								.findFirst()
+								.orElse(null);
+		MobSpawnSettings.SpawnerData catSpawn =
+				catOverride == null ? null
+						: catOverride.spawns().unwrap()
+								.stream()
+								.filter(entry -> entry.type
+										== CakeWorldEntities
+												.CUSTARD_CAT
+												.get())
+								.findFirst()
+								.orElse(null);
+		boolean repairInstalled =
+				hasPlacedFeature(
+						level,
+						CakeWorldBiomes.COOKIE_FOREST
+								.getId(),
+						GenerationStep.Decoration
+								.TOP_LAYER_MODIFICATION,
+						CaramelCottageRepairFeature.ID);
+		require(helper,
+				configured != null
+						&& configured.feature
+								== CaramelCottageFeature
+										.STRUCTURE_FEATURE
+						&& !configured.adaptNoise
+						&& CaramelCottageFeature
+								.STRUCTURE_FEATURE.step()
+								== GenerationStep
+										.Decoration
+										.SURFACE_STRUCTURES
+						&& structureSet != null
+						&& structureSet.structures().size()
+								== 1
+						&& structureSet.structures().get(0)
+								.structure().value()
+								== configured
+						&& ownTag
+						&& eligibleBiomes.equals(Set.of(
+								CakeWorldBiomes
+										.COOKIE_FOREST
+										.getId()))
+						&& CaramelCottageRepairFeature
+								.placedFeature() != null
+						&& repairInstalled
+						&& bakerOverride != null
+						&& bakerOverride.boundingBox()
+								== StructureSpawnOverride
+										.BoundingBoxType.PIECE
+						&& bakerOverride.spawns()
+								.unwrap().size() == 1
+						&& bakerSpawn != null
+						&& bakerSpawn.getWeight()
+								.asInt() == 1
+						&& bakerSpawn.minCount == 1
+						&& bakerSpawn.maxCount == 1
+						&& catOverride != null
+						&& catOverride.boundingBox()
+								== StructureSpawnOverride
+										.BoundingBoxType.PIECE
+						&& catOverride.spawns()
+								.unwrap().size() == 1
+						&& catSpawn != null
+						&& catSpawn.getWeight()
+								.asInt() == 1
+						&& catSpawn.minCount == 1
+						&& catSpawn.maxCount == 1,
+				"Caramel Cottage lost its configured structure, Cookie-Forest repair/tag or exact PIECE-bounded 1/1-1 Baker/Cat overrides: eligible="
+						+ eligibleBiomes
+						+ ", ownTag=" + ownTag
+						+ ", repair="
+						+ repairInstalled
+						+ ", baker="
+						+ bakerSpawn
+						+ ", cat=" + catSpawn);
+
+		net.minecraft.world.level.levelgen.structure.placement
+				.RandomSpreadStructurePlacement placement =
+				(net.minecraft.world.level.levelgen.structure
+						.placement.RandomSpreadStructurePlacement)
+						structureSet.placement();
+		require(helper,
+				placement.spacing() == 32
+						&& placement.separation() == 8
+						&& placement.spreadType()
+								== net.minecraft.world.level
+										.levelgen.structure
+										.placement
+										.RandomSpreadType
+										.LINEAR
+						&& placement.salt()
+								== 14357620,
+				"Caramel Cottage lost vanilla Swamp Hut's exact 32/8/14357620 linear placement");
+
+		net.minecraft.world.level.levelgen.structure.pools
+				.StructurePoolElement element =
+				CaramelCottageFeature.pool().value()
+						.getRandomTemplate(
+								new Random(
+										14357620L));
+		net.minecraft.world.level.levelgen.structure.BoundingBox
+				pieceBounds =
+				element.getBoundingBox(
+						level.getStructureManager(),
+						BlockPos.ZERO,
+						Rotation.NONE);
+		require(helper,
+				element
+						instanceof CakeWorldFeaturePoolElement
+						&& pieceBounds.getXSpan() == 15
+						&& pieceBounds.getYSpan() == 12
+						&& pieceBounds.getZSpan() == 15,
+				"Caramel Cottage lost its serializable 15x12x15 PIECE spawn envelope");
+
+		Set<Rotation> rotations =
+				new java.util.HashSet<>();
+		for (int index = 0;
+				index < 128
+						&& rotations.size() < 4;
+				index++) {
+			rotations.add(
+					CaramelCottageFeature.orientation(
+							level.getSeed(),
+							new BlockPos(
+									index * 41,
+									80,
+									index * -47)));
+		}
+		require(helper, rotations.size() == 4,
+				"Caramel Cottage deterministic orientation contract did not expose all four cardinal rotations: "
+						+ rotations);
+
+		BlockPos centre = new BlockPos(
+				helper.absolutePos(
+						new BlockPos(4, 4, 4))
+						.getX(),
+				level.getMaxBuildHeight() - 80,
+				helper.absolutePos(
+						new BlockPos(4, 4, 4))
+						.getZ());
+		for (int x = -7; x <= 7; x++) {
+			for (int y = -4; y <= 12; y++) {
+				for (int z = -7; z <= 7; z++) {
+					level.setBlock(
+							centre.offset(x, y, z),
+							y == -4
+									? CakeWorldBlocks
+											.BISCUIT_STONE
+											.get()
+											.defaultBlockState()
+									: Blocks.AIR
+											.defaultBlockState(),
+							2);
+				}
+			}
+		}
+		require(helper,
+				CaramelCottageFeature.buildAt(
+						level,
+						new Random(14357620L),
+						centre),
+				"Caramel Cottage refused a forced Cookie-Forest fixture");
+
+		Map<Block, Integer> palette =
+				scanBlockPalette(level, centre,
+						7, 4, 12);
+		require(helper,
+				palette.getOrDefault(
+						CakeWorldBlocks
+								.GINGERBREAD_BRICKS
+								.get(), 0) >= 90
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.WAFER_BLOCK
+										.get(), 0)
+								>= 150
+						&& palette.getOrDefault(
+								CakeWorldBlocks.ICING
+										.get(), 0)
+								>= 120
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CANDY_CANE_PILLAR
+										.get(), 0)
+								>= 40
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CANDY_GLASS
+										.get(), 0)
+								== 8
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CANDY_SPROUT
+										.get(), 0)
+								== 3
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CHOCOLATE_SPONGE
+										.get(), 0)
+								== 6
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.SYRUP_PIPE
+										.get(), 0)
+								== 2
+						&& palette.getOrDefault(
+								CakeWorldBlocks.OVEN
+										.get(), 0)
+								== 1
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CANDY_COOKER
+										.get(), 0)
+								== 1
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.MIXING_BOWL
+										.get(), 0)
+								== 1
+						&& palette.getOrDefault(
+								Blocks.CAULDRON, 0) == 3
+						&& palette.getOrDefault(
+								Blocks.BARREL, 0) == 2
+						&& palette.getOrDefault(
+								Blocks.CRAFTING_TABLE,
+								0) == 1
+						&& palette.getOrDefault(
+								Blocks
+										.POTTED_RED_MUSHROOM,
+								0) == 1
+						&& palette.getOrDefault(
+								Blocks.CHEST, 0) == 0,
+				"Caramel Cottage lost its edible shell, kitchen, syrup garden, caramel basin or no-invented-loot contract: "
+						+ palette);
+		List<BlockPos> storage =
+				CaramelCottageFeature
+						.fluidStoragePositions(
+								level.getSeed(),
+								centre);
+		Container syrupStorage =
+				level.getBlockEntity(storage.get(0))
+						instanceof Container container
+								? container : null;
+		Container caramelStorage =
+				level.getBlockEntity(storage.get(1))
+						instanceof Container container
+								? container : null;
+		int syrupBuckets = 0;
+		int caramelBuckets = 0;
+		if (syrupStorage != null) {
+			for (int slot = 0;
+					slot < syrupStorage
+							.getContainerSize(); slot++) {
+				if (syrupStorage.getItem(slot).is(
+						CakeWorldFluids
+								.SYRUP_BUCKET.get())) {
+					syrupBuckets += syrupStorage
+							.getItem(slot).getCount();
+				}
+			}
+		}
+		if (caramelStorage != null) {
+			for (int slot = 0;
+					slot < caramelStorage
+							.getContainerSize(); slot++) {
+				if (caramelStorage.getItem(slot).is(
+						CakeWorldFluids
+								.CARAMEL_BUCKET
+								.get())) {
+					caramelBuckets += caramelStorage
+							.getItem(slot).getCount();
+				}
+			}
+		}
+		BlockEntity syrupEntity =
+				level.getBlockEntity(storage.get(0));
+		BlockEntity caramelEntity =
+				level.getBlockEntity(storage.get(1));
+		CompoundTag syrupState =
+				syrupEntity == null
+						? new CompoundTag()
+						: syrupEntity
+								.saveWithoutMetadata();
+		CompoundTag caramelState =
+				caramelEntity == null
+						? new CompoundTag()
+						: caramelEntity
+								.saveWithoutMetadata();
+		require(helper,
+				syrupBuckets == 1
+						&& caramelBuckets == 2
+						&& !syrupState
+								.contains("LootTable")
+						&& !caramelState
+								.contains("LootTable"),
+				"Caramel Cottage lost its sealed real Syrup/Caramel buckets or invented random loot: syrup="
+						+ syrupBuckets
+						+ ", caramel="
+						+ caramelBuckets);
+
+		Rotation orientation =
+				CaramelCottageFeature.orientation(
+						level.getSeed(), centre);
+		for (int x : new int[] {-4, 4}) {
+			for (int z : new int[] {-4, 2}) {
+				BlockPos offset =
+						new BlockPos(x, 0, z)
+								.rotate(orientation);
+				for (int y = -3; y <= 2; y++) {
+					require(helper,
+							level.getBlockState(
+									centre.offset(
+											offset.getX(),
+											y,
+											offset.getZ()))
+									.is(CakeWorldBlocks
+											.CANDY_CANE_PILLAR
+											.get()),
+							"Caramel Cottage lost a downward candy-cane support at local "
+									+ x + "," + y
+									+ "," + z);
+				}
+			}
+		}
+
+		AABB cottage = new AABB(
+				centre.offset(-7, 0, -7),
+				centre.offset(8, 12, 8));
+		List<BitterBaker> bakers =
+				level.getEntitiesOfClass(
+						BitterBaker.class,
+						cottage);
+		List<CustardCat> cats =
+				level.getEntitiesOfClass(
+						CustardCat.class,
+						cottage);
+		require(helper,
+				bakers.size() == 1
+						&& cats.size() == 1
+						&& bakers.get(0)
+								.isPersistenceRequired()
+						&& bakers.get(0).canJoinRaid()
+						&& cats.get(0)
+								.isPersistenceRequired()
+						&& cats.get(0).getCatType()
+								== Cat.TYPE_ALL_BLACK
+						&& level.getBlockState(
+								CaramelCottageFeature
+										.residentMarker(
+												centre,
+												orientation))
+								.is(CakeWorldBlocks
+										.GINGERBREAD_BRICKS
+										.get()),
+				"Caramel Cottage lost its one persistent structure-spawned raid-capable Baker, explicit all-black Custard Cat or consumed resident marker: bakers="
+						+ bakers.size()
+						+ ", cats=" + cats.size());
+
+		Set<UUID> residentIds = Set.of(
+				bakers.get(0).getUUID(),
+				cats.get(0).getUUID());
+		BlockPos damagedRoof = centre.above(9);
+		level.setBlock(damagedRoof,
+				Blocks.AIR.defaultBlockState(), 2);
+		require(helper,
+				CaramelCottageFeature.repairAt(
+						level,
+						new Random(14357620L),
+						centre),
+				"Caramel Cottage late block repair refused its complete fixture");
+		Set<UUID> repairedIds =
+				java.util.stream.Stream.concat(
+						level.getEntitiesOfClass(
+								BitterBaker.class,
+								cottage).stream(),
+						level.getEntitiesOfClass(
+								CustardCat.class,
+								cottage).stream())
+						.map(net.minecraft.world.entity.Entity
+								::getUUID)
+						.collect(java.util.stream.Collectors
+								.toSet());
+		require(helper,
+				level.getBlockState(damagedRoof)
+						.is(CakeWorldBlocks.ICING.get())
+						&& residentIds.equals(repairedIds)
+						&& level.getBlockState(
+								CaramelCottageFeature
+										.residentMarker(
+												centre,
+												orientation))
+								.is(CakeWorldBlocks
+										.GINGERBREAD_BRICKS
+										.get()),
+				"Caramel Cottage repair failed to restore its roof without replacing residents or reopening the durable marker: before="
+						+ residentIds + ", after="
+						+ repairedIds);
+
+		bakers.forEach(BitterBaker::discard);
+		cats.forEach(CustardCat::discard);
 		helper.succeed();
 	}
 
