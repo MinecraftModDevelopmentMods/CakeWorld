@@ -92,6 +92,8 @@ import com.mcmoddev.cakeworld.entity.MirageSweetProjectile;
 import com.mcmoddev.cakeworld.entity.NougatGoat;
 import com.mcmoddev.cakeworld.entity.PeppermintFox;
 import com.mcmoddev.cakeworld.entity.PopRockPopper;
+import com.mcmoddev.cakeworld.entity.RollingPinRaider;
+import com.mcmoddev.cakeworld.entity.RollingPinRaiderGriefSafety;
 import com.mcmoddev.cakeworld.entity.SodaCod;
 import com.mcmoddev.cakeworld.entity.SodaDolphin;
 import com.mcmoddev.cakeworld.entity.SoggyBiscuit;
@@ -124,6 +126,7 @@ import com.mcmoddev.cakeworld.world.CakeWorldPiglinBruteReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldTurtleReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldVexReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldVillagerReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldVindicatorReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldPillagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldRavagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldShulkerReplacement;
@@ -269,6 +272,7 @@ import net.minecraft.world.entity.monster.Spider;
 import net.minecraft.world.entity.monster.Stray;
 import net.minecraft.world.entity.monster.Strider;
 import net.minecraft.world.entity.monster.Vex;
+import net.minecraft.world.entity.monster.Vindicator;
 import net.minecraft.world.entity.monster.Witch;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.monster.ZombifiedPiglin;
@@ -23931,6 +23935,840 @@ public final class FirstBiteGameTests {
 							state, 3));
 			helper.succeed();
 		});
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 160)
+	public static void rollingPinRaidersKeepVindicatorRaidsAndSafeShoves(
+			GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		BlockPos anchor = helper.absolutePos(
+				new BlockPos(5, 3, 5));
+		AABB localArea = new AABB(anchor).inflate(16.0D);
+		level.getEntitiesOfClass(
+				Vindicator.class, localArea)
+				.forEach(Vindicator::discard);
+		level.getEntitiesOfClass(Pig.class, localArea)
+				.forEach(Pig::discard);
+
+		RollingPinRaiderProbe bareRaider =
+				new RollingPinRaiderProbe(level);
+		require(helper,
+				close(bareRaider.getMaxHealth(),
+								24.0D)
+						&& close(bareRaider
+								.getAttributeValue(
+										Attributes
+												.MOVEMENT_SPEED),
+								0.35D)
+						&& close(bareRaider
+								.getAttributeValue(
+										Attributes
+												.FOLLOW_RANGE),
+								12.0D)
+						&& close(bareRaider
+								.getAttributeValue(
+										Attributes
+												.ATTACK_DAMAGE),
+								5.0D)
+						&& bareRaider
+								.getExperienceValue()
+								== 5,
+				"Unequipped Rolling-Pin Raider lost the base Vindicator attributes or XP reward");
+		bareRaider.discard();
+
+		RollingPinRaiderProbe raider =
+				new RollingPinRaiderProbe(level);
+		raider.setPos(anchor.getX() + 0.5D,
+				anchor.getY(),
+				anchor.getZ() + 0.5D);
+		raider.finalizeSpawn(level,
+				level.getCurrentDifficultyAt(anchor),
+				MobSpawnType.STRUCTURE, null, null);
+		level.addFreshEntity(raider);
+		int equippedExperience =
+				raider.getExperienceValue();
+		boolean groundNavigation =
+				raider.getNavigation()
+						instanceof GroundPathNavigation;
+		boolean opensDoors = groundNavigation
+				&& ((GroundPathNavigation)raider
+						.getNavigation()).canOpenDoors();
+		require(helper,
+				raider instanceof Vindicator
+						&& raider instanceof Raider
+						&& raider
+								instanceof PatrollingMonster
+						&& raider.getType()
+								== CakeWorldEntities
+										.ROLLING_PIN_RAIDER
+										.get()
+						&& raider.getType().getCategory()
+								== MobCategory.MONSTER
+						&& close(raider.getMaxHealth(),
+								24.0D)
+						&& close(raider.getAttributeValue(
+								Attributes.MOVEMENT_SPEED),
+								0.35D)
+						&& close(raider.getAttribute(
+								Attributes.FOLLOW_RANGE)
+										.getBaseValue(),
+								12.0D)
+						&& raider.getAttribute(
+								Attributes.FOLLOW_RANGE)
+								.getModifiers().stream()
+								.anyMatch(modifier ->
+										"Random spawn bonus"
+												.equals(modifier
+														.getName()))
+						&& close(raider.getAttributeValue(
+								Attributes.ATTACK_DAMAGE),
+								5.0D)
+						&& close(raider.getDimensions(
+								Pose.STANDING).width,
+								0.6D)
+						&& close(raider.getDimensions(
+								Pose.STANDING).height,
+								1.95D)
+						&& raider.getType()
+								.clientTrackingRange() == 8
+						&& raider.getMaxSpawnClusterSize()
+								== 4
+						&& equippedExperience >= 6
+						&& equippedExperience <= 8
+						&& raider.getMobType()
+								== MobType.ILLAGER
+						&& raider.canBeLeader()
+						&& raider.canJoinPatrol()
+						&& raider.canJoinRaid()
+						&& raider.despawnsInPeaceful()
+						&& groundNavigation
+						&& opensDoors,
+				"Rolling-Pin Raider lost the exact Vindicator body, attributes, equipped XP, navigation, raid or patrol roles"
+						+ ": equippedExperience="
+						+ equippedExperience
+						+ ", maxHealth="
+						+ raider.getMaxHealth()
+						+ ", speed="
+						+ raider.getAttributeValue(
+								Attributes.MOVEMENT_SPEED)
+						+ ", followBase="
+						+ raider.getAttribute(
+								Attributes.FOLLOW_RANGE)
+								.getBaseValue()
+						+ ", followEffective="
+						+ raider.getAttributeValue(
+								Attributes.FOLLOW_RANGE)
+						+ ", attack="
+						+ raider.getAttributeValue(
+								Attributes.ATTACK_DAMAGE)
+						+ ", dimensions="
+						+ raider.getDimensions(
+								Pose.STANDING)
+						+ ", tracking="
+						+ raider.getType()
+								.clientTrackingRange()
+						+ ", cluster="
+						+ raider.getMaxSpawnClusterSize()
+						+ ", mobType="
+						+ raider.getMobType()
+						+ ", leader="
+						+ raider.canBeLeader()
+						+ ", joinPatrol="
+						+ raider.canJoinPatrol()
+						+ ", joinRaid="
+						+ raider.canJoinRaid()
+						+ ", peaceful="
+						+ raider.despawnsInPeaceful()
+						+ ", navigation="
+						+ raider.getNavigation()
+								.getClass()
+								.getSimpleName()
+						+ ", opensDoors="
+						+ opensDoors);
+		require(helper,
+				raider.getMainHandItem()
+								.is(Items.IRON_AXE)
+						&& raider.getLootTableId().equals(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/rolling_pin_raider"))
+						&& raider.ambientSound()
+								== SoundEvents
+										.VINDICATOR_AMBIENT
+						&& raider.hurtSound()
+								== SoundEvents
+										.VINDICATOR_HURT
+						&& raider.deathSound()
+								== SoundEvents
+										.VINDICATOR_DEATH
+						&& raider.getCelebrateSound()
+								== SoundEvents
+										.VINDICATOR_CELEBRATE,
+				"Rolling-Pin Raider lost Vindicator equipment, loot or sounds");
+		require(helper,
+				raider.countGoalsNamed("FloatGoal") == 1
+						&& raider.countGoalsNamed(
+								"VindicatorBreakDoorGoal")
+								== 1
+						&& raider.countGoalsNamed(
+								"RaiderOpenDoorGoal")
+								== 1
+						&& raider.countGoalsNamed(
+								"HoldGroundAttackGoal")
+								== 1
+						&& raider.countGoalsNamed(
+								"VindicatorMeleeAttackGoal")
+								== 1
+						&& raider.countGoalsNamed(
+								"LongDistancePatrolGoal")
+								== 1
+						&& raider.countGoalsNamed(
+								"RandomStrollGoal") == 1
+						&& raider.countGoalsNamed(
+								"LookAtPlayerGoal") == 2
+						&& raider.countTargetGoalsNamed(
+								"HurtByTargetGoal") == 1
+						&& raider.countTargetGoalsNamed(
+								"NearestAttackableTargetGoal")
+								== 3
+						&& raider.countTargetGoalsNamed(
+								"VindicatorJohnnyAttackGoal")
+								== 1,
+				"Rolling-Pin Raider lost Vindicator raid, door, melee, patrol, target or Johnny goals");
+		require(helper,
+				raider.getArmPose()
+								== AbstractIllager
+										.IllagerArmPose
+										.CROSSED,
+				"Idle Rolling-Pin Raider lost the crossed-arm pose");
+		raider.setAggressive(true);
+		require(helper,
+				raider.getArmPose()
+								== AbstractIllager
+										.IllagerArmPose
+										.ATTACKING,
+				"Aggressive Rolling-Pin Raider lost the attacking pose");
+		raider.setAggressive(false);
+		raider.setCelebrating(true);
+		require(helper,
+				raider.getArmPose()
+								== AbstractIllager
+										.IllagerArmPose
+										.CELEBRATING,
+				"Victorious Rolling-Pin Raider lost the celebration pose");
+		raider.setCelebrating(false);
+
+		BlockPos patrolTarget =
+				anchor.offset(80, 0, -48);
+		RollingPinRaiderProbe captain =
+				new RollingPinRaiderProbe(level);
+		captain.setPos(anchor.getX() + 2.5D,
+				anchor.getY(),
+				anchor.getZ() + 0.5D);
+		captain.setPatrolLeader(true);
+		captain.setPatrolTarget(patrolTarget);
+		captain.setCustomName(
+				new TextComponent("Johnny"));
+		captain.finalizeSpawn(level,
+				level.getCurrentDifficultyAt(
+						captain.blockPosition()),
+				MobSpawnType.PATROL, null, null);
+		require(helper,
+				ItemStack.isSameItemSameTags(
+						captain.getItemBySlot(
+								EquipmentSlot.HEAD),
+						Raid.getLeaderBannerInstance()),
+				"Patrol-finalized Rolling-Pin Raider captain did not receive the leader banner");
+		CompoundTag raiderState =
+				captain.saveWithoutId(
+						new CompoundTag());
+		RollingPinRaiderProbe restored =
+				new RollingPinRaiderProbe(level);
+		restored.load(raiderState);
+		CompoundTag restoredState =
+				restored.saveWithoutId(
+						new CompoundTag());
+		require(helper,
+				restoredState.getBoolean("Johnny")
+						&& restored.isPatrolLeader()
+						&& restored.hasPatrolTarget()
+						&& patrolTarget.equals(
+								restored.getPatrolTarget())
+						&& ItemStack.isSameItemSameTags(
+								restored.getItemBySlot(
+										EquipmentSlot.HEAD),
+								Raid.getLeaderBannerInstance())
+						&& "Johnny".equals(
+								restored.getName()
+										.getString()),
+				"Rolling-Pin Raider lost Johnny, patrol target, captain banner or name NBT");
+		restored.setPos(anchor.getX() + 3.5D,
+				anchor.getY(),
+				anchor.getZ() + 0.5D);
+		level.addFreshEntity(restored);
+		Pig johnnyTarget =
+				EntityType.PIG.create(level);
+		require(helper, johnnyTarget != null,
+				"Could not create Rolling-Pin Raider Johnny target");
+		johnnyTarget.setPos(restored.getX() + 2.0D,
+				restored.getY(), restored.getZ());
+		johnnyTarget.setNoAi(true);
+		level.addFreshEntity(johnnyTarget);
+		require(helper,
+				restored.startJohnnyTargetGoal()
+						&& restored.getTarget()
+								== johnnyTarget,
+				"Johnny Rolling-Pin Raider did not target an otherwise neutral living entity");
+
+		GingerbreadFolk villager =
+				CakeWorldEntities.GINGERBREAD_FOLK
+						.get().create(level);
+		require(helper, villager != null,
+				"Could not create Rolling-Pin Raider Villager-awareness fixture");
+		villager.setPos(raider.getX() + 4.0D,
+				raider.getY(), raider.getZ());
+		villager.setNoAi(true);
+		level.addFreshEntity(villager);
+		villager.getBrain().eraseMemory(
+				MemoryModuleType.NEAREST_HOSTILE);
+		villager.getBrain().setMemory(
+				MemoryModuleType
+						.NEAREST_VISIBLE_LIVING_ENTITIES,
+				new NearestVisibleLivingEntities(
+						villager, List.of(raider)));
+		raider.setTestTickCount(20);
+		raider.runVillagerHostileRepair();
+		require(helper,
+				villager.getBrain().getMemory(
+						MemoryModuleType.NEAREST_HOSTILE)
+						.filter(hostile ->
+								hostile == raider)
+						.isPresent(),
+				"Rolling-Pin Raider did not repair Vindicator fear for Gingerbread Folk");
+		Evoker colleague =
+				EntityType.EVOKER.create(level);
+		require(helper,
+				colleague != null
+						&& raider.isAlliedTo(colleague),
+				"Rolling-Pin Raider lost unteamed Illager alliance");
+		colleague.discard();
+
+		RollingPinRaiderProbe buffed =
+				new RollingPinRaiderProbe(level);
+		buffed.setPos(anchor.getX() + 6.5D,
+				anchor.getY(),
+				anchor.getZ() + 0.5D);
+		buffed.finalizeSpawn(level,
+				level.getCurrentDifficultyAt(
+						buffed.blockPosition()),
+				MobSpawnType.EVENT, null, null);
+		Raid buffRaid = new Raid(197863, level,
+				buffed.blockPosition());
+		buffRaid.setBadOmenLevel(5);
+		buffRaid.joinRaid(7, buffed, null, true);
+		buffRaid.setLeader(7, buffed);
+		buffed.seedRandom(0L);
+		buffed.applyRaidBuffs(7, false);
+		require(helper,
+				buffed.getCurrentRaid() == buffRaid
+						&& buffed.getWave() == 7
+						&& buffRaid.getLeader(7)
+								== buffed
+						&& buffed.getMainHandItem()
+								.is(Items.IRON_AXE)
+						&& EnchantmentHelper
+								.getItemEnchantmentLevel(
+										Enchantments
+												.SHARPNESS,
+										buffed
+												.getMainHandItem())
+								== 2,
+				"Rolling-Pin Raider lost wave-seven raid membership, leadership or Sharpness-II axe buff");
+		buffRaid.removeFromRaid(buffed, true);
+		buffed.discard();
+
+		for (Difficulty difficulty :
+				Difficulty.values()) {
+			EntityMobGriefingEvent grief =
+					new EntityMobGriefingEvent(raider);
+			RollingPinRaiderGriefSafety
+					.applyForDifficulty(
+							grief, difficulty);
+			require(helper,
+					grief.getResult()
+							== (difficulty
+									== Difficulty.HARD
+											? Event.Result.DEFAULT
+											: Event.Result.DENY),
+					difficulty
+							+ " Rolling-Pin Raider door-grief policy crossed the Hard-only possession boundary");
+		}
+
+		Difficulty originalDifficulty =
+				level.getDifficulty();
+		try {
+			for (Difficulty safeDifficulty :
+					List.of(Difficulty.PEACEFUL,
+							Difficulty.EASY,
+							Difficulty.NORMAL)) {
+				level.getServer().setDifficulty(
+						safeDifficulty, true);
+				Pig safeTarget =
+						EntityType.PIG.create(level);
+				require(helper, safeTarget != null,
+						"Could not create protected Rolling-Pin Raider target");
+				safeTarget.setPos(
+						raider.getX() + 1.0D,
+						raider.getY(),
+						raider.getZ());
+				safeTarget.setSecondsOnFire(5);
+				safeTarget.fallDistance = 9.0F;
+				level.addFreshEntity(safeTarget);
+				raider.doHurtTarget(safeTarget);
+				require(helper,
+						close(safeTarget.getHealth(),
+								safeTarget
+										.getMaxHealth())
+								&& safeTarget
+										.getDeltaMovement()
+										.lengthSqr()
+										> 0.01D
+								&& !safeTarget.isOnFire()
+								&& close(safeTarget
+										.fallDistance,
+										0.0D)
+								&& safeTarget.hasEffect(
+										MobEffects
+												.MOVEMENT_SLOWDOWN)
+								&& safeTarget.hasEffect(
+										MobEffects.GLOWING)
+								&& safeTarget.hasEffect(
+										MobEffects
+												.SLOW_FALLING)
+								&& safeTarget.hasEffect(
+										MobEffects
+												.FIRE_RESISTANCE)
+								&& safeTarget.getEffect(
+										MobEffects
+												.DAMAGE_RESISTANCE)
+										.getAmplifier()
+										== 4,
+						safeDifficulty
+								+ " Rolling-Pin Raider shove caused health/fall/fire damage or lacked visible rescue");
+				safeTarget.discard();
+			}
+
+			level.getServer().setDifficulty(
+					Difficulty.HARD, true);
+			Pig hardTarget =
+					EntityType.PIG.create(level);
+			require(helper, hardTarget != null,
+					"Could not create Hard Rolling-Pin Raider target");
+			hardTarget.setPos(raider.getX() + 1.0D,
+					raider.getY(), raider.getZ());
+			level.addFreshEntity(hardTarget);
+			raider.doHurtTarget(hardTarget);
+			require(helper,
+					hardTarget.getHealth()
+							< hardTarget.getMaxHealth()
+							&& !hardTarget.hasEffect(
+									MobEffects
+											.DAMAGE_RESISTANCE),
+					"Hard Rolling-Pin Raider did not retain real Vindicator axe damage");
+			hardTarget.discard();
+
+			level.getServer().setDifficulty(
+					Difficulty.PEACEFUL, true);
+			RollingPinRaiderProbe peaceful =
+					new RollingPinRaiderProbe(level);
+			peaceful.checkDespawn();
+			require(helper,
+					peaceful.isRemoved()
+							&& peaceful
+									.despawnsInPeaceful(),
+					"Peaceful Rolling-Pin Raider lost vanilla Monster removal");
+		} finally {
+			level.getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		try {
+			Field raidTypeField =
+					Raid.RaiderType.class
+							.getDeclaredField(
+									"entityType");
+			Field wavesField =
+					Raid.RaiderType.class
+							.getDeclaredField(
+									"spawnsPerWaveBeforeBonus");
+			raidTypeField.setAccessible(true);
+			wavesField.setAccessible(true);
+			require(helper,
+					raidTypeField.get(
+							Raid.RaiderType.VINDICATOR)
+								== EntityType.VINDICATOR
+							&& Arrays.equals(
+									(int[])wavesField.get(
+											Raid.RaiderType
+													.VINDICATOR),
+									new int[] {0, 0, 2,
+											0, 1, 4,
+											2, 5}),
+					"Rolling-Pin Raider lost the literal vanilla Vindicator raid source or exact wave counts");
+		} catch (ReflectiveOperationException exception) {
+			throw new IllegalStateException(
+					"Could not inspect the vanilla Vindicator raid source",
+					exception);
+		}
+
+		Registry<Biome> biomes = level.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY);
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS.getId())) {
+			Biome biome = biomes.get(biomeId);
+			require(helper, biome != null
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory
+													.MONSTER)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType
+															.VINDICATOR
+											|| spawn.type
+													== CakeWorldEntities
+															.ROLLING_PIN_RAIDER
+															.get()),
+					"Rolling-Pin Raider fabricated open-biome ecology in "
+							+ biomeId);
+		}
+		TagKey<EntityType<?>> raiders =
+				TagKey.create(
+						Registry.ENTITY_TYPE_REGISTRY,
+						new ResourceLocation(
+								"minecraft", "raiders"));
+		require(helper,
+				CakeWorldItems
+						.ROLLING_PIN_RAIDER_SPAWN_EGG
+						.isPresent()
+						&& CakeWorldEntities
+								.ROLLING_PIN_RAIDER
+								.get().is(raiders)
+						&& SpawnPlacements
+								.getPlacementType(
+										CakeWorldEntities
+												.ROLLING_PIN_RAIDER
+												.get())
+								== SpawnPlacements.Type
+										.NO_RESTRICTIONS
+						&& SpawnPlacements
+								.getPlacementType(
+										CakeWorldEntities
+												.ROLLING_PIN_RAIDER
+												.get())
+								== SpawnPlacements
+										.getPlacementType(
+												EntityType
+														.VINDICATOR)
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+												.ROLLING_PIN_RAIDER
+												.get())
+								== SpawnPlacements
+										.getHeightmapType(
+												EntityType
+														.VINDICATOR)
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+												.ROLLING_PIN_RAIDER
+												.get())
+								== SoundEvents
+										.PARROT_IMITATE_VINDICATOR,
+				"Rolling-Pin Raider lost raider tag, egg, exact placement or Lorikeet mimic");
+		ServerPlayer advancementPlayer =
+				new ServerPlayer(level.getServer(), level,
+						new GameProfile(
+								UUID.fromString(
+										"1978feed-feed-4bad-babe-1978feed2063"),
+								"CakeWorldRollingPinRaiderRoleTest"));
+		VanillaRoleAdvancements
+				.creditKilledVindicatorRole(
+						advancementPlayer);
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:adventure/kill_all_mobs",
+				"minecraft:vindicator");
+
+		BlockPos cakeWorldPos =
+				findCakeWorldBiomePosition(helper,
+						anchor.offset(16, 0, 16),
+						256);
+		require(helper, cakeWorldPos != null,
+				"Could not locate CakeWorld terrain for literal Vindicator conversion");
+		AABB eventArea =
+				new AABB(cakeWorldPos).inflate(6.0D);
+		level.getEntitiesOfClass(
+				Vindicator.class, eventArea)
+				.forEach(Vindicator::discard);
+		Vindicator literal =
+				EntityType.VINDICATOR.create(level);
+		Ravager mount =
+				EntityType.RAVAGER.create(level);
+		Chicken passenger =
+				EntityType.CHICKEN.create(level);
+		Pig conversionTarget =
+				EntityType.PIG.create(level);
+		require(helper,
+				literal != null
+						&& mount != null
+						&& passenger != null
+						&& conversionTarget != null,
+				"Could not create Rolling-Pin Raider direct-conversion fixtures");
+		mount.setPos(cakeWorldPos.getX() + 0.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		mount.setNoAi(true);
+		level.addFreshEntity(mount);
+		conversionTarget.setPos(
+				cakeWorldPos.getX() + 3.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		conversionTarget.setNoAi(true);
+		level.addFreshEntity(conversionTarget);
+		literal.setPos(mount.getX(), mount.getY(),
+				mount.getZ());
+		literal.finalizeSpawn(level,
+				level.getCurrentDifficultyAt(
+						cakeWorldPos),
+				MobSpawnType.EVENT, null, null);
+		literal.setHealth(17.0F);
+		literal.setCustomName(
+				new TextComponent("Johnny"));
+		literal.setNoAi(true);
+		literal.setPersistenceRequired();
+		literal.setPatrolLeader(true);
+		BlockPos transferredPatrolTarget =
+				cakeWorldPos.offset(48, 0, -48);
+		literal.setPatrolTarget(
+				transferredPatrolTarget);
+		literal.invulnerableTime = 29;
+		literal.setTarget(conversionTarget);
+		literal.setLastHurtByMob(
+				conversionTarget);
+		Raid transferRaid = new Raid(
+				197864, level, cakeWorldPos);
+		transferRaid.joinRaid(
+				7, literal, null, true);
+		transferRaid.setLeader(7, literal);
+		level.addFreshEntity(literal);
+		literal.startRiding(mount, true);
+		passenger.startRiding(literal, true);
+		RollingPinRaider converted =
+				CakeWorldVindicatorReplacement
+						.replaceIfInCakeWorldBiome(
+								level, literal);
+		CompoundTag convertedState =
+				converted == null
+						? new CompoundTag()
+						: converted.saveWithoutId(
+								new CompoundTag());
+		require(helper,
+				converted != null
+						&& literal.isRemoved()
+						&& convertedState.getBoolean(
+								"Johnny")
+						&& close(converted.getHealth(),
+								17.0D)
+						&& converted.isNoAi()
+						&& converted
+								.isPersistenceRequired()
+						&& converted.isPatrolLeader()
+						&& transferredPatrolTarget
+								.equals(converted
+										.getPatrolTarget())
+						&& converted.invulnerableTime
+								== 29
+						&& converted.getTarget()
+								== conversionTarget
+						&& converted.getLastHurtByMob()
+								== conversionTarget
+						&& converted.getCurrentRaid()
+								== transferRaid
+						&& converted.getWave() == 7
+						&& transferRaid.getLeader(7)
+								== converted
+						&& transferRaid
+								.getTotalRaidersAlive()
+								== 1
+						&& converted.getVehicle() == mount
+						&& converted.getPassengers()
+								.contains(passenger)
+						&& converted.getMainHandItem()
+								.is(Items.IRON_AXE),
+				"Fresh literal Vindicator conversion lost Johnny, state, patrol, target, raid, leader, axe or riding relationships");
+		require(helper,
+				CakeWorldVindicatorReplacement
+						.replaceIfInCakeWorldBiome(
+								level, raider) == null
+						&& !raider.isRemoved(),
+				"Vindicator source conversion touched a non-literal entity type");
+		passenger.discard();
+		if (converted != null) {
+			transferRaid.removeFromRaid(
+					converted, true);
+			converted.discard();
+		}
+		mount.discard();
+		conversionTarget.discard();
+
+		Vindicator eventLiteral =
+				EntityType.VINDICATOR.create(level);
+		require(helper, eventLiteral != null,
+				"Could not create Rolling-Pin Raider entity-join source");
+		eventLiteral.setPos(
+				cakeWorldPos.getX() + 0.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		eventLiteral.finalizeSpawn(level,
+				level.getCurrentDifficultyAt(
+						cakeWorldPos),
+				MobSpawnType.STRUCTURE, null, null);
+		eventLiteral.setCustomName(
+				new TextComponent(
+						"Entity Join Rolling-Pin Raider"));
+		eventLiteral.setNoAi(true);
+		eventLiteral.setPatrolTarget(
+				cakeWorldPos.offset(-32, 0, 32));
+		require(helper,
+				level.addFreshEntity(eventLiteral),
+				"Could not add literal Vindicator entity-join source");
+
+		helper.runAfterDelay(4, () -> {
+			List<RollingPinRaider> emitted =
+					level.getEntitiesOfClass(
+							RollingPinRaider.class,
+							eventArea,
+							candidate ->
+									candidate.hasCustomName()
+											&& "Entity Join Rolling-Pin Raider"
+													.equals(candidate
+															.getName()
+															.getString()));
+			RollingPinRaider eventRaider =
+					emitted.size() == 1
+							? emitted.get(0) : null;
+			require(helper,
+					eventLiteral.isRemoved()
+							&& eventRaider != null
+							&& eventRaider.isNoAi()
+							&& eventRaider
+									.hasPatrolTarget()
+							&& eventRaider
+									.getMainHandItem()
+									.is(Items.IRON_AXE),
+					"Actual deferred Vindicator entity-join source lost structure state: literalRemoved="
+							+ eventLiteral.isRemoved()
+							+ ", emitted="
+							+ emitted.size());
+			emitted.forEach(
+					RollingPinRaider::discard);
+			raider.discard();
+			captain.discard();
+			restored.discard();
+			johnnyTarget.discard();
+			villager.discard();
+			helper.succeed();
+		});
+	}
+
+	private static final class RollingPinRaiderProbe
+			extends RollingPinRaider {
+		private RollingPinRaiderProbe(Level level) {
+			super(CakeWorldEntities.ROLLING_PIN_RAIDER
+					.get(), level);
+		}
+
+		private boolean despawnsInPeaceful() {
+			return shouldDespawnInPeaceful();
+		}
+
+		private int getExperienceValue() {
+			return getExperienceReward(null);
+		}
+
+		private ResourceLocation getLootTableId() {
+			return getLootTable();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				ambientSound() {
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				hurtSound() {
+			return getHurtSound(DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				deathSound() {
+			return getDeathSound();
+		}
+
+		private void seedRandom(long seed) {
+			random.setSeed(seed);
+		}
+
+		private void setTestTickCount(int ticks) {
+			tickCount = ticks;
+		}
+
+		private void runVillagerHostileRepair() {
+			repairVillagerHostileAwareness();
+		}
+
+		private boolean startJohnnyTargetGoal() {
+			for (WrappedGoal wrapped :
+					targetSelector.getAvailableGoals()) {
+				if ("VindicatorJohnnyAttackGoal"
+						.equals(wrapped.getGoal()
+								.getClass()
+								.getSimpleName())
+						&& wrapped.getGoal().canUse()) {
+					wrapped.getGoal().start();
+					return true;
+				}
+			}
+			return false;
+		}
+
+		private int countGoalsNamed(String name) {
+			return (int)goalSelector
+					.getAvailableGoals().stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
+		}
+
+		private int countTargetGoalsNamed(
+				String name) {
+			return (int)targetSelector
+					.getAvailableGoals().stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
+		}
 	}
 
 	private static final class LollipopLorikeetProbe

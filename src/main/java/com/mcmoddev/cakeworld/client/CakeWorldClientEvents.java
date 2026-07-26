@@ -61,6 +61,7 @@ import net.minecraft.client.renderer.entity.ThrownTridentRenderer;
 import net.minecraft.client.renderer.entity.TropicalFishRenderer;
 import net.minecraft.client.renderer.entity.TurtleRenderer;
 import net.minecraft.client.renderer.entity.VexRenderer;
+import net.minecraft.client.renderer.entity.VindicatorRenderer;
 import net.minecraft.client.renderer.entity.VillagerRenderer;
 import net.minecraft.client.model.SquidModel;
 import net.minecraft.client.model.geom.ModelLayers;
@@ -139,6 +140,10 @@ public final class CakeWorldClientEvents {
 		event.registerEntityRenderer(
 				CakeWorldEntities.BISCUIT_BANDIT.get(),
 				PillagerRenderer::new);
+		event.registerEntityRenderer(
+				CakeWorldEntities.ROLLING_PIN_RAIDER
+						.get(),
+				VindicatorRenderer::new);
 		event.registerEntityRenderer(
 				CakeWorldEntities.VANILLA_ICE_BEAR.get(),
 				PolarBearRenderer::new);

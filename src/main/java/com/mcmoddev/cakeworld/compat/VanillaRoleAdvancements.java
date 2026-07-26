@@ -263,6 +263,12 @@ public final class VanillaRoleAdvancements {
 		award(player, KILL_ALL, "minecraft:pillager");
 	}
 
+	public static void creditKilledVindicatorRole(
+			ServerPlayer player) {
+		award(player, KILL_ALL,
+				"minecraft:vindicator");
+	}
+
 	public static void creditDistractedPiglinRole(
 			ServerPlayer player, boolean direct) {
 		if (player.getItemBySlot(
@@ -433,6 +439,11 @@ public final class VanillaRoleAdvancements {
 		}
 		if (type == CakeWorldEntities.BISCUIT_BANDIT.get()) {
 			return "minecraft:pillager";
+		}
+		if (type
+				== CakeWorldEntities.ROLLING_PIN_RAIDER
+						.get()) {
+			return "minecraft:vindicator";
 		}
 		if (type
 				== CakeWorldEntities.GINGERBREAD_STOMPER.get()) {

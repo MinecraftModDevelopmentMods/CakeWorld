@@ -261,6 +261,11 @@ public final class CakeWorldItems {
 			spawnEgg("biscuit_bandit_spawn_egg",
 					CakeWorldEntities.BISCUIT_BANDIT,
 					0x7A5532, 0xE3C58F);
+	public static final RegistryObject<Item>
+			ROLLING_PIN_RAIDER_SPAWN_EGG =
+			spawnEgg("rolling_pin_raider_spawn_egg",
+					CakeWorldEntities.ROLLING_PIN_RAIDER,
+					0x765A45, 0xD9B77A);
 	public static final RegistryObject<Item> VANILLA_ICE_BEAR_SPAWN_EGG =
 			spawnEgg("vanilla_ice_bear_spawn_egg",
 					CakeWorldEntities.VANILLA_ICE_BEAR,

@@ -50,6 +50,7 @@ import com.mcmoddev.cakeworld.entity.MirageSweetProjectile;
 import com.mcmoddev.cakeworld.entity.NougatGoat;
 import com.mcmoddev.cakeworld.entity.PeppermintFox;
 import com.mcmoddev.cakeworld.entity.PopRockPopper;
+import com.mcmoddev.cakeworld.entity.RollingPinRaider;
 import com.mcmoddev.cakeworld.entity.SodaCod;
 import com.mcmoddev.cakeworld.entity.SodaDolphin;
 import com.mcmoddev.cakeworld.entity.SoggyBiscuit;
@@ -124,6 +125,7 @@ import net.minecraft.world.entity.monster.Skeleton;
 import net.minecraft.world.entity.monster.Spider;
 import net.minecraft.world.entity.monster.Strider;
 import net.minecraft.world.entity.monster.Vex;
+import net.minecraft.world.entity.monster.Vindicator;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.monster.hoglin.Hoglin;
 import net.minecraft.world.entity.monster.piglin.Piglin;
@@ -306,6 +308,14 @@ public final class CakeWorldEntities {
 							MobCategory.MONSTER)
 							.sized(0.6F, 1.95F)
 							.clientTrackingRange(8));
+	public static final RegistryObject<EntityType<RollingPinRaider>>
+			ROLLING_PIN_RAIDER =
+					entity("rolling_pin_raider",
+							EntityType.Builder.of(
+									RollingPinRaider::new,
+									MobCategory.MONSTER)
+									.sized(0.6F, 1.95F)
+									.clientTrackingRange(8));
 	public static final RegistryObject<EntityType<VanillaIceBear>>
 			VANILLA_ICE_BEAR = entity("vanilla_ice_bear",
 					EntityType.Builder.of(VanillaIceBear::new,
@@ -626,6 +636,8 @@ public final class CakeWorldEntities {
 				PiglinBrute.createAttributes().build());
 		event.put(BISCUIT_BANDIT.get(),
 				Pillager.createAttributes().build());
+		event.put(ROLLING_PIN_RAIDER.get(),
+				Vindicator.createAttributes().build());
 		event.put(VANILLA_ICE_BEAR.get(),
 				PolarBear.createAttributes().build());
 		event.put(GUMMY_BUNNY.get(),
@@ -792,6 +804,11 @@ public final class CakeWorldEntities {
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					PatrollingMonster
 							::checkPatrollingMonsterSpawnRules);
+			SpawnPlacements.register(
+					ROLLING_PIN_RAIDER.get(),
+					SpawnPlacements.Type.NO_RESTRICTIONS,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					Monster::checkMonsterSpawnRules);
 			SpawnPlacements.register(VANILLA_ICE_BEAR.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
