@@ -80,6 +80,23 @@ public final class CakeWorldLandmarks {
 							.TOP_LAYER_MODIFICATION)
 					.add(parlourRepair);
 		}
+		Holder<PlacedFeature> archRepair =
+				BurntSugarArchRepairFeature
+						.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(
+						biome.getNamespace())
+				&& (isCurrentOverworldBiome(
+						biome.getPath())
+						|| "fudge_wastes"
+								.equals(biome
+										.getPath()))
+				&& archRepair != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration
+							.TOP_LAYER_MODIFICATION)
+					.add(archRepair);
+		}
 	}
 
 	private static boolean isCurrentOverworldBiome(

@@ -38,6 +38,10 @@ public final class CakeWorldFeatureRegistration {
 				IceCreamParlourFeature.FEATURE);
 		event.getRegistry().register(
 				IceCreamParlourRepairFeature.FEATURE);
+		event.getRegistry().register(
+				BurntSugarArchFeature.FEATURE);
+		event.getRegistry().register(
+				BurntSugarArchRepairFeature.FEATURE);
 	}
 
 	@SubscribeEvent
@@ -57,6 +61,8 @@ public final class CakeWorldFeatureRegistration {
 				SherbetPyramidFeature.STRUCTURE_FEATURE);
 		event.getRegistry().register(
 				IceCreamParlourFeature.STRUCTURE_FEATURE);
+		event.getRegistry().register(
+				BurntSugarArchFeature.STRUCTURE_FEATURE);
 	}
 
 	@SubscribeEvent
@@ -78,6 +84,9 @@ public final class CakeWorldFeatureRegistration {
 					.registerConfiguredFeature();
 			IceCreamParlourFeature.registerWorldgen();
 			IceCreamParlourRepairFeature
+					.registerConfiguredFeature();
+			BurntSugarArchFeature.registerWorldgen();
+			BurntSugarArchRepairFeature
 					.registerConfiguredFeature();
 		});
 	}

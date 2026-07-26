@@ -151,6 +151,9 @@ import com.mcmoddev.cakeworld.world.CakeWorldZombieVillagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldZombifiedPiglinReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldZoglinReplacement;
 import com.mcmoddev.cakeworld.world.BiscuitBanditLookoutFeature;
+import com.mcmoddev.cakeworld.world.BurntSugarArchFeature;
+import com.mcmoddev.cakeworld.world.BurntSugarArchRepairFeature;
+import com.mcmoddev.cakeworld.world.BurntSugarArchStructureFeature;
 import com.mcmoddev.cakeworld.world.CakeWorldFeaturePoolElement;
 import com.mcmoddev.cakeworld.world.GingerbreadVillageFeature;
 import com.mcmoddev.cakeworld.world.GrandGingerbreadManorFeature;
@@ -401,7 +404,12 @@ import net.minecraft.data.worldgen.StructureFeatures;
 import net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature;
 import net.minecraft.world.level.levelgen.structure.StructureSpawnOverride;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
+import net.minecraft.world.level.portal.PortalShape;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
+import net.minecraft.world.level.storage.loot.LootContext;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.entity.raid.Raid;
 import net.minecraft.world.entity.raid.Raider;
 import net.minecraft.world.entity.schedule.Activity;
@@ -35078,6 +35086,358 @@ public final class FirstBiteGameTests {
 				"Ice-Cream Parlour supplied the cure clue but the genuine Crumbled Gingerbread Folk could not begin conversion");
 		helper.succeed();
 		});
+	}
+
+	@GameTest(template = EMPTY, batch = "struct008",
+			timeoutTicks = 600)
+	public static void burntSugarArchKeepsPortalRepairRole(
+			GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						BurntSugarArchFeature
+								.STRUCTURE_ID);
+		Registry<net.minecraft.world.level.levelgen.structure.StructureSet>
+				structureSets =
+				level.registryAccess().registryOrThrow(
+						Registry.STRUCTURE_SET_REGISTRY);
+		net.minecraft.world.level.levelgen.structure.StructureSet
+				structureSet =
+				structureSets.get(
+						BurntSugarArchFeature
+								.STRUCTURE_SET_ID);
+		boolean ownTag = structures.getTag(
+						BurntSugarArchFeature
+								.STRUCTURE_TAG)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		Set<ResourceLocation> eligibleBiomes =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.getTag(BurntSugarArchFeature
+								.GENERATES_IN)
+						.map(tag -> tag.stream()
+								.map(holder -> holder
+										.unwrapKey()
+										.orElseThrow()
+										.location())
+								.collect(
+										java.util.stream
+												.Collectors
+												.toSet()))
+						.orElse(Set.of());
+		Set<ResourceLocation> expectedBiomes = Set.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId());
+		boolean overworldRepairInstalled =
+				hasPlacedFeature(
+						level,
+						CakeWorldBiomes.CANDY_PLAINS
+								.getId(),
+						GenerationStep.Decoration
+								.TOP_LAYER_MODIFICATION,
+						BurntSugarArchRepairFeature.ID);
+		boolean netherRepairInstalled =
+				hasPlacedFeature(
+						level,
+						CakeWorldBiomes.FUDGE_WASTES
+								.getId(),
+						GenerationStep.Decoration
+								.TOP_LAYER_MODIFICATION,
+						BurntSugarArchRepairFeature.ID);
+		require(helper,
+				configured != null
+						&& configured.feature
+								== BurntSugarArchFeature
+										.STRUCTURE_FEATURE
+						&& !configured.adaptNoise
+						&& BurntSugarArchFeature
+								.STRUCTURE_FEATURE.step()
+								== GenerationStep
+										.Decoration
+										.SURFACE_STRUCTURES
+						&& structureSet != null
+						&& structureSet.structures().size()
+								== 1
+						&& structureSet.structures().get(0)
+								.structure().value()
+								== configured
+						&& ownTag
+						&& BurntSugarArchRepairFeature
+								.placedFeature() != null
+						&& overworldRepairInstalled
+						&& netherRepairInstalled
+						&& eligibleBiomes
+								.equals(expectedBiomes),
+				"Burnt-Sugar Arch lost its configured structure, locate tag, five-biome contract or Overworld/Nether repair: eligible="
+						+ eligibleBiomes
+						+ ", overworldRepair="
+						+ overworldRepairInstalled
+						+ ", netherRepair="
+						+ netherRepairInstalled);
+
+		net.minecraft.world.level.levelgen.structure.placement
+				.RandomSpreadStructurePlacement placement =
+				(net.minecraft.world.level.levelgen.structure
+						.placement.RandomSpreadStructurePlacement)
+						structureSet.placement();
+		require(helper,
+				placement.spacing() == 40
+						&& placement.separation() == 15
+						&& placement.spreadType()
+								== net.minecraft.world.level
+										.levelgen.structure
+										.placement
+										.RandomSpreadType
+										.LINEAR
+						&& placement.salt() == 34222645,
+				"Burnt-Sugar Arch lost vanilla Ruined Portal's exact 40/15 linear placement contract");
+
+		net.minecraft.world.level.levelgen.structure.pools
+				.StructurePoolElement element =
+				BurntSugarArchFeature.pool().value()
+						.getRandomTemplate(
+								new Random(34222645L));
+		net.minecraft.world.level.levelgen.structure.BoundingBox
+				pieceBounds =
+				element.getBoundingBox(
+						level.getStructureManager(),
+						BlockPos.ZERO,
+						Rotation.NONE);
+		require(helper,
+				element
+						instanceof CakeWorldFeaturePoolElement
+						&& pieceBounds.getXSpan() == 17
+						&& pieceBounds.getYSpan() == 17
+						&& pieceBounds.getZSpan() == 17,
+				"Burnt-Sugar Arch lost its serializable 17x17x17 Overworld/Nether envelope");
+
+		BlockPos column =
+				helper.absolutePos(new BlockPos(4, 4, 4));
+		BlockPos overworldCentre = new BlockPos(
+				column.getX(),
+				level.getMaxBuildHeight() - 80,
+				column.getZ());
+		BlockPos netherCentre = new BlockPos(
+				column.getX(),
+				level.getMaxBuildHeight() - 104,
+				column.getZ());
+		for (BlockPos centre : List.of(
+				overworldCentre, netherCentre)) {
+			for (int x = -8; x <= 8; x++) {
+				for (int y = -4; y <= 12;
+						y++) {
+					for (int z = -8; z <= 8;
+							z++) {
+						level.setBlock(
+								centre.offset(
+										x, y,
+										z),
+								Blocks.AIR
+										.defaultBlockState(),
+								2);
+					}
+				}
+			}
+		}
+
+		require(helper,
+				BurntSugarArchFeature.buildAt(
+						level,
+						new Random(34222645L),
+						overworldCentre, false)
+						&& BurntSugarArchFeature
+								.buildAt(
+										level,
+										new Random(
+												34222645L),
+										netherCentre,
+										true),
+				"Burnt-Sugar Arch refused an Overworld or Nether fixture");
+		Map<Block, Integer> overworldPalette =
+				scanBlockPalette(level, overworldCentre,
+						8, 4, 12);
+		Map<Block, Integer> netherPalette =
+				scanBlockPalette(level, netherCentre,
+						8, 4, 12);
+		require(helper,
+				overworldPalette.getOrDefault(
+						CakeWorldBlocks
+								.BURNT_SUGAR_ROCK
+								.get(), 0) >= 140
+						&& overworldPalette
+								.getOrDefault(
+										CakeWorldBlocks
+												.BISCUIT_STONE
+												.get(),
+										0) == 48
+						&& overworldPalette
+								.getOrDefault(
+										CakeWorldBlocks
+												.HONEYCOMB_GOLD
+												.get(),
+										0) == 2
+						&& netherPalette.getOrDefault(
+								CakeWorldBlocks
+										.BURNT_SUGAR_ROCK
+										.get(), 0)
+								>= 140
+						&& netherPalette.getOrDefault(
+								CakeWorldBlocks
+										.FUDGE_ROCK.get(),
+								0) == 48
+						&& netherPalette.getOrDefault(
+								CakeWorldBlocks
+										.FUDGE_GOLD.get(),
+								0) == 2,
+				"Burnt-Sugar Arch lost its dimension-specific scorched confectionery palette: overworld="
+						+ overworldPalette
+						+ ", nether="
+						+ netherPalette);
+		for (Map<Block, Integer> palette : List.of(
+				overworldPalette, netherPalette)) {
+			require(helper,
+					palette.getOrDefault(
+							Blocks.OBSIDIAN, 0)
+							== 18
+							&& palette.getOrDefault(
+									Blocks
+											.CRYING_OBSIDIAN,
+									0) == 2
+							&& palette.getOrDefault(
+									Blocks.MAGMA_BLOCK,
+									0) == 2
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.MARSHMALLOW
+											.get(), 0)
+									== 2
+							&& palette.getOrDefault(
+									Blocks.CHEST, 0)
+									== 1,
+					"Burnt-Sugar Arch lost its partial frame, warning/rescue pair or repair chest: "
+							+ palette);
+		}
+
+		BlockPos repairChest =
+				overworldCentre.offset(5, 1, 3);
+		BlockEntity chestEntity =
+				level.getBlockEntity(repairChest);
+		CompoundTag chestState =
+				chestEntity == null
+						? new CompoundTag()
+						: chestEntity
+								.saveWithoutMetadata();
+		require(helper,
+				BurntSugarArchFeature.LOOT_ID
+						.toString().equals(
+								chestState.getString(
+										"LootTable")),
+				"Burnt-Sugar Arch repair chest lost its loot identity");
+		LootTable loot = level.getServer()
+				.getLootTables()
+				.get(BurntSugarArchFeature.LOOT_ID);
+		LootContext lootContext =
+				new LootContext.Builder(level)
+						.withParameter(
+								LootContextParams.ORIGIN,
+								Vec3.atCenterOf(
+										repairChest))
+						.create(
+								LootContextParamSets.CHEST);
+		List<ItemStack> repairKit =
+				loot.getRandomItems(lootContext);
+		int suppliedObsidian = repairKit.stream()
+				.filter(stack -> stack.is(
+						Items.OBSIDIAN))
+				.mapToInt(ItemStack::getCount)
+				.sum();
+		boolean suppliedIgnition =
+				repairKit.stream().anyMatch(
+						stack -> stack.is(
+								Items.FLINT_AND_STEEL));
+		require(helper,
+				suppliedObsidian == 4
+						&& suppliedIgnition,
+				"Burnt-Sugar Arch did not guarantee exactly its four missing Obsidian plus ignition: "
+						+ repairKit);
+
+		for (BlockPos gap
+				: BurntSugarArchFeature
+						.portalGaps(
+								overworldCentre)) {
+			require(helper,
+					level.getBlockState(gap).isAir(),
+					"Burnt-Sugar Arch repair gap was not visibly missing at "
+							+ gap);
+			level.setBlock(gap,
+					Blocks.OBSIDIAN
+							.defaultBlockState(),
+					2);
+		}
+		java.util.Optional<PortalShape> portal =
+				PortalShape.findEmptyPortalShape(
+						level,
+						BurntSugarArchFeature
+								.portalInterior(
+										overworldCentre),
+						Direction.Axis.X);
+		require(helper, portal.isPresent(),
+				"Burnt-Sugar Arch could not become a valid vanilla portal after inserting only its four supplied blocks");
+		portal.orElseThrow().createPortalBlocks();
+		int portalBlocks = 0;
+		for (BlockPos position : BlockPos.betweenClosed(
+				overworldCentre.offset(-2, 2, 0),
+				overworldCentre.offset(1, 6, 0))) {
+			if (level.getBlockState(position)
+					.is(Blocks.NETHER_PORTAL)) {
+				portalBlocks++;
+			}
+		}
+		require(helper, portalBlocks == 20,
+				"Burnt-Sugar Arch repair produced "
+						+ portalBlocks
+						+ " portal blocks instead of the exact 4x5 opening");
+		helper.succeed();
+	}
+
+	private static boolean hasPlacedFeature(
+			ServerLevel level,
+			ResourceLocation biomeId,
+			GenerationStep.Decoration step,
+			ResourceLocation featureId) {
+		Biome biome = level.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY)
+				.get(biomeId);
+		if (biome == null
+				|| biome.getGenerationSettings()
+						.features().size()
+						<= step.ordinal()) {
+			return false;
+		}
+		for (Holder<PlacedFeature> feature
+				: biome.getGenerationSettings()
+						.features().get(
+								step.ordinal())) {
+			if (feature.unwrapKey()
+					.map(key -> key.location()
+							.equals(featureId))
+					.orElse(false)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private static Map<Block, Integer> scanBlockPalette(

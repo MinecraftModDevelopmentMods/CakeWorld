@@ -26,6 +26,7 @@ import com.mcmoddev.cakeworld.init.CakeWorldBlocks;
 import com.mcmoddev.cakeworld.init.CakeWorldFluids;
 import com.mcmoddev.cakeworld.init.CakeWorldEntities;
 import com.mcmoddev.cakeworld.world.BiscuitBanditLookoutFeature;
+import com.mcmoddev.cakeworld.world.BurntSugarArchFeature;
 import com.mcmoddev.cakeworld.world.GingerbreadVillageFeature;
 import com.mcmoddev.cakeworld.world.GrandGingerbreadManorFeature;
 import com.mcmoddev.cakeworld.world.GummyShrineFeature;
@@ -84,6 +85,7 @@ import net.minecraft.world.level.levelgen.Aquifer;
 import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature;
+import net.minecraft.world.level.portal.PortalShape;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
@@ -3014,6 +3016,165 @@ public final class DeepPantryGameTests {
 		});
 	}
 
+	@GameTest(template = EMPTY, timeoutTicks = 7200)
+	public static void focusedBurntSugarArchStructureAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean(
+				"cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed Burnt-Sugar Arch audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel overworld = helper.getLevel();
+		ServerLevel nether = overworld.getServer()
+				.getLevel(Level.NETHER);
+		require(helper, nether != null,
+				"Burnt-Sugar Arch audit could not open the Nether");
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				overworld.registryAccess()
+						.registryOrThrow(
+								Registry
+										.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						BurntSugarArchFeature
+								.STRUCTURE_ID);
+		require(helper, configured != null,
+				"Burnt-Sugar Arch configured structure was absent from the live registry");
+		boolean tagged = structures.getTag(
+						BurntSugarArchFeature
+								.STRUCTURE_TAG)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		require(helper, tagged,
+				"Burnt-Sugar Arch lost its public locate tag");
+
+		LocatedArch overworldArch =
+				locateBurntSugarArch(
+						helper, overworld,
+						configured,
+						helper.absolutePos(
+								new BlockPos(
+										4, 4, 4)),
+						"Overworld");
+		LocatedArch netherArch =
+				locateBurntSugarArch(
+						helper, nether,
+						configured,
+						new BlockPos(0, 64, 0),
+						"Nether");
+		setArchChunksForced(overworld,
+				overworldArch, true);
+		setArchChunksForced(nether,
+				netherArch, true);
+
+		helper.runAfterDelay(60, () -> {
+			ArchWorldAudit overworldAudit =
+					auditBurntSugarArch(
+							overworld,
+							overworldArch,
+							false);
+			ArchWorldAudit netherAudit =
+					auditBurntSugarArch(
+							nether,
+							netherArch,
+							true);
+			setArchChunksForced(overworld,
+					overworldArch, false);
+			setArchChunksForced(nether,
+					netherArch, false);
+
+			Set<ResourceLocation> expectedOverworld =
+					Set.of(
+							CakeWorldBiomes
+									.CANDY_PLAINS
+									.getId(),
+							CakeWorldBiomes
+									.COOKIE_FOREST
+									.getId(),
+							CakeWorldBiomes
+									.MARSHMALLOW_PEAKS
+									.getId(),
+							CakeWorldBiomes
+									.SODA_OCEAN
+									.getId());
+			LOGGER.info("Focused Burnt-Sugar Arch audit: overworldLocate={}, overworldCentre={}, overworldBounds={}, overworldBiome={}, overworldPalette={}, overworldLoot={}, overworldRepairable={}; netherLocate={}, netherCentre={}, netherBounds={}, netherBiome={}, netherPalette={}, netherLoot={}, netherRepairable={}",
+					overworldArch.located(),
+					overworldArch.centre(),
+					overworldArch.bounds(),
+					overworldAudit.biome(),
+					overworldAudit.palette(),
+					overworldAudit.loot(),
+					overworldAudit.repairable(),
+					netherArch.located(),
+					netherArch.centre(),
+					netherArch.bounds(),
+					netherAudit.biome(),
+					netherAudit.palette(),
+					netherAudit.loot(),
+					netherAudit.repairable());
+			require(helper,
+					expectedOverworld.contains(
+							overworldAudit.biome())
+							&& CakeWorldBiomes
+									.FUDGE_WASTES
+									.getId().equals(
+											netherAudit
+													.biome())
+							&& !overworldAudit
+									.literalEligible()
+							&& !netherAudit
+									.literalEligible(),
+					"Natural Burnt-Sugar Arches lost their CakeWorld Overworld/Fudge-Wastes homes or leaked literal Ruined Portal eligibility: overworld="
+							+ overworldAudit.biome()
+							+ ", nether="
+							+ netherAudit.biome()
+							+ ", overworldLiteral="
+							+ overworldAudit
+									.literalEligible()
+							+ ", netherLiteral="
+							+ netherAudit
+									.literalEligible());
+			require(helper,
+					overworldArch.bounds()
+							.getXSpan() == 17
+							&& overworldArch.bounds()
+									.getYSpan() == 17
+							&& overworldArch.bounds()
+									.getZSpan() == 17
+							&& netherArch.bounds()
+									.getXSpan() == 17
+							&& netherArch.bounds()
+									.getYSpan() == 17
+							&& netherArch.bounds()
+									.getZSpan() == 17
+							&& netherArch.bounds()
+									.minY() >= 32
+							&& netherArch.bounds()
+									.minY() <= 80,
+					"Natural Burnt-Sugar Arch lost its exact saved bounds or deterministic Nether pocket range: overworld="
+							+ overworldArch.bounds()
+							+ ", nether="
+							+ netherArch.bounds());
+			assertNaturalArchPalette(
+					helper, overworldAudit,
+					CakeWorldBlocks.BISCUIT_STONE
+							.get(),
+					CakeWorldBlocks.HONEYCOMB_GOLD
+							.get(),
+					"Overworld");
+			assertNaturalArchPalette(
+					helper, netherAudit,
+					CakeWorldBlocks.FUDGE_ROCK.get(),
+					CakeWorldBlocks.FUDGE_GOLD.get(),
+					"Nether");
+			helper.succeed();
+		});
+	}
+
 	@GameTest(template = EMPTY, timeoutTicks = 1200)
 	public static void baseMetalsCounterpartsPreserveTagsRecipesAndGeneration(
 			GameTestHelper helper) {
@@ -4187,6 +4348,220 @@ public final class DeepPantryGameTests {
 		helper.succeed();
 	}
 
+	private static LocatedArch locateBurntSugarArch(
+			GameTestHelper helper, ServerLevel level,
+			ConfiguredStructureFeature<?, ?> configured,
+			BlockPos origin, String dimensionName) {
+		BlockPos located = level.findNearestMapFeature(
+				BurntSugarArchFeature.STRUCTURE_TAG,
+				origin, 512, false);
+		require(helper, located != null,
+				"The fixed-seed CakeWorld contained no locatable Burnt-Sugar Arch within 512 chunks in the "
+						+ dimensionName);
+		net.minecraft.world.level.ChunkPos startChunk =
+				new net.minecraft.world.level.ChunkPos(
+						located);
+		net.minecraft.world.level.chunk.LevelChunk
+				startLevelChunk =
+				level.getChunk(startChunk.x,
+						startChunk.z);
+		net.minecraft.world.level.levelgen.structure.StructureStart
+				start =
+				startLevelChunk.getStartForFeature(
+						configured);
+		require(helper,
+				start != null && start.isValid()
+						&& start.getFeature() == configured
+						&& start.getPieces().size() == 1,
+				"The located Burnt-Sugar Arch lost its saved "
+						+ dimensionName
+						+ " structure start");
+		net.minecraft.world.level.levelgen.structure.BoundingBox
+				bounds = start.getBoundingBox();
+		BlockPos centre = new BlockPos(
+				bounds.minX() + 8,
+				bounds.minY() + 4,
+				bounds.minZ() + 8);
+		return new LocatedArch(
+				located, centre, bounds);
+	}
+
+	private static void setArchChunksForced(
+			ServerLevel level, LocatedArch arch,
+			boolean forced) {
+		int minimumChunkX = Math.floorDiv(
+				arch.bounds().minX(), 16);
+		int maximumChunkX = Math.floorDiv(
+				arch.bounds().maxX(), 16);
+		int minimumChunkZ = Math.floorDiv(
+				arch.bounds().minZ(), 16);
+		int maximumChunkZ = Math.floorDiv(
+				arch.bounds().maxZ(), 16);
+		for (int chunkX = minimumChunkX;
+				chunkX <= maximumChunkX; chunkX++) {
+			for (int chunkZ = minimumChunkZ;
+					chunkZ <= maximumChunkZ;
+					chunkZ++) {
+				level.setChunkForced(
+						chunkX, chunkZ, forced);
+			}
+		}
+	}
+
+	private static ArchWorldAudit auditBurntSugarArch(
+			ServerLevel level, LocatedArch arch,
+			boolean nether) {
+		Map<Block, Integer> palette =
+				new LinkedHashMap<>();
+		for (int x = -8; x <= 8; x++) {
+			for (int y = -4; y <= 12; y++) {
+				for (int z = -8; z <= 8; z++) {
+					Block block = level
+							.getBlockState(
+									arch.centre()
+											.offset(
+													x,
+													y,
+													z))
+							.getBlock();
+					palette.merge(block, 1,
+							Integer::sum);
+				}
+			}
+		}
+		BlockEntity chestEntity =
+				level.getBlockEntity(
+						arch.centre().offset(
+								5, 1, 3));
+		CompoundTag chestState =
+				chestEntity == null
+						? new CompoundTag()
+						: chestEntity
+								.saveWithoutMetadata();
+		boolean loot =
+				BurntSugarArchFeature.LOOT_ID
+						.toString().equals(
+								chestState.getString(
+										"LootTable"));
+		boolean gaps = true;
+		for (BlockPos gap
+				: BurntSugarArchFeature
+						.portalGaps(
+								arch.centre())) {
+			gaps &= level.getBlockState(gap).isAir();
+			level.setBlock(gap,
+					Blocks.OBSIDIAN
+							.defaultBlockState(),
+					2);
+		}
+		boolean repairable =
+				PortalShape.findEmptyPortalShape(
+						level,
+						BurntSugarArchFeature
+								.portalInterior(
+										arch.centre()),
+						Direction.Axis.X)
+						.isPresent();
+		for (BlockPos gap
+				: BurntSugarArchFeature
+						.portalGaps(
+								arch.centre())) {
+			level.setBlock(gap,
+					Blocks.AIR.defaultBlockState(),
+					2);
+		}
+		ResourceLocation biomeId =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.getKey(level.getBiome(
+								arch.centre())
+								.value());
+		boolean literalEligible =
+				isLiteralRuinedPortalBiome(
+						level.getBiome(
+								arch.centre()));
+		return new ArchWorldAudit(
+				palette, biomeId, loot,
+				gaps && repairable,
+				literalEligible);
+	}
+
+	private static boolean isLiteralRuinedPortalBiome(
+			Holder<Biome> biome) {
+		return biome.is(
+				BiomeTags.HAS_RUINED_PORTAL_STANDARD)
+				|| biome.is(
+						BiomeTags
+								.HAS_RUINED_PORTAL_DESERT)
+				|| biome.is(
+						BiomeTags
+								.HAS_RUINED_PORTAL_JUNGLE)
+				|| biome.is(
+						BiomeTags
+								.HAS_RUINED_PORTAL_SWAMP)
+				|| biome.is(
+						BiomeTags
+								.HAS_RUINED_PORTAL_MOUNTAIN)
+				|| biome.is(
+						BiomeTags
+								.HAS_RUINED_PORTAL_OCEAN)
+				|| biome.is(
+						BiomeTags
+								.HAS_RUINED_PORTAL_NETHER);
+	}
+
+	private static void assertNaturalArchPalette(
+			GameTestHelper helper,
+			ArchWorldAudit audit,
+			Block dimensionRock,
+			Block dimensionGold,
+			String dimensionName) {
+		Map<Block, Integer> palette =
+				audit.palette();
+		require(helper,
+				palette.getOrDefault(
+						CakeWorldBlocks
+								.BURNT_SUGAR_ROCK
+								.get(), 0) >= 140
+						&& palette.getOrDefault(
+								dimensionRock, 0)
+								>= 48
+						&& palette.getOrDefault(
+								dimensionGold, 0)
+								== 2
+						&& palette.getOrDefault(
+								Blocks.OBSIDIAN, 0)
+								== 18
+						&& palette.getOrDefault(
+								Blocks
+										.CRYING_OBSIDIAN,
+								0) == 2
+						&& palette.getOrDefault(
+								Blocks.MAGMA_BLOCK,
+								0) == 2
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.MARSHMALLOW
+										.get(), 0)
+								== 2
+						&& palette.getOrDefault(
+								Blocks.CHEST, 0)
+								== 1
+						&& palette.getOrDefault(
+								Blocks.NETHER_PORTAL,
+								0) == 0
+						&& audit.loot()
+						&& audit.repairable(),
+				"The natural " + dimensionName
+						+ " Burnt-Sugar Arch lost its edible ruin, incomplete repairable frame, warning/rescue pair or repair chest: "
+						+ palette
+						+ ", loot="
+						+ audit.loot()
+						+ ", repairable="
+						+ audit.repairable());
+	}
+
 	private static List<ItemStack> drops(GameTestHelper helper, Block block,
 			ItemStack tool, BlockPos origin) {
 		ResourceLocation blockId = Registry.BLOCK.getKey(block);
@@ -4254,6 +4629,19 @@ public final class DeepPantryGameTests {
 
 	private record RockDepthSummary(int samples, int minimumY, int maximumY,
 			double meanY) {
+	}
+
+	private record LocatedArch(
+			BlockPos located, BlockPos centre,
+			net.minecraft.world.level.levelgen.structure.BoundingBox
+					bounds) {
+	}
+
+	private record ArchWorldAudit(
+			Map<Block, Integer> palette,
+			ResourceLocation biome, boolean loot,
+			boolean repairable,
+			boolean literalEligible) {
 	}
 
 	private record GeomePlacementSurvey(
