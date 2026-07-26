@@ -65,6 +65,7 @@ import com.mcmoddev.cakeworld.entity.SugarBee;
 import com.mcmoddev.cakeworld.entity.SugarMite;
 import com.mcmoddev.cakeworld.entity.TaffyTallwalker;
 import com.mcmoddev.cakeworld.entity.TrufflePig;
+import com.mcmoddev.cakeworld.entity.TravellingConfectioner;
 import com.mcmoddev.cakeworld.entity.VanillaIceBear;
 import com.mcmoddev.cakeworld.entity.WaferTurtle;
 import com.mcmoddev.cakeworld.entity.WaferWraith;
@@ -505,6 +506,14 @@ public final class CakeWorldEntities {
 									MobCategory.MISC)
 									.sized(0.6F, 1.95F)
 									.clientTrackingRange(10));
+	public static final RegistryObject<EntityType<TravellingConfectioner>>
+			TRAVELLING_CONFECTIONER =
+					entity("travelling_confectioner",
+							EntityType.Builder.of(
+									TravellingConfectioner::new,
+									MobCategory.CREATURE)
+									.sized(0.6F, 1.95F)
+									.clientTrackingRange(10));
 	public static final RegistryObject<EntityType<PeppermintFox>>
 			PEPPERMINT_FOX = entity("peppermint_fox",
 					EntityType.Builder.of(PeppermintFox::new,
@@ -689,6 +698,8 @@ public final class CakeWorldEntities {
 				Vex.createAttributes().build());
 		event.put(GINGERBREAD_FOLK.get(),
 				Villager.createAttributes().build());
+		event.put(TRAVELLING_CONFECTIONER.get(),
+				Mob.createMobAttributes().build());
 		event.put(PEPPERMINT_FOX.get(),
 				Fox.createAttributes().build());
 		event.put(MALLOW_FLOATER.get(),

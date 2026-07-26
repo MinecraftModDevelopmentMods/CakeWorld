@@ -63,6 +63,7 @@ import net.minecraft.client.renderer.entity.TurtleRenderer;
 import net.minecraft.client.renderer.entity.VexRenderer;
 import net.minecraft.client.renderer.entity.VindicatorRenderer;
 import net.minecraft.client.renderer.entity.VillagerRenderer;
+import net.minecraft.client.renderer.entity.WanderingTraderRenderer;
 import net.minecraft.client.model.SquidModel;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraftforge.api.distmarker.Dist;
@@ -225,6 +226,11 @@ public final class CakeWorldClientEvents {
 		event.registerEntityRenderer(
 				CakeWorldEntities.GINGERBREAD_FOLK.get(),
 				VillagerRenderer::new);
+		event.registerEntityRenderer(
+				CakeWorldEntities
+						.TRAVELLING_CONFECTIONER
+						.get(),
+				WanderingTraderRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.PEPPERMINT_FOX.get(),
 				FoxRenderer::new);
 		event.registerEntityRenderer(CakeWorldEntities.MALLOW_FLOATER.get(),

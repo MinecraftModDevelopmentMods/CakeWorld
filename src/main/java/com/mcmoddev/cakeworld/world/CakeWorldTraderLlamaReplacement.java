@@ -56,6 +56,10 @@ public final class CakeWorldTraderLlamaReplacement {
 			replaceIfInCakeWorldBiome(
 					ServerLevel level,
 					TraderLlama traderLlama) {
+		if (traderLlama.getType()
+				!= EntityType.TRADER_LLAMA) {
+			return null;
+		}
 		ResourceLocation biome = level.getBiome(
 				traderLlama.blockPosition()).unwrapKey()
 				.map(key -> key.location()).orElse(null);

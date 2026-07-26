@@ -108,6 +108,7 @@ import com.mcmoddev.cakeworld.entity.SugarBee;
 import com.mcmoddev.cakeworld.entity.SugarMite;
 import com.mcmoddev.cakeworld.entity.TaffyTallwalker;
 import com.mcmoddev.cakeworld.entity.TrufflePig;
+import com.mcmoddev.cakeworld.entity.TravellingConfectioner;
 import com.mcmoddev.cakeworld.entity.VanillaIceBear;
 import com.mcmoddev.cakeworld.entity.VanillaIceBearDamageSafety;
 import com.mcmoddev.cakeworld.entity.WaferTurtle;
@@ -127,6 +128,7 @@ import com.mcmoddev.cakeworld.world.CakeWorldTurtleReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldVexReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldVillagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldVindicatorReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldWanderingTraderReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldPillagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldRavagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldShulkerReplacement;
@@ -166,6 +168,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.stats.Stats;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.ItemTags;
@@ -181,6 +184,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.GlowSquid;
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.AgeableMob;
@@ -193,6 +197,7 @@ import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.LlamaFollowCaravanGoal;
+import net.minecraft.world.entity.ai.goal.UseItemGoal;
 import net.minecraft.world.entity.ai.goal.WrappedGoal;
 import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
@@ -304,6 +309,8 @@ import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.MobBucketItem;
 import net.minecraft.world.item.SuspiciousStewItem;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.alchemy.PotionUtils;
+import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
@@ -5714,7 +5721,7 @@ public final class FirstBiteGameTests {
 				"Dried Crumbler lost Husk's explicit daylight-safe contract");
 
 		BlockPos darkSpawn = helper.absolutePos(
-				new BlockPos(12, 4, 12));
+				new BlockPos(0, 24, 0));
 		for (int x = -2; x <= 2; x++) {
 			for (int z = -2; z <= 2; z++) {
 				helper.getLevel().setBlock(
@@ -5748,26 +5755,8 @@ public final class FirstBiteGameTests {
 		require(helper,
 				SpawnPlacements.getPlacementType(
 						CakeWorldEntities.DRIED_CRUMBLER.get())
-						== SpawnPlacements.Type.ON_GROUND
-						&& DriedCrumbler
-								.checkDriedCrumblerSpawnRules(
-										CakeWorldEntities
-												.DRIED_CRUMBLER
-												.get(),
-										helper.getLevel(),
-										MobSpawnType.SPAWNER,
-										darkSpawn,
-										new Random(1978L))
-						&& !DriedCrumbler
-								.checkDriedCrumblerSpawnRules(
-										CakeWorldEntities
-												.DRIED_CRUMBLER
-												.get(),
-										helper.getLevel(),
-										MobSpawnType.NATURAL,
-										darkSpawn,
-										new Random(1978L)),
-				"Dried Crumbler lost its ground placement or exact Husk sky-visible natural-spawn boundary");
+						== SpawnPlacements.Type.ON_GROUND,
+				"Dried Crumbler lost its ON_GROUND placement");
 
 		DriedCrumbler converting =
 				CakeWorldEntities.DRIED_CRUMBLER.get()
@@ -5871,7 +5860,76 @@ public final class FirstBiteGameTests {
 		requireCriterion(helper, advancementPlayer,
 				"minecraft:adventure/kill_all_mobs",
 				"minecraft:husk");
-		helper.succeed();
+		helper.runAfterDelay(5, () -> {
+			Difficulty predicateDifficulty =
+					helper.getLevel()
+							.getDifficulty();
+			boolean spawnerAllowed;
+			boolean naturalAllowed;
+			try {
+				helper.getLevel().getServer()
+						.setDifficulty(
+								Difficulty.NORMAL,
+								true);
+				spawnerAllowed =
+						DriedCrumbler
+								.checkDriedCrumblerSpawnRules(
+										CakeWorldEntities
+												.DRIED_CRUMBLER
+												.get(),
+										helper.getLevel(),
+										MobSpawnType
+												.SPAWNER,
+										darkSpawn,
+										new Random(
+												1978L));
+				naturalAllowed =
+						DriedCrumbler
+								.checkDriedCrumblerSpawnRules(
+										CakeWorldEntities
+												.DRIED_CRUMBLER
+												.get(),
+										helper.getLevel(),
+										MobSpawnType
+												.NATURAL,
+										darkSpawn,
+										new Random(
+												1978L));
+			} finally {
+				helper.getLevel().getServer()
+						.setDifficulty(
+								predicateDifficulty,
+								true);
+			}
+			require(helper,
+					spawnerAllowed
+							&& !naturalAllowed,
+					"Dried Crumbler lost its lit spawn boundary after light propagation: spawner="
+							+ spawnerAllowed
+							+ ", natural="
+							+ naturalAllowed
+							+ ", sky="
+							+ helper.getLevel()
+									.getBrightness(
+											LightLayer
+													.SKY,
+											darkSpawn)
+							+ ", block="
+							+ helper.getLevel()
+									.getBrightness(
+											LightLayer
+													.BLOCK,
+											darkSpawn)
+							+ ", raw="
+							+ helper.getLevel()
+									.getMaxLocalRawBrightness(
+											darkSpawn)
+							+ ", canSeeSky="
+							+ helper.getLevel()
+									.canSeeSky(
+											darkSpawn));
+			helper.succeed();
+		});
 	}
 
 	@GameTest(template = EMPTY)
@@ -18022,13 +18080,32 @@ public final class FirstBiteGameTests {
 					automatic.size() == 1
 							? automatic.get(0)
 							: null;
+			List<TravellingConfectioner>
+					automaticTraders =
+							helper.getLevel()
+									.getEntitiesOfClass(
+											TravellingConfectioner.class,
+											new AABB(
+													sourcePos)
+													.inflate(
+															5.0D));
+			TravellingConfectioner
+					automaticTrader =
+							automaticTraders
+											.size()
+									== 1
+											? automaticTraders
+													.get(0)
+											: null;
 			require(helper,
 					automaticLlama != null
+							&& automaticTrader != null
+							&& sourceTrader.isRemoved()
 							&& !automaticLlama
 									.isBaby()
 							&& automaticLlama
 									.getLeashHolder()
-									== sourceTrader
+									== automaticTrader
 							&& automaticLlama
 									.saveWithoutId(
 											new CompoundTag())
@@ -18036,7 +18113,7 @@ public final class FirstBiteGameTests {
 											"DespawnDelay")
 									> 0
 							&& !literalRemains,
-					"Deferred fresh EVENT source did not convert after the wandering-trader leash was attached");
+					"Deferred fresh EVENT caravan did not convert both the trader and its attached llama");
 			require(helper,
 					helper.getLevel()
 							.getMaxLocalRawBrightness(
@@ -24686,6 +24763,872 @@ public final class FirstBiteGameTests {
 			villager.discard();
 			helper.succeed();
 		});
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 240)
+	public static void travellingConfectionersKeepTradesCaravansAndDespawn(
+			GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		BlockPos anchor = helper.absolutePos(
+				new BlockPos(5, 3, 5));
+		AABB localArea = new AABB(anchor).inflate(16.0D);
+		level.getEntitiesOfClass(
+				WanderingTrader.class, localArea)
+				.forEach(WanderingTrader::discard);
+		level.getEntitiesOfClass(
+				TraderLlama.class, localArea)
+				.forEach(TraderLlama::discard);
+
+		TravellingConfectionerProbe trader =
+				new TravellingConfectionerProbe(level);
+		trader.setPos(anchor.getX() + 0.5D,
+				anchor.getY(),
+				anchor.getZ() + 0.5D);
+		trader.seedRandom(1978L);
+		level.addFreshEntity(trader);
+		require(helper,
+				trader instanceof WanderingTrader
+						&& trader.getType()
+								== CakeWorldEntities
+										.TRAVELLING_CONFECTIONER
+										.get()
+						&& trader.getType().getCategory()
+								== MobCategory.CREATURE
+						&& close(trader.getMaxHealth(),
+								20.0D)
+						&& close(trader.getAttributeValue(
+								Attributes.MOVEMENT_SPEED),
+								0.7D)
+						&& close(trader.getAttributeValue(
+								Attributes.FOLLOW_RANGE),
+								16.0D)
+						&& close(trader.getDimensions(
+								Pose.STANDING).width,
+								0.6D)
+						&& close(trader.getDimensions(
+								Pose.STANDING).height,
+								1.95D)
+						&& close(trader
+								.standingEyeHeight(),
+								1.62D)
+						&& trader.getType()
+								.clientTrackingRange()
+								== 10
+						&& trader
+								.getMaxSpawnClusterSize()
+								== 4
+						&& trader.experienceReward() == 0
+						&& trader.getNavigation()
+								instanceof GroundPathNavigation
+						&& !trader.showProgressBar()
+						&& !trader.removeWhenFarAway(
+								1000000.0D)
+						&& !trader.canBeLeashed(
+								helper.makeMockPlayer())
+						&& trader.getBreedOffspring(
+								level, trader) == null,
+				"Travelling Confectioner lost the exact Wandering Trader body, attributes, navigation or lifecycle");
+		require(helper,
+				trader.goalCount() == 18
+						&& trader.goalCount(
+								"FloatGoal") == 1
+						&& trader.goalCount(
+								"UseItemGoal") == 2
+						&& trader.goalCount(
+								"TradeWithPlayerGoal")
+								== 1
+						&& trader.goalCount(
+								"AvoidEntityGoal") == 7
+						&& trader.goalCount(
+								"PanicGoal") == 1
+						&& trader.goalCount(
+								"LookAtTradingPlayerGoal")
+								== 1
+						&& trader.goalCount(
+								"WanderToPositionGoal")
+								== 1
+						&& trader.goalCount(
+								"MoveTowardsRestrictionGoal")
+								== 1
+						&& trader.goalCount(
+								"WaterAvoidingRandomStrollGoal")
+								== 1
+						&& trader.goalCount(
+								"InteractGoal") == 1
+						&& trader.goalCount(
+								"LookAtPlayerGoal") == 1
+						&& trader.targetGoalCount() == 0,
+				"Travelling Confectioner lost vanilla trade, avoidance, potion, wander or look goals");
+		require(helper,
+				trader.ambientSound()
+								== SoundEvents
+										.WANDERING_TRADER_AMBIENT
+						&& trader.hurtSound()
+								== SoundEvents
+										.WANDERING_TRADER_HURT
+						&& trader.deathSound()
+								== SoundEvents
+										.WANDERING_TRADER_DEATH
+						&& trader.drinkingSound(
+								new ItemStack(
+										Items.MILK_BUCKET))
+								== SoundEvents
+										.WANDERING_TRADER_DRINK_MILK
+						&& trader.drinkingSound(
+								PotionUtils.setPotion(
+										new ItemStack(
+												Items.POTION),
+										Potions
+												.INVISIBILITY))
+								== SoundEvents
+										.WANDERING_TRADER_DRINK_POTION
+						&& trader.tradeUpdatedSound(true)
+								== SoundEvents
+										.WANDERING_TRADER_YES
+						&& trader.tradeUpdatedSound(false)
+								== SoundEvents
+										.WANDERING_TRADER_NO
+						&& trader.getNotifyTradeSound()
+								== SoundEvents
+										.WANDERING_TRADER_YES,
+				"Travelling Confectioner lost Wandering Trader voice, trade, potion or milk sounds");
+
+		long originalDayTime = level.getDayTime();
+		try {
+			level.setDayTime(13000L);
+			level.updateSkyBrightness();
+			trader.setInvisible(false);
+			ItemStack nightDrink =
+					trader.startOnlyUsableItemGoal();
+			require(helper,
+					nightDrink.is(Items.POTION)
+							&& PotionUtils.getPotion(
+									nightDrink)
+									== Potions
+											.INVISIBILITY,
+					"Night Travelling Confectioner did not select its Invisibility Potion");
+			trader.setInvisible(true);
+			level.setDayTime(1000L);
+			level.updateSkyBrightness();
+			ItemStack dayDrink =
+					trader.startOnlyUsableItemGoal();
+			require(helper,
+					dayDrink.is(Items.MILK_BUCKET),
+					"Daytime invisible Travelling Confectioner did not select its Milk Bucket");
+		} finally {
+			trader.setInvisible(false);
+			trader.setItemSlot(EquipmentSlot.MAINHAND,
+					ItemStack.EMPTY);
+			level.setDayTime(originalDayTime);
+			level.updateSkyBrightness();
+		}
+
+		MerchantOffers offers = trader.getOffers();
+		Set<Item> snackItems = Set.of(
+				CakeWorldItems.CHOCOLATE_SPONGE_SLICE
+						.get(),
+				CakeWorldItems.SIMPLE_BISCUIT.get(),
+				CakeWorldItems.LEMONADE_BOTTLE.get(),
+				CakeWorldItems.SHERBET_FIZZ.get(),
+				CakeWorldItems.COMFORT_COCOA.get(),
+				CakeWorldItems.MINT_WAFER.get());
+		List<MerchantOffer> snackOffers =
+				offers.stream()
+						.filter(offer -> snackItems
+								.contains(offer
+										.getResult()
+										.getItem()))
+						.toList();
+		List<MerchantOffer> seedOffers =
+				offers.stream()
+						.filter(offer -> offer
+								.getResult().is(
+										CakeWorldItems
+												.SPRINKLE_SEEDS
+												.get()))
+						.toList();
+		MerchantOffer seedOffer =
+				seedOffers.size() == 1
+						? seedOffers.get(0) : null;
+		require(helper,
+				offers.size() == 8
+						&& snackOffers.size() == 1
+						&& seedOffer != null
+						&& seedOffer.getBaseCostA()
+								.is(Items.EMERALD)
+						&& seedOffer.getBaseCostA()
+								.getCount() == 5
+						&& seedOffer.getResult()
+								.getCount() == 1
+						&& seedOffer.getMaxUses() == 2
+						&& seedOffer.getXp() == 1
+						&& offers.stream()
+								.filter(offer ->
+										!snackOffers
+												.contains(offer)
+										&& offer
+												!= seedOffer)
+								.count() == 6,
+				"Travelling Confectioner did not preserve six vanilla/Forge offers plus one snack and scarce Sprinkle Seeds");
+
+		ServerPlayer tradingPlayer =
+				new ServerPlayer(level.getServer(), level,
+						new GameProfile(
+								UUID.fromString(
+										"1978feed-feed-4bad-babe-1978feed2064"),
+								"CakeWorldTravellingConfectionerTradeTest"));
+		tradingPlayer.connection =
+				new ServerGamePacketListenerImpl(
+						level.getServer(),
+						new Connection(
+								PacketFlow.CLIENTBOUND),
+						tradingPlayer);
+		tradingPlayer.setPos(trader.getX(),
+				trader.getY(), trader.getZ());
+		tradingPlayer.setItemInHand(
+				InteractionHand.MAIN_HAND,
+				ItemStack.EMPTY);
+		int talkedBefore = tradingPlayer.getStats()
+				.getValue(Stats.CUSTOM.get(
+						Stats.TALKED_TO_VILLAGER));
+		InteractionResult interaction =
+				trader.mobInteract(tradingPlayer,
+						InteractionHand.MAIN_HAND);
+		require(helper,
+				interaction.consumesAction()
+						&& trader.getTradingPlayer()
+								== tradingPlayer
+						&& tradingPlayer.getStats()
+								.getValue(
+										Stats.CUSTOM.get(
+												Stats
+														.TALKED_TO_VILLAGER))
+								== talkedBefore + 1,
+				"Travelling Confectioner did not open trade or award the villager-talk statistic");
+		tradingPlayer.closeContainer();
+		trader.setTradingPlayer(tradingPlayer);
+		level.getEntitiesOfClass(
+				ExperienceOrb.class,
+				trader.getBoundingBox().inflate(3.0D))
+				.forEach(ExperienceOrb::discard);
+		require(helper, seedOffer != null,
+				"Missing Sprinkle Seed offer fixture");
+		trader.notifyTrade(seedOffer);
+		List<ExperienceOrb> tradeExperience =
+				level.getEntitiesOfClass(
+						ExperienceOrb.class,
+						trader.getBoundingBox()
+								.inflate(3.0D));
+		int experienceTotal = tradeExperience.stream()
+				.mapToInt(ExperienceOrb::getValue)
+				.sum();
+		require(helper,
+				seedOffer.getUses() == 1
+						&& experienceTotal >= 3
+						&& experienceTotal <= 6,
+				"Travelling Confectioner lost trade uses or the three-to-six XP reward");
+		requireCriterion(helper, tradingPlayer,
+				"minecraft:adventure/trade", "traded");
+		tradingPlayer.setPos(trader.getX(),
+				319.0D, trader.getZ());
+		CriteriaTriggers.TRADE.trigger(
+				tradingPlayer, trader,
+				seedOffer.getResult());
+		requireCriterion(helper, tradingPlayer,
+				"minecraft:adventure/trade_at_world_height",
+				"trade_at_world_height");
+		tradingPlayer.setPos(trader.getX(),
+				trader.getY(), trader.getZ());
+		CookbookEvents.onTrack(
+				new PlayerEvent.StartTracking(
+						tradingPlayer, trader));
+		require(helper,
+				CookbookProgress
+						.read(CookbookProgress.snapshot(
+								tradingPlayer))
+						.get(DiscoveryType.MEETING)
+						.contains(new ResourceLocation(
+								CakeWorld.MODID,
+								"travelling_confectioner")),
+				"Meeting a Travelling Confectioner did not unlock its player-specific Cookbook discovery");
+
+		BlockPos wanderTarget =
+				anchor.offset(40, 0, -24);
+		BlockPos restriction =
+				anchor.offset(-8, 0, 8);
+		trader.setDespawnDelay(4321);
+		trader.setWanderTarget(wanderTarget);
+		trader.restrictTo(restriction, 16);
+		trader.setAge(-24000);
+		trader.getInventory().setItem(0,
+				new ItemStack(
+						CakeWorldItems.CARAMEL_CHEW.get(),
+						3));
+		CompoundTag traderState =
+				trader.saveWithoutId(
+						new CompoundTag());
+		TravellingConfectioner restored =
+				CakeWorldEntities
+						.TRAVELLING_CONFECTIONER
+						.get().create(level);
+		require(helper, restored != null,
+				"Could not create Travelling Confectioner reload fixture");
+		restored.load(traderState);
+		CompoundTag restoredState =
+				restored.saveWithoutId(
+						new CompoundTag());
+		MerchantOffer restoredSeed =
+				restored.getOffers().stream()
+						.filter(offer -> offer
+								.getResult().is(
+										CakeWorldItems
+												.SPRINKLE_SEEDS
+												.get()))
+						.findFirst().orElse(null);
+		require(helper,
+				restored.getDespawnDelay() == 4321
+						&& restored.getAge() == 0
+						&& restoredState.contains(
+								"WanderTarget")
+						&& wanderTarget.equals(
+								NbtUtils.readBlockPos(
+										restoredState
+												.getCompound(
+														"WanderTarget")))
+						&& restored.getInventory()
+								.getItem(0).is(
+										CakeWorldItems
+												.CARAMEL_CHEW
+												.get())
+						&& restored.getInventory()
+								.getItem(0)
+								.getCount() == 3
+						&& restored.getOffers().size()
+								== 8
+						&& restoredSeed != null
+						&& restoredSeed.getUses() == 1,
+				"Travelling Confectioner reload lost state: delay="
+						+ restored.getDespawnDelay()
+						+ ", age=" + restored.getAge()
+						+ ", wander="
+						+ (restoredState.contains(
+								"WanderTarget")
+										? NbtUtils.readBlockPos(
+												restoredState
+														.getCompound(
+																"WanderTarget"))
+										: null)
+						+ ", inventory="
+						+ restored.getInventory()
+								.getItem(0)
+						+ ", offers="
+						+ restored.getOffers().size()
+						+ ", seedUses="
+						+ (restoredSeed == null
+								? null
+								: restoredSeed.getUses()));
+
+		TravellingConfectionerProbe despawning =
+				new TravellingConfectionerProbe(level);
+		despawning.setPos(anchor.getX() + 5.5D,
+				anchor.getY(), anchor.getZ() + 0.5D);
+		despawning.setNoAi(true);
+		despawning.setDespawnDelay(2);
+		despawning.setTradingPlayer(tradingPlayer);
+		level.addFreshEntity(despawning);
+		despawning.aiStep();
+		despawning.aiStep();
+		require(helper,
+				despawning.getDespawnDelay() == 2
+						&& !despawning.isRemoved(),
+				"Trading did not pause the Travelling Confectioner's despawn delay");
+		despawning.setTradingPlayer(null);
+		despawning.aiStep();
+		require(helper,
+				despawning.getDespawnDelay() == 1
+						&& !despawning.isRemoved(),
+				"Idle Travelling Confectioner did not resume its despawn countdown");
+		despawning.aiStep();
+		require(helper, despawning.isRemoved(),
+				"Travelling Confectioner did not leave when its despawn delay expired");
+
+		Registry<Biome> biomes = level.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY);
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS.getId())) {
+			Biome biome = biomes.get(biomeId);
+			require(helper, biome != null
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory
+													.CREATURE)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType
+															.WANDERING_TRADER
+											|| spawn.type
+													== CakeWorldEntities
+															.TRAVELLING_CONFECTIONER
+															.get()),
+					"Travelling Confectioner fabricated open-biome ecology in "
+							+ biomeId);
+		}
+		require(helper,
+				CakeWorldItems
+						.TRAVELLING_CONFECTIONER_SPAWN_EGG
+						.isPresent()
+						&& SpawnPlacements
+								.getPlacementType(
+										CakeWorldEntities
+												.TRAVELLING_CONFECTIONER
+												.get())
+								== SpawnPlacements.Type
+										.NO_RESTRICTIONS
+						&& SpawnPlacements
+								.getPlacementType(
+										CakeWorldEntities
+												.TRAVELLING_CONFECTIONER
+												.get())
+								== SpawnPlacements
+										.getPlacementType(
+												EntityType
+														.WANDERING_TRADER)
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+												.TRAVELLING_CONFECTIONER
+												.get())
+								== SpawnPlacements
+										.getHeightmapType(
+												EntityType
+														.WANDERING_TRADER)
+						&& trader.getLootTableId()
+								.equals(new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/travelling_confectioner"))
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+												.TRAVELLING_CONFECTIONER
+												.get())
+								== null,
+				"Travelling Confectioner lost its egg, exact default placement, empty loot or deliberate no-mimic role");
+		require(helper,
+				CakeWorldWanderingTraderReplacement
+						.replaceIfInCakeWorldBiome(
+								level, trader) == null
+						&& !trader.isRemoved(),
+				"Wandering Trader source conversion touched a non-literal entity type");
+		SprinkleLlama llamaGuard =
+				CakeWorldEntities.SPRINKLE_LLAMA
+						.get().create(level);
+		require(helper,
+				llamaGuard != null
+						&& CakeWorldTraderLlamaReplacement
+								.replaceIfInCakeWorldBiome(
+										level,
+										llamaGuard)
+								== null
+						&& !llamaGuard.isRemoved(),
+				"Trader-Llama source conversion touched a non-literal entity type");
+		llamaGuard.discard();
+
+		BlockPos cakeWorldBiomePos =
+				findCakeWorldBiomePosition(helper,
+						anchor.offset(24, 0, 24),
+						256);
+		require(helper, cakeWorldBiomePos != null,
+				"Could not locate CakeWorld terrain for caravan conversion");
+		BlockPos cakeWorldPos = level.getHeightmapPos(
+				Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+				cakeWorldBiomePos).above();
+		AABB eventArea =
+				new AABB(cakeWorldPos).inflate(8.0D);
+		level.getEntitiesOfClass(
+				WanderingTrader.class, eventArea)
+				.forEach(WanderingTrader::discard);
+		level.getEntitiesOfClass(
+				TraderLlama.class, eventArea)
+				.forEach(TraderLlama::discard);
+		WanderingTrader literal =
+				EntityType.WANDERING_TRADER
+						.create(level);
+		TraderLlama firstLiteralLlama =
+				EntityType.TRADER_LLAMA.create(level);
+		TraderLlama secondLiteralLlama =
+				EntityType.TRADER_LLAMA.create(level);
+		Boat caravanBoat =
+				EntityType.BOAT.create(level);
+		Chicken caravanPassenger =
+				EntityType.CHICKEN.create(level);
+		Pig caravanAttacker =
+				EntityType.PIG.create(level);
+		require(helper,
+				literal != null
+						&& firstLiteralLlama != null
+						&& secondLiteralLlama != null
+						&& caravanBoat != null
+						&& caravanPassenger != null
+						&& caravanAttacker != null,
+				"Could not create Travelling Confectioner caravan fixtures");
+		caravanBoat.setPos(
+				cakeWorldPos.getX() + 0.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		level.addFreshEntity(caravanBoat);
+		caravanAttacker.setPos(
+				cakeWorldPos.getX() + 5.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		caravanAttacker.setNoAi(true);
+		level.addFreshEntity(caravanAttacker);
+		literal.setPos(caravanBoat.getX(),
+				caravanBoat.getY(),
+				caravanBoat.getZ());
+		literal.finalizeSpawn(level,
+				level.getCurrentDifficultyAt(
+						cakeWorldPos),
+				MobSpawnType.EVENT, null, null);
+		literal.getOffers();
+		literal.setCustomName(new TextComponent(
+				"Entity Join Travelling Confectioner"));
+		literal.setNoAi(true);
+		literal.setHealth(15.0F);
+		literal.setDespawnDelay(48000);
+		BlockPos caravanTarget =
+				cakeWorldPos.offset(24, 0, -24);
+		literal.setWanderTarget(caravanTarget);
+		literal.restrictTo(caravanTarget, 16);
+		literal.setTradingPlayer(tradingPlayer);
+		literal.setLastHurtByMob(
+				caravanAttacker);
+		literal.invulnerableTime = 17;
+		require(helper, level.addFreshEntity(literal),
+				"Could not add literal Wandering Trader caravan source");
+		literal.startRiding(caravanBoat, true);
+		caravanPassenger.setPos(
+				literal.getX(), literal.getY(),
+				literal.getZ());
+		level.addFreshEntity(caravanPassenger);
+		caravanPassenger.startRiding(literal, true);
+		firstLiteralLlama.setPos(
+				literal.getX() + 2.0D,
+				literal.getY(), literal.getZ());
+		firstLiteralLlama.finalizeSpawn(level,
+				level.getCurrentDifficultyAt(
+						firstLiteralLlama
+								.blockPosition()),
+				MobSpawnType.EVENT, null, null);
+		firstLiteralLlama.setCustomName(
+				new TextComponent(
+						"First Sprinkle Caravan"));
+		firstLiteralLlama.setNoAi(true);
+		level.addFreshEntity(firstLiteralLlama);
+		firstLiteralLlama.setLeashedTo(
+				literal, true);
+		secondLiteralLlama.setPos(
+				literal.getX() - 2.0D,
+				literal.getY(), literal.getZ());
+		secondLiteralLlama.finalizeSpawn(level,
+				level.getCurrentDifficultyAt(
+						secondLiteralLlama
+								.blockPosition()),
+				MobSpawnType.EVENT, null, null);
+		secondLiteralLlama.setCustomName(
+				new TextComponent(
+						"Second Sprinkle Caravan"));
+		secondLiteralLlama.setNoAi(true);
+		level.addFreshEntity(secondLiteralLlama);
+		secondLiteralLlama.setLeashedTo(
+				literal, true);
+		UUID originalActiveTrader = level
+				.getServer().getWorldData()
+				.overworldData()
+				.getWanderingTraderId();
+		level.getServer().getWorldData()
+				.overworldData()
+				.setWanderingTraderId(
+						literal.getUUID());
+
+		helper.runAfterDelay(4, () -> {
+			List<TravellingConfectioner>
+					emittedTraders =
+					level.getEntitiesOfClass(
+							TravellingConfectioner.class,
+							eventArea,
+							candidate ->
+									candidate.hasCustomName()
+											&& "Entity Join Travelling Confectioner"
+													.equals(candidate
+															.getName()
+															.getString()));
+			TravellingConfectioner emitted =
+					emittedTraders.size() == 1
+							? emittedTraders.get(0)
+							: null;
+			List<SprinkleLlama> emittedLlamas =
+					level.getEntitiesOfClass(
+							SprinkleLlama.class,
+							eventArea,
+							candidate ->
+									candidate.hasCustomName()
+											&& candidate
+													.getName()
+													.getString()
+													.endsWith(
+															"Sprinkle Caravan"));
+			require(helper,
+					literal.isRemoved()
+							&& firstLiteralLlama
+									.isRemoved()
+							&& secondLiteralLlama
+									.isRemoved()
+							&& emitted != null
+							&& close(emitted.getHealth(),
+									15.0D)
+							&& emitted.isNoAi()
+							&& emitted
+									.getDespawnDelay()
+									== 48000
+							&& emitted
+									.getTradingPlayer()
+									== tradingPlayer
+							&& emitted
+									.getLastHurtByMob()
+									== caravanAttacker
+							&& emitted.hasRestriction()
+							&& caravanTarget.equals(
+									emitted
+											.getRestrictCenter())
+							&& emitted
+									.getRestrictRadius()
+									== 16.0F
+							&& emitted.invulnerableTime
+									> 0
+							&& emitted.invulnerableTime
+									<= 17
+							&& emitted.getVehicle()
+									== caravanBoat
+							&& emitted.getPassengers()
+									.contains(
+											caravanPassenger)
+							&& emitted.getOffers()
+									.size() == 8
+							&& level.getServer()
+									.getWorldData()
+									.overworldData()
+									.getWanderingTraderId()
+									.equals(emitted
+											.getUUID())
+							&& emittedLlamas.size()
+									== 2
+							&& emittedLlamas.stream()
+									.allMatch(llama ->
+											llama
+													.getLeashHolder()
+													== emitted),
+					"Actual deferred caravan conversion lost trader state, world UUID, riding or both Sprinkle-Llama leads: traders="
+							+ emittedTraders.size()
+							+ ", llamas="
+							+ emittedLlamas.size());
+			SprinkleLlamaProbe defended =
+					new SprinkleLlamaProbe(level);
+			if (emitted != null) {
+				caravanAttacker.setPos(
+						emitted.getX() + 1.0D,
+						emitted.getY() + 2.0D,
+						emitted.getZ());
+				defended.setPos(
+						emitted.getX() + 0.25D,
+						emitted.getY() + 2.0D,
+						emitted.getZ());
+			} else {
+				defended.setPos(
+						cakeWorldPos.getX()
+								+ 3.5D,
+						cakeWorldPos.getY()
+								+ 2.0D,
+						cakeWorldPos.getZ()
+								+ 0.5D);
+			}
+			defended.setNoAi(true);
+			level.addFreshEntity(defended);
+			if (emitted != null) {
+				defended.setLeashedTo(
+						emitted, true);
+			}
+			net.minecraft.world.entity.ai.goal.Goal
+					defenceGoal =
+							defended.targetSelector
+									.getAvailableGoals()
+									.stream()
+									.map(WrappedGoal::getGoal)
+									.filter(goal -> goal
+											.getClass()
+											.getSimpleName()
+											.equals(
+													"TraderLlamaDefendWanderingTraderGoal"))
+									.findFirst()
+									.orElse(null);
+			boolean canDefend =
+					defenceGoal != null
+							&& defenceGoal.canUse();
+			if (canDefend) {
+				defenceGoal.start();
+			}
+			require(helper,
+					emitted != null
+							&& canDefend
+							&& defended.getTarget()
+									== caravanAttacker,
+					"Sprinkle Llama did not defend its custom Travelling Confectioner: goal="
+							+ (defenceGoal != null)
+							+ ", canUse="
+							+ canDefend
+							+ ", holder="
+							+ defended.getLeashHolder()
+							+ ", lastHurt="
+							+ (emitted == null
+									? null
+									: emitted
+											.getLastHurtByMob())
+							+ ", hurtTimestamp="
+							+ (emitted == null
+									? null
+									: emitted
+											.getLastHurtByMobTimestamp())
+							+ ", canAttack="
+							+ defended.canAttack(
+									caravanAttacker)
+							+ ", lineOfSight="
+							+ defended.getSensing()
+									.hasLineOfSight(
+											caravanAttacker)
+							+ ", distanceSquared="
+							+ defended.distanceToSqr(
+									caravanAttacker));
+
+			level.getServer().getWorldData()
+					.overworldData()
+					.setWanderingTraderId(
+							originalActiveTrader);
+			emittedLlamas.forEach(
+					SprinkleLlama::discard);
+			defended.discard();
+			emittedTraders.forEach(
+					TravellingConfectioner::discard);
+			tradeExperience.forEach(
+					ExperienceOrb::discard);
+			caravanBoat.discard();
+			caravanPassenger.discard();
+			caravanAttacker.discard();
+			trader.discard();
+			restored.discard();
+			helper.succeed();
+		});
+	}
+
+	private static final class TravellingConfectionerProbe
+			extends TravellingConfectioner {
+		private TravellingConfectionerProbe(
+				Level level) {
+			super(CakeWorldEntities
+					.TRAVELLING_CONFECTIONER
+					.get(), level);
+		}
+
+		private void seedRandom(long seed) {
+			random.setSeed(seed);
+		}
+
+		private int experienceReward() {
+			return getExperienceReward(null);
+		}
+
+		private float standingEyeHeight() {
+			return getStandingEyeHeight(
+					Pose.STANDING,
+					getDimensions(Pose.STANDING));
+		}
+
+		private ResourceLocation getLootTableId() {
+			return getLootTable();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				ambientSound() {
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				hurtSound() {
+			return getHurtSound(
+					DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				deathSound() {
+			return getDeathSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				drinkingSound(ItemStack stack) {
+			return getDrinkingSound(stack);
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				tradeUpdatedSound(boolean accepted) {
+			return getTradeUpdatedSound(accepted);
+		}
+
+		private int goalCount() {
+			return goalSelector.getAvailableGoals()
+					.size();
+		}
+
+		private int goalCount(String name) {
+			return (int)goalSelector
+					.getAvailableGoals().stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
+		}
+
+		private int targetGoalCount() {
+			return targetSelector
+					.getAvailableGoals().size();
+		}
+
+		private ItemStack startOnlyUsableItemGoal() {
+			List<net.minecraft.world.entity.ai.goal.Goal>
+					usable = goalSelector
+							.getAvailableGoals()
+							.stream()
+							.map(WrappedGoal::getGoal)
+							.filter(UseItemGoal.class
+									::isInstance)
+							.filter(net.minecraft.world.entity.ai.goal.Goal
+									::canUse)
+							.toList();
+			if (usable.size() != 1) {
+				return ItemStack.EMPTY;
+			}
+			net.minecraft.world.entity.ai.goal.Goal goal =
+					usable.get(0);
+			goal.start();
+			ItemStack selected =
+					getMainHandItem().copy();
+			goal.stop();
+			return selected;
+		}
 	}
 
 	private static final class RollingPinRaiderProbe
