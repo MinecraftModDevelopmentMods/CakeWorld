@@ -33,6 +33,7 @@ import com.mcmoddev.cakeworld.cookbook.DiscoveryType;
 import com.mcmoddev.cakeworld.cookbook.SharedCookbookLibrary;
 import com.mcmoddev.cakeworld.compat.VanillaRoleAdvancements;
 import com.mcmoddev.cakeworld.entity.BiscuitBandit;
+import com.mcmoddev.cakeworld.entity.BitterBaker;
 import com.mcmoddev.cakeworld.entity.BrittleBiscuitSteed;
 import com.mcmoddev.cakeworld.entity.CandyflossSheep;
 import com.mcmoddev.cakeworld.entity.CandyflossSheepGrazeGoal;
@@ -129,6 +130,7 @@ import com.mcmoddev.cakeworld.world.CakeWorldVexReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldVillagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldVindicatorReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldWanderingTraderReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldWitchReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldPillagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldRavagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldShulkerReplacement;
@@ -297,6 +299,7 @@ import net.minecraft.world.entity.projectile.ShulkerBullet;
 import net.minecraft.world.entity.projectile.SmallFireball;
 import net.minecraft.world.entity.projectile.Snowball;
 import net.minecraft.world.entity.projectile.ThrownTrident;
+import net.minecraft.world.entity.projectile.ThrownPotion;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.food.FoodProperties;
@@ -25442,11 +25445,11 @@ public final class FirstBiteGameTests {
 			if (emitted != null) {
 				caravanAttacker.setPos(
 						emitted.getX() + 1.0D,
-						emitted.getY() + 2.0D,
+						emitted.getY() + 8.0D,
 						emitted.getZ());
 				defended.setPos(
 						emitted.getX() + 0.25D,
-						emitted.getY() + 2.0D,
+						emitted.getY() + 8.0D,
 						emitted.getZ());
 			} else {
 				defended.setPos(
@@ -25532,6 +25535,791 @@ public final class FirstBiteGameTests {
 			restored.discard();
 			helper.succeed();
 		});
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 200)
+	public static void bitterBakersKeepWitchPotionsRaidsAndSafeMixtures(
+			GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		BlockPos anchor = helper.absolutePos(
+				new BlockPos(5, 3, 5));
+		AABB localArea = new AABB(anchor).inflate(20.0D);
+		level.getEntitiesOfClass(
+				Witch.class, localArea)
+				.forEach(Witch::discard);
+		level.getEntitiesOfClass(
+				ThrownPotion.class, localArea)
+				.forEach(ThrownPotion::discard);
+
+		BitterBakerProbe baker =
+				new BitterBakerProbe(level);
+		VanillaWitchProbe vanilla =
+				new VanillaWitchProbe(level);
+		baker.setPos(anchor.getX() + 0.5D,
+				anchor.getY(),
+				anchor.getZ() + 0.5D);
+		level.addFreshEntity(baker);
+		require(helper,
+				baker instanceof Witch
+						&& baker instanceof Raider
+						&& baker.getType()
+								== CakeWorldEntities
+										.BITTER_BAKER
+										.get()
+						&& baker.getType().getCategory()
+								== MobCategory.MONSTER
+						&& close(baker.getMaxHealth(),
+								26.0D)
+						&& close(baker
+								.getAttributeValue(
+										Attributes
+												.MOVEMENT_SPEED),
+								0.25D)
+						&& close(baker.getDimensions(
+								Pose.STANDING).width,
+								0.6D)
+						&& close(baker.getDimensions(
+								Pose.STANDING).height,
+								1.95D)
+						&& close(baker
+								.standingEyeHeight(),
+								1.62D)
+						&& baker.getType()
+								.clientTrackingRange() == 8
+						&& baker.getMaxSpawnClusterSize()
+								== vanilla
+										.getMaxSpawnClusterSize()
+						&& baker.experienceReward()
+								== vanilla
+										.experienceReward()
+						&& baker.canJoinRaid()
+								== vanilla
+										.canJoinRaid()
+						&& !baker.canBeLeader()
+						&& baker.despawnsInPeaceful()
+						&& baker.getNavigation()
+								instanceof GroundPathNavigation,
+				"Bitter Baker lost the exact Witch body, attributes, navigation, XP or raid role");
+		BitterBakerProbe naturalBaker =
+				new BitterBakerProbe(level);
+		BitterBakerProbe eventSpawnBaker =
+				new BitterBakerProbe(level);
+		naturalBaker.finalizeSpawn(level,
+				level.getCurrentDifficultyAt(anchor),
+				MobSpawnType.NATURAL, null, null);
+		eventSpawnBaker.finalizeSpawn(level,
+				level.getCurrentDifficultyAt(anchor),
+				MobSpawnType.EVENT, null, null);
+		require(helper,
+				!naturalBaker.canJoinRaid()
+						&& eventSpawnBaker.canJoinRaid(),
+				"Bitter Baker crossed Witch's literal-type natural-versus-event raid-eligibility boundary");
+		naturalBaker.discard();
+		eventSpawnBaker.discard();
+		require(helper,
+				baker.goalSignatures().equals(
+								vanilla
+										.goalSignatures())
+						&& baker.targetGoalSignatures()
+								.equals(vanilla
+										.targetGoalSignatures())
+						&& baker.countTargetGoalsNamed(
+								"NearestHealableRaiderTargetGoal")
+								== 1,
+				"Bitter Baker lost or duplicated a Witch goal while repairing the literal healing predicate: bakerGoals="
+						+ baker.goalSignatures()
+						+ ", vanillaGoals="
+						+ vanilla.goalSignatures()
+						+ ", bakerTargets="
+						+ baker.targetGoalSignatures()
+						+ ", vanillaTargets="
+						+ vanilla.targetGoalSignatures());
+		require(helper,
+				baker.getLootTableId().equals(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/bitter_baker"))
+						&& baker.ambientSound()
+								== SoundEvents
+										.WITCH_AMBIENT
+						&& baker.hurtSound()
+								== SoundEvents.WITCH_HURT
+						&& baker.deathSound()
+								== SoundEvents.WITCH_DEATH
+						&& baker.getCelebrateSound()
+								== SoundEvents
+										.WITCH_CELEBRATE
+						&& close(baker
+								.magicDamageAfterAbsorb(
+										DamageSource.MAGIC,
+										10.0F),
+								vanilla
+										.magicDamageAfterAbsorb(
+												DamageSource.MAGIC,
+												10.0F)),
+				"Bitter Baker lost Witch loot, sounds, celebration or magic resistance");
+
+		BitterBakerProbe drinker =
+				new BitterBakerProbe(level);
+		drinker.setSecondsOnFire(200);
+		drinker.seedRandom(1978L);
+		int selectionTicks = 0;
+		while (!drinker.isDrinkingPotion()
+				&& selectionTicks++ < 200) {
+			drinker.runAiStep();
+		}
+		require(helper,
+				drinker.isDrinkingPotion()
+						&& drinker.getMainHandItem()
+								.is(Items.POTION)
+						&& PotionUtils.getPotion(
+								drinker
+										.getMainHandItem())
+								== Potions.FIRE_RESISTANCE
+						&& close(drinker
+								.getAttributeValue(
+										Attributes
+												.MOVEMENT_SPEED),
+								0.0D),
+				"Bitter Baker did not select Fire Resistance or apply the exact Witch drinking speed penalty in "
+						+ selectionTicks + " ticks");
+		int drinkingTicks = 0;
+		while (drinker.isDrinkingPotion()
+				&& drinkingTicks++ < 40) {
+			drinker.runAiStep();
+		}
+		require(helper,
+				!drinker.isDrinkingPotion()
+						&& drinker.getMainHandItem()
+								.isEmpty()
+						&& drinker.hasEffect(
+								MobEffects
+										.FIRE_RESISTANCE)
+						&& close(drinker
+								.getAttributeValue(
+										Attributes
+												.MOVEMENT_SPEED),
+								0.25D),
+				"Bitter Baker did not consume its self-selected potion or restore movement speed");
+		drinker.discard();
+
+		Difficulty originalDifficulty =
+				level.getDifficulty();
+		try {
+			for (Difficulty safeDifficulty :
+					List.of(Difficulty.PEACEFUL,
+							Difficulty.EASY,
+							Difficulty.NORMAL)) {
+				level.getServer().setDifficulty(
+						safeDifficulty, true);
+				Pig target =
+						EntityType.PIG.create(level);
+				require(helper, target != null,
+						"Could not create protected Bitter Baker target");
+				target.setPos(baker.getX() + 4.0D,
+						baker.getY(), baker.getZ());
+				target.setNoAi(true);
+				target.setSecondsOnFire(5);
+				target.fallDistance = 9.0F;
+				level.addFreshEntity(target);
+				level.getEntitiesOfClass(
+						ThrownPotion.class,
+						localArea)
+						.forEach(
+								ThrownPotion::discard);
+				baker.performRangedAttack(
+						target, 1.0F);
+				List<ThrownPotion> mixtures =
+						level.getEntitiesOfClass(
+								ThrownPotion.class,
+								localArea);
+				require(helper,
+						mixtures.size() == 1
+								&& PotionUtils
+										.getPotion(
+												mixtures
+														.get(0)
+														.getItem())
+										== Potions
+												.SLOWNESS
+								&& close(target
+										.getHealth(),
+										target
+												.getMaxHealth())
+								&& !target.isOnFire()
+								&& close(target
+										.fallDistance,
+										0.0D)
+								&& target.hasEffect(
+										MobEffects
+												.MOVEMENT_SLOWDOWN)
+								&& target.hasEffect(
+										MobEffects
+												.GLOWING)
+								&& target.hasEffect(
+										MobEffects
+												.SLOW_FALLING)
+								&& target.hasEffect(
+										MobEffects
+												.FIRE_RESISTANCE)
+								&& target.getEffect(
+										MobEffects
+												.DAMAGE_RESISTANCE)
+										.getAmplifier()
+										== 4
+								&& !target.hasEffect(
+										MobEffects
+												.POISON),
+						safeDifficulty
+								+ " Bitter Baker mixture caused health/fall/fire danger or lost its visible rescue envelope");
+				mixtures.forEach(
+						ThrownPotion::discard);
+				target.discard();
+			}
+
+			level.getServer().setDifficulty(
+					Difficulty.HARD, true);
+			Pig hardTarget =
+					EntityType.PIG.create(level);
+			require(helper, hardTarget != null,
+					"Could not create Hard Bitter Baker target");
+			hardTarget.setPos(baker.getX() + 5.0D,
+					baker.getY(), baker.getZ());
+			hardTarget.setHealth(6.0F);
+			hardTarget.setNoAi(true);
+			level.addFreshEntity(hardTarget);
+			baker.performRangedAttack(
+					hardTarget, 1.0F);
+			List<ThrownPotion> hardPotions =
+					level.getEntitiesOfClass(
+							ThrownPotion.class,
+							localArea);
+			require(helper,
+					hardPotions.size() == 1
+							&& PotionUtils.getPotion(
+									hardPotions.get(0)
+											.getItem())
+									== Potions.HARMING
+							&& !hardTarget.hasEffect(
+									MobEffects
+											.DAMAGE_RESISTANCE),
+					"Hard Bitter Baker did not retain the real context-sensitive Witch harming potion");
+			hardPotions.forEach(
+					ThrownPotion::discard);
+			hardTarget.discard();
+
+			level.getServer().setDifficulty(
+					Difficulty.NORMAL, true);
+			RollingPinRaider healingTarget =
+					CakeWorldEntities
+							.ROLLING_PIN_RAIDER
+							.get().create(level);
+			require(helper, healingTarget != null,
+					"Could not create Bitter Baker raid-healing target");
+			healingTarget.setPos(
+					baker.getX() + 3.0D,
+					baker.getY(), baker.getZ());
+			healingTarget.setHealth(3.0F);
+			healingTarget.setNoAi(true);
+			level.addFreshEntity(healingTarget);
+			baker.setTarget(healingTarget);
+			baker.performRangedAttack(
+					healingTarget, 1.0F);
+			List<ThrownPotion> healingPotions =
+					level.getEntitiesOfClass(
+							ThrownPotion.class,
+							localArea);
+			require(helper,
+					healingPotions.size() == 1
+							&& PotionUtils.getPotion(
+									healingPotions
+											.get(0)
+											.getItem())
+									== Potions.HEALING
+							&& baker.getTarget() == null,
+					"Bitter Baker lost the Witch low-health Raider healing branch");
+			healingPotions.forEach(
+					ThrownPotion::discard);
+			healingTarget.setHealth(10.0F);
+			baker.setTarget(healingTarget);
+			baker.performRangedAttack(
+					healingTarget, 1.0F);
+			List<ThrownPotion> regenerationPotions =
+					level.getEntitiesOfClass(
+							ThrownPotion.class,
+							localArea);
+			require(helper,
+					regenerationPotions.size() == 1
+							&& PotionUtils.getPotion(
+									regenerationPotions
+											.get(0)
+											.getItem())
+									== Potions.REGENERATION
+							&& baker.getTarget() == null,
+					"Bitter Baker lost the Witch higher-health Raider regeneration branch");
+			regenerationPotions.forEach(
+					ThrownPotion::discard);
+
+			BitterBaker otherBaker =
+					CakeWorldEntities.BITTER_BAKER
+							.get().create(level);
+			require(helper, otherBaker != null,
+					"Could not create same-family Bitter Baker healing boundary");
+			otherBaker.setPos(
+					baker.getX() + 1.0D,
+					baker.getY(), baker.getZ());
+			otherBaker.setHealth(3.0F);
+			otherBaker.setNoAi(true);
+			level.addFreshEntity(otherBaker);
+			baker.setTarget(otherBaker);
+			baker.performRangedAttack(
+					otherBaker, 1.0F);
+			require(helper,
+					baker.getTarget() == null
+							&& level.getEntitiesOfClass(
+									ThrownPotion.class,
+									localArea)
+									.isEmpty(),
+					"Bitter Baker selected another Witch-family entity through vanilla's literal-type healing seam");
+			otherBaker.discard();
+			healingTarget.discard();
+
+			level.getServer().setDifficulty(
+					Difficulty.PEACEFUL, true);
+			BitterBakerProbe peaceful =
+					new BitterBakerProbe(level);
+			peaceful.checkDespawn();
+			require(helper,
+					peaceful.isRemoved()
+							&& peaceful
+									.despawnsInPeaceful(),
+					"Peaceful Bitter Baker lost vanilla Monster removal");
+		} finally {
+			level.getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		try {
+			Field raidTypeField =
+					Raid.RaiderType.class
+							.getDeclaredField(
+									"entityType");
+			Field wavesField =
+					Raid.RaiderType.class
+							.getDeclaredField(
+									"spawnsPerWaveBeforeBonus");
+			raidTypeField.setAccessible(true);
+			wavesField.setAccessible(true);
+			require(helper,
+					raidTypeField.get(
+							Raid.RaiderType.WITCH)
+								== EntityType.WITCH
+							&& Arrays.equals(
+									(int[])wavesField.get(
+											Raid.RaiderType
+													.WITCH),
+									new int[] {0, 0, 0,
+											0, 3, 0,
+											0, 1}),
+					"Bitter Baker lost the literal vanilla Witch raid source or exact wave counts");
+		} catch (ReflectiveOperationException exception) {
+			throw new IllegalStateException(
+					"Could not inspect the vanilla Witch raid source",
+					exception);
+		}
+
+		Registry<Biome> biomes = level.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY);
+		int activeBakerProfiles = 0;
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS.getId())) {
+			Biome biome = biomes.get(biomeId);
+			require(helper, biome != null,
+					"Missing Bitter Baker ecology-audit biome "
+							+ biomeId);
+			for (MobSpawnSettings.SpawnerData spawn :
+					biome.getMobSettings().getMobs(
+							MobCategory.MONSTER)
+							.unwrap()) {
+				require(helper,
+						spawn.type
+								!= EntityType.WITCH,
+						"Literal Witch leaked through CakeWorld ecology in "
+								+ biomeId);
+				if (spawn.type
+						== CakeWorldEntities
+								.BITTER_BAKER
+								.get()) {
+					activeBakerProfiles++;
+					require(helper,
+							spawn.getWeight()
+									.asInt() == 5
+									&& spawn.minCount
+											== 1
+									&& spawn.maxCount
+											== 1,
+							"Bitter Baker changed the inherited Witch spawn profile in "
+									+ biomeId);
+				}
+			}
+		}
+		require(helper, activeBakerProfiles > 0,
+				"Bitter Baker did not replace any inherited Witch profile in the current CakeWorld biomes");
+
+		TagKey<EntityType<?>> raiders =
+				TagKey.create(
+						Registry.ENTITY_TYPE_REGISTRY,
+						new ResourceLocation(
+								"minecraft", "raiders"));
+		require(helper,
+				CakeWorldItems.BITTER_BAKER_SPAWN_EGG
+						.isPresent()
+						&& CakeWorldEntities
+								.BITTER_BAKER
+								.get().is(raiders)
+						&& SpawnPlacements
+								.getPlacementType(
+										CakeWorldEntities
+												.BITTER_BAKER
+												.get())
+								== SpawnPlacements
+										.getPlacementType(
+												EntityType
+														.WITCH)
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+												.BITTER_BAKER
+												.get())
+								== SpawnPlacements
+										.getHeightmapType(
+												EntityType
+														.WITCH)
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+												.BITTER_BAKER
+												.get())
+								== SoundEvents
+										.PARROT_IMITATE_WITCH,
+				"Bitter Baker lost raider tag, egg, exact placement or Lorikeet mimic");
+		ServerPlayer advancementPlayer =
+				new ServerPlayer(level.getServer(), level,
+						new GameProfile(
+								UUID.fromString(
+										"1978feed-feed-4bad-babe-1978feed2065"),
+								"CakeWorldBitterBakerRoleTest"));
+		VanillaRoleAdvancements
+				.creditKilledWitchRole(
+						advancementPlayer);
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:adventure/kill_all_mobs",
+				"minecraft:witch");
+
+		BlockPos cakeWorldPos =
+				findCakeWorldBiomePosition(helper,
+						anchor.offset(16, 0, 16),
+						256);
+		require(helper, cakeWorldPos != null,
+				"Could not locate CakeWorld terrain for literal Witch conversion");
+		AABB eventArea =
+				new AABB(cakeWorldPos).inflate(7.0D);
+		level.getEntitiesOfClass(
+				Witch.class, eventArea)
+				.forEach(Witch::discard);
+		Witch literal =
+				EntityType.WITCH.create(level);
+		Ravager mount =
+				EntityType.RAVAGER.create(level);
+		Chicken passenger =
+				EntityType.CHICKEN.create(level);
+		Pig conversionTarget =
+				EntityType.PIG.create(level);
+		require(helper,
+				literal != null
+						&& mount != null
+						&& passenger != null
+						&& conversionTarget != null,
+				"Could not create Bitter Baker direct-conversion fixtures");
+		mount.setPos(cakeWorldPos.getX() + 0.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		mount.setNoAi(true);
+		level.addFreshEntity(mount);
+		conversionTarget.setPos(
+				cakeWorldPos.getX() + 3.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		conversionTarget.setNoAi(true);
+		level.addFreshEntity(conversionTarget);
+		literal.setPos(mount.getX(), mount.getY(),
+				mount.getZ());
+		literal.setHealth(17.0F);
+		literal.setCustomName(
+				new TextComponent("Bitter Brew"));
+		literal.setNoAi(true);
+		literal.setPersistenceRequired();
+		literal.invulnerableTime = 31;
+		literal.setItemSlot(EquipmentSlot.MAINHAND,
+				PotionUtils.setPotion(
+						new ItemStack(Items.POTION),
+						Potions.SWIFTNESS));
+		literal.setUsingItem(true);
+		literal.setTarget(conversionTarget);
+		literal.setLastHurtByMob(
+				conversionTarget);
+		Raid transferRaid = new Raid(
+				197865, level, cakeWorldPos);
+		transferRaid.joinRaid(
+				5, literal, null, true);
+		level.addFreshEntity(literal);
+		literal.startRiding(mount, true);
+		passenger.startRiding(literal, true);
+		BitterBaker converted =
+				CakeWorldWitchReplacement
+						.replaceIfInCakeWorldBiome(
+								level, literal);
+		require(helper,
+				converted != null
+						&& literal.isRemoved()
+						&& close(converted.getHealth(),
+								17.0D)
+						&& "Bitter Brew".equals(
+								converted.getName()
+										.getString())
+						&& converted.isNoAi()
+						&& converted
+								.isPersistenceRequired()
+						&& converted.invulnerableTime
+								== 31
+						&& converted
+								.isDrinkingPotion()
+						&& PotionUtils.getPotion(
+								converted
+										.getMainHandItem())
+								== Potions.SWIFTNESS
+						&& converted.getTarget()
+								== conversionTarget
+						&& converted.getLastHurtByMob()
+								== conversionTarget
+						&& converted.getCurrentRaid()
+								== transferRaid
+						&& converted.getWave() == 5
+						&& transferRaid
+								.getTotalRaidersAlive()
+								== 1
+						&& converted.getVehicle() == mount
+						&& converted.getPassengers()
+								.contains(passenger),
+				"Fresh literal Witch conversion lost drinking, NBT, target, raid or riding state");
+		require(helper,
+				CakeWorldWitchReplacement
+						.replaceIfInCakeWorldBiome(
+								level, baker) == null
+						&& !baker.isRemoved(),
+				"Witch source conversion touched a non-literal entity type");
+		passenger.discard();
+		if (converted != null) {
+			transferRaid.removeFromRaid(
+					converted, true);
+			converted.discard();
+		}
+		mount.discard();
+		conversionTarget.discard();
+
+		Witch eventLiteral =
+				EntityType.WITCH.create(level);
+		require(helper, eventLiteral != null,
+				"Could not create Bitter Baker entity-join source");
+		eventLiteral.setPos(
+				cakeWorldPos.getX() + 0.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		eventLiteral.setCustomName(
+				new TextComponent(
+						"Entity Join Bitter Baker"));
+		eventLiteral.setNoAi(true);
+		eventLiteral.setPersistenceRequired();
+		eventLiteral.setItemSlot(
+				EquipmentSlot.MAINHAND,
+				PotionUtils.setPotion(
+						new ItemStack(Items.POTION),
+						Potions.HEALING));
+		eventLiteral.setUsingItem(true);
+		require(helper,
+				level.addFreshEntity(eventLiteral),
+				"Could not add literal Witch entity-join source");
+
+		helper.runAfterDelay(4, () -> {
+			List<BitterBaker> emitted =
+					level.getEntitiesOfClass(
+							BitterBaker.class,
+							eventArea,
+							candidate ->
+									candidate
+											.hasCustomName()
+											&& "Entity Join Bitter Baker"
+													.equals(candidate
+															.getName()
+															.getString()));
+			BitterBaker eventBaker =
+					emitted.size() == 1
+							? emitted.get(0) : null;
+			require(helper,
+					eventLiteral.isRemoved()
+							&& eventBaker != null
+							&& eventBaker.isNoAi()
+							&& eventBaker
+									.isPersistenceRequired()
+							&& PotionUtils.getPotion(
+									eventBaker
+											.getMainHandItem())
+									== Potions.HEALING,
+					"Actual deferred Witch entity-join source lost structure state: literalRemoved="
+							+ eventLiteral.isRemoved()
+							+ ", emitted="
+							+ emitted.size());
+			emitted.forEach(
+					BitterBaker::discard);
+			baker.discard();
+			vanilla.discard();
+			helper.succeed();
+		});
+	}
+
+	private static final class BitterBakerProbe
+			extends BitterBaker {
+		private BitterBakerProbe(Level level) {
+			super(CakeWorldEntities.BITTER_BAKER
+					.get(), level);
+		}
+
+		private void seedRandom(long seed) {
+			random.setSeed(seed);
+		}
+
+		private void runAiStep() {
+			aiStep();
+		}
+
+		private int experienceReward() {
+			return getExperienceReward(null);
+		}
+
+		private boolean despawnsInPeaceful() {
+			return shouldDespawnInPeaceful();
+		}
+
+		private float standingEyeHeight() {
+			return getStandingEyeHeight(
+					Pose.STANDING,
+					getDimensions(Pose.STANDING));
+		}
+
+		private ResourceLocation getLootTableId() {
+			return getLootTable();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				ambientSound() {
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				hurtSound() {
+			return getHurtSound(
+					DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				deathSound() {
+			return getDeathSound();
+		}
+
+		private float magicDamageAfterAbsorb(
+				DamageSource source, float damage) {
+			return getDamageAfterMagicAbsorb(
+					source, damage);
+		}
+
+		private List<String> goalSignatures() {
+			return goalSelector.getAvailableGoals()
+					.stream()
+					.map(wrapped ->
+							wrapped.getPriority() + ":"
+									+ wrapped.getGoal()
+											.getClass()
+											.getSimpleName())
+					.sorted().toList();
+		}
+
+		private List<String>
+				targetGoalSignatures() {
+			return targetSelector
+					.getAvailableGoals().stream()
+					.map(wrapped ->
+							wrapped.getPriority() + ":"
+									+ wrapped.getGoal()
+											.getClass()
+											.getSimpleName())
+					.sorted().toList();
+		}
+
+		private int countTargetGoalsNamed(
+				String name) {
+			return (int)targetSelector
+					.getAvailableGoals().stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
+		}
+	}
+
+	private static final class VanillaWitchProbe
+			extends Witch {
+		private VanillaWitchProbe(Level level) {
+			super(EntityType.WITCH, level);
+		}
+
+		private int experienceReward() {
+			return getExperienceReward(null);
+		}
+
+		private float magicDamageAfterAbsorb(
+				DamageSource source, float damage) {
+			return getDamageAfterMagicAbsorb(
+					source, damage);
+		}
+
+		private List<String> goalSignatures() {
+			return goalSelector.getAvailableGoals()
+					.stream()
+					.map(wrapped ->
+							wrapped.getPriority() + ":"
+									+ wrapped.getGoal()
+											.getClass()
+											.getSimpleName())
+					.sorted().toList();
+		}
+
+		private List<String>
+				targetGoalSignatures() {
+			return targetSelector
+					.getAvailableGoals().stream()
+					.map(wrapped ->
+							wrapped.getPriority() + ":"
+									+ wrapped.getGoal()
+											.getClass()
+											.getSimpleName())
+					.sorted().toList();
+		}
 	}
 
 	private static final class TravellingConfectionerProbe

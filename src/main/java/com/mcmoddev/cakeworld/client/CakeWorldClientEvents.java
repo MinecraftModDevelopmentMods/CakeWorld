@@ -64,6 +64,7 @@ import net.minecraft.client.renderer.entity.VexRenderer;
 import net.minecraft.client.renderer.entity.VindicatorRenderer;
 import net.minecraft.client.renderer.entity.VillagerRenderer;
 import net.minecraft.client.renderer.entity.WanderingTraderRenderer;
+import net.minecraft.client.renderer.entity.WitchRenderer;
 import net.minecraft.client.model.SquidModel;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraftforge.api.distmarker.Dist;
@@ -145,6 +146,9 @@ public final class CakeWorldClientEvents {
 				CakeWorldEntities.ROLLING_PIN_RAIDER
 						.get(),
 				VindicatorRenderer::new);
+		event.registerEntityRenderer(
+				CakeWorldEntities.BITTER_BAKER.get(),
+				WitchRenderer::new);
 		event.registerEntityRenderer(
 				CakeWorldEntities.VANILLA_ICE_BEAR.get(),
 				PolarBearRenderer::new);

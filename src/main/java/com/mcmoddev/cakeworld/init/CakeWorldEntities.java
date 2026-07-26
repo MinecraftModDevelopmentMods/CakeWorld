@@ -2,6 +2,7 @@ package com.mcmoddev.cakeworld.init;
 
 import com.mcmoddev.cakeworld.CakeWorld;
 import com.mcmoddev.cakeworld.entity.BiscuitBandit;
+import com.mcmoddev.cakeworld.entity.BitterBaker;
 import com.mcmoddev.cakeworld.entity.BonbonBat;
 import com.mcmoddev.cakeworld.entity.BrittleBiscuitSteed;
 import com.mcmoddev.cakeworld.entity.CandyCaneArcher;
@@ -127,6 +128,7 @@ import net.minecraft.world.entity.monster.Spider;
 import net.minecraft.world.entity.monster.Strider;
 import net.minecraft.world.entity.monster.Vex;
 import net.minecraft.world.entity.monster.Vindicator;
+import net.minecraft.world.entity.monster.Witch;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.monster.hoglin.Hoglin;
 import net.minecraft.world.entity.monster.piglin.Piglin;
@@ -314,6 +316,14 @@ public final class CakeWorldEntities {
 					entity("rolling_pin_raider",
 							EntityType.Builder.of(
 									RollingPinRaider::new,
+									MobCategory.MONSTER)
+									.sized(0.6F, 1.95F)
+									.clientTrackingRange(8));
+	public static final RegistryObject<EntityType<BitterBaker>>
+			BITTER_BAKER =
+					entity("bitter_baker",
+							EntityType.Builder.of(
+									BitterBaker::new,
 									MobCategory.MONSTER)
 									.sized(0.6F, 1.95F)
 									.clientTrackingRange(8));
@@ -647,6 +657,8 @@ public final class CakeWorldEntities {
 				Pillager.createAttributes().build());
 		event.put(ROLLING_PIN_RAIDER.get(),
 				Vindicator.createAttributes().build());
+		event.put(BITTER_BAKER.get(),
+				Witch.createAttributes().build());
 		event.put(VANILLA_ICE_BEAR.get(),
 				PolarBear.createAttributes().build());
 		event.put(GUMMY_BUNNY.get(),
@@ -818,6 +830,11 @@ public final class CakeWorldEntities {
 			SpawnPlacements.register(
 					ROLLING_PIN_RAIDER.get(),
 					SpawnPlacements.Type.NO_RESTRICTIONS,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					Monster::checkMonsterSpawnRules);
+			SpawnPlacements.register(
+					BITTER_BAKER.get(),
+					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					Monster::checkMonsterSpawnRules);
 			SpawnPlacements.register(VANILLA_ICE_BEAR.get(),

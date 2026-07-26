@@ -269,6 +269,12 @@ public final class VanillaRoleAdvancements {
 				"minecraft:vindicator");
 	}
 
+	public static void creditKilledWitchRole(
+			ServerPlayer player) {
+		award(player, KILL_ALL,
+				"minecraft:witch");
+	}
+
 	public static void creditDistractedPiglinRole(
 			ServerPlayer player, boolean direct) {
 		if (player.getItemBySlot(
@@ -444,6 +450,9 @@ public final class VanillaRoleAdvancements {
 				== CakeWorldEntities.ROLLING_PIN_RAIDER
 						.get()) {
 			return "minecraft:vindicator";
+		}
+		if (type == CakeWorldEntities.BITTER_BAKER.get()) {
+			return "minecraft:witch";
 		}
 		if (type
 				== CakeWorldEntities.GINGERBREAD_STOMPER.get()) {
