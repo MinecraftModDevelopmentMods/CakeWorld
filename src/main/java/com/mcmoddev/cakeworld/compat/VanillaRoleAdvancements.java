@@ -180,6 +180,12 @@ public final class VanillaRoleAdvancements {
 		award(player, KILL_ALL, "minecraft:wither");
 	}
 
+	public static void creditKilledWitherSkeletonRole(
+			ServerPlayer player) {
+		award(player, KILL_ALL,
+				"minecraft:wither_skeleton");
+	}
+
 	public static void creditRodeStriderRole(
 			ServerPlayer player) {
 		award(player, RIDE_STRIDER,
@@ -463,6 +469,11 @@ public final class VanillaRoleAdvancements {
 				== CakeWorldEntities.BURNT_SUGAR_TEMPEST
 						.get()) {
 			return "minecraft:wither";
+		}
+		if (type
+				== CakeWorldEntities.BURNT_CANDY_KNIGHT
+						.get()) {
+			return "minecraft:wither_skeleton";
 		}
 		if (type
 				== CakeWorldEntities.GINGERBREAD_STOMPER.get()) {

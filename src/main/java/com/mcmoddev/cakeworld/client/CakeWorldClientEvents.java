@@ -66,6 +66,7 @@ import net.minecraft.client.renderer.entity.VillagerRenderer;
 import net.minecraft.client.renderer.entity.WanderingTraderRenderer;
 import net.minecraft.client.renderer.entity.WitchRenderer;
 import net.minecraft.client.renderer.entity.WitherBossRenderer;
+import net.minecraft.client.renderer.entity.WitherSkeletonRenderer;
 import net.minecraft.client.model.SquidModel;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraftforge.api.distmarker.Dist;
@@ -154,6 +155,10 @@ public final class CakeWorldClientEvents {
 				CakeWorldEntities.BURNT_SUGAR_TEMPEST
 						.get(),
 				WitherBossRenderer::new);
+		event.registerEntityRenderer(
+				CakeWorldEntities.BURNT_CANDY_KNIGHT
+						.get(),
+				WitherSkeletonRenderer::new);
 		event.registerEntityRenderer(
 				CakeWorldEntities.VANILLA_ICE_BEAR.get(),
 				PolarBearRenderer::new);

@@ -35,6 +35,8 @@ import com.mcmoddev.cakeworld.compat.VanillaRoleAdvancements;
 import com.mcmoddev.cakeworld.entity.BiscuitBandit;
 import com.mcmoddev.cakeworld.entity.BitterBaker;
 import com.mcmoddev.cakeworld.entity.BrittleBiscuitSteed;
+import com.mcmoddev.cakeworld.entity.BurntCandyKnight;
+import com.mcmoddev.cakeworld.entity.BurntCandyKnightSafety;
 import com.mcmoddev.cakeworld.entity.BurntSugarTempest;
 import com.mcmoddev.cakeworld.entity.BurntSugarTempestSafety;
 import com.mcmoddev.cakeworld.entity.CandyflossSheep;
@@ -134,6 +136,7 @@ import com.mcmoddev.cakeworld.world.CakeWorldVindicatorReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldWanderingTraderReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldWitchReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldWitherReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldWitherSkeletonReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldPillagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldRavagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldShulkerReplacement;
@@ -26992,6 +26995,801 @@ public final class FirstBiteGameTests {
 			vanilla.discard();
 			helper.succeed();
 		});
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 200)
+	public static void burntCandyKnightsKeepFortressSkullsAndDifficultySafety(
+			GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		BlockPos anchor = helper.absolutePos(
+				new BlockPos(5, 4, 5));
+		AABB localArea = new AABB(anchor)
+				.inflate(32.0D);
+		level.getEntitiesOfClass(
+				WitherSkeleton.class, localArea)
+				.forEach(WitherSkeleton::discard);
+		level.getEntitiesOfClass(
+				ItemEntity.class, localArea,
+				item -> item.getItem().is(
+						Items.WITHER_SKELETON_SKULL))
+				.forEach(ItemEntity::discard);
+
+		BurntCandyKnightProbe knight =
+				new BurntCandyKnightProbe(level);
+		VanillaWitherSkeletonProbe vanilla =
+				new VanillaWitherSkeletonProbe(level);
+		knight.setPos(anchor.getX() + 0.5D,
+				anchor.getY(),
+				anchor.getZ() + 0.5D);
+		vanilla.setPos(anchor.getX() + 3.5D,
+				anchor.getY(),
+				anchor.getZ() + 0.5D);
+		knight.finalizeSpawn(
+				level,
+				level.getCurrentDifficultyAt(anchor),
+				MobSpawnType.STRUCTURE, null, null);
+		vanilla.finalizeSpawn(
+				level,
+				level.getCurrentDifficultyAt(anchor),
+				MobSpawnType.STRUCTURE, null, null);
+		knight.setNoAi(true);
+		vanilla.setNoAi(true);
+		level.addFreshEntity(knight);
+		level.addFreshEntity(vanilla);
+
+		require(helper,
+				knight instanceof WitherSkeleton
+						&& knight instanceof AbstractSkeleton
+						&& knight.getType()
+								== CakeWorldEntities
+										.BURNT_CANDY_KNIGHT
+										.get()
+						&& knight.getType()
+								.getCategory()
+								== MobCategory.MONSTER
+						&& close(knight.getMaxHealth(),
+								20.0D)
+						&& close(knight
+								.getAttributeValue(
+										Attributes
+												.MOVEMENT_SPEED),
+								0.25D)
+						&& close(knight
+								.getAttributeValue(
+										Attributes
+												.ATTACK_DAMAGE),
+								4.0D)
+						&& close(knight
+								.getAttributeBaseValue(
+										Attributes
+												.FOLLOW_RANGE),
+								16.0D)
+						&& close(knight
+								.getAttributeValue(
+										Attributes.ARMOR),
+								0.0D)
+						&& close(knight.getDimensions(
+								Pose.STANDING).width,
+								0.7D)
+						&& close(knight.getDimensions(
+								Pose.STANDING).height,
+								2.4D)
+						&& close(knight
+								.standingEyeHeight(),
+								2.1D)
+						&& knight.getType()
+								.clientTrackingRange()
+								== 8
+						&& knight.getType()
+								.fireImmune()
+						&& !knight.getType()
+								.isBlockDangerous(
+										Blocks
+												.WITHER_ROSE
+												.defaultBlockState())
+						&& knight.getNavigation()
+								instanceof GroundPathNavigation
+						&& close(knight
+								.getPathfindingMalus(
+										net.minecraft.world.level.pathfinder.BlockPathTypes
+												.LAVA),
+								8.0D)
+						&& knight.getMobType()
+								== MobType.UNDEAD
+						&& knight.baseExperienceReward()
+								== 5,
+				"Burnt-Candy Knight lost exact Wither-Skeleton type, body, attributes, movement, immunity or XP:"
+						+ " type="
+						+ Registry.ENTITY_TYPE.getKey(
+								knight.getType())
+						+ ", category="
+						+ knight.getType().getCategory()
+						+ ", maxHealth="
+						+ knight.getMaxHealth()
+						+ ", speed="
+						+ knight.getAttributeValue(
+								Attributes.MOVEMENT_SPEED)
+						+ ", attack="
+						+ knight.getAttributeValue(
+								Attributes.ATTACK_DAMAGE)
+						+ ", follow="
+						+ knight.getAttributeValue(
+								Attributes.FOLLOW_RANGE)
+						+ ", followBase="
+						+ knight.getAttributeBaseValue(
+								Attributes.FOLLOW_RANGE)
+						+ ", armor="
+						+ knight.getAttributeValue(
+								Attributes.ARMOR)
+						+ ", dimensions="
+						+ knight.getDimensions(
+								Pose.STANDING)
+						+ ", eye="
+						+ knight.standingEyeHeight()
+						+ ", tracking="
+						+ knight.getType()
+								.clientTrackingRange()
+						+ ", fireImmune="
+						+ knight.getType().fireImmune()
+						+ ", roseDanger="
+						+ knight.getType()
+								.isBlockDangerous(
+										Blocks.WITHER_ROSE
+												.defaultBlockState())
+						+ ", navigation="
+						+ knight.getNavigation()
+								.getClass()
+								.getSimpleName()
+						+ ", lavaMalus="
+						+ knight.getPathfindingMalus(
+								net.minecraft.world.level.pathfinder.BlockPathTypes
+										.LAVA)
+						+ ", mobType="
+						+ knight.getMobType()
+						+ ", baseXp="
+						+ knight.baseExperienceReward());
+		require(helper,
+				knight.goalSignatures().equals(
+								vanilla.goalSignatures())
+						&& knight.targetGoalSignatures()
+								.equals(vanilla
+										.targetGoalSignatures())
+						&& knight.countTargetGoalsNamed(
+								"NearestAttackableTargetGoal")
+								== 4
+						&& knight.getMainHandItem()
+								.is(Items.STONE_SWORD)
+						&& EnchantmentHelper
+								.getEnchantments(
+										knight
+												.getMainHandItem())
+								.isEmpty()
+						&& knight.ambientSound()
+								== SoundEvents
+										.WITHER_SKELETON_AMBIENT
+						&& knight.hurtSound()
+								== SoundEvents
+										.WITHER_SKELETON_HURT
+						&& knight.deathSound()
+								== SoundEvents
+										.WITHER_SKELETON_DEATH
+						&& knight.stepSound()
+								== SoundEvents
+										.WITHER_SKELETON_STEP
+						&& knight.getLootTableId()
+								.equals(new ResourceLocation(
+										CakeWorld.MODID,
+										"entities/burnt_candy_knight")),
+				"Burnt-Candy Knight lost exact goals, Piglin target, sword, sounds or loot identity");
+
+		knight.setItemSlot(
+				EquipmentSlot.MAINHAND,
+				new ItemStack(Items.BOW));
+		vanilla.setItemSlot(
+				EquipmentSlot.MAINHAND,
+				new ItemStack(Items.BOW));
+		AbstractArrow burningArrow =
+				knight.makeArrow();
+		require(helper,
+				knight.goalSignatures().equals(
+								vanilla.goalSignatures())
+						&& burningArrow.isOnFire()
+						&& burningArrow.getOwner()
+								== knight,
+				"Burnt-Candy Knight lost exact bow-goal reassessment or flaming-arrow ownership");
+		burningArrow.discard();
+		knight.setItemSlot(
+				EquipmentSlot.MAINHAND,
+				new ItemStack(Items.STONE_SWORD));
+
+		require(helper,
+				!knight.canBeAffected(
+						new MobEffectInstance(
+								MobEffects.WITHER,
+								200))
+						&& knight.canBeAffected(
+								new MobEffectInstance(
+										MobEffects.MOVEMENT_SPEED,
+										200)),
+				"Burnt-Candy Knight lost exact Wither-only effect immunity");
+
+		Difficulty originalDifficulty =
+				level.getDifficulty();
+		try {
+			for (Difficulty safeDifficulty :
+					List.of(Difficulty.EASY,
+							Difficulty.NORMAL)) {
+				level.getServer().setDifficulty(
+						safeDifficulty, true);
+				Pig safeTarget =
+						EntityType.PIG.create(level);
+				require(helper,
+						safeTarget != null,
+						"Could not create safe Knight target");
+				safeTarget.setPos(
+						knight.getX() + 4.0D,
+						knight.getY(),
+						knight.getZ()
+								+ safeDifficulty
+										.getId());
+				safeTarget.setNoAi(true);
+				safeTarget.setSecondsOnFire(5);
+				safeTarget.fallDistance = 9.0F;
+				level.addFreshEntity(safeTarget);
+				boolean accepted =
+						knight.doHurtTarget(
+								safeTarget);
+				require(helper,
+						!accepted
+								&& close(safeTarget
+										.getHealth(),
+										safeTarget
+												.getMaxHealth())
+								&& !safeTarget
+										.hasEffect(
+												MobEffects
+														.WITHER)
+								&& !safeTarget.isOnFire()
+								&& close(safeTarget
+										.fallDistance,
+										0.0D)
+								&& safeTarget
+										.hasEffect(
+												MobEffects
+														.MOVEMENT_SLOWDOWN)
+								&& safeTarget
+										.hasEffect(
+												MobEffects
+														.GLOWING)
+								&& safeTarget
+										.hasEffect(
+												MobEffects
+														.SLOW_FALLING)
+								&& safeTarget
+										.hasEffect(
+												MobEffects
+														.FIRE_RESISTANCE)
+								&& safeTarget
+										.getEffect(
+												MobEffects
+														.DAMAGE_RESISTANCE)
+										.getAmplifier()
+										== 4,
+						safeDifficulty
+								+ " Knight melee caused health, Wither, fire, fall or follow-on damage");
+
+				AbstractArrow safeArrow =
+						knight.makeArrow();
+				safeTarget.removeAllEffects();
+				safeTarget.setSecondsOnFire(5);
+				safeTarget.fallDistance = 7.0F;
+				LivingAttackEvent arrowHit =
+						new LivingAttackEvent(
+								safeTarget,
+								DamageSource.arrow(
+										safeArrow,
+										knight),
+								4.0F);
+				BurntCandyKnightSafety
+						.applyAttackPolicy(
+								arrowHit,
+								safeDifficulty);
+				require(helper,
+						arrowHit.isCanceled()
+								&& BurntCandyKnightSafety
+										.isOwnedByKnight(
+												knight,
+												safeArrow)
+								&& !safeTarget.isOnFire()
+								&& close(safeTarget
+										.fallDistance,
+										0.0D)
+								&& safeTarget
+										.hasEffect(
+												MobEffects
+														.SLOW_FALLING),
+						safeDifficulty
+								+ " owned flaming arrow escaped Knight safety");
+				safeArrow.discard();
+				safeTarget.discard();
+			}
+
+			level.getServer().setDifficulty(
+					Difficulty.HARD, true);
+			Pig hardTarget =
+					EntityType.PIG.create(level);
+			require(helper, hardTarget != null,
+					"Could not create Hard Knight target");
+			hardTarget.setPos(knight.getX() + 4.0D,
+					knight.getY(),
+					knight.getZ() + 6.0D);
+			hardTarget.setNoAi(true);
+			level.addFreshEntity(hardTarget);
+			boolean hardAccepted =
+					knight.doHurtTarget(hardTarget);
+			require(helper,
+					hardAccepted
+							&& close(hardTarget
+									.getHealth(),
+									6.0D)
+							&& hardTarget.hasEffect(
+									MobEffects.WITHER)
+							&& hardTarget.getEffect(
+									MobEffects.WITHER)
+									.getDuration()
+									== 200,
+					"Hard Knight lost exact four-damage and ten-second Wither peril");
+			hardTarget.discard();
+
+			level.getServer().setDifficulty(
+					Difficulty.PEACEFUL, true);
+			BurntCandyKnightProbe peaceful =
+					new BurntCandyKnightProbe(level);
+			peaceful.checkDespawn();
+			require(helper,
+					peaceful.isRemoved()
+							&& peaceful
+									.despawnsInPeaceful(),
+					"Peaceful Knight lost vanilla Monster removal");
+		} finally {
+			level.getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		Creeper charged =
+				EntityType.CREEPER.create(level);
+		LightningBolt lightning =
+				EntityType.LIGHTNING_BOLT.create(level);
+		require(helper,
+				charged != null
+						&& lightning != null,
+				"Could not create charged-Creeper skull fixtures");
+		charged.setPos(knight.getX() + 2.0D,
+				knight.getY(), knight.getZ());
+		lightning.setPos(charged.getX(),
+				charged.getY(), charged.getZ());
+		level.addFreshEntity(charged);
+		level.addFreshEntity(lightning);
+		charged.thunderHit(level, lightning);
+		require(helper, charged.canDropMobsSkull(),
+				"Lightning did not arm the charged-Creeper skull route");
+		knight.dropChargedCreeperLoot(
+				DamageSource.mobAttack(charged));
+		List<ItemEntity> skulls =
+				level.getEntitiesOfClass(
+						ItemEntity.class,
+						localArea,
+						item -> item.getItem()
+								.is(Items
+										.WITHER_SKELETON_SKULL));
+		require(helper,
+				skulls.size() == 1
+						&& skulls.get(0).getItem()
+								.getCount() == 1
+						&& !charged
+								.canDropMobsSkull(),
+				"Knight lost exact charged-Creeper Wither-Skeleton-Skull drop or one-skull gate");
+
+		ServerPlayer advancementPlayer =
+				new ServerPlayer(level.getServer(), level,
+						new GameProfile(
+								UUID.fromString(
+										"1978feed-feed-4bad-babe-1978feed2067"),
+								"CakeWorldKnightRoleTest"));
+		advancementPlayer.connection =
+				new ServerGamePacketListenerImpl(
+						level.getServer(),
+						new Connection(
+								PacketFlow.CLIENTBOUND),
+						advancementPlayer);
+		ItemStack progressionSkull =
+				skulls.get(0).getItem().copy();
+		advancementPlayer.getInventory()
+				.add(progressionSkull.copy());
+		CriteriaTriggers.INVENTORY_CHANGED
+				.trigger(advancementPlayer,
+						advancementPlayer
+								.getInventory(),
+						progressionSkull);
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:nether/get_wither_skull",
+				"wither_skull");
+		VanillaRoleAdvancements
+				.creditKilledWitherSkeletonRole(
+						advancementPlayer);
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:adventure/kill_all_mobs",
+				"minecraft:wither_skeleton");
+		skulls.forEach(ItemEntity::discard);
+		charged.discard();
+		lightning.discard();
+
+		MobSpawnSettings.SpawnerData fortressSpawn =
+				NetherFortressFeature.FORTRESS_ENEMIES
+						.unwrap().stream()
+						.filter(spawn -> spawn.type
+								== EntityType
+										.WITHER_SKELETON)
+						.findFirst().orElse(null);
+		require(helper,
+				fortressSpawn != null
+						&& fortressSpawn
+								.getWeight().asInt()
+								== 8
+						&& fortressSpawn.minCount
+								== 5
+						&& fortressSpawn.maxCount
+								== 5
+						&& NetherFortressFeature
+								.FORTRESS_ENEMIES
+								.unwrap().stream()
+								.noneMatch(spawn ->
+										spawn.type
+												== CakeWorldEntities
+														.BURNT_CANDY_KNIGHT
+														.get()),
+				"Knight replaced the authoritative literal Fortress 8/5-5 source instead of converting it");
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS.getId())) {
+			Biome biome = level.registryAccess()
+					.registryOrThrow(
+							Registry.BIOME_REGISTRY)
+					.get(biomeId);
+			require(helper,
+					biome != null
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory
+													.MONSTER)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType
+															.WITHER_SKELETON
+													|| spawn.type
+															== CakeWorldEntities
+																	.BURNT_CANDY_KNIGHT
+																	.get()),
+					"Knight leaked into open-biome ecology in "
+							+ biomeId);
+		}
+		require(helper,
+				CakeWorldItems
+						.BURNT_CANDY_KNIGHT_SPAWN_EGG
+						.isPresent()
+						&& SpawnPlacements
+								.getPlacementType(
+										CakeWorldEntities
+												.BURNT_CANDY_KNIGHT
+												.get())
+								== SpawnPlacements
+										.getPlacementType(
+												EntityType
+														.WITHER_SKELETON)
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+												.BURNT_CANDY_KNIGHT
+												.get())
+								== SpawnPlacements
+										.getHeightmapType(
+												EntityType
+														.WITHER_SKELETON)
+						&& CakeWorldEntities
+								.BURNT_CANDY_KNIGHT
+								.get().is(
+										net.minecraft.tags.EntityTypeTags
+												.SKELETONS)
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+												.BURNT_CANDY_KNIGHT
+												.get())
+								== SoundEvents
+										.PARROT_IMITATE_WITHER_SKELETON,
+				"Knight lost testing egg, exact placement, skeleton role tag or Lorikeet mimic");
+
+		BlockPos cakeWorldPos =
+				findCakeWorldBiomePosition(helper,
+						anchor.offset(16, 0, 16),
+						256);
+		require(helper, cakeWorldPos != null,
+				"Could not locate CakeWorld terrain for Fortress Knight conversion");
+		WitherSkeleton literal =
+				EntityType.WITHER_SKELETON
+						.create(level);
+		Pig conversionTarget =
+				EntityType.PIG.create(level);
+		Boat vehicle =
+				EntityType.BOAT.create(level);
+		Chicken passenger =
+				EntityType.CHICKEN.create(level);
+		require(helper,
+				literal != null
+						&& conversionTarget != null
+						&& vehicle != null
+						&& passenger != null,
+				"Could not create Knight direct-conversion fixtures");
+		literal.setPos(cakeWorldPos.getX() + 0.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		literal.finalizeSpawn(
+				level,
+				level.getCurrentDifficultyAt(
+						cakeWorldPos),
+				MobSpawnType.STRUCTURE, null, null);
+		literal.setCustomName(
+				new TextComponent(
+						"Charred Gatekeeper"));
+		literal.setNoAi(true);
+		literal.setPersistenceRequired();
+		literal.setHealth(13.0F);
+		literal.invulnerableTime = 19;
+		conversionTarget.setPos(
+				literal.getX() + 4.0D,
+				literal.getY(), literal.getZ());
+		conversionTarget.setNoAi(true);
+		vehicle.setPos(literal.getX(),
+				literal.getY(), literal.getZ());
+		passenger.setPos(literal.getX(),
+				literal.getY(), literal.getZ());
+		level.addFreshEntity(conversionTarget);
+		level.addFreshEntity(vehicle);
+		level.addFreshEntity(literal);
+		level.addFreshEntity(passenger);
+		literal.setTarget(conversionTarget);
+		literal.setLastHurtByMob(
+				conversionTarget);
+		literal.startRiding(vehicle, true);
+		passenger.startRiding(literal, true);
+		BurntCandyKnight converted =
+				CakeWorldWitherSkeletonReplacement
+						.replaceIfInCakeWorldBiome(
+								level, literal);
+		require(helper,
+				converted != null
+						&& literal.isRemoved()
+						&& close(converted.getHealth(),
+								13.0D)
+						&& "Charred Gatekeeper".equals(
+								converted.getName()
+										.getString())
+						&& converted.isNoAi()
+						&& converted
+								.isPersistenceRequired()
+						&& converted.invulnerableTime
+								== 19
+						&& converted.getMainHandItem()
+								.is(Items.STONE_SWORD)
+						&& close(converted
+								.getAttributeValue(
+										Attributes
+												.ATTACK_DAMAGE),
+								4.0D)
+						&& converted.getTarget()
+								== conversionTarget
+						&& converted.getLastHurtByMob()
+								== conversionTarget
+						&& converted.getVehicle()
+								== vehicle
+						&& converted.getPassengers()
+								.contains(passenger),
+				"Fresh literal Fortress conversion lost NBT, equipment, target, vehicle or passenger state");
+		require(helper,
+				CakeWorldWitherSkeletonReplacement
+						.replaceIfInCakeWorldBiome(
+								level, converted)
+						== null
+						&& !converted.isRemoved(),
+				"Wither-Skeleton source conversion touched a non-literal entity type");
+		passenger.discard();
+		vehicle.discard();
+		conversionTarget.discard();
+		converted.discard();
+
+		BlockPos eventPos =
+				findCakeWorldBiomePosition(helper,
+						cakeWorldPos.offset(
+								12, 0, 0),
+						64);
+		require(helper, eventPos != null,
+				"Could not locate CakeWorld terrain for deferred Fortress Knight conversion");
+		WitherSkeleton eventLiteral =
+				EntityType.WITHER_SKELETON
+						.create(level);
+		require(helper, eventLiteral != null,
+				"Could not create deferred Fortress Knight fixture");
+		eventLiteral.setPos(
+				eventPos.getX() + 0.5D,
+				eventPos.getY(),
+				eventPos.getZ() + 0.5D);
+		eventLiteral.finalizeSpawn(
+				level,
+				level.getCurrentDifficultyAt(
+						eventPos),
+				MobSpawnType.STRUCTURE,
+				null, null);
+		eventLiteral.setCustomName(
+				new TextComponent(
+						"Deferred Knight"));
+		eventLiteral.setNoAi(true);
+		level.addFreshEntity(eventLiteral);
+		AABB eventArea =
+				new AABB(eventPos).inflate(3.0D);
+		helper.runAfterDelay(5, () -> {
+			List<BurntCandyKnight> emitted =
+					level.getEntitiesOfClass(
+							BurntCandyKnight.class,
+							eventArea);
+			require(helper,
+					eventLiteral.isRemoved()
+							&& emitted.size() == 1
+							&& emitted.get(0)
+									.isNoAi()
+							&& emitted.get(0)
+									.getMainHandItem()
+									.is(Items.STONE_SWORD)
+							&& "Deferred Knight".equals(
+									emitted.get(0)
+											.getName()
+											.getString()),
+					"Fresh literal Fortress entity did not defer-convert with finalized Knight state");
+			emitted.forEach(
+					BurntCandyKnight::discard);
+			knight.discard();
+			vanilla.discard();
+			helper.succeed();
+		});
+	}
+
+	private static class BurntCandyKnightProbe
+			extends BurntCandyKnight {
+		private BurntCandyKnightProbe(Level level) {
+			super(CakeWorldEntities
+					.BURNT_CANDY_KNIGHT
+					.get(), level);
+		}
+
+		private int baseExperienceReward() {
+			return xpReward;
+		}
+
+		private boolean despawnsInPeaceful() {
+			return shouldDespawnInPeaceful();
+		}
+
+		private float standingEyeHeight() {
+			return getStandingEyeHeight(
+					Pose.STANDING,
+					getDimensions(Pose.STANDING));
+		}
+
+		private ResourceLocation getLootTableId() {
+			return getLootTable();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				ambientSound() {
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				hurtSound() {
+			return getHurtSound(
+					DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				deathSound() {
+			return getDeathSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				stepSound() {
+			return getStepSound();
+		}
+
+		private AbstractArrow makeArrow() {
+			return getArrow(
+					new ItemStack(Items.ARROW),
+					1.0F);
+		}
+
+		private void dropChargedCreeperLoot(
+				DamageSource source) {
+			dropCustomDeathLoot(source, 0, true);
+		}
+
+		private List<String> goalSignatures() {
+			return goalSelector.getAvailableGoals()
+					.stream()
+					.map(wrapped ->
+							wrapped.getPriority() + ":"
+									+ wrapped.getGoal()
+											.getClass()
+											.getSimpleName())
+					.sorted().toList();
+		}
+
+		private List<String>
+				targetGoalSignatures() {
+			return targetSelector
+					.getAvailableGoals().stream()
+					.map(wrapped ->
+							wrapped.getPriority() + ":"
+									+ wrapped.getGoal()
+											.getClass()
+											.getSimpleName())
+					.sorted().toList();
+		}
+
+		private int countTargetGoalsNamed(
+				String name) {
+			return (int)targetSelector
+					.getAvailableGoals().stream()
+					.map(WrappedGoal::getGoal)
+					.filter(goal -> name.equals(
+							goal.getClass()
+									.getSimpleName()))
+					.count();
+		}
+	}
+
+	private static final class VanillaWitherSkeletonProbe
+			extends WitherSkeleton {
+		private VanillaWitherSkeletonProbe(
+				Level level) {
+			super(EntityType.WITHER_SKELETON,
+					level);
+		}
+
+		private List<String> goalSignatures() {
+			return goalSelector.getAvailableGoals()
+					.stream()
+					.map(wrapped ->
+							wrapped.getPriority() + ":"
+									+ wrapped.getGoal()
+											.getClass()
+											.getSimpleName())
+					.sorted().toList();
+		}
+
+		private List<String>
+				targetGoalSignatures() {
+			return targetSelector
+					.getAvailableGoals().stream()
+					.map(wrapped ->
+							wrapped.getPriority() + ":"
+									+ wrapped.getGoal()
+											.getClass()
+											.getSimpleName())
+					.sorted().toList();
+		}
 	}
 
 	private static class BurntSugarTempestProbe
