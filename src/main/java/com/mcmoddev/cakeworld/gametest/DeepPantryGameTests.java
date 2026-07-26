@@ -23,8 +23,10 @@ import com.mcmoddev.cakeworld.entity.JawbreakerGuardian;
 import com.mcmoddev.cakeworld.init.CakeWorldBiomes;
 import com.mcmoddev.cakeworld.init.CakeWorldBlocks;
 import com.mcmoddev.cakeworld.init.CakeWorldFluids;
+import com.mcmoddev.cakeworld.init.CakeWorldEntities;
 import com.mcmoddev.cakeworld.world.BiscuitBanditLookoutFeature;
 import com.mcmoddev.cakeworld.world.GingerbreadVillageFeature;
+import com.mcmoddev.cakeworld.world.WaferMineFeature;
 import com.mcmoddev.orespawn.api.CompiledOrePattern;
 import com.mcmoddev.orespawn.api.GeologyColumn;
 import com.mcmoddev.orespawn.api.GeologyProfileView;
@@ -51,6 +53,7 @@ import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.raid.Raid;
+import net.minecraft.world.entity.vehicle.MinecartChest;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -61,6 +64,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RedStoneOreBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.levelgen.Aquifer;
@@ -1486,6 +1490,299 @@ public final class DeepPantryGameTests {
 			require(helper,
 					villageChunkDistance > 10,
 					"The Biscuit Bandit Lookout violated its ten-chunk Gingerbread Village exclusion");
+			helper.succeed();
+		});
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 4800)
+	public static void focusedWaferMineStructureAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean(
+				"cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed Wafer Mine audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						WaferMineFeature.STRUCTURE_ID);
+		require(helper, configured != null,
+				"Wafer Mine configured structure was absent from the live registry");
+		boolean tagged = structures.getTag(
+						WaferMineFeature.STRUCTURE_TAG)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		require(helper, tagged,
+				"Wafer Mine was absent from its public locate tag");
+
+		BlockPos located = level.findNearestMapFeature(
+				WaferMineFeature.STRUCTURE_TAG,
+				helper.absolutePos(new BlockPos(4, 4, 4)),
+				256, false);
+		require(helper, located != null,
+				"The fixed-seed CakeWorld contained no locatable Wafer Mine within 256 chunks");
+		net.minecraft.world.level.ChunkPos startChunk =
+				new net.minecraft.world.level.ChunkPos(
+						located);
+		net.minecraft.world.level.chunk.LevelChunk
+				startLevelChunk =
+				level.getChunk(startChunk.x,
+						startChunk.z);
+		net.minecraft.world.level.levelgen.structure.StructureStart
+				start =
+				startLevelChunk.getStartForFeature(
+						configured);
+		require(helper,
+				start != null && start.isValid()
+						&& start.getFeature() == configured
+						&& start.getPieces().size() == 1,
+				"The located Wafer Mine lost its saved underground structure start");
+		net.minecraft.world.level.levelgen.structure.BoundingBox
+				savedBounds = start.getBoundingBox();
+		require(helper,
+				savedBounds.getXSpan() == 41
+						&& savedBounds.getYSpan() == 13
+						&& savedBounds.getZSpan() == 41,
+				"The saved Wafer Mine collapsed its 41x13x41 piece bounds: "
+						+ savedBounds);
+
+		int minimumChunkX =
+				Math.floorDiv(savedBounds.minX(), 16);
+		int maximumChunkX =
+				Math.floorDiv(savedBounds.maxX(), 16);
+		int minimumChunkZ =
+				Math.floorDiv(savedBounds.minZ(), 16);
+		int maximumChunkZ =
+				Math.floorDiv(savedBounds.maxZ(), 16);
+		for (int chunkX = minimumChunkX;
+				chunkX <= maximumChunkX; chunkX++) {
+			for (int chunkZ = minimumChunkZ;
+					chunkZ <= maximumChunkZ; chunkZ++) {
+				level.setChunkForced(
+						chunkX, chunkZ, true);
+			}
+		}
+
+		helper.runAfterDelay(20, () -> {
+			BlockPos spawnerPosition = null;
+			for (int x = savedBounds.minX();
+					x <= savedBounds.maxX()
+							&& spawnerPosition == null;
+					x++) {
+				for (int y = savedBounds.minY();
+						y <= savedBounds.maxY()
+								&& spawnerPosition == null;
+						y++) {
+					for (int z = savedBounds.minZ();
+							z <= savedBounds.maxZ();
+							z++) {
+						BlockPos candidate =
+								new BlockPos(x, y, z);
+						if (level.getBlockState(
+								candidate).is(
+										Blocks.SPAWNER)) {
+							spawnerPosition =
+									candidate;
+							break;
+						}
+					}
+				}
+			}
+			require(helper, spawnerPosition != null,
+					"The natural Wafer Mine produced no Weaver spawner anchor");
+			BlockPos centre =
+					spawnerPosition.offset(
+							-12, -1, -10);
+			require(helper,
+					savedBounds.isInside(
+							centre.offset(
+									-20, 0, -20))
+							&& savedBounds.isInside(
+									centre.offset(
+											20, 12,
+											20)),
+					"The saved Wafer Mine bounds do not contain the complete layout derived from its Weaver anchor");
+			Map<Block, Integer> palette =
+					new LinkedHashMap<>();
+			for (int x = -20; x <= 20; x++) {
+				for (int y = 0; y <= 6; y++) {
+					for (int z = -20; z <= 20;
+							z++) {
+						Block block =
+								level.getBlockState(
+										centre.offset(
+												x, y,
+												z))
+										.getBlock();
+						palette.merge(block, 1,
+								Integer::sum);
+					}
+				}
+			}
+			int themedOreFaces =
+					palette.getOrDefault(
+							CakeWorldBlocks.COCOA_COAL
+									.get(), 0)
+					+ palette.getOrDefault(
+							CakeWorldBlocks.IRON_WAFER
+									.get(), 0)
+					+ palette.getOrDefault(
+							CakeWorldBlocks
+									.COPPER_CARAMEL
+									.get(), 0)
+					+ palette.getOrDefault(
+							CakeWorldBlocks
+									.RASPBERRY_REDSTONE
+									.get(), 0)
+					+ palette.getOrDefault(
+							CakeWorldBlocks
+									.BLUEBERRY_LAPIS
+									.get(), 0)
+					+ palette.getOrDefault(
+							CakeWorldBlocks
+									.ROCK_CANDY_DIAMOND
+									.get(), 0)
+					+ palette.getOrDefault(
+							CakeWorldBlocks
+									.ROCK_CANDY_DEPOSIT
+									.get(), 0)
+					+ palette.getOrDefault(
+							CakeWorldBlocks
+									.LIQUORICE_VEIN
+									.get(), 0)
+					+ palette.getOrDefault(
+							CakeWorldBlocks
+									.SPRINKLE_CLUSTER
+									.get(), 0);
+			boolean continuousRail = true;
+			for (int z = -20; z <= 20; z++) {
+				continuousRail &=
+						level.getBlockState(
+								centre.offset(
+										0, 1, z))
+								.is(Blocks.RAIL);
+			}
+			BlockEntity spawner =
+					level.getBlockEntity(
+							spawnerPosition);
+			CompoundTag spawnerState =
+					spawner == null
+							? new CompoundTag()
+							: spawner
+									.saveWithoutMetadata();
+			String spawnedEntity = spawnerState
+					.getCompound("SpawnData")
+					.getCompound("entity")
+					.getString("id");
+			List<MinecartChest> lootMinecarts =
+					level.getEntitiesOfClass(
+							MinecartChest.class,
+							new AABB(centre)
+									.inflate(24.0D))
+							.stream()
+							.filter(cart ->
+									WaferMineFeature
+											.LOOT_ID
+											.toString()
+											.equals(cart
+													.saveWithoutId(
+															new CompoundTag())
+													.getString(
+															"LootTable")))
+							.toList();
+			ResourceLocation biomeId =
+					level.registryAccess()
+							.registryOrThrow(
+									Registry.BIOME_REGISTRY)
+							.getKey(level.getBiome(
+									centre.atY(50))
+									.value());
+			boolean literalMineshaftEligible =
+					level.getBiome(centre.atY(50))
+							.is(net.minecraft.tags
+									.BiomeTags
+									.HAS_MINESHAFT)
+							|| level.getBiome(
+									centre.atY(50))
+									.is(net.minecraft.tags
+											.BiomeTags
+											.HAS_MINESHAFT_MESA);
+			for (int chunkX = minimumChunkX;
+					chunkX <= maximumChunkX;
+					chunkX++) {
+				for (int chunkZ = minimumChunkZ;
+						chunkZ <= maximumChunkZ;
+						chunkZ++) {
+					level.setChunkForced(
+							chunkX, chunkZ, false);
+				}
+			}
+
+			LOGGER.info("Focused Wafer Mine audit: locate={}, centre={}, bounds={}, biome={}, palette={}, continuousRail={}, spawner={}, lootMinecarts={}",
+					located, centre, savedBounds,
+					biomeId, palette,
+					continuousRail, spawnedEntity,
+					lootMinecarts.size());
+			require(helper,
+					level.getBiome(centre.atY(50)).is(
+							WaferMineFeature
+									.GENERATES_IN)
+							&& biomeId != null
+							&& CakeWorld.MODID.equals(
+									biomeId
+											.getNamespace())
+							&& !literalMineshaftEligible,
+					"Wafer Mine generated outside its four-biome CakeWorld Overworld contract or enabled a literal vanilla Mineshaft: "
+							+ biomeId);
+			require(helper,
+					palette.getOrDefault(
+							CakeWorldBlocks.WAFER_BLOCK
+									.get(), 0) >= 750
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.CANDY_CANE_PILLAR
+											.get(), 0)
+									>= 140
+							&& palette.getOrDefault(
+									Blocks.RAIL, 0)
+									== 41
+							&& palette.getOrDefault(
+									Blocks.SPAWNER, 0)
+									== 1
+							&& palette.getOrDefault(
+									Blocks.COBWEB, 0)
+									== 6
+							&& themedOreFaces >= 24,
+					"The natural Wafer Mine lost its edible supports, rails, Weaver nest or exposed geology");
+			require(helper, continuousRail,
+					"The natural Wafer Mine's 41-block main rail is discontinuous");
+			require(helper,
+					spawner
+							instanceof SpawnerBlockEntity
+							&& CakeWorldEntities
+									.DEEP_LIQUORICE_WEAVER
+									.getId().toString()
+									.equals(
+											spawnedEntity),
+					"The natural Wafer Mine spawner lost its Deep Liquorice Weaver role: "
+							+ spawnedEntity);
+			require(helper,
+					lootMinecarts.size() == 1
+							&& lootMinecarts.get(0)
+									.blockPosition()
+									.equals(centre.offset(
+											0, 1,
+											-12)),
+					"The natural Wafer Mine lost its single saved cave-loot minecart: "
+							+ lootMinecarts.size());
 			helper.succeed();
 		});
 	}

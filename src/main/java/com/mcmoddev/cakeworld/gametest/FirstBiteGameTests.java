@@ -153,6 +153,8 @@ import com.mcmoddev.cakeworld.world.CakeWorldZoglinReplacement;
 import com.mcmoddev.cakeworld.world.BiscuitBanditLookoutFeature;
 import com.mcmoddev.cakeworld.world.CakeWorldFeaturePoolElement;
 import com.mcmoddev.cakeworld.world.GingerbreadVillageFeature;
+import com.mcmoddev.cakeworld.world.WaferMineFeature;
+import com.mcmoddev.cakeworld.world.WaferMineStructureFeature;
 import com.mcmoddev.cakeworld.world.CakeWorldPillagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldRavagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldShulkerReplacement;
@@ -363,6 +365,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.WitherSkullBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
 import net.minecraft.world.level.block.entity.SkullBlockEntity;
 import net.minecraft.world.level.block.CarrotBlock;
 import net.minecraft.world.level.block.FallingBlock;
@@ -390,6 +393,7 @@ import net.minecraft.world.entity.raid.Raider;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.entity.schedule.Schedule;
 import net.minecraft.world.entity.vehicle.Boat;
+import net.minecraft.world.entity.vehicle.MinecartChest;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.AABB;
@@ -33613,6 +33617,250 @@ public final class FirstBiteGameTests {
 										EquipmentSlot
 												.HEAD)));
 		bandits.forEach(BiscuitBandit::discard);
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, batch = "struct003",
+			timeoutTicks = 500)
+	public static void waferMineKeepsMineshaftHooks(
+			GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						WaferMineFeature.STRUCTURE_ID);
+		Registry<net.minecraft.world.level.levelgen.structure.StructureSet>
+				structureSets =
+				level.registryAccess().registryOrThrow(
+						Registry.STRUCTURE_SET_REGISTRY);
+		net.minecraft.world.level.levelgen.structure.StructureSet
+				structureSet =
+				structureSets.get(
+						WaferMineFeature
+								.STRUCTURE_SET_ID);
+		boolean ownTag = structures.getTag(
+						WaferMineFeature.STRUCTURE_TAG)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		Set<ResourceLocation> eligibleBiomes =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.getTag(WaferMineFeature
+								.GENERATES_IN)
+						.map(tag -> tag.stream()
+								.map(holder -> holder
+										.unwrapKey()
+										.orElseThrow()
+										.location())
+								.collect(
+										java.util.stream
+												.Collectors
+												.toSet()))
+						.orElse(Set.of());
+		require(helper,
+				configured != null
+						&& configured.feature
+								== WaferMineFeature
+										.STRUCTURE_FEATURE
+						&& !configured.adaptNoise
+						&& WaferMineFeature
+								.STRUCTURE_FEATURE.step()
+								== GenerationStep
+										.Decoration
+										.UNDERGROUND_STRUCTURES
+						&& structureSet != null
+						&& structureSet.structures().size()
+								== 1
+						&& structureSet.structures().get(0)
+								.structure().value()
+								== configured
+						&& ownTag
+						&& eligibleBiomes.equals(Set.of(
+								CakeWorldBiomes
+										.CANDY_PLAINS
+										.getId(),
+								CakeWorldBiomes
+										.COOKIE_FOREST
+										.getId(),
+								CakeWorldBiomes
+										.MARSHMALLOW_PEAKS
+										.getId(),
+								CakeWorldBiomes
+										.SODA_OCEAN
+										.getId())),
+				"Wafer Mine lost its configured structure, underground step, locate tag or four-biome Overworld contract: "
+						+ eligibleBiomes);
+
+		net.minecraft.world.level.levelgen.structure.placement
+				.RandomSpreadStructurePlacement placement =
+				(net.minecraft.world.level.levelgen.structure
+						.placement.RandomSpreadStructurePlacement)
+						structureSet.placement();
+		require(helper,
+				placement.spacing() == 1
+						&& placement.separation() == 0
+						&& placement.salt() == 1978003
+						&& close(
+								WaferMineStructureFeature
+										.PROBABILITY,
+								0.004F),
+				"Wafer Mine lost vanilla's every-chunk candidate and 0.004 probability contract");
+
+		net.minecraft.world.level.levelgen.structure.pools
+				.StructurePoolElement element =
+				WaferMineFeature.pool().value()
+						.getRandomTemplate(
+								new Random(1978003L));
+		net.minecraft.world.level.levelgen.structure.BoundingBox
+				pieceBounds =
+				element.getBoundingBox(
+						level.getStructureManager(),
+						BlockPos.ZERO,
+						Rotation.NONE);
+		require(helper,
+				element
+						instanceof CakeWorldFeaturePoolElement
+						&& pieceBounds.getXSpan() == 41
+						&& pieceBounds.getYSpan() == 13
+						&& pieceBounds.getZSpan() == 41,
+				"Wafer Mine lost its serializable 41x13x41 underground bounds");
+
+		BlockPos column =
+				helper.absolutePos(new BlockPos(4, 4, 4));
+		BlockPos centre = new BlockPos(
+				column.getX(),
+				level.getMaxBuildHeight() - 48,
+				column.getZ());
+		require(helper,
+				WaferMineFeature.buildAt(
+						level, new Random(1978003L),
+						centre),
+				"Wafer Mine refused a prepared underground site");
+
+		Map<Block, Integer> palette =
+				new java.util.HashMap<>();
+		for (int x = -20; x <= 20; x++) {
+			for (int y = 0; y <= 6; y++) {
+				for (int z = -20; z <= 20; z++) {
+					Block block = level.getBlockState(
+							centre.offset(x, y, z))
+							.getBlock();
+					palette.merge(block, 1,
+							Integer::sum);
+				}
+			}
+		}
+		int themedOreFaces =
+				palette.getOrDefault(
+						CakeWorldBlocks.COCOA_COAL
+								.get(), 0)
+				+ palette.getOrDefault(
+						CakeWorldBlocks.IRON_WAFER
+								.get(), 0)
+				+ palette.getOrDefault(
+						CakeWorldBlocks.COPPER_CARAMEL
+								.get(), 0)
+				+ palette.getOrDefault(
+						CakeWorldBlocks
+								.RASPBERRY_REDSTONE
+								.get(), 0)
+				+ palette.getOrDefault(
+						CakeWorldBlocks.BLUEBERRY_LAPIS
+								.get(), 0)
+				+ palette.getOrDefault(
+						CakeWorldBlocks
+								.ROCK_CANDY_DIAMOND
+								.get(), 0)
+				+ palette.getOrDefault(
+						CakeWorldBlocks
+								.ROCK_CANDY_DEPOSIT
+								.get(), 0)
+				+ palette.getOrDefault(
+						CakeWorldBlocks.LIQUORICE_VEIN
+								.get(), 0)
+				+ palette.getOrDefault(
+						CakeWorldBlocks
+								.SPRINKLE_CLUSTER
+								.get(), 0);
+		require(helper,
+				palette.getOrDefault(
+						CakeWorldBlocks.WAFER_BLOCK
+								.get(), 0) >= 750
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CANDY_CANE_PILLAR
+										.get(), 0)
+								>= 140
+						&& palette.getOrDefault(
+								Blocks.RAIL, 0) == 41
+						&& palette.getOrDefault(
+								Blocks.SPAWNER, 0) == 1
+						&& palette.getOrDefault(
+								Blocks.COBWEB, 0) == 6
+						&& themedOreFaces >= 24,
+				"Wafer Mine lost its edible supports, rail, Weaver nest or exposed geology: "
+						+ palette);
+		for (int z = -20; z <= 20; z++) {
+			require(helper,
+					level.getBlockState(
+							centre.offset(0, 1, z))
+							.is(Blocks.RAIL),
+					"Wafer Mine rail broke at relative z="
+							+ z);
+		}
+
+		BlockEntity spawner =
+				level.getBlockEntity(
+						centre.offset(12, 1, 10));
+		CompoundTag spawnerState =
+				spawner == null
+						? new CompoundTag()
+						: spawner
+								.saveWithoutMetadata();
+		String spawnedEntity = spawnerState
+				.getCompound("SpawnData")
+				.getCompound("entity")
+				.getString("id");
+		require(helper,
+				spawner instanceof SpawnerBlockEntity
+						&& CakeWorldEntities
+								.DEEP_LIQUORICE_WEAVER
+								.getId().toString()
+								.equals(spawnedEntity),
+				"Wafer Mine spawner lost its Deep Liquorice Weaver role: "
+						+ spawnedEntity);
+
+		List<MinecartChest> lootMinecarts =
+				level.getEntitiesOfClass(
+						MinecartChest.class,
+						new AABB(centre)
+								.inflate(24.0D))
+						.stream()
+						.filter(cart ->
+								WaferMineFeature.LOOT_ID
+										.toString()
+										.equals(cart
+												.saveWithoutId(
+														new CompoundTag())
+												.getString(
+														"LootTable")))
+						.toList();
+		require(helper,
+				lootMinecarts.size() == 1
+						&& lootMinecarts.get(0)
+								.blockPosition()
+								.equals(centre.offset(
+										0, 1, -12)),
+				"Wafer Mine lost its single saved cave-loot minecart: "
+						+ lootMinecarts.size());
+		lootMinecarts.forEach(MinecartChest::discard);
 		helper.succeed();
 	}
 

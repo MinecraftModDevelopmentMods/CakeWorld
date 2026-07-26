@@ -20,6 +20,8 @@ public final class CakeWorldFeatureRegistration {
 		event.getRegistry().register(GingerbreadVillageFeature.FEATURE);
 		event.getRegistry().register(
 				BiscuitBanditLookoutFeature.FEATURE);
+		event.getRegistry().register(
+				WaferMineFeature.FEATURE);
 	}
 
 	@SubscribeEvent
@@ -28,6 +30,8 @@ public final class CakeWorldFeatureRegistration {
 		event.getRegistry().register(
 				BiscuitBanditLookoutFeature
 						.STRUCTURE_FEATURE);
+		event.getRegistry().register(
+				WaferMineFeature.STRUCTURE_FEATURE);
 	}
 
 	@SubscribeEvent
@@ -37,6 +41,7 @@ public final class CakeWorldFeatureRegistration {
 			StarterPicnicFeature.registerConfiguredFeature();
 			GingerbreadVillageFeature.registerWorldgen();
 			BiscuitBanditLookoutFeature.registerWorldgen();
+			WaferMineFeature.registerWorldgen();
 		});
 	}
 }

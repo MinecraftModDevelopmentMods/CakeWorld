@@ -17,6 +17,7 @@ import net.minecraft.world.level.StructureFeatureManager;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.pools.StructurePoolElement;
@@ -152,6 +153,16 @@ public final class CakeWorldFeaturePoolElement
 			BoundingBox generationBounds,
 			Random random,
 			boolean keepJigsaws) {
+		ConfiguredFeature<?, ?> configured =
+				feature.value().feature().value();
+		if (configured.feature()
+				instanceof CakeWorldBoundedStructureFeature) {
+			return ((CakeWorldBoundedStructureFeature)
+					configured.feature()).placeInBounds(
+							world, chunkGenerator,
+							random, position,
+							generationBounds);
+		}
 		// A multi-chunk piece receives one post-process call per intersecting
 		// chunk. Only the chunk containing the saved anchor owns the
 		// procedural placement, preventing duplicate blocks and entities.

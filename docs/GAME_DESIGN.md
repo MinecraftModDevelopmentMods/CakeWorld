@@ -414,7 +414,7 @@ specification gives them a clear CakeWorld purpose.
 |---|---|---|---|
 | STRUCT-001 | `minecraft:village` | Gingerbread Villages | Functional first variant: a Candy Plains village with candy-cane and biscuit roads, three gumdrop-roof gingerbread houses, real beds, profession workstations, a farm, meeting bell, Cookbook library and loot, Wafer Windmill, four employed Gingerbread Folk, and a Jawbreaker Guardian. It is a genuine saved and locatable `VILLAGE` structure with occupied POIs and village/raid-location semantics. Hearthlands and other biome variants, expanding multi-piece layouts, presentation, and hands-on raid play remain. |
 | STRUCT-002 | `minecraft:pillager_outpost` | Biscuit Bandit Lookout | Functional first Cookie Forest variant: a tall Wafer and Candy-Cane watchtower with gummy-and-icing roof, ladder, supply chest, biscuit paths, gingerbread camp, holding cage, target range, four persistent crossbow bandits, and a banner captain. It has a dedicated saved structure/set/tag, correctly bounded structure-wide custom-bandit spawn override, vanilla's one-in-five candidate gate, and ten-chunk avoidance of both vanilla and Gingerbread village sets. Layout variation, original presentation, and hands-on Bad Omen/raid play remain. |
-| STRUCT-003 | `minecraft:mineshaft` | Wafer Mine | Fragile supports, rail continuity, cave loot, and edible geology integration. |
+| STRUCT-003 | `minecraft:mineshaft` | Wafer Mine | Functional first underground variant: a saved, locatable and exactly bounded `41 x 13 x 41` branching mine with fragile Wafer floors and beams, Candy-Cane support frames, a continuous 41-block rail, themed minecart loot, a Deep Liquorice Weaver spawner, cobweb nest, lighting, and exposed CakeWorld ore faces. It retains vanilla's every-chunk candidate, `0.004` probability and non-adapted noise contract while remaining eligible in all four current CakeWorld Overworld biomes; those biomes do not gain literal vanilla-Mineshaft eligibility. A wider random piece graph, corridor variation, original presentation, and hands-on exploration/balance play remain. |
 | STRUCT-004 | `minecraft:mansion` | Grand Gingerbread Manor | Sour Sorcerers, secret kitchens, rare recipes, and raid-role compatibility. |
 | STRUCT-005 | `minecraft:jungle_pyramid` | Gummy Shrine | Elastic traps, jungle clues, and themed treasure. |
 | STRUCT-006 | `minecraft:desert_pyramid` | Sherbet Pyramid | Powder traps, fizzy fossils, and buried sweet jars. |
@@ -451,6 +451,22 @@ Lookout retains Pillager-Outpost surface placement, spacing `32`, separation
 structure spawn list names Biscuit Bandits directly instead of relying on a
 one-tick literal-Pillager conversion. It does not rewrite vanilla or
 third-party Outposts.
+
+The `STRUCT-003` prototype is CakeWorld-owned because vanilla 1.18.2 embeds
+Oak and Dark-Oak mine palettes in a closed `MineshaftFeature.Type` enum and
+package-scoped piece graph; child-mod configuration cannot substitute edible
+supports. CakeWorld therefore retains the vanilla normal-Mineshaft frequency
+contract but supplies its own configured structure, set, public locate tag,
+underground generation step, correctly bounded piece, palette, loot and
+Weaver-spawner role. The shared bounded pool element slices large procedural
+pieces by the chunk currently being post-processed, so the mine's complete
+saved bounds do not permit unsafe far-chunk writes. The first fixed branching
+plan preserves the identifying player contract but does not claim vanilla's
+full random corridor graph. It does not rewrite vanilla or third-party
+Mineshafts; current CakeWorld biomes select the Wafer Mine instead of joining
+vanilla's Mineshaft biome tags. Like vanilla normal Mineshafts, it does not
+adapt surrounding terrain noise, so saved bounds remain exactly
+`41 x 13 x 41`.
 
 ## Original Structure Additions
 
