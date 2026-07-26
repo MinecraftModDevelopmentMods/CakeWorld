@@ -15,7 +15,7 @@ import net.minecraft.world.level.Level;
  * The inherited private goals retain the mirror and blindness spells. Only
  * the damaging bow payload changes below Hard.
  */
-public final class MirageConfectioner extends Illusioner {
+public class MirageConfectioner extends Illusioner {
 	public MirageConfectioner(
 			EntityType<? extends Illusioner> type, Level level) {
 		super(type, level);

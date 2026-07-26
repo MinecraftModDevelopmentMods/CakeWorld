@@ -110,6 +110,8 @@ import com.mcmoddev.cakeworld.entity.SourSorcerer;
 import com.mcmoddev.cakeworld.entity.SourSprite;
 import com.mcmoddev.cakeworld.entity.SprinkleLlama;
 import com.mcmoddev.cakeworld.entity.StaleCrumbler;
+import com.mcmoddev.cakeworld.entity.StaleCrumblerReinforcements;
+import com.mcmoddev.cakeworld.entity.StaleCrumblerSafety;
 import com.mcmoddev.cakeworld.entity.StaleFudgeBoar;
 import com.mcmoddev.cakeworld.entity.SugarBee;
 import com.mcmoddev.cakeworld.entity.SugarMite;
@@ -140,6 +142,7 @@ import com.mcmoddev.cakeworld.world.CakeWorldWitchReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldWitherReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldWitherSkeletonReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldWolfReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldZombieReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldZoglinReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldPillagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldRavagerReplacement;
@@ -292,6 +295,7 @@ import net.minecraft.world.entity.monster.Vex;
 import net.minecraft.world.entity.monster.Vindicator;
 import net.minecraft.world.entity.monster.Witch;
 import net.minecraft.world.entity.monster.Zombie;
+import net.minecraft.world.entity.monster.ZombieVillager;
 import net.minecraft.world.entity.monster.ZombifiedPiglin;
 import net.minecraft.world.entity.monster.Zoglin;
 import net.minecraft.world.entity.monster.WitherSkeleton;
@@ -393,6 +397,7 @@ import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.event.entity.living.ZombieEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.world.BlockEvent;
@@ -6142,30 +6147,38 @@ public final class FirstBiteGameTests {
 		}
 
 		target.setInvulnerable(true);
-		confectioner.setTarget(target);
-		helper.getLevel().addFreshEntity(confectioner);
-		helper.getLevel().addFreshEntity(target);
 		try {
 			helper.getLevel().getServer().setDifficulty(
 					Difficulty.NORMAL, true);
-			for (int i = 0; i < 50; i++) {
-				confectioner.tick();
-			}
+			MirageConfectionerProbe mirror =
+					new MirageConfectionerProbe(
+							helper.getLevel());
+			mirror.setPos(anchor.getX(),
+					anchor.getY(), anchor.getZ());
+			mirror.setTarget(target);
 			require(helper,
-					confectioner.hasEffect(
-							MobEffects.INVISIBILITY),
+					mirror.runInheritedSpell(
+							"IllusionerMirrorSpellGoal")
+							&& mirror.hasEffect(
+									MobEffects
+											.INVISIBILITY),
 					"Mirage Confectioner did not retain the inherited mirror/invisibility spell");
-			for (int i = 0; i < 30; i++) {
-				confectioner.tick();
-			}
+
+			MirageConfectionerProbe blinder =
+					new MirageConfectionerProbe(
+							helper.getLevel());
+			blinder.setPos(anchor.getX(),
+					anchor.getY(), anchor.getZ());
+			blinder.setTarget(target);
 			helper.getLevel().getServer().setDifficulty(
 					Difficulty.HARD, true);
 			target.removeEffect(MobEffects.BLINDNESS);
-			for (int i = 0; i < 50; i++) {
-				confectioner.tick();
-			}
 			require(helper,
-					target.hasEffect(MobEffects.BLINDNESS),
+					blinder.runInheritedSpell(
+							"IllusionerBlindnessSpellGoal")
+							&& target.hasEffect(
+									MobEffects
+											.BLINDNESS),
 					"Mirage Confectioner did not retain Illusioner's Hard-only blindness spell");
 		} finally {
 			helper.getLevel().getServer().setDifficulty(
@@ -21686,6 +21699,14 @@ public final class FirstBiteGameTests {
 
 		AABB releaseArea =
 				new AABB(lemonadePos).inflate(2.0D);
+		Set<UUID> existingJellybeans =
+				new java.util.HashSet<>();
+		for (JellybeanFish existing :
+				helper.getLevel().getEntitiesOfClass(
+						JellybeanFish.class,
+						releaseArea)) {
+			existingJellybeans.add(existing.getUUID());
+		}
 		((MobBucketItem)bucket.getItem())
 				.checkExtraContent(null,
 						helper.getLevel(), bucket,
@@ -21693,7 +21714,11 @@ public final class FirstBiteGameTests {
 		List<JellybeanFish> released =
 				helper.getLevel().getEntitiesOfClass(
 						JellybeanFish.class,
-						releaseArea);
+						releaseArea,
+						candidate -> !existingJellybeans
+								.contains(
+										candidate
+												.getUUID()));
 		require(helper,
 				released.size() == 1
 						&& released.get(0).fromBucket()
@@ -29405,6 +29430,1249 @@ public final class FirstBiteGameTests {
 					StaleFudgeBoar::discard);
 			helper.succeed();
 		});
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 320)
+	public static void staleCrumblersKeepTheCompleteZombieRoleSafely(
+			GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		BlockPos testColumn =
+				helper.absolutePos(new BlockPos(5, 5, 5));
+		BlockPos selectedAnchor = null;
+		for (int y = level.getMaxBuildHeight() - 32;
+				y >= level.getMinBuildHeight() + 32;
+				y -= 32) {
+			BlockPos candidate = new BlockPos(
+					testColumn.getX(), y,
+					testColumn.getZ());
+			if (level.getEntitiesOfClass(
+							LivingEntity.class,
+							new AABB(candidate)
+									.inflate(42.0D),
+							Entity::isAlive)
+					.isEmpty()) {
+				selectedAnchor = candidate;
+				break;
+			}
+		}
+		require(helper, selectedAnchor != null,
+				"Could not find an isolated vertical slot for the Stale Crumbler fixtures");
+		final BlockPos anchor = selectedAnchor;
+
+		StaleCrumblerProbe crumbler =
+				new StaleCrumblerProbe(level);
+		VanillaZombieProbe vanilla =
+				new VanillaZombieProbe(level);
+		require(helper,
+				crumbler instanceof Zombie
+						&& crumbler.getType()
+								== CakeWorldEntities
+										.STALE_CRUMBLER
+										.get()
+						&& crumbler.getType()
+								.getCategory()
+								== MobCategory.MONSTER
+						&& !crumbler.fireImmune()
+						&& close(crumbler
+								.getMaxHealth(),
+								20.0D)
+						&& close(crumbler
+								.getAttributeValue(
+										Attributes
+											.FOLLOW_RANGE),
+								35.0D)
+						&& close(crumbler
+								.getAttributeValue(
+										Attributes
+											.MOVEMENT_SPEED),
+								0.23D)
+						&& close(crumbler
+								.getAttributeValue(
+										Attributes
+											.ATTACK_DAMAGE),
+								3.0D)
+						&& close(crumbler
+								.getAttributeValue(
+										Attributes.ARMOR),
+								2.0D)
+						&& close(crumbler
+								.getAttributeValue(
+										Attributes
+											.SPAWN_REINFORCEMENTS_CHANCE),
+								vanilla.getAttributeValue(
+										Attributes
+											.SPAWN_REINFORCEMENTS_CHANCE))
+						&& close(crumbler
+								.getDimensions(
+										Pose.STANDING)
+								.width, 0.6D)
+						&& close(crumbler
+								.getDimensions(
+										Pose.STANDING)
+								.height, 1.95D)
+						&& close(crumbler
+								.standingEyeHeight(),
+								1.74D)
+						&& crumbler.getType()
+								.clientTrackingRange() == 8
+						&& crumbler
+								.getMaxSpawnClusterSize() == 4
+						&& crumbler
+								.baseExperienceReward() == 5
+						&& crumbler.getSoundSource()
+								== SoundSource.HOSTILE
+						&& crumbler.getMobType()
+								== MobType.UNDEAD,
+				"Stale Crumbler lost the exact Zombie body, attributes, tracking, XP or undead contract");
+		require(helper,
+				crumbler.goalSignatures()
+								.equals(vanilla
+										.goalSignatures())
+						&& crumbler
+								.targetGoalSignatures()
+								.equals(vanilla
+										.targetGoalSignatures())
+						&& crumbler.goalSignatures()
+								.size() == 6
+						&& crumbler
+								.targetGoalSignatures()
+								.size() == 5
+						&& crumbler.getNavigation()
+								.getClass()
+								== GroundPathNavigation.class
+						&& crumbler.sunSensitive()
+						&& crumbler
+								.supportsDoorBreaking(),
+				"Stale Crumbler lost Zombie goals, targets, ground navigation, sunlight or door support: goals="
+						+ crumbler.goalSignatures()
+						+ ", targets="
+						+ crumbler
+								.targetGoalSignatures());
+		require(helper,
+				crumbler.ambientSound()
+								== SoundEvents
+										.ZOMBIE_AMBIENT
+						&& crumbler.hurtSound()
+								== SoundEvents.ZOMBIE_HURT
+						&& crumbler.deathSound()
+								== SoundEvents.ZOMBIE_DEATH,
+				"Stale Crumbler lost Zombie ambient, hurt or death sounds");
+		crumbler.clearLastSound();
+		crumbler.playStep();
+		require(helper,
+				crumbler.lastSound()
+						== SoundEvents.ZOMBIE_STEP,
+				"Stale Crumbler lost the Zombie step sound");
+		require(helper,
+				!crumbler.addEffect(
+								new MobEffectInstance(
+										MobEffects
+											.REGENERATION,
+										100, 0))
+						&& !crumbler.addEffect(
+								new MobEffectInstance(
+										MobEffects.POISON,
+										100, 0)),
+				"Stale Crumbler lost undead Regeneration and Poison immunity");
+		require(helper,
+				SpawnPlacements.getPlacementType(
+								CakeWorldEntities
+										.STALE_CRUMBLER
+										.get())
+								== SpawnPlacements.Type
+										.ON_GROUND
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+											.STALE_CRUMBLER
+											.get())
+								== Heightmap.Types
+										.MOTION_BLOCKING_NO_LEAVES
+						&& SpawnPlacements.getPlacementType(
+								CakeWorldEntities
+										.STALE_CRUMBLER
+										.get())
+								== SpawnPlacements
+										.getPlacementType(
+												EntityType
+													.ZOMBIE)
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+											.STALE_CRUMBLER
+											.get())
+								== SpawnPlacements
+										.getHeightmapType(
+												EntityType
+													.ZOMBIE),
+				"Stale Crumbler lost exact Zombie dark-ground placement metadata");
+
+		StaleCrumblerProbe baby =
+				new StaleCrumblerProbe(level);
+		baby.setBaby(true);
+		CompoundTag babyState =
+				baby.saveWithoutId(
+						new CompoundTag());
+		StaleCrumblerProbe restoredBaby =
+				new StaleCrumblerProbe(level);
+		restoredBaby.load(babyState);
+		require(helper,
+				baby.isBaby()
+						&& restoredBaby.isBaby()
+						&& babyState
+								.getBoolean("IsBaby")
+						&& close(baby
+								.getDimensions(
+										Pose.STANDING)
+								.width, 0.3D)
+						&& close(baby
+								.getDimensions(
+										Pose.STANDING)
+								.height, 0.975D)
+						&& close(baby
+								.standingEyeHeight(),
+								0.93D)
+						&& close(baby
+								.getAttributeValue(
+										Attributes
+											.MOVEMENT_SPEED),
+								0.345D)
+						&& close(baby
+								.getMyRidingOffset(),
+								0.0D)
+						&& close(crumbler
+								.getMyRidingOffset(),
+								-0.45D)
+						&& baby
+								.experienceReward() == 12,
+				"Baby Stale Crumbler lost half scale, speed boost, eye height, riding offset, XP or IsBaby NBT");
+		Chicken eggMount =
+				EntityType.CHICKEN.create(level);
+		require(helper, eggMount != null,
+				"Could not create baby Stale Crumbler item-role fixture");
+		eggMount.setPos(anchor.getX() + 0.5D,
+				anchor.getY(), anchor.getZ());
+		baby.setPos(eggMount.getX(),
+				eggMount.getY(), eggMount.getZ());
+		level.addFreshEntity(eggMount);
+		level.addFreshEntity(baby);
+		baby.startRiding(eggMount, true);
+		require(helper,
+				!baby.canHoldItem(
+								new ItemStack(Items.EGG))
+						&& !baby.wantsToPickUp(
+								new ItemStack(
+										Items
+											.GLOW_INK_SAC)),
+				"Baby jockey Stale Crumbler lost Egg refusal or Zombie Glow-Ink-Sac refusal");
+		baby.stopRiding();
+		baby.discard();
+		eggMount.discard();
+
+		StaleCrumblerProbe persisted =
+				new StaleCrumblerProbe(level);
+		persisted.setCanBreakDoors(true);
+		CompoundTag persistedState =
+				persisted.saveWithoutId(
+						new CompoundTag());
+		persistedState.putInt(
+				"DrownedConversionTime", 20);
+		persisted.load(persistedState);
+		CompoundTag roundTrip =
+				persisted.saveWithoutId(
+						new CompoundTag());
+		require(helper,
+				persisted.canBreakDoors()
+						&& persisted
+								.navigationOpensDoors()
+						&& persisted
+								.isUnderWaterConverting()
+						&& roundTrip
+								.getBoolean(
+										"CanBreakDoors")
+						&& roundTrip.getInt(
+								"DrownedConversionTime")
+								== 20,
+				"Stale Crumbler lost door/navigation or drowning-conversion NBT");
+
+		Difficulty originalDifficulty =
+				level.getDifficulty();
+		boolean originalMobSpawning =
+				level.getGameRules().getBoolean(
+						GameRules
+								.RULE_DOMOBSPAWNING);
+		boolean originalMobGriefing =
+				level.getGameRules().getBoolean(
+						GameRules
+								.RULE_MOBGRIEFING);
+		Pig contactTarget =
+				EntityType.PIG.create(level);
+		require(helper, contactTarget != null,
+				"Could not create Stale Crumbler contact fixture");
+		crumbler.setPos(anchor.getX() + 3.5D,
+				anchor.getY(), anchor.getZ());
+		contactTarget.setPos(
+				crumbler.getX() + 1.0D,
+				crumbler.getY(),
+				crumbler.getZ());
+		level.addFreshEntity(crumbler);
+		level.addFreshEntity(contactTarget);
+		try {
+			level.getGameRules()
+					.getRule(GameRules
+							.RULE_DOMOBSPAWNING)
+					.set(true, level.getServer());
+			level.getGameRules()
+					.getRule(GameRules
+							.RULE_MOBGRIEFING)
+					.set(true, level.getServer());
+
+			for (Difficulty safeDifficulty :
+					new Difficulty[] {
+							Difficulty.EASY,
+							Difficulty.NORMAL}) {
+				level.getServer().setDifficulty(
+						safeDifficulty, true);
+				contactTarget.removeAllEffects();
+				contactTarget.setHealth(10.0F);
+				contactTarget.invulnerableTime = 0;
+				contactTarget.setSecondsOnFire(5);
+				contactTarget.fallDistance = 12.0F;
+				contactTarget.setDeltaMovement(
+						Vec3.ZERO);
+				require(helper,
+						crumbler.doHurtTarget(
+									contactTarget)
+								&& close(contactTarget
+										.getHealth(),
+										10.0D)
+								&& !contactTarget
+										.isOnFire()
+								&& close(contactTarget
+										.fallDistance,
+										0.0D)
+								&& contactTarget
+										.hasEffect(
+												MobEffects
+													.MOVEMENT_SLOWDOWN)
+								&& contactTarget
+										.hasEffect(
+												MobEffects
+													.GLOWING)
+								&& contactTarget
+										.hasEffect(
+												MobEffects
+													.SLOW_FALLING)
+								&& contactTarget
+										.hasEffect(
+												MobEffects
+													.FIRE_RESISTANCE)
+								&& contactTarget
+										.getEffect(
+												MobEffects
+													.DAMAGE_RESISTANCE)
+										.getAmplifier()
+										== 4
+								&& contactTarget
+										.getDeltaMovement()
+										.horizontalDistanceSqr()
+										> 0.0D,
+						safeDifficulty
+								+ " Stale Crumbler contact caused damage or lost its visible rescue");
+				contactTarget.invulnerableTime = 0;
+				contactTarget.hurt(
+						DamageSource.FALL, 8.0F);
+				contactTarget.invulnerableTime = 0;
+				contactTarget.hurt(
+						DamageSource.IN_FIRE, 8.0F);
+				require(helper,
+						close(contactTarget.getHealth(),
+								10.0D),
+						safeDifficulty
+								+ " protected contact permitted disguised fall or fire damage");
+
+				EntityMobGriefingEvent grief =
+						new EntityMobGriefingEvent(
+								crumbler);
+				StaleCrumblerSafety
+						.applyGriefPolicy(
+								grief,
+								safeDifficulty);
+				require(helper,
+						grief.getResult()
+								== Event.Result.DENY,
+						safeDifficulty
+								+ " Stale Crumbler could still destroy eggs or collect possessions");
+			}
+
+			level.getServer().setDifficulty(
+					Difficulty.NORMAL, true);
+			StaleCrumbler normalCollector =
+					CakeWorldEntities.STALE_CRUMBLER
+							.get().create(level);
+			ItemEntity protectedItem =
+					new ItemEntity(level,
+							anchor.getX() + 7.5D,
+							anchor.getY(),
+							anchor.getZ(),
+							new ItemStack(
+									Items.IRON_SWORD));
+			require(helper,
+					normalCollector != null,
+					"Could not create Normal Stale Crumbler pickup fixture");
+			normalCollector.setPos(
+					protectedItem.getX(),
+					protectedItem.getY(),
+					protectedItem.getZ());
+			normalCollector.setNoAi(true);
+			normalCollector.setCanPickUpLoot(
+					true);
+			protectedItem.setNoPickUpDelay();
+			level.addFreshEntity(
+					normalCollector);
+			level.addFreshEntity(
+					protectedItem);
+			normalCollector.aiStep();
+			require(helper,
+					protectedItem.isAlive()
+							&& normalCollector
+									.getMainHandItem()
+									.isEmpty(),
+					"Normal Stale Crumbler collected a protected dropped possession");
+			normalCollector.discard();
+			protectedItem.discard();
+
+			level.getServer().setDifficulty(
+					Difficulty.HARD, true);
+			EntityMobGriefingEvent hardGrief =
+					new EntityMobGriefingEvent(
+							crumbler);
+			StaleCrumblerSafety
+					.applyGriefPolicy(
+							hardGrief,
+							Difficulty.HARD);
+			require(helper,
+					hardGrief.getResult()
+							== Event.Result.DEFAULT,
+					"Hard Stale Crumbler did not release the ordinary mobGriefing rule");
+			StaleCrumbler hardCollector =
+					CakeWorldEntities.STALE_CRUMBLER
+							.get().create(level);
+			ItemEntity perilItem =
+					new ItemEntity(level,
+							anchor.getX() + 9.5D,
+							anchor.getY(),
+							anchor.getZ(),
+							new ItemStack(
+									Items.IRON_SWORD));
+			require(helper, hardCollector != null,
+					"Could not create Hard Stale Crumbler pickup fixture");
+			hardCollector.setPos(perilItem.getX(),
+					perilItem.getY(),
+					perilItem.getZ());
+			hardCollector.setNoAi(true);
+			hardCollector.setCanPickUpLoot(
+					true);
+			perilItem.setNoPickUpDelay();
+			level.addFreshEntity(hardCollector);
+			level.addFreshEntity(perilItem);
+			hardCollector.aiStep();
+			require(helper,
+					perilItem.isRemoved()
+							&& hardCollector
+									.getMainHandItem()
+									.is(Items.IRON_SWORD),
+					"Hard Stale Crumbler lost ordinary equipment pickup");
+			hardCollector.discard();
+			perilItem.discard();
+
+			contactTarget.removeAllEffects();
+			contactTarget.setHealth(10.0F);
+			contactTarget.invulnerableTime = 0;
+			contactTarget.clearFire();
+			crumbler.setSecondsOnFire(20);
+			boolean transferredFire = false;
+			for (int attempt = 0;
+					attempt < 40
+							&& !transferredFire;
+					attempt++) {
+				// Java Random seeds 0-39 all begin around 0.73,
+				// above the Zombie fire-transfer threshold. The
+				// 4096 range starts below 0.10 and deterministically
+				// exercises the inherited branch.
+				crumbler.seedRandom(4096L + attempt);
+				contactTarget.setHealth(10.0F);
+				contactTarget.invulnerableTime = 0;
+				contactTarget.clearFire();
+				require(helper,
+						crumbler.doHurtTarget(
+								contactTarget),
+						"Hard Stale Crumbler attack did not register");
+				require(helper,
+						close(contactTarget.getHealth(),
+								7.0D),
+						"Hard Stale Crumbler lost the exact three-point Zombie attack");
+				transferredFire =
+						contactTarget.isOnFire();
+			}
+			require(helper, transferredFire,
+					"Hard burning Stale Crumbler never retained Zombie fire transfer");
+
+			Pig reinforcementTarget =
+					EntityType.PIG.create(level);
+			require(helper,
+					reinforcementTarget != null,
+					"Could not create Stale Crumbler reinforcement target");
+			ZombieEvent.SummonAidEvent aid =
+					new ZombieEvent.SummonAidEvent(
+							crumbler, level,
+							anchor.getX(),
+							anchor.getY(),
+							anchor.getZ(),
+							reinforcementTarget,
+							1.0D);
+			crumbler.seedRandom(1978L);
+			StaleCrumblerReinforcements
+					.onSummonAid(aid);
+			require(helper,
+					aid.getResult()
+								== Event.Result.ALLOW
+							&& aid
+									.getCustomSummonedAid()
+									.getType()
+									== CakeWorldEntities
+											.STALE_CRUMBLER
+											.get(),
+					"Hard guaranteed Zombie reinforcement did not retain the custom family");
+			aid.getCustomSummonedAid()
+					.discard();
+			level.getServer().setDifficulty(
+					Difficulty.NORMAL, true);
+			ZombieEvent.SummonAidEvent safeAid =
+					new ZombieEvent.SummonAidEvent(
+							crumbler, level,
+							anchor.getX(),
+							anchor.getY(),
+							anchor.getZ(),
+							reinforcementTarget,
+							1.0D);
+			StaleCrumblerReinforcements
+					.onSummonAid(safeAid);
+			require(helper,
+					safeAid.getResult()
+							== Event.Result.DENY,
+					"Normal Stale Crumbler could summon a disguised reinforcement");
+			reinforcementTarget.discard();
+
+			level.getServer().setDifficulty(
+					Difficulty.PEACEFUL, true);
+			StaleCrumblerProbe peaceful =
+					new StaleCrumblerProbe(level);
+			peaceful.setPos(anchor.getX() + 11.5D,
+					anchor.getY(), anchor.getZ());
+			level.addFreshEntity(peaceful);
+			peaceful.checkDespawn();
+			require(helper,
+					peaceful.isRemoved()
+							&& peaceful
+									.despawnsInPeaceful(),
+					"Peaceful Stale Crumbler did not retain Monster removal");
+		} finally {
+			level.getGameRules()
+					.getRule(GameRules
+							.RULE_DOMOBSPAWNING)
+					.set(originalMobSpawning,
+							level.getServer());
+			level.getGameRules()
+					.getRule(GameRules
+							.RULE_MOBGRIEFING)
+					.set(originalMobGriefing,
+							level.getServer());
+			level.getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		boolean foundSword = false;
+		boolean foundShovel = false;
+		for (int seed = 0; seed < 1000
+				&& !(foundSword && foundShovel);
+				seed++) {
+			StaleCrumblerProbe equipped =
+					new StaleCrumblerProbe(level);
+			equipped.seedRandom(seed);
+			equipped.populateEquipment(
+					new DifficultyInstance(
+							Difficulty.HARD,
+							0L, 0L, 0.0F));
+			foundSword |= equipped
+					.getMainHandItem()
+					.is(Items.IRON_SWORD);
+			foundShovel |= equipped
+					.getMainHandItem()
+					.is(Items.IRON_SHOVEL);
+			require(helper,
+					equipped.getMainHandItem()
+									.isEmpty()
+							|| equipped
+									.getMainHandItem()
+									.is(Items.IRON_SWORD)
+							|| equipped
+									.getMainHandItem()
+									.is(Items.IRON_SHOVEL),
+					"Stale Crumbler generated non-Zombie default equipment");
+		}
+		require(helper,
+				foundSword && foundShovel,
+				"Deterministic Stale Crumbler equipment sweep did not retain both Zombie weapons");
+
+		MallowChick jockeyMount =
+				CakeWorldEntities.MALLOW_CHICK.get()
+						.create(level);
+		require(helper, jockeyMount != null,
+				"Could not create Stale Crumbler jockey mount");
+		jockeyMount.setPos(anchor.getX() + 14.5D,
+				anchor.getY(), anchor.getZ());
+		level.addFreshEntity(jockeyMount);
+		StaleCrumblerProbe jockey = null;
+		for (int seed = 0; seed < 1000
+				&& jockey == null; seed++) {
+			StaleCrumblerProbe candidate =
+					new StaleCrumblerProbe(level);
+			candidate.setPos(
+					jockeyMount.getX(),
+					jockeyMount.getY(),
+					jockeyMount.getZ());
+			candidate.seedRandom(seed);
+			candidate.finalizeSpawn(
+					level,
+					level.getCurrentDifficultyAt(
+							candidate
+									.blockPosition()),
+					MobSpawnType.NATURAL,
+					new Zombie.ZombieGroupData(
+							true, true),
+					null);
+			if (candidate.getVehicle()
+					== jockeyMount) {
+				jockey = candidate;
+			} else {
+				Entity vehicle =
+						candidate.getVehicle();
+				candidate.stopRiding();
+				candidate.discard();
+				if (vehicle instanceof Chicken
+						&& vehicle != jockeyMount) {
+					vehicle.discard();
+				}
+			}
+		}
+		require(helper,
+				jockey != null
+						&& jockey.isBaby()
+						&& jockeyMount
+								.isChickenJockey(),
+				"Stale Crumbler natural finalization lost the baby Chicken-jockey role");
+		jockey.stopRiding();
+		jockey.discard();
+		jockeyMount.discard();
+
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId())) {
+			Biome biome = level.registryAccess()
+					.registryOrThrow(
+							Registry.BIOME_REGISTRY)
+					.get(biomeId);
+			require(helper, biome != null,
+					"Missing CakeWorld biome "
+							+ biomeId);
+			List<MobSpawnSettings.SpawnerData>
+					zombieSpawns =
+							biome.getMobSettings()
+									.getMobs(
+											MobCategory
+												.MONSTER)
+									.unwrap().stream()
+									.filter(spawn ->
+											spawn.type
+													== EntityType
+														.ZOMBIE
+											|| spawn.type
+													== CakeWorldEntities
+														.STALE_CRUMBLER
+														.get())
+									.toList();
+			require(helper,
+					zombieSpawns.size() == 1
+							&& zombieSpawns.get(0).type
+									== CakeWorldEntities
+											.STALE_CRUMBLER
+											.get()
+							&& zombieSpawns.get(0)
+									.getWeight()
+									.asInt() == 95
+							&& zombieSpawns.get(0)
+									.minCount == 4
+							&& zombieSpawns.get(0)
+									.maxCount == 4,
+					"Stale Crumbler lost the exact Zombie 95/4-4 replacement in "
+							+ biomeId
+							+ ": "
+							+ zombieSpawns);
+		}
+
+		require(helper,
+				CakeWorldItems
+								.STALE_CRUMBLER_SPAWN_EGG
+								.get()
+								instanceof net.minecraft.world.item.SpawnEggItem
+						&& crumbler.getLootTableId()
+								.equals(
+										new ResourceLocation(
+												CakeWorld.MODID,
+												"entities/stale_crumbler"))
+						&& crumbler.skullItem()
+								.is(Items.ZOMBIE_HEAD)
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+											.STALE_CRUMBLER
+											.get())
+								== SoundEvents
+										.PARROT_IMITATE_ZOMBIE,
+				"Stale Crumbler lost egg, loot identity, charged-Creeper head or Lorikeet mimic");
+		ServerPlayer advancementPlayer =
+				new ServerPlayer(level.getServer(), level,
+						new GameProfile(
+								UUID.fromString(
+										"1978feed-feed-4bad-babe-1978feed2070"),
+								"CakeWorldStaleCrumblerRoleTest"));
+		VanillaRoleAdvancements.onDeath(
+				new LivingDeathEvent(crumbler,
+						DamageSource.playerAttack(
+								advancementPlayer)));
+		requireCriterion(helper, advancementPlayer,
+				"minecraft:adventure/kill_all_mobs",
+				"minecraft:zombie");
+
+		BlockPos cakeWorldPos =
+				findCakeWorldBiomePosition(helper,
+						anchor.offset(20, 0, 20),
+						256);
+		require(helper, cakeWorldPos != null,
+				"Could not locate CakeWorld terrain for Zombie conversion");
+		Zombie literal =
+				EntityType.ZOMBIE.create(level);
+		Pig conversionTarget =
+				EntityType.PIG.create(level);
+		Pig leashHolder =
+				EntityType.PIG.create(level);
+		Chicken passenger =
+				EntityType.CHICKEN.create(level);
+		require(helper,
+				literal != null
+						&& conversionTarget != null
+						&& leashHolder != null
+						&& passenger != null,
+				"Could not create direct Zombie conversion fixtures");
+		literal.setPos(cakeWorldPos.getX() + 0.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		literal.setBaby(true);
+		literal.setCustomName(
+				new TextComponent("Stale Scout"));
+		literal.setPersistenceRequired();
+		literal.setNoAi(true);
+		literal.setCanBreakDoors(true);
+		literal.setCanPickUpLoot(true);
+		literal.setItemSlot(
+				EquipmentSlot.MAINHAND,
+				new ItemStack(Items.IRON_SHOVEL));
+		literal.setHealth(13.0F);
+		literal.invulnerableTime = 19;
+		CompoundTag literalState =
+				literal.saveWithoutId(
+						new CompoundTag());
+		literalState.putInt(
+				"DrownedConversionTime", 40);
+		literal.load(literalState);
+		conversionTarget.setPos(
+				literal.getX() + 4.0D,
+				literal.getY(), literal.getZ());
+		leashHolder.setPos(literal.getX(),
+				literal.getY(), literal.getZ() + 2.0D);
+		passenger.setPos(literal.getX(),
+				literal.getY(), literal.getZ());
+		level.addFreshEntity(conversionTarget);
+		level.addFreshEntity(leashHolder);
+		level.addFreshEntity(literal);
+		level.addFreshEntity(passenger);
+		literal.setTarget(conversionTarget);
+		literal.setLastHurtByMob(
+				conversionTarget);
+		literal.setLeashedTo(
+				leashHolder, true);
+		passenger.startRiding(literal, true);
+		StaleCrumbler converted =
+				CakeWorldZombieReplacement
+						.replaceIfInCakeWorldBiome(
+								level, literal);
+		require(helper,
+				converted != null
+						&& literal.isRemoved()
+						&& converted.isBaby()
+						&& "Stale Scout".equals(
+								converted.getName()
+										.getString())
+						&& converted
+								.isPersistenceRequired()
+						&& converted.isNoAi()
+						&& converted.canBreakDoors()
+						&& converted.canPickUpLoot()
+						&& converted
+								.getMainHandItem()
+								.is(Items.IRON_SHOVEL)
+						&& converted
+								.isUnderWaterConverting()
+						&& close(converted.getHealth(),
+								13.0D)
+						&& converted.invulnerableTime
+								== 19
+						&& converted.getTarget()
+								== conversionTarget
+						&& converted.getLastHurtByMob()
+								== conversionTarget
+						&& converted
+								.getLeashHolder()
+								== leashHolder
+						&& converted.getPassengers()
+								.contains(passenger),
+				"Fresh literal Zombie conversion lost baby, NBT, health, combat, leash or passenger state");
+		require(helper,
+				CakeWorldZombieReplacement
+						.replaceIfInCakeWorldBiome(
+								level, converted)
+						== null
+						&& !converted.isRemoved(),
+				"Zombie conversion touched a non-literal entity type");
+		passenger.discard();
+		conversionTarget.discard();
+		leashHolder.discard();
+		converted.discard();
+
+		Boat vehicle =
+				EntityType.BOAT.create(level);
+		Zombie mountedLiteral =
+				EntityType.ZOMBIE.create(level);
+		require(helper,
+				vehicle != null
+						&& mountedLiteral != null,
+				"Could not create mounted Zombie conversion fixture");
+		vehicle.setPos(cakeWorldPos.getX() + 2.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		mountedLiteral.setPos(vehicle.getX(),
+				vehicle.getY(), vehicle.getZ());
+		mountedLiteral.setCustomName(
+				new TextComponent("Mounted Crumbler"));
+		level.addFreshEntity(vehicle);
+		level.addFreshEntity(mountedLiteral);
+		mountedLiteral.startRiding(vehicle, true);
+		StaleCrumbler mountedConverted =
+				CakeWorldZombieReplacement
+						.replaceIfInCakeWorldBiome(
+								level,
+								mountedLiteral);
+		require(helper,
+				mountedConverted != null
+						&& mountedLiteral.isRemoved()
+						&& mountedConverted.getVehicle()
+								== vehicle,
+				"Fresh literal Zombie conversion lost its vehicle");
+		mountedConverted.discard();
+		vehicle.discard();
+
+		Difficulty villagerDifficulty =
+				level.getDifficulty();
+		level.getServer().setDifficulty(
+				Difficulty.HARD, true);
+		StaleCrumbler villagerSlayer =
+				CakeWorldEntities.STALE_CRUMBLER
+						.get().create(level);
+		Villager villagerVictim =
+				EntityType.VILLAGER.create(level);
+		require(helper,
+				villagerSlayer != null
+						&& villagerVictim != null,
+				"Could not create Stale Crumbler Villager-conversion fixtures");
+		villagerSlayer.setPos(
+				cakeWorldPos.getX() + 4.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		villagerVictim.setPos(
+				villagerSlayer.getX() + 1.0D,
+				villagerSlayer.getY(),
+				villagerSlayer.getZ());
+		villagerVictim.setCustomName(
+				new TextComponent(
+						"Crumbled Citizen"));
+		villagerVictim.setVillagerData(
+				villagerVictim
+						.getVillagerData()
+						.setProfession(
+								VillagerProfession
+									.FARMER)
+						.setLevel(3));
+		villagerVictim.setVillagerXp(17);
+		level.addFreshEntity(villagerSlayer);
+		level.addFreshEntity(villagerVictim);
+		villagerSlayer.killed(
+				level, villagerVictim);
+		ZombieVillager zombieVillager =
+				level.getEntitiesOfClass(
+						ZombieVillager.class,
+						new AABB(villagerSlayer
+								.blockPosition())
+								.inflate(4.0D),
+						entity -> "Crumbled Citizen"
+								.equals(entity
+										.getName()
+										.getString()))
+						.stream().findFirst()
+						.orElse(null);
+		require(helper,
+				villagerVictim.isRemoved()
+						&& zombieVillager != null
+						&& zombieVillager.getType()
+								== EntityType
+										.ZOMBIE_VILLAGER
+						&& zombieVillager
+								.getVillagerData()
+								.getProfession()
+								== VillagerProfession.FARMER
+						&& zombieVillager
+								.getVillagerData()
+								.getLevel() == 3
+						&& zombieVillager
+								.getVillagerXp() == 17,
+				"Hard Stale Crumbler lost the finalized Zombie-Villager conversion role");
+		zombieVillager.discard();
+		villagerSlayer.discard();
+		level.getServer().setDifficulty(
+				villagerDifficulty, true);
+
+		StaleCrumbler drowning =
+				CakeWorldEntities.STALE_CRUMBLER
+						.get().create(level);
+		Boat drowningVehicle =
+				EntityType.BOAT.create(level);
+		Chicken drowningPassenger =
+				EntityType.CHICKEN.create(level);
+		require(helper,
+				drowning != null
+						&& drowningVehicle != null
+						&& drowningPassenger != null,
+				"Could not create actual Stale-Crumbler drowning fixtures");
+		drowningVehicle.setPos(
+				cakeWorldPos.getX() + 6.5D,
+				cakeWorldPos.getY(),
+				cakeWorldPos.getZ() + 0.5D);
+		drowning.setPos(drowningVehicle.getX(),
+				drowningVehicle.getY(),
+				drowningVehicle.getZ());
+		drowning.setBaby(true);
+		drowning.setCustomName(
+				new TextComponent(
+						"Naturally Soggy"));
+		drowning.setPersistenceRequired();
+		drowning.setItemSlot(
+				EquipmentSlot.MAINHAND,
+				new ItemStack(Items.IRON_SWORD));
+		CompoundTag drowningState =
+				drowning.saveWithoutId(
+						new CompoundTag());
+		drowningState.putInt(
+				"DrownedConversionTime", 0);
+		drowning.load(drowningState);
+		drowningPassenger.setPos(
+				drowning.getX(),
+				drowning.getY(),
+				drowning.getZ());
+		level.addFreshEntity(drowningVehicle);
+		level.addFreshEntity(drowning);
+		level.addFreshEntity(
+				drowningPassenger);
+		drowning.startRiding(
+				drowningVehicle, true);
+		drowningPassenger.startRiding(
+				drowning, true);
+		drowning.tick();
+		SoggyBiscuit drownedConversion =
+				level.getEntitiesOfClass(
+						SoggyBiscuit.class,
+						new AABB(drowning
+								.blockPosition())
+								.inflate(4.0D),
+						entity -> "Naturally Soggy"
+								.equals(entity
+										.getName()
+										.getString()))
+						.stream().findFirst()
+						.orElse(null);
+		require(helper,
+				drowning.isRemoved()
+						&& drownedConversion != null
+						&& drownedConversion.isBaby()
+						&& drownedConversion
+								.isPersistenceRequired()
+						&& drownedConversion
+								.getMainHandItem()
+								.is(Items.IRON_SWORD)
+						&& drownedConversion
+								.getVehicle()
+								== drowningVehicle
+						&& drownedConversion
+								.getPassengers()
+								.contains(
+										drowningPassenger),
+				"Actual drowning conversion lost Soggy Biscuit type, baby, equipment, vehicle or passenger state");
+		drowningPassenger.discard();
+		drownedConversion.discard();
+		drowningVehicle.discard();
+
+		BlockPos eventPos =
+				findCakeWorldBiomePosition(helper,
+						cakeWorldPos.offset(12, 0, 0),
+						64);
+		require(helper, eventPos != null,
+				"Could not locate CakeWorld terrain for deferred Zombie conversion");
+		Zombie eventLiteral =
+				EntityType.ZOMBIE.create(level);
+		require(helper, eventLiteral != null,
+				"Could not create deferred Zombie fixture");
+		eventLiteral.setPos(
+				eventPos.getX() + 0.5D,
+				eventPos.getY(),
+				eventPos.getZ() + 0.5D);
+		eventLiteral.setCustomName(
+				new TextComponent(
+						"Deferred Crumbler"));
+		eventLiteral.setNoAi(true);
+		level.addFreshEntity(eventLiteral);
+		AABB eventArea =
+				new AABB(eventPos).inflate(3.0D);
+		restoredBaby.discard();
+		persisted.discard();
+		contactTarget.discard();
+		vanilla.discard();
+		helper.runAfterDelay(5, () -> {
+			List<StaleCrumbler> emitted =
+					level.getEntitiesOfClass(
+							StaleCrumbler.class,
+							eventArea,
+							entity -> "Deferred Crumbler"
+									.equals(entity
+											.getName()
+											.getString()));
+			require(helper,
+					eventLiteral.isRemoved()
+							&& emitted.size() == 1
+							&& emitted.get(0)
+									.isNoAi(),
+					"Fresh literal Zombie did not defer-convert with finalized Stale Crumbler state");
+			emitted.forEach(
+					StaleCrumbler::discard);
+			helper.succeed();
+		});
+	}
+
+	private static final class MirageConfectionerProbe
+			extends MirageConfectioner {
+		private MirageConfectionerProbe(Level level) {
+			super(CakeWorldEntities
+					.MIRAGE_CONFECTIONER.get(),
+					level);
+		}
+
+		private boolean runInheritedSpell(
+				String simpleName) {
+			net.minecraft.world.entity.ai.goal.Goal goal =
+					goalSelector.getAvailableGoals()
+							.stream()
+							.map(WrappedGoal::getGoal)
+							.filter(candidate ->
+									candidate
+											.getClass()
+											.getSimpleName()
+											.equals(
+													simpleName))
+							.findFirst()
+							.orElse(null);
+			if (goal == null || !goal.canUse()) {
+				return false;
+			}
+			goal.start();
+			for (int tick = 0; tick < 40; ++tick) {
+				goal.tick();
+			}
+			return true;
+		}
+	}
+
+	private static final class StaleCrumblerProbe
+			extends StaleCrumbler {
+		private net.minecraft.sounds.SoundEvent
+				lastSound;
+
+		private StaleCrumblerProbe(Level level) {
+			super(CakeWorldEntities
+					.STALE_CRUMBLER.get(),
+					level);
+		}
+
+		private void seedRandom(long seed) {
+			random.setSeed(seed);
+		}
+
+		private int baseExperienceReward() {
+			return xpReward;
+		}
+
+		private int experienceReward() {
+			return getExperienceReward(null);
+		}
+
+		private float standingEyeHeight() {
+			return getStandingEyeHeight(
+					Pose.STANDING,
+					getDimensions(Pose.STANDING));
+		}
+
+		private boolean sunSensitive() {
+			return isSunSensitive();
+		}
+
+		private boolean supportsDoorBreaking() {
+			return supportsBreakDoorGoal();
+		}
+
+		private boolean navigationOpensDoors() {
+			return getNavigation()
+						instanceof GroundPathNavigation
+								navigation
+					&& navigation.canOpenDoors();
+		}
+
+		private void populateEquipment(
+				DifficultyInstance difficulty) {
+			populateDefaultEquipmentSlots(
+					difficulty);
+		}
+
+		private boolean despawnsInPeaceful() {
+			return shouldDespawnInPeaceful();
+		}
+
+		private ResourceLocation getLootTableId() {
+			return getLootTable();
+		}
+
+		private ItemStack skullItem() {
+			return getSkull();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				ambientSound() {
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				hurtSound() {
+			return getHurtSound(
+					DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				deathSound() {
+			return getDeathSound();
+		}
+
+		private void playStep() {
+			playStepSound(blockPosition(),
+					Blocks.STONE
+							.defaultBlockState());
+		}
+
+		private void clearLastSound() {
+			lastSound = null;
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				lastSound() {
+			return lastSound;
+		}
+
+		private List<String> goalSignatures() {
+			return goalSelector.getAvailableGoals()
+					.stream()
+					.map(wrapped ->
+							wrapped.getPriority() + ":"
+									+ wrapped.getGoal()
+											.getClass()
+											.getSimpleName())
+					.sorted().toList();
+		}
+
+		private List<String>
+				targetGoalSignatures() {
+			return targetSelector
+					.getAvailableGoals().stream()
+					.map(wrapped ->
+							wrapped.getPriority() + ":"
+									+ wrapped.getGoal()
+											.getClass()
+											.getSimpleName())
+					.sorted().toList();
+		}
+
+		@Override
+		public void playSound(
+				net.minecraft.sounds.SoundEvent sound,
+				float volume, float pitch) {
+			lastSound = sound;
+		}
+	}
+
+	private static final class VanillaZombieProbe
+			extends Zombie {
+		private VanillaZombieProbe(Level level) {
+			super(EntityType.ZOMBIE, level);
+		}
+
+		private List<String> goalSignatures() {
+			return goalSelector.getAvailableGoals()
+					.stream()
+					.map(wrapped ->
+							wrapped.getPriority() + ":"
+									+ wrapped.getGoal()
+											.getClass()
+											.getSimpleName())
+					.sorted().toList();
+		}
+
+		private List<String>
+				targetGoalSignatures() {
+			return targetSelector
+					.getAvailableGoals().stream()
+					.map(wrapped ->
+							wrapped.getPriority() + ":"
+									+ wrapped.getGoal()
+											.getClass()
+											.getSimpleName())
+					.sorted().toList();
+		}
 	}
 
 	private static final class StaleFudgeBoarProbe
