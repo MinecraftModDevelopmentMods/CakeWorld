@@ -18,6 +18,7 @@ import com.mojang.authlib.GameProfile;
 import com.mcmoddev.cakeworld.CakeWorld;
 import com.mcmoddev.cakeworld.compat.VanillaResourceAdvancements;
 import com.mcmoddev.cakeworld.entity.BiscuitBandit;
+import com.mcmoddev.cakeworld.entity.CrumbledGingerbreadFolk;
 import com.mcmoddev.cakeworld.entity.GingerbreadFolk;
 import com.mcmoddev.cakeworld.entity.JawbreakerGuardian;
 import com.mcmoddev.cakeworld.init.CakeWorldBiomes;
@@ -28,6 +29,7 @@ import com.mcmoddev.cakeworld.world.BiscuitBanditLookoutFeature;
 import com.mcmoddev.cakeworld.world.GingerbreadVillageFeature;
 import com.mcmoddev.cakeworld.world.GrandGingerbreadManorFeature;
 import com.mcmoddev.cakeworld.world.GummyShrineFeature;
+import com.mcmoddev.cakeworld.world.IceCreamParlourFeature;
 import com.mcmoddev.cakeworld.world.SherbetPyramidFeature;
 import com.mcmoddev.cakeworld.world.WaferMineFeature;
 import com.mcmoddev.orespawn.api.CompiledOrePattern;
@@ -57,6 +59,8 @@ import net.minecraft.tags.ConfiguredStructureTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.entity.npc.VillagerType;
 import net.minecraft.world.entity.raid.Raid;
 import net.minecraft.world.entity.vehicle.MinecartChest;
 import net.minecraft.world.item.Item;
@@ -71,6 +75,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RedStoneOreBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BrewingStandBlockEntity;
 import net.minecraft.world.level.block.entity.DispenserBlockEntity;
 import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -2654,6 +2659,358 @@ public final class DeepPantryGameTests {
 			require(helper, protectedLoot,
 					"The natural Sherbet Pyramid lost one or more protected buried loot jars");
 			helper.succeed();
+		});
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 7200)
+	public static void focusedIceCreamParlourStructureAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean(
+				"cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed Ice-Cream Parlour audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						IceCreamParlourFeature
+								.STRUCTURE_ID);
+		require(helper, configured != null,
+				"Ice-Cream Parlour configured structure was absent from the live registry");
+		boolean tagged = structures.getTag(
+						IceCreamParlourFeature
+								.STRUCTURE_TAG)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		require(helper, tagged,
+				"Ice-Cream Parlour lost its public locate tag");
+
+		BlockPos located = level.findNearestMapFeature(
+				IceCreamParlourFeature.STRUCTURE_TAG,
+				helper.absolutePos(new BlockPos(4, 4, 4)),
+				512, false);
+		require(helper, located != null,
+				"The fixed-seed CakeWorld contained no locatable Ice-Cream Parlour within 512 chunks");
+		net.minecraft.world.level.ChunkPos startChunk =
+				new net.minecraft.world.level.ChunkPos(
+						located);
+		net.minecraft.world.level.chunk.LevelChunk
+				startLevelChunk =
+				level.getChunk(startChunk.x,
+						startChunk.z);
+		net.minecraft.world.level.levelgen.structure.StructureStart
+				start =
+				startLevelChunk.getStartForFeature(
+						configured);
+		require(helper,
+				start != null && start.isValid()
+						&& start.getFeature() == configured
+						&& start.getPieces().size() == 1,
+				"The located Ice-Cream Parlour lost its saved surface-structure start");
+		net.minecraft.world.level.levelgen.structure.BoundingBox
+				savedBounds = start.getBoundingBox();
+		require(helper,
+				savedBounds.getXSpan() == 13
+						&& savedBounds.getYSpan() == 27
+						&& savedBounds.getZSpan() == 13,
+				"The saved Ice-Cream Parlour collapsed its exact 13x27x13 optional-cellar envelope: "
+						+ savedBounds);
+		BlockPos centre = new BlockPos(
+				savedBounds.minX() + 6,
+				savedBounds.minY() + 19,
+				savedBounds.minZ() + 6);
+		boolean expectedBasement =
+				IceCreamParlourFeature.hasBasement(
+						level.getSeed(), centre);
+
+		int minimumChunkX =
+				Math.floorDiv(savedBounds.minX(), 16);
+		int maximumChunkX =
+				Math.floorDiv(savedBounds.maxX(), 16);
+		int minimumChunkZ =
+				Math.floorDiv(savedBounds.minZ(), 16);
+		int maximumChunkZ =
+				Math.floorDiv(savedBounds.maxZ(), 16);
+		for (int chunkX = minimumChunkX;
+				chunkX <= maximumChunkX; chunkX++) {
+			for (int chunkZ = minimumChunkZ;
+					chunkZ <= maximumChunkZ; chunkZ++) {
+				level.setChunkForced(
+						chunkX, chunkZ, true);
+			}
+		}
+
+		helper.runAfterDelay(40, () -> {
+			Map<Block, Integer> palette =
+					new LinkedHashMap<>();
+			for (int x = -6; x <= 6; x++) {
+				for (int y = -19; y <= 7;
+						y++) {
+					for (int z = -6; z <= 6;
+							z++) {
+						Block block =
+								level.getBlockState(
+										centre.offset(
+												x, y,
+												z))
+										.getBlock();
+						palette.merge(block, 1,
+								Integer::sum);
+					}
+				}
+			}
+			ResourceLocation biomeId =
+					level.registryAccess()
+							.registryOrThrow(
+									Registry.BIOME_REGISTRY)
+							.getKey(level.getBiome(
+									centre)
+									.value());
+			boolean literalIglooEligible =
+					level.getBiome(centre).is(
+							BiomeTags.HAS_IGLOO);
+
+			BlockEntity brewingEntity =
+					level.getBlockEntity(
+							centre.offset(
+									-3, -17, 2));
+			boolean stockedWeakness =
+					brewingEntity
+							instanceof BrewingStandBlockEntity
+							&& PotionUtils.getPotion(
+									((BrewingStandBlockEntity)
+											brewingEntity)
+											.getItem(0))
+									== Potions.WEAKNESS;
+			BlockEntity lootEntity =
+					level.getBlockEntity(
+							centre.offset(
+									3, -17, 2));
+			CompoundTag lootState =
+					lootEntity == null
+							? new CompoundTag()
+							: lootEntity
+									.saveWithoutMetadata();
+			boolean parlourLoot =
+					IceCreamParlourFeature.LOOT_ID
+							.toString().equals(
+									lootState
+											.getString(
+													"LootTable"));
+			// Keep the remote chunk forced through a complete server-tick
+			// boundary after generation so the one-shot START-phase resident
+			// handoff has joined both entities before this observation.
+			helper.runAfterDelay(20, () -> {
+			helper.runAfterDelay(1, () -> {
+			AABB cellarArea = new AABB(
+					centre.offset(-5, -18, -5),
+					centre.offset(6, -11, 6));
+			List<GingerbreadFolk> folk =
+					level.getEntitiesOfClass(
+							GingerbreadFolk.class,
+							cellarArea);
+			List<CrumbledGingerbreadFolk> crumbs =
+					level.getEntitiesOfClass(
+							CrumbledGingerbreadFolk
+									.class,
+							cellarArea);
+			boolean curingPair =
+					folk.size() == 1
+							&& crumbs.size() == 1
+							&& folk.get(0)
+									.isPersistenceRequired()
+							&& crumbs.get(0)
+									.isPersistenceRequired()
+							&& folk.get(0)
+									.getVillagerData()
+									.getType()
+									== VillagerType.SNOW
+							&& folk.get(0)
+									.getVillagerData()
+									.getProfession()
+									== VillagerProfession
+											.CLERIC
+							&& crumbs.get(0)
+									.getVillagerData()
+									.getType()
+									== VillagerType.SNOW
+							&& crumbs.get(0)
+									.getVillagerData()
+									.getProfession()
+									== VillagerProfession
+											.CLERIC;
+			boolean residentMarkerPresent =
+					level.getBlockState(
+							centre.offset(
+									0, -17, 5))
+							.is(Blocks.STRUCTURE_VOID);
+			boolean pendingHandoff =
+					expectedBasement
+							&& residentMarkerPresent
+							&& folk.isEmpty()
+							&& crumbs.isEmpty();
+
+			int cellarLadders = 0;
+			for (int y = -17; y <= -1;
+					y++) {
+				if (level.getBlockState(
+						centre.offset(0, y, 2))
+						.is(Blocks.LADDER)) {
+					cellarLadders++;
+				}
+			}
+			boolean noCellarArtifacts =
+					!level.getBlockState(
+							centre.offset(0, 0, 2))
+							.is(Blocks.OAK_TRAPDOOR)
+							&& brewingEntity == null
+							&& lootEntity == null
+							&& cellarLadders == 0
+							&& folk.isEmpty()
+							&& crumbs.isEmpty()
+							&& !residentMarkerPresent;
+
+			for (int chunkX = minimumChunkX;
+					chunkX <= maximumChunkX;
+					chunkX++) {
+				for (int chunkZ = minimumChunkZ;
+						chunkZ <= maximumChunkZ;
+						chunkZ++) {
+					level.setChunkForced(
+							chunkX, chunkZ, false);
+				}
+			}
+
+			LOGGER.info("Focused Ice-Cream Parlour audit: locate={}, centre={}, bounds={}, biome={}, expectedBasement={}, palette={}, weakness={}, loot={}, folk={}, crumbs={}, pendingHandoff={}",
+					located, centre, savedBounds,
+					biomeId, expectedBasement,
+					palette, stockedWeakness,
+					parlourLoot, folk.size(),
+					crumbs.size(),
+					pendingHandoff);
+			require(helper,
+					CakeWorldBiomes
+							.MARSHMALLOW_PEAKS
+							.getId().equals(biomeId)
+							&& !literalIglooEligible,
+					"The natural Ice-Cream Parlour lost its temporary Marshmallow Peaks home or leaked literal Igloo eligibility: biome="
+							+ biomeId
+							+ ", literalIglooEligible="
+							+ literalIglooEligible);
+			require(helper,
+					palette.getOrDefault(
+							CakeWorldBlocks
+									.MARSHMALLOW
+									.get(), 0) >= 300
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.FROZEN_LEMONADE
+											.get(), 0)
+									>= (expectedBasement
+											? 120
+											: 121)
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.ICING
+											.get(), 0)
+									>= 89
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.CANDY_GLASS
+											.get(), 0)
+									>= 14
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.CANDY_CANE_PILLAR
+											.get(), 0)
+									>= 12
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.WAFER_BLOCK
+											.get(), 0)
+									>= 8
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.OVEN
+											.get(), 0)
+									== 1
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.MIXING_BOWL
+											.get(), 0)
+									== 1
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.COOLING_RACK
+											.get(), 0)
+									== 1
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.SODA_FOUNTAIN
+											.get(), 0)
+									== 1
+							&& palette.getOrDefault(
+									Blocks.LIGHT_BLUE_BED,
+									0) == 2,
+					"The natural Ice-Cream Parlour lost its soft shelter, frozen floor, scoop roof or kitchen roles: "
+							+ palette);
+			if (expectedBasement) {
+				require(helper,
+						palette.getOrDefault(
+								CakeWorldBlocks
+										.GINGERBREAD_BRICKS
+										.get(), 0)
+								>= 250
+								&& palette.getOrDefault(
+										CakeWorldBlocks
+												.BISCUIT_STONE
+												.get(), 0)
+										>= 81
+								&& palette.getOrDefault(
+										Blocks.IRON_BARS,
+										0) == 22
+								&& palette.getOrDefault(
+										Blocks
+												.OAK_FENCE_GATE,
+										0) == 2
+								&& level.getBlockState(
+										centre.offset(
+												0, 0,
+												2))
+										.is(Blocks
+												.OAK_TRAPDOOR)
+								&& cellarLadders == 17
+								&& stockedWeakness
+								&& parlourLoot
+								&& (curingPair
+										|| pendingHandoff),
+						"The natural Ice-Cream Parlour lost its hidden cellar, cure station, loot or persistent Snow-cleric pair: "
+								+ palette
+								+ ", weakness="
+								+ stockedWeakness
+								+ ", loot="
+								+ parlourLoot
+								+ ", folk="
+								+ folk.size()
+								+ ", crumbs="
+								+ crumbs.size()
+								+ ", pendingHandoff="
+								+ pendingHandoff);
+			} else {
+				require(helper, noCellarArtifacts,
+						"The natural surface-only Ice-Cream Parlour leaked cellar blocks or residents");
+			}
+			helper.succeed();
+			});
+			});
 		});
 	}
 

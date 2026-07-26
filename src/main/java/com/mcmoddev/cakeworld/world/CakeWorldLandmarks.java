@@ -66,6 +66,20 @@ public final class CakeWorldLandmarks {
 							.TOP_LAYER_MODIFICATION)
 					.add(pyramidRepair);
 		}
+		Holder<PlacedFeature> parlourRepair =
+				IceCreamParlourRepairFeature
+						.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(
+						biome.getNamespace())
+				&& isCurrentOverworldBiome(
+						biome.getPath())
+				&& parlourRepair != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration
+							.TOP_LAYER_MODIFICATION)
+					.add(parlourRepair);
+		}
 	}
 
 	private static boolean isCurrentOverworldBiome(

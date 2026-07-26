@@ -158,6 +158,9 @@ import com.mcmoddev.cakeworld.world.GrandGingerbreadManorRepairFeature;
 import com.mcmoddev.cakeworld.world.GrandGingerbreadManorStructureFeature;
 import com.mcmoddev.cakeworld.world.GummyShrineFeature;
 import com.mcmoddev.cakeworld.world.GummyShrineRepairFeature;
+import com.mcmoddev.cakeworld.world.IceCreamParlourFeature;
+import com.mcmoddev.cakeworld.world.IceCreamParlourRepairFeature;
+import com.mcmoddev.cakeworld.world.IceCreamParlourStructureFeature;
 import com.mcmoddev.cakeworld.world.SherbetPyramidFeature;
 import com.mcmoddev.cakeworld.world.SherbetPyramidRepairFeature;
 import com.mcmoddev.cakeworld.world.SherbetPyramidStructureFeature;
@@ -374,6 +377,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.WitherSkullBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BrewingStandBlockEntity;
 import net.minecraft.world.level.block.entity.DispenserBlockEntity;
 import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
 import net.minecraft.world.level.block.entity.SkullBlockEntity;
@@ -34644,6 +34648,459 @@ public final class FirstBiteGameTests {
 							+ recoveryLadders);
 			helper.succeed();
 		});
+	}
+
+	@GameTest(template = EMPTY, batch = "struct007",
+			timeoutTicks = 600)
+	public static void iceCreamParloursKeepIglooCuringRole(
+			GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						IceCreamParlourFeature
+								.STRUCTURE_ID);
+		Registry<net.minecraft.world.level.levelgen.structure.StructureSet>
+				structureSets =
+				level.registryAccess().registryOrThrow(
+						Registry.STRUCTURE_SET_REGISTRY);
+		net.minecraft.world.level.levelgen.structure.StructureSet
+				structureSet =
+				structureSets.get(
+						IceCreamParlourFeature
+								.STRUCTURE_SET_ID);
+		boolean ownTag = structures.getTag(
+						IceCreamParlourFeature
+								.STRUCTURE_TAG)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		Set<ResourceLocation> eligibleBiomes =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.getTag(IceCreamParlourFeature
+								.GENERATES_IN)
+						.map(tag -> tag.stream()
+								.map(holder -> holder
+										.unwrapKey()
+										.orElseThrow()
+										.location())
+								.collect(
+										java.util.stream
+												.Collectors
+												.toSet()))
+						.orElse(Set.of());
+		Biome marshmallowPeaks =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.get(CakeWorldBiomes
+								.MARSHMALLOW_PEAKS
+								.getId());
+		boolean repairInstalled = false;
+		if (marshmallowPeaks != null) {
+			for (Holder<PlacedFeature> feature
+					: marshmallowPeaks
+							.getGenerationSettings()
+							.features().get(
+									GenerationStep.Decoration
+											.TOP_LAYER_MODIFICATION
+											.ordinal())) {
+				if (feature.unwrapKey().map(key ->
+						key.location().equals(
+								IceCreamParlourRepairFeature
+										.ID))
+						.orElse(false)) {
+					repairInstalled = true;
+					break;
+				}
+			}
+		}
+		require(helper,
+				configured != null
+						&& configured.feature
+								== IceCreamParlourFeature
+										.STRUCTURE_FEATURE
+						&& !configured.adaptNoise
+						&& IceCreamParlourFeature
+								.STRUCTURE_FEATURE.step()
+								== GenerationStep
+										.Decoration
+										.SURFACE_STRUCTURES
+						&& IceCreamParlourStructureFeature
+								.BURIED_DEPTH == 19
+						&& structureSet != null
+						&& structureSet.structures().size()
+								== 1
+						&& structureSet.structures().get(0)
+								.structure().value()
+								== configured
+						&& ownTag
+						&& IceCreamParlourRepairFeature
+								.placedFeature() != null
+						&& repairInstalled
+						&& eligibleBiomes.equals(Set.of(
+								CakeWorldBiomes
+										.MARSHMALLOW_PEAKS
+										.getId())),
+				"Ice-Cream Parlour lost its configured structure, projected surface envelope, locate tag, installed late repair or temporary Marshmallow Peaks contract: eligible="
+						+ eligibleBiomes
+						+ ", repairInstalled="
+						+ repairInstalled);
+
+		net.minecraft.world.level.levelgen.structure.placement
+				.RandomSpreadStructurePlacement placement =
+				(net.minecraft.world.level.levelgen.structure
+						.placement.RandomSpreadStructurePlacement)
+						structureSet.placement();
+		require(helper,
+				placement.spacing() == 32
+						&& placement.separation() == 8
+						&& placement.spreadType()
+								== net.minecraft.world.level
+										.levelgen.structure
+										.placement
+										.RandomSpreadType
+										.LINEAR
+						&& placement.salt() == 14357618,
+				"Ice-Cream Parlour lost vanilla Igloo's exact 32/8 linear placement contract");
+
+		net.minecraft.world.level.levelgen.structure.pools
+				.StructurePoolElement element =
+				IceCreamParlourFeature.pool().value()
+						.getRandomTemplate(
+								new Random(14357618L));
+		net.minecraft.world.level.levelgen.structure.BoundingBox
+				pieceBounds =
+				element.getBoundingBox(
+						level.getStructureManager(),
+						BlockPos.ZERO,
+						Rotation.NONE);
+		require(helper,
+				element
+						instanceof CakeWorldFeaturePoolElement
+						&& pieceBounds.getXSpan() == 13
+						&& pieceBounds.getYSpan() == 27
+						&& pieceBounds.getZSpan() == 13,
+				"Ice-Cream Parlour lost its serializable 13x27x13 optional-cellar envelope");
+
+		int basementSamples = 0;
+		for (int sample = 0; sample < 256;
+				sample++) {
+			BlockPos samplePosition =
+					new BlockPos(sample * 32, 64,
+							sample * -17);
+			boolean first =
+					IceCreamParlourFeature
+							.hasBasement(
+									5059928472718672684L,
+									samplePosition);
+			boolean second =
+					IceCreamParlourFeature
+							.hasBasement(
+									5059928472718672684L,
+									samplePosition);
+			require(helper, first == second,
+					"Ice-Cream Parlour cellar decision was not stable for "
+							+ samplePosition);
+			if (first) {
+				basementSamples++;
+			}
+		}
+		require(helper,
+				basementSamples >= 96
+						&& basementSamples <= 160,
+				"Ice-Cream Parlour stable half-cellar rule produced "
+						+ basementSamples
+						+ " cellars across 256 sample starts");
+
+		BlockPos column =
+				helper.absolutePos(new BlockPos(4, 4, 4));
+		BlockPos topOnlyCentre = new BlockPos(
+				column.getX(),
+				level.getMaxBuildHeight() - 96,
+				column.getZ());
+		BlockPos cellarCentre = new BlockPos(
+				column.getX(),
+				level.getMaxBuildHeight() - 128,
+				column.getZ());
+		for (BlockPos centre : List.of(
+				topOnlyCentre, cellarCentre)) {
+			AABB envelope = new AABB(
+					centre.offset(-6, -19, -6),
+					centre.offset(7, 8, 7));
+			level.getEntitiesOfClass(
+					GingerbreadFolk.class, envelope)
+					.forEach(GingerbreadFolk::discard);
+			level.getEntitiesOfClass(
+					CrumbledGingerbreadFolk.class,
+					envelope)
+					.forEach(
+							CrumbledGingerbreadFolk
+									::discard);
+			for (int x = -6; x <= 6; x++) {
+				for (int y = -19; y <= 7;
+						y++) {
+					for (int z = -6; z <= 6;
+							z++) {
+						level.setBlock(
+								centre.offset(
+										x, y,
+										z),
+								Blocks.AIR
+										.defaultBlockState(),
+								2);
+					}
+				}
+			}
+		}
+
+		require(helper,
+				IceCreamParlourFeature.buildAt(
+						level,
+						new Random(14357618L),
+						topOnlyCentre, false),
+				"Ice-Cream Parlour refused its forced surface-only fixture");
+		Map<Block, Integer> topPalette =
+				scanBlockPalette(level, topOnlyCentre,
+						6, 19, 7);
+		require(helper,
+				topPalette.getOrDefault(
+						CakeWorldBlocks.MARSHMALLOW
+								.get(), 0) >= 250
+						&& topPalette.getOrDefault(
+								CakeWorldBlocks
+										.FROZEN_LEMONADE
+										.get(), 0)
+								== 121
+						&& topPalette.getOrDefault(
+								CakeWorldBlocks.ICING
+										.get(), 0)
+								>= 85
+						&& topPalette.getOrDefault(
+								CakeWorldBlocks
+										.CANDY_GLASS
+										.get(), 0)
+								== 14
+						&& topPalette.getOrDefault(
+								CakeWorldBlocks
+										.CANDY_CANE_PILLAR
+										.get(), 0)
+								== 12
+						&& topPalette.getOrDefault(
+								CakeWorldBlocks
+										.WAFER_BLOCK
+										.get(), 0)
+								== 8
+						&& topPalette.getOrDefault(
+								CakeWorldBlocks.OVEN
+										.get(), 0)
+								== 1
+						&& topPalette.getOrDefault(
+								CakeWorldBlocks
+										.MIXING_BOWL
+										.get(), 0)
+								== 1
+						&& topPalette.getOrDefault(
+								CakeWorldBlocks
+										.COOLING_RACK
+										.get(), 0)
+								== 1
+						&& topPalette.getOrDefault(
+								CakeWorldBlocks
+										.SODA_FOUNTAIN
+										.get(), 0)
+								== 1
+						&& topPalette.getOrDefault(
+								Blocks.LIGHT_BLUE_BED,
+								0) == 2
+						&& topPalette.getOrDefault(
+								Blocks.OAK_TRAPDOOR,
+								0) == 0
+						&& topPalette.getOrDefault(
+								Blocks.CHEST, 0) == 0
+						&& topPalette.getOrDefault(
+								Blocks.BREWING_STAND,
+								0) == 0
+						&& topPalette.getOrDefault(
+								Blocks.LADDER, 0)
+								== 0,
+				"Ice-Cream Parlour surface-only variant lost its soft shelter, frozen floor, scoop roof or kitchen roles: "
+						+ topPalette);
+
+		require(helper,
+				IceCreamParlourFeature.buildAt(
+						level,
+						new Random(14357618L),
+						cellarCentre, true),
+				"Ice-Cream Parlour refused its forced curing-cellar fixture");
+		Map<Block, Integer> cellarPalette =
+				scanBlockPalette(level, cellarCentre,
+						6, 19, 7);
+		require(helper,
+				cellarPalette.getOrDefault(
+						CakeWorldBlocks
+								.GINGERBREAD_BRICKS
+								.get(), 0) >= 250
+						&& cellarPalette.getOrDefault(
+								CakeWorldBlocks
+										.BISCUIT_STONE
+										.get(), 0)
+								== 81
+						&& cellarPalette.getOrDefault(
+								CakeWorldBlocks
+										.WAFER_BLOCK
+										.get(), 0)
+								>= 87
+						&& cellarPalette.getOrDefault(
+								Blocks.LADDER, 0)
+								== 17
+						&& cellarPalette.getOrDefault(
+								Blocks.IRON_BARS, 0)
+								== 22
+						&& cellarPalette.getOrDefault(
+								Blocks.OAK_FENCE_GATE,
+								0) == 2
+						&& cellarPalette.getOrDefault(
+								Blocks.OAK_TRAPDOOR,
+								0) == 1
+						&& cellarPalette.getOrDefault(
+								Blocks.BREWING_STAND,
+								0) == 1
+						&& cellarPalette.getOrDefault(
+								Blocks.CHEST, 0) == 1
+						&& cellarPalette.getOrDefault(
+								CakeWorldBlocks
+										.COOKBOOK_LIBRARY
+										.get(), 0)
+								== 1,
+				"Ice-Cream Parlour cellar lost its accessible cells, recovery ladder, cure station or guaranteed cache: "
+						+ cellarPalette);
+
+		BlockPos brewing =
+				cellarCentre.offset(-3, -17, 2);
+		BlockEntity brewingEntity =
+				level.getBlockEntity(brewing);
+		require(helper,
+				brewingEntity
+						instanceof BrewingStandBlockEntity
+						&& PotionUtils.getPotion(
+								((BrewingStandBlockEntity)
+										brewingEntity)
+										.getItem(0))
+								== Potions.WEAKNESS,
+				"Ice-Cream Parlour cellar lost its stocked Weakness splash");
+		BlockEntity lootEntity =
+				level.getBlockEntity(
+						cellarCentre.offset(
+								3, -17, 2));
+		CompoundTag lootState =
+				lootEntity == null
+						? new CompoundTag()
+						: lootEntity
+								.saveWithoutMetadata();
+		require(helper,
+				IceCreamParlourFeature.LOOT_ID
+						.toString().equals(
+								lootState.getString(
+										"LootTable")),
+				"Ice-Cream Parlour cellar lost its guaranteed cure-supply loot identity");
+
+		// Give the Folk enough ordinary server ticks to abandon an invalid
+		// novice profession. Retaining Cleric here proves the Brewing Stand
+		// job-site claim, not merely the construction-time data assignment.
+		helper.runAfterDelay(40, () -> {
+		AABB cellarArea = new AABB(
+				cellarCentre.offset(-5, -18, -5),
+				cellarCentre.offset(6, -11, 6));
+		List<GingerbreadFolk> folk =
+				level.getEntitiesOfClass(
+						GingerbreadFolk.class,
+						cellarArea);
+		List<CrumbledGingerbreadFolk> crumbs =
+				level.getEntitiesOfClass(
+						CrumbledGingerbreadFolk.class,
+						cellarArea);
+		require(helper,
+				folk.size() == 1
+						&& crumbs.size() == 1
+						&& folk.get(0)
+								.isPersistenceRequired()
+						&& crumbs.get(0)
+								.isPersistenceRequired()
+						&& folk.get(0)
+								.getVillagerData()
+								.getType()
+								== VillagerType.SNOW
+						&& folk.get(0)
+								.getVillagerData()
+								.getProfession()
+								== VillagerProfession
+										.CLERIC
+						&& crumbs.get(0)
+								.getVillagerData()
+								.getType()
+								== VillagerType.SNOW
+						&& crumbs.get(0)
+								.getVillagerData()
+								.getProfession()
+								== VillagerProfession
+										.CLERIC,
+				"Ice-Cream Parlour cellar lost its persistent Snow cleric curing pair: folk="
+						+ folk.size()
+						+ ", crumbs="
+						+ crumbs.size());
+
+		CrumbledGingerbreadFolk crumb =
+				crumbs.get(0);
+		crumb.addEffect(new MobEffectInstance(
+				MobEffects.WEAKNESS, 1200));
+		Player curer = helper.makeMockPlayer();
+		ItemStack goldenApple =
+				new ItemStack(Items.GOLDEN_APPLE);
+		curer.setItemInHand(
+				InteractionHand.MAIN_HAND,
+				goldenApple);
+		InteractionResult cureStart =
+				crumb.mobInteract(
+						curer,
+						InteractionHand.MAIN_HAND);
+		require(helper,
+				cureStart.consumesAction()
+						&& goldenApple.isEmpty()
+						&& crumb.isConverting(),
+				"Ice-Cream Parlour supplied the cure clue but the genuine Crumbled Gingerbread Folk could not begin conversion");
+		helper.succeed();
+		});
+	}
+
+	private static Map<Block, Integer> scanBlockPalette(
+			ServerLevel level, BlockPos centre,
+			int horizontalRadius, int buriedDepth,
+			int topHeight) {
+		Map<Block, Integer> palette =
+				new java.util.HashMap<>();
+		for (int x = -horizontalRadius;
+				x <= horizontalRadius; x++) {
+			for (int y = -buriedDepth;
+					y <= topHeight; y++) {
+				for (int z = -horizontalRadius;
+						z <= horizontalRadius; z++) {
+					Block block = level.getBlockState(
+							centre.offset(x, y, z))
+							.getBlock();
+					palette.merge(block, 1,
+							Integer::sum);
+				}
+			}
+		}
+		return palette;
 	}
 
 	private static final class StaleFudgeFolkProbe
