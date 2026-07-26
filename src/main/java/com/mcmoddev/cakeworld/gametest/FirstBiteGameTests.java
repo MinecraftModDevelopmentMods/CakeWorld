@@ -71,6 +71,7 @@ import com.mcmoddev.cakeworld.entity.FizzballFish;
 import com.mcmoddev.cakeworld.entity.FizzballFishDamageSafety;
 import com.mcmoddev.cakeworld.entity.FrostedArcher;
 import com.mcmoddev.cakeworld.entity.FudgeSkater;
+import com.mcmoddev.cakeworld.entity.GingerbreadFolk;
 import com.mcmoddev.cakeworld.entity.GingerbreadPony;
 import com.mcmoddev.cakeworld.entity.GingerbreadStomper;
 import com.mcmoddev.cakeworld.entity.GingerbreadStomperDamageSafety;
@@ -122,6 +123,7 @@ import com.mcmoddev.cakeworld.world.CakeWorldPiglinReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldPiglinBruteReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldTurtleReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldVexReplacement;
+import com.mcmoddev.cakeworld.world.CakeWorldVillagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldPillagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldRavagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldShulkerReplacement;
@@ -190,6 +192,8 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.LlamaFollowCaravanGoal;
 import net.minecraft.world.entity.ai.goal.WrappedGoal;
 import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
+import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
+import net.minecraft.world.entity.ai.village.poi.PoiType;
 import net.minecraft.world.entity.ai.navigation.WallClimberNavigation;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.NearestVisibleLivingEntities;
@@ -197,6 +201,7 @@ import net.minecraft.world.entity.ai.sensing.GolemSensor;
 import net.minecraft.world.entity.ai.sensing.HoglinSpecificSensor;
 import net.minecraft.world.entity.ai.sensing.NearestLivingEntitySensor;
 import net.minecraft.world.entity.ai.sensing.PiglinSpecificSensor;
+import net.minecraft.world.entity.ai.village.ReputationEventType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.SpawnPlacements;
@@ -234,6 +239,9 @@ import net.minecraft.world.entity.animal.horse.SkeletonTrapGoal;
 import net.minecraft.world.entity.animal.horse.TraderLlama;
 import net.minecraft.world.entity.animal.horse.Variant;
 import net.minecraft.world.entity.npc.WanderingTrader;
+import net.minecraft.world.entity.npc.VillagerData;
+import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.entity.npc.VillagerType;
 import net.minecraft.world.entity.monster.Drowned;
 import net.minecraft.world.entity.monster.AbstractSkeleton;
 import net.minecraft.world.entity.monster.Creeper;
@@ -261,6 +269,8 @@ import net.minecraft.world.entity.monster.Spider;
 import net.minecraft.world.entity.monster.Stray;
 import net.minecraft.world.entity.monster.Strider;
 import net.minecraft.world.entity.monster.Vex;
+import net.minecraft.world.entity.monster.Witch;
+import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.monster.ZombifiedPiglin;
 import net.minecraft.world.entity.monster.Zoglin;
 import net.minecraft.world.entity.monster.WitherSkeleton;
@@ -290,6 +300,8 @@ import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.MobBucketItem;
 import net.minecraft.world.item.SuspiciousStewItem;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.trading.MerchantOffer;
+import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.context.UseOnContext;
@@ -313,6 +325,7 @@ import net.minecraft.world.level.block.InfestedBlock;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BedPart;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.TurtleEggBlock;
 import net.minecraft.world.level.biome.Biome;
@@ -329,6 +342,8 @@ import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 import net.minecraft.world.entity.raid.Raid;
 import net.minecraft.world.entity.raid.Raider;
+import net.minecraft.world.entity.schedule.Activity;
+import net.minecraft.world.entity.schedule.Schedule;
 import net.minecraft.world.entity.vehicle.Boat;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
@@ -6072,18 +6087,11 @@ public final class FirstBiteGameTests {
 			target.setInvulnerable(false);
 		}
 
-		var nearestCakeWorldBiome =
-				helper.getLevel().findNearestBiome(
-						holder -> holder.unwrapKey()
-								.map(key -> CakeWorld.MODID
-										.equals(key.location()
-												.getNamespace()))
-								.orElse(false),
-						anchor, 512, 4);
-		require(helper, nearestCakeWorldBiome != null,
-				"Could not locate CakeWorld terrain for Illusioner command conversion");
 		BlockPos conversionPos =
-				nearestCakeWorldBiome.getFirst();
+				findCakeWorldBiomeColumnPosition(
+						helper, anchor, 512, 4);
+		require(helper, conversionPos != null,
+				"Could not locate CakeWorld terrain for Illusioner command conversion");
 		Illusioner literal =
 				EntityType.ILLUSIONER.create(
 						helper.getLevel());
@@ -6122,6 +6130,15 @@ public final class FirstBiteGameTests {
 		literal.moveTo(conversionPos.getX(),
 				conversionPos.getY(),
 				conversionPos.getZ(), 29.0F, 0.0F);
+		ResourceLocation literalBiome = helper.getLevel()
+				.getBiome(literal.blockPosition()).unwrapKey()
+				.map(key -> key.location()).orElse(null);
+		require(helper, literalBiome != null
+						&& CakeWorld.MODID.equals(
+								literalBiome.getNamespace()),
+				"Mounted Illusioner conversion fixture left CakeWorld terrain at "
+						+ literal.blockPosition() + " in "
+						+ literalBiome);
 		MirageConfectioner converted =
 				CakeWorldIllusionerReplacement
 						.replaceIfInCakeWorldBiome(
@@ -10286,12 +10303,42 @@ public final class FirstBiteGameTests {
 				new FudgeBruteProbe(helper.getLevel());
 		FudgeFolkProbe familyFolk =
 				new FudgeFolkProbe(helper.getLevel());
-		familyBrute.setPos(brute.getX() + 5.0D,
-				brute.getY(), brute.getZ());
+		BlockPos familyPos = helper.absolutePos(
+				new BlockPos(4, 7, 4));
+		helper.getLevel().setBlock(
+				familyPos, Blocks.AIR.defaultBlockState(), 3);
+		helper.getLevel().setBlock(
+				familyPos.above(),
+				Blocks.AIR.defaultBlockState(), 3);
+		helper.getLevel().setBlock(
+				familyPos.east(),
+				Blocks.AIR.defaultBlockState(), 3);
+		helper.getLevel().setBlock(
+				familyPos.east().above(),
+				Blocks.AIR.defaultBlockState(), 3);
+		familyBrute.setPos(familyPos.getX() + 0.5D,
+				familyPos.getY(),
+				familyPos.getZ() + 0.5D);
 		familyFolk.setPos(familyBrute.getX() + 1.0D,
 				familyBrute.getY(), familyBrute.getZ());
 		helper.getLevel().addFreshEntity(familyBrute);
 		helper.getLevel().addFreshEntity(familyFolk);
+		familyBrute.getBrain().eraseMemory(
+				MemoryModuleType.ATTACK_TARGET);
+		familyBrute.getBrain().eraseMemory(
+				MemoryModuleType.WALK_TARGET);
+		familyBrute.getBrain().eraseMemory(
+				MemoryModuleType.INTERACTION_TARGET);
+		familyBrute.getBrain()
+				.setActiveActivityIfPossible(Activity.IDLE);
+		familyFolk.getBrain().eraseMemory(
+				MemoryModuleType.ATTACK_TARGET);
+		familyFolk.getBrain().eraseMemory(
+				MemoryModuleType.WALK_TARGET);
+		familyFolk.getBrain().eraseMemory(
+				MemoryModuleType.INTERACTION_TARGET);
+		familyFolk.getBrain()
+				.setActiveActivityIfPossible(Activity.IDLE);
 		familyBrute.getBrain().setMemory(
 				MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES,
 				new NearestVisibleLivingEntities(
@@ -20920,6 +20967,11 @@ public final class FirstBiteGameTests {
 					new FudgeFolkProbe(helper.getLevel());
 			converting.setPos(folk.getX() + 11.0D,
 					folk.getY(), folk.getZ());
+			helper.getLevel().getEntitiesOfClass(
+					ZombifiedPiglin.class,
+					converting.getBoundingBox()
+							.inflate(3.0D))
+					.forEach(ZombifiedPiglin::discard);
 			converting.setBaby(true);
 			converting.setCustomName(new TextComponent(
 					"Staged Stale Fudge Folk"));
@@ -20940,7 +20992,12 @@ public final class FirstBiteGameTests {
 					.getEntitiesOfClass(
 							ZombifiedPiglin.class,
 							converting.getBoundingBox()
-									.inflate(3.0D))
+									.inflate(3.0D),
+							candidate ->
+									"Staged Stale Fudge Folk"
+											.equals(candidate
+													.getName()
+													.getString()))
 					.stream().findFirst().orElse(null);
 			require(helper,
 					converting.isRemoved()
@@ -23101,6 +23158,781 @@ public final class FirstBiteGameTests {
 		});
 	}
 
+	@GameTest(template = EMPTY, timeoutTicks = 420)
+	public static void gingerbreadFolkKeepVillageLifeAndFamilyBridges(
+			GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		BlockPos anchor = helper.absolutePos(
+				new BlockPos(5, 3, 5));
+		AABB localArea = new AABB(anchor).inflate(12.0D);
+		level.getEntitiesOfClass(
+				Villager.class, localArea)
+				.forEach(Villager::discard);
+		level.getEntitiesOfClass(Witch.class, localArea)
+				.forEach(Witch::discard);
+
+		GingerbreadFolkProbe folk =
+				new GingerbreadFolkProbe(level);
+		require(helper,
+				folk instanceof Villager
+						&& folk.getType()
+								== CakeWorldEntities
+										.GINGERBREAD_FOLK.get()
+						&& folk.getType().getCategory()
+								== MobCategory.MISC
+						&& close(folk.getMaxHealth(),
+								20.0D)
+						&& close(folk.getAttributeValue(
+								Attributes.MOVEMENT_SPEED),
+								0.5D)
+						&& close(folk.getAttributeValue(
+								Attributes.FOLLOW_RANGE),
+								48.0D)
+						&& close(folk.getDimensions(
+								Pose.STANDING).width,
+								0.6D)
+						&& close(folk.getDimensions(
+								Pose.STANDING).height,
+								1.95D)
+						&& folk.getType()
+								.clientTrackingRange() == 10
+						&& folk.getInventory()
+								.getContainerSize() == 8
+						&& folk.getNavigation()
+								instanceof GroundPathNavigation
+										navigation
+						&& navigation.canOpenDoors()
+						&& !folk.removeWhenFarAway(
+								Double.MAX_VALUE),
+				"Gingerbread Folk lost the exact persistent Villager body, navigation, inventory or attributes");
+		require(helper,
+				folk.getBrain().getSchedule()
+								== Schedule.VILLAGER_DEFAULT
+						&& folk.ambientSound()
+								== SoundEvents
+										.VILLAGER_AMBIENT
+						&& folk.hurtSound()
+								== SoundEvents.VILLAGER_HURT
+						&& folk.deathSound()
+								== SoundEvents
+										.VILLAGER_DEATH,
+				"Gingerbread Folk lost the adult schedule or Villager sounds");
+
+		folk.setVillagerData(new VillagerData(
+				VillagerType.PLAINS,
+				VillagerProfession.FARMER, 1));
+		folk.refreshBrain(level);
+		MerchantOffers farmerOffers = folk.getOffers();
+		require(helper,
+				farmerOffers.size() == 2
+						&& farmerOffers.stream()
+								.allMatch(offer ->
+										!offer.getCostA()
+												.isEmpty()
+												&& !offer
+														.getResult()
+														.isEmpty())
+						&& "entity.cakeworld.gingerbread_folk.farmer"
+								.equals(folk
+										.typeNameKey()),
+				"Gingerbread Farmer lost vanilla/Forge profession trades or its translated profession identity");
+
+		ServerPlayer tradingPlayer =
+				new ServerPlayer(level.getServer(), level,
+						new GameProfile(
+								UUID.fromString(
+										"1978feed-feed-4bad-babe-1978feed2062"),
+								"CakeWorldGingerbreadTradeTest"));
+		tradingPlayer.setPos(anchor.getX(),
+				anchor.getY(), anchor.getZ());
+		MerchantOffer testOffer =
+				new MerchantOffer(
+						new ItemStack(Items.EMERALD),
+						new ItemStack(Items.BREAD, 3),
+						12, 5, 0.05F);
+		MerchantOffers testOffers =
+				new MerchantOffers();
+		testOffers.add(testOffer);
+		folk.setOffers(testOffers);
+		folk.setTradingPlayer(tradingPlayer);
+		int previousXp = folk.getVillagerXp();
+		folk.notifyTrade(testOffer);
+		require(helper,
+				testOffer.getUses() == 1
+						&& folk.getVillagerXp()
+								== previousXp + 5,
+				"Gingerbread Folk lost trade uses or Villager XP");
+		requireCriterion(helper, tradingPlayer,
+				"minecraft:adventure/trade", "traded");
+		tradingPlayer.setPos(anchor.getX(),
+				319.0D, anchor.getZ());
+		CriteriaTriggers.TRADE.trigger(tradingPlayer,
+				folk, testOffer.getResult());
+		requireCriterion(helper, tradingPlayer,
+				"minecraft:adventure/trade_at_world_height",
+				"trade_at_world_height");
+		tradingPlayer.setPos(anchor.getX(),
+				anchor.getY(), anchor.getZ());
+
+		Zombie cureSource =
+				EntityType.ZOMBIE.create(level);
+		require(helper, cureSource != null,
+				"Could not create Gingerbread Folk cure criterion source");
+		CriteriaTriggers.CURED_ZOMBIE_VILLAGER.trigger(
+				tradingPlayer, cureSource, folk);
+		requireCriterion(helper, tradingPlayer,
+				"minecraft:story/cure_zombie_villager",
+				"cured_zombie");
+		folk.onReputationEventFrom(
+				ReputationEventType.TRADE,
+				tradingPlayer);
+		folk.onReputationEventFrom(
+				ReputationEventType.ZOMBIE_VILLAGER_CURED,
+				tradingPlayer);
+		require(helper,
+				folk.getPlayerReputation(
+						tradingPlayer) > 0,
+				"Gingerbread Folk lost positive Villager gossip");
+		GingerbreadFolkProbe gossipPartner =
+				new GingerbreadFolkProbe(level);
+		gossipPartner.getRandom().setSeed(1978L);
+		gossipPartner.gossip(level, folk,
+				Math.max(1200L, level.getGameTime()));
+		require(helper,
+				gossipPartner.getPlayerReputation(
+						tradingPlayer) > 0,
+				"Gingerbread Folk did not transfer player reputation through Villager gossip");
+
+		Difficulty originalDifficulty =
+				level.getDifficulty();
+		try {
+			level.getServer().setDifficulty(
+					Difficulty.PEACEFUL, true);
+			GingerbreadFolkProbe peaceful =
+					new GingerbreadFolkProbe(level);
+			peaceful.checkDespawnRole();
+			require(helper,
+					!peaceful.isRemoved()
+							&& !peaceful
+									.despawnsInPeaceful(),
+					"Peaceful Gingerbread Folk lost passive Villager persistence");
+			peaceful.discard();
+
+			level.getServer().setDifficulty(
+					Difficulty.HARD, true);
+			GingerbreadFolkProbe lightningFolk =
+					new GingerbreadFolkProbe(level);
+			lightningFolk.setPos(anchor.getX() + 7.0D,
+					anchor.getY(), anchor.getZ());
+			lightningFolk.setCustomName(
+					new TextComponent(
+							"Spiced by Lightning"));
+			lightningFolk.setNoAi(true);
+			level.addFreshEntity(lightningFolk);
+			LightningBolt lightning =
+					EntityType.LIGHTNING_BOLT
+							.create(level);
+			require(helper, lightning != null,
+					"Could not create Gingerbread Folk lightning fixture");
+			lightning.setPos(lightningFolk.getX(),
+					lightningFolk.getY(),
+					lightningFolk.getZ());
+			lightningFolk.thunderHit(
+					level, lightning);
+			Witch witch = level.getEntitiesOfClass(
+					Witch.class, localArea,
+					candidate ->
+							candidate.hasCustomName()
+									&& "Spiced by Lightning"
+											.equals(candidate
+													.getName()
+													.getString()))
+					.stream().findFirst().orElse(null);
+			require(helper,
+					lightningFolk.isRemoved()
+							&& witch != null
+							&& witch.isNoAi()
+							&& witch
+									.isPersistenceRequired(),
+					"Gingerbread Folk lost exact non-Peaceful Villager lightning conversion");
+			if (witch != null) {
+				witch.discard();
+			}
+			lightning.discard();
+		} finally {
+			level.getServer().setDifficulty(
+					originalDifficulty, true);
+		}
+
+		require(helper,
+				folk.getLootTableId().equals(
+						new ResourceLocation(
+								CakeWorld.MODID,
+								"entities/gingerbread_folk"))
+						&& CakeWorldItems
+								.GINGERBREAD_FOLK_SPAWN_EGG
+								.isPresent()
+						&& LollipopLorikeet
+								.getCakeWorldImitatedSound(
+										CakeWorldEntities
+												.GINGERBREAD_FOLK
+												.get())
+								== null
+						&& SpawnPlacements
+								.getPlacementType(
+										CakeWorldEntities
+												.GINGERBREAD_FOLK
+												.get())
+								== SpawnPlacements.Type
+										.ON_GROUND
+						&& SpawnPlacements
+								.getHeightmapType(
+										CakeWorldEntities
+												.GINGERBREAD_FOLK
+												.get())
+								== Heightmap.Types
+										.MOTION_BLOCKING_NO_LEAVES,
+				"Gingerbread Folk lost empty loot, test egg, dormant Villager placement or deliberate no-mimic role");
+
+		Registry<Biome> biomes = level.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY);
+		for (ResourceLocation biomeId : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS.getId())) {
+			Biome biome = biomes.get(biomeId);
+			require(helper, biome != null
+							&& biome.getMobSettings()
+									.getMobs(
+											MobCategory.MISC)
+									.unwrap().stream()
+									.noneMatch(spawn ->
+											spawn.type
+													== EntityType
+															.VILLAGER
+											|| spawn.type
+													== CakeWorldEntities
+															.GINGERBREAD_FOLK
+															.get()),
+					"Gingerbread Folk fabricated natural ecology in "
+							+ biomeId);
+		}
+
+		BlockPos cakeWorldPos =
+				findCakeWorldBiomePosition(helper,
+						anchor.offset(16, 0, 16),
+						256);
+		require(helper, cakeWorldPos != null,
+				"Could not locate CakeWorld terrain for Gingerbread Folk conversion");
+		AABB eventArea =
+				new AABB(cakeWorldPos).inflate(6.0D);
+		level.getEntitiesOfClass(
+				Villager.class, eventArea)
+				.forEach(Villager::discard);
+
+		Villager literal =
+				EntityType.VILLAGER.create(level);
+		Chicken passenger =
+				EntityType.CHICKEN.create(level);
+		Boat vehicle = new Boat(level,
+				cakeWorldPos.getX() + 2.0D,
+				cakeWorldPos.getY() + 1.0D,
+				cakeWorldPos.getZ() + 2.0D);
+		require(helper,
+				literal != null && passenger != null,
+				"Could not create Gingerbread Folk direct-conversion fixtures");
+		literal.setPos(cakeWorldPos.getX() + 0.5D,
+				cakeWorldPos.getY() + 1.0D,
+				cakeWorldPos.getZ() + 0.5D);
+		literal.finalizeSpawn(level,
+				level.getCurrentDifficultyAt(
+						cakeWorldPos),
+				MobSpawnType.STRUCTURE, null, null);
+		literal.setVillagerData(new VillagerData(
+				VillagerType.DESERT,
+				VillagerProfession.LIBRARIAN, 3));
+		MerchantOffers preservedOffers =
+				new MerchantOffers();
+		preservedOffers.add(new MerchantOffer(
+				new ItemStack(Items.EMERALD, 2),
+				new ItemStack(Items.BOOK),
+				8, 11, 0.2F));
+		literal.setOffers(preservedOffers);
+		literal.setVillagerXp(77);
+		literal.setCustomName(
+				new TextComponent(
+						"Professor Biscotti"));
+		literal.setPersistenceRequired();
+		literal.setNoAi(true);
+		literal.onReputationEventFrom(
+				ReputationEventType
+						.ZOMBIE_VILLAGER_CURED,
+				tradingPlayer);
+		GlobalPos home = GlobalPos.of(level.dimension(),
+				cakeWorldPos.offset(4, 0, -3));
+		literal.getBrain().setMemory(
+				MemoryModuleType.HOME, home);
+		CompoundTag literalState =
+				literal.saveWithoutId(
+						new CompoundTag());
+		literalState.putByte("FoodLevel", (byte)9);
+		literalState.putLong("LastRestock", 12345L);
+		literalState.putInt("RestocksToday", 1);
+		literal.load(literalState);
+		literal.getInventory().addItem(
+				new ItemStack(Items.BREAD, 7));
+		literal.setTradingPlayer(tradingPlayer);
+		literal.invulnerableTime = 31;
+		literal.startRiding(vehicle, true);
+		passenger.startRiding(literal, true);
+		GingerbreadFolk converted =
+				CakeWorldVillagerReplacement
+						.replaceIfInCakeWorldBiome(
+								level, literal);
+		CompoundTag convertedState =
+				converted == null
+						? new CompoundTag()
+						: converted.saveWithoutId(
+								new CompoundTag());
+		require(helper, converted != null,
+				"Literal Villager conversion did not create Gingerbread Folk");
+		require(helper, literal.isRemoved(),
+				"Literal Villager conversion did not remove its source");
+		require(helper,
+				converted.getVillagerData().getType()
+								== VillagerType.DESERT
+						&& converted.getVillagerData()
+								.getProfession()
+								== VillagerProfession
+										.LIBRARIAN
+						&& converted.getVillagerData()
+								.getLevel() == 3,
+				"Literal Villager conversion lost type, profession or career level: "
+						+ converted.getVillagerData());
+		require(helper,
+				converted.getOffers().size() == 1
+						&& converted.getOffers().get(0)
+								.getResult().is(Items.BOOK),
+				"Literal Villager conversion lost its trade offers");
+		require(helper,
+				converted.getInventory()
+								.countItem(Items.BREAD) == 7
+						&& converted.getVillagerXp() == 77,
+				"Literal Villager conversion lost inventory or Villager XP: bread="
+						+ converted.getInventory()
+								.countItem(Items.BREAD)
+						+ ", xp="
+						+ converted.getVillagerXp());
+		require(helper,
+				convertedState.getByte("FoodLevel") == 9
+						&& convertedState.getLong(
+								"LastRestock") == 12345L
+						&& convertedState.getInt(
+								"RestocksToday") == 1,
+				"Literal Villager conversion lost food or restock NBT: food="
+						+ convertedState.getByte(
+								"FoodLevel")
+						+ ", last="
+						+ convertedState.getLong(
+								"LastRestock")
+						+ ", count="
+						+ convertedState.getInt(
+								"RestocksToday"));
+		require(helper,
+				converted.assignProfessionWhenSpawned(),
+				"Literal Villager conversion lost deferred structure profession assignment");
+		require(helper,
+				converted.getBrain()
+						.getMemory(MemoryModuleType.HOME)
+						.filter(home::equals).isPresent(),
+				"Literal Villager conversion lost HOME brain/POI memory: "
+						+ converted.getBrain().getMemory(
+								MemoryModuleType.HOME));
+		require(helper,
+				converted.getPlayerReputation(
+								tradingPlayer) > 0
+						&& converted.getTradingPlayer()
+								== tradingPlayer,
+				"Literal Villager conversion lost gossip or its active trading player");
+		require(helper,
+				converted.invulnerableTime == 31
+						&& converted.getVehicle()
+								== vehicle
+						&& converted.getPassengers()
+								.contains(passenger),
+				"Literal Villager conversion lost invulnerability, vehicle or passenger state");
+		require(helper,
+				converted.hasCustomName()
+						&& "Professor Biscotti".equals(
+								converted.getName()
+										.getString())
+						&& converted.isPersistenceRequired()
+						&& converted.isNoAi(),
+				"Literal Villager conversion lost name, persistence or AI state");
+		require(helper,
+				CakeWorldVillagerReplacement
+						.replaceIfInCakeWorldBiome(
+								level, converted) == null
+						&& !converted.isRemoved(),
+				"Villager source conversion touched a non-literal entity type");
+		passenger.discard();
+		converted.discard();
+		vehicle.discard();
+
+		Villager leashedLiteral =
+				EntityType.VILLAGER.create(level);
+		Pig leashHolder =
+				EntityType.PIG.create(level);
+		require(helper,
+				leashedLiteral != null
+						&& leashHolder != null,
+				"Could not create Gingerbread Folk leash-conversion fixtures");
+		leashedLiteral.setPos(
+				cakeWorldPos.getX() + 3.5D,
+				cakeWorldPos.getY() + 1.0D,
+				cakeWorldPos.getZ() + 0.5D);
+		leashedLiteral.setLeashedTo(
+				leashHolder, false);
+		GingerbreadFolk leashedConverted =
+				CakeWorldVillagerReplacement
+						.replaceIfInCakeWorldBiome(
+								level, leashedLiteral);
+		require(helper,
+				leashedConverted != null
+						&& leashedLiteral.isRemoved()
+						&& leashedConverted
+								.getLeashHolder()
+								== leashHolder,
+				"Gingerbread Folk conversion lost a valid leash");
+		leashedConverted.discard();
+		leashHolder.discard();
+
+		Villager eventLiteral =
+				EntityType.VILLAGER.create(level);
+		require(helper, eventLiteral != null,
+				"Could not create Gingerbread Folk entity-join source");
+		eventLiteral.setPos(
+				cakeWorldPos.getX() + 0.5D,
+				cakeWorldPos.getY() + 1.0D,
+				cakeWorldPos.getZ() + 0.5D);
+		eventLiteral.finalizeSpawn(level,
+				level.getCurrentDifficultyAt(
+						cakeWorldPos),
+				MobSpawnType.STRUCTURE, null, null);
+		eventLiteral.setVillagerData(
+				new VillagerData(
+						VillagerType.SNOW,
+						VillagerProfession.CLERIC,
+						2));
+		eventLiteral.setCustomName(
+				new TextComponent(
+						"Entity Join Gingerbread Folk"));
+		eventLiteral.setNoAi(true);
+		require(helper,
+				level.addFreshEntity(eventLiteral),
+				"Could not add literal Villager entity-join source");
+
+		Map<BlockPos, BlockState> originalBlocks =
+				new java.util.HashMap<>();
+		for (int x = -2; x <= 3; ++x) {
+			for (int z = -2; z <= 2; ++z) {
+				BlockPos ground =
+						anchor.offset(x, -1, z);
+				originalBlocks.put(ground,
+						level.getBlockState(ground));
+				level.setBlock(ground,
+						Blocks.STONE.defaultBlockState(),
+						3);
+				for (int y = 0; y <= 2; ++y) {
+					BlockPos space =
+							anchor.offset(x, y, z);
+					originalBlocks.put(space,
+							level.getBlockState(space));
+					level.setBlock(space,
+							Blocks.AIR.defaultBlockState(),
+							3);
+				}
+			}
+		}
+		BlockPos bedFoot = anchor.offset(2, 0, 0);
+		BlockPos bedHead =
+				bedFoot.relative(Direction.NORTH);
+		BlockPos secondBedFoot =
+				anchor.offset(-1, 0, 2);
+		BlockPos secondBedHead =
+				secondBedFoot.relative(Direction.NORTH);
+		BlockPos thirdBedFoot =
+				anchor.offset(1, 0, 2);
+		BlockPos thirdBedHead =
+				thirdBedFoot.relative(Direction.NORTH);
+		placeTestBed(level, bedFoot, Direction.NORTH);
+		placeTestBed(level, secondBedFoot,
+				Direction.NORTH);
+		placeTestBed(level, thirdBedFoot,
+				Direction.NORTH);
+		List<BlockPos> familyBedPositions =
+				List.of(bedFoot, bedHead,
+						secondBedFoot, secondBedHead,
+						thirdBedFoot, thirdBedHead);
+		require(helper,
+				familyBedPositions.stream().allMatch(
+						position -> level.getBlockState(
+										position)
+								.is(Blocks.RED_BED)),
+				"Gingerbread Folk family fixture did not retain all six bed halves");
+
+		GingerbreadFolkProbe firstParent =
+				new GingerbreadFolkProbe(level);
+		GingerbreadFolkProbe secondParent =
+				new GingerbreadFolkProbe(level);
+		firstParent.setPos(anchor.getX() + 1.5D,
+				anchor.getY(),
+				anchor.getZ() - 0.5D);
+		secondParent.setPos(anchor.getX() + 0.5D,
+				anchor.getY(),
+				anchor.getZ() - 0.5D);
+		firstParent.setVillagerData(
+				new VillagerData(
+						VillagerType.DESERT,
+						VillagerProfession.NONE,
+						1));
+		secondParent.setVillagerData(
+				new VillagerData(
+						VillagerType.SNOW,
+						VillagerProfession.NONE,
+						1));
+		firstParent.refreshBrain(level);
+		secondParent.refreshBrain(level);
+		firstParent.getInventory().addItem(
+				new ItemStack(Items.BREAD, 3));
+		secondParent.getInventory().addItem(
+				new ItemStack(Items.BREAD, 3));
+		level.addFreshEntity(firstParent);
+		level.addFreshEntity(secondParent);
+		Villager directChild =
+				firstParent.getBreedOffspring(
+						level, secondParent);
+		require(helper,
+				directChild instanceof GingerbreadFolk
+						&& directChild.getType()
+								== CakeWorldEntities
+										.GINGERBREAD_FOLK.get()
+						&& directChild.getVillagerData()
+								.getProfession()
+								== VillagerProfession.NONE,
+				"Gingerbread Folk offspring factory returned a literal Villager or retained a profession");
+		directChild.discard();
+		firstParent.getBrain().setMemory(
+				MemoryModuleType
+						.NEAREST_VISIBLE_LIVING_ENTITIES,
+				new NearestVisibleLivingEntities(
+						firstParent,
+						List.of(secondParent)));
+		firstParent.getBrain()
+				.setActiveActivityIfPossible(
+						Activity.IDLE);
+		boolean familyVisibleBeforeBrain =
+				firstParent.getBrain().getMemory(
+								MemoryModuleType
+										.NEAREST_VISIBLE_LIVING_ENTITIES)
+						.filter(visible ->
+								visible.contains(candidate ->
+										candidate
+												== secondParent))
+						.isPresent();
+		boolean idleBeforeBrain =
+				firstParent.getBrain()
+						.isActive(Activity.IDLE);
+		boolean parentsCanBreedBeforeBrain =
+				firstParent.canBreed()
+						&& secondParent.canBreed();
+		boolean foundFamilyInteraction = false;
+		boolean foundFamilyBreedTarget = false;
+		for (int attempt = 0; attempt < 96
+				&& (!foundFamilyInteraction
+						|| !foundFamilyBreedTarget);
+				attempt++) {
+			firstParent.runBrainOnce();
+			foundFamilyInteraction |=
+					firstParent.getBrain()
+							.getRunningBehaviors()
+							.stream()
+							.anyMatch(behavior ->
+									"GingerbreadFolkTradeWith"
+											.equals(behavior
+													.getClass()
+													.getSimpleName()));
+			foundFamilyBreedTarget |=
+					firstParent.getBrain()
+							.getRunningBehaviors()
+							.stream()
+							.anyMatch(behavior ->
+									"GingerbreadFolkMakeLove"
+											.equals(behavior
+													.getClass()
+													.getSimpleName()));
+			firstParent.getBrain().stopAll(
+					level, firstParent);
+			firstParent.getBrain().eraseMemory(
+					MemoryModuleType.WALK_TARGET);
+			firstParent.getBrain().eraseMemory(
+					MemoryModuleType.LOOK_TARGET);
+			firstParent.getBrain().eraseMemory(
+					MemoryModuleType.INTERACTION_TARGET);
+			firstParent.getBrain().eraseMemory(
+					MemoryModuleType.BREED_TARGET);
+			firstParent.getBrain().setMemory(
+					MemoryModuleType
+							.NEAREST_VISIBLE_LIVING_ENTITIES,
+					new NearestVisibleLivingEntities(
+							firstParent,
+							List.of(secondParent)));
+			firstParent.getBrain()
+					.setActiveActivityIfPossible(
+							Activity.IDLE);
+		}
+		require(helper,
+				foundFamilyInteraction
+						&& foundFamilyBreedTarget,
+				"Gingerbread Folk additive brain did not recognize its own family for social and breeding targets: social="
+						+ foundFamilyInteraction
+						+ ", breed="
+						+ foundFamilyBreedTarget
+						+ ", visible="
+						+ familyVisibleBeforeBrain
+						+ ", idle="
+						+ idleBeforeBrain
+						+ ", canBreed="
+						+ parentsCanBreedBeforeBrain
+						+ ", types="
+						+ firstParent.getType()
+						+ "/"
+						+ secondParent.getType());
+		firstParent.getBrain().setSchedule(
+				Schedule.EMPTY);
+		secondParent.getBrain().setSchedule(
+				Schedule.EMPTY);
+		firstParent.getBrain()
+				.setActiveActivityIfPossible(
+						Activity.IDLE);
+		secondParent.getBrain()
+				.setActiveActivityIfPossible(
+						Activity.IDLE);
+		BlockPos registeredBed =
+				familyBedPositions.stream()
+						.filter(position ->
+								level.getPoiManager()
+										.existsAtPosition(
+												PoiType.HOME,
+												position))
+						.findFirst().orElse(bedFoot);
+		boolean familyBedPoi =
+				level.getPoiManager().existsAtPosition(
+						PoiType.HOME, registeredBed);
+		var familyPath =
+				firstParent.getNavigation().createPath(
+						registeredBed,
+						PoiType.HOME.getValidRange());
+		require(helper, familyBedPoi,
+				"Gingerbread Folk family fixture did not expose a HOME bed POI; immediatePath="
+						+ (familyPath != null
+								&& familyPath.canReach()));
+
+		helper.runAfterDelay(360, () -> {
+			List<GingerbreadFolk> babies =
+					level.getEntitiesOfClass(
+							GingerbreadFolk.class,
+							localArea,
+							GingerbreadFolk::isBaby);
+			GingerbreadFolk baby =
+					babies.size() == 1
+							? babies.get(0) : null;
+			GlobalPos childHome = baby == null
+					? null
+					: baby.getBrain().getMemory(
+							MemoryModuleType.HOME)
+							.orElse(null);
+			List<GingerbreadFolk> emitted =
+					level.getEntitiesOfClass(
+							GingerbreadFolk.class,
+							eventArea,
+							candidate ->
+									candidate
+											.hasCustomName()
+											&& "Entity Join Gingerbread Folk"
+													.equals(candidate
+															.getName()
+															.getString()));
+			GingerbreadFolk eventFolk =
+					emitted.size() == 1
+							? emitted.get(0) : null;
+			require(helper,
+					baby != null
+							&& firstParent.getAge() > 0
+							&& firstParent.getAge() <= 6000
+							&& secondParent.getAge() > 0
+							&& secondParent.getAge() <= 6000
+							&& childHome != null
+							&& childHome.dimension()
+									.equals(
+											level.dimension())
+							&& familyBedPositions
+									.contains(
+											childHome.pos()),
+					"Gingerbread Folk did not complete real food-and-bed-backed family breeding: babies="
+							+ babies.size()
+							+ ", firstAge="
+							+ firstParent.getAge()
+							+ ", secondAge="
+							+ secondParent.getAge()
+							+ ", home=" + childHome
+							+ ", firstBread="
+							+ firstParent.getInventory()
+									.countItem(
+											Items.BREAD)
+							+ ", secondBread="
+							+ secondParent.getInventory()
+									.countItem(
+											Items.BREAD));
+			require(helper,
+					eventLiteral.isRemoved()
+							&& eventFolk != null
+							&& eventFolk
+									.getVillagerData()
+									.getType()
+									== VillagerType.SNOW
+							&& eventFolk
+									.getVillagerData()
+									.getProfession()
+									== VillagerProfession
+											.CLERIC
+							&& eventFolk
+									.getVillagerData()
+									.getLevel() == 2,
+					"Actual deferred Villager entity-join source lost structure identity: literalRemoved="
+							+ eventLiteral.isRemoved()
+							+ ", emitted="
+							+ emitted.size());
+
+			babies.forEach(
+					GingerbreadFolk::discard);
+			emitted.forEach(
+					GingerbreadFolk::discard);
+			firstParent.discard();
+			secondParent.discard();
+			folk.discard();
+			gossipPartner.discard();
+			cureSource.discard();
+			originalBlocks.forEach((position, state) ->
+					level.setBlock(position,
+							state, 3));
+			helper.succeed();
+		});
+	}
+
 	private static final class LollipopLorikeetProbe
 			extends LollipopLorikeet {
 		private LollipopLorikeetProbe(Level level) {
@@ -23833,6 +24665,52 @@ public final class FirstBiteGameTests {
 				net.minecraft.sounds.SoundEvent sound,
 				float volume, float pitch) {
 			recordedSound = sound;
+		}
+	}
+
+	private static final class GingerbreadFolkProbe
+			extends GingerbreadFolk {
+		private GingerbreadFolkProbe(Level level) {
+			super(CakeWorldEntities
+					.GINGERBREAD_FOLK.get(), level);
+		}
+
+		private ResourceLocation getLootTableId() {
+			return getLootTable();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				ambientSound() {
+			return getAmbientSound();
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				hurtSound() {
+			return getHurtSound(
+					DamageSource.GENERIC);
+		}
+
+		private net.minecraft.sounds.SoundEvent
+				deathSound() {
+			return getDeathSound();
+		}
+
+		private String typeNameKey() {
+			return ((TranslatableComponent)
+					getTypeName()).getKey();
+		}
+
+		private void checkDespawnRole() {
+			checkDespawn();
+		}
+
+		private boolean despawnsInPeaceful() {
+			return shouldDespawnInPeaceful();
+		}
+
+		private void runBrainOnce() {
+			getBrain().tick(
+					(ServerLevel)level, this);
 		}
 	}
 
@@ -25614,6 +26492,34 @@ public final class FirstBiteGameTests {
 		return food;
 	}
 
+	private static void placeTestBed(
+			ServerLevel level, BlockPos foot,
+			Direction facing) {
+		BlockPos head = foot.relative(facing);
+		level.setBlock(foot,
+				Blocks.RED_BED.defaultBlockState()
+						.setValue(
+								BlockStateProperties
+										.HORIZONTAL_FACING,
+								facing)
+						.setValue(
+								BlockStateProperties
+										.BED_PART,
+								BedPart.FOOT),
+				2);
+		level.setBlock(head,
+				Blocks.RED_BED.defaultBlockState()
+						.setValue(
+								BlockStateProperties
+										.HORIZONTAL_FACING,
+								facing)
+						.setValue(
+								BlockStateProperties
+										.BED_PART,
+								BedPart.HEAD),
+				2);
+	}
+
 	private static BlockPos findCakeWorldBiomePosition(
 			GameTestHelper helper, BlockPos origin,
 			int maximumRadius) {
@@ -25634,6 +26540,48 @@ public final class FirstBiteGameTests {
 									.equals(key.location()
 											.getNamespace()))
 							.orElse(false);
+					if (cakeWorld) {
+						return candidate;
+					}
+				}
+			}
+		}
+		return null;
+	}
+
+	private static BlockPos findCakeWorldBiomeColumnPosition(
+			GameTestHelper helper, BlockPos origin,
+			int maximumRadius, int height) {
+		for (int radius = 0; radius <= maximumRadius;
+				radius += 4) {
+			for (int x = -radius; x <= radius; x += 4) {
+				for (int z = -radius; z <= radius;
+						z += 4) {
+					if (Math.max(Math.abs(x),
+							Math.abs(z)) != radius) {
+						continue;
+					}
+					BlockPos candidate =
+							origin.offset(x, 0, z);
+					boolean cakeWorld = true;
+					for (int y = 0; y <= height; y++) {
+						ResourceLocation biome =
+								helper.getLevel()
+										.getBiome(
+												candidate
+														.above(y))
+										.unwrapKey()
+										.map(key ->
+												key.location())
+										.orElse(null);
+						if (biome == null
+								|| !CakeWorld.MODID.equals(
+										biome
+												.getNamespace())) {
+							cakeWorld = false;
+							break;
+						}
+					}
 					if (cakeWorld) {
 						return candidate;
 					}

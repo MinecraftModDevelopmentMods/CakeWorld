@@ -22,6 +22,7 @@ import com.mcmoddev.cakeworld.entity.FudgeFolk;
 import com.mcmoddev.cakeworld.entity.FizzballFish;
 import com.mcmoddev.cakeworld.entity.FrostedArcher;
 import com.mcmoddev.cakeworld.entity.FudgeSkater;
+import com.mcmoddev.cakeworld.entity.GingerbreadFolk;
 import com.mcmoddev.cakeworld.entity.GingerbreadPony;
 import com.mcmoddev.cakeworld.entity.GingerbreadStomper;
 import com.mcmoddev.cakeworld.entity.GrandGumballGuardian;
@@ -127,6 +128,7 @@ import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.monster.hoglin.Hoglin;
 import net.minecraft.world.entity.monster.piglin.Piglin;
 import net.minecraft.world.entity.monster.piglin.PiglinBrute;
+import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
@@ -485,6 +487,14 @@ public final class CakeWorldEntities {
 							.fireImmune()
 							.sized(0.4F, 0.8F)
 							.clientTrackingRange(8));
+	public static final RegistryObject<EntityType<GingerbreadFolk>>
+			GINGERBREAD_FOLK =
+					entity("gingerbread_folk",
+							EntityType.Builder.of(
+									GingerbreadFolk::new,
+									MobCategory.MISC)
+									.sized(0.6F, 1.95F)
+									.clientTrackingRange(10));
 	public static final RegistryObject<EntityType<PeppermintFox>>
 			PEPPERMINT_FOX = entity("peppermint_fox",
 					EntityType.Builder.of(PeppermintFox::new,
@@ -665,6 +675,8 @@ public final class CakeWorldEntities {
 				Evoker.createAttributes().build());
 		event.put(SOUR_SPRITE.get(),
 				Vex.createAttributes().build());
+		event.put(GINGERBREAD_FOLK.get(),
+				Villager.createAttributes().build());
 		event.put(PEPPERMINT_FOX.get(),
 				Fox.createAttributes().build());
 		event.put(MALLOW_FLOATER.get(),
@@ -804,6 +816,10 @@ public final class CakeWorldEntities {
 					DriedCrumbler
 							::checkDriedCrumblerSpawnRules);
 			SpawnPlacements.register(JAWBREAKER_GUARDIAN.get(),
+					SpawnPlacements.Type.ON_GROUND,
+					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					Mob::checkMobSpawnRules);
+			SpawnPlacements.register(GINGERBREAD_FOLK.get(),
 					SpawnPlacements.Type.ON_GROUND,
 					Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					Mob::checkMobSpawnRules);
