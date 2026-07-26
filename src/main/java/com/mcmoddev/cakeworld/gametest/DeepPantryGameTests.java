@@ -20,6 +20,7 @@ import com.mcmoddev.cakeworld.compat.VanillaResourceAdvancements;
 import com.mcmoddev.cakeworld.entity.BiscuitBandit;
 import com.mcmoddev.cakeworld.entity.BitterBaker;
 import com.mcmoddev.cakeworld.entity.CrumbledGingerbreadFolk;
+import com.mcmoddev.cakeworld.entity.CinnamonSpark;
 import com.mcmoddev.cakeworld.entity.CustardCat;
 import com.mcmoddev.cakeworld.entity.GrandGumballGuardian;
 import com.mcmoddev.cakeworld.entity.GingerbreadFolk;
@@ -42,6 +43,7 @@ import com.mcmoddev.cakeworld.world.SherbetPyramidFeature;
 import com.mcmoddev.cakeworld.world.SodaPalaceFeature;
 import com.mcmoddev.cakeworld.world.SodaPalacePalette;
 import com.mcmoddev.cakeworld.world.SunkenSweetshopFeature;
+import com.mcmoddev.cakeworld.world.LiquoriceFortressFeature;
 import com.mcmoddev.cakeworld.world.WaferMineFeature;
 import com.mcmoddev.cakeworld.world.WaferWreckFeature;
 import com.mcmoddev.orespawn.api.CompiledOrePattern;
@@ -77,6 +79,7 @@ import net.minecraft.world.entity.animal.Cat;
 import net.minecraft.world.entity.monster.ElderGuardian;
 import net.minecraft.world.entity.monster.Guardian;
 import net.minecraft.world.entity.monster.Drowned;
+import net.minecraft.world.entity.monster.Blaze;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.VillagerType;
 import net.minecraft.world.entity.raid.Raid;
@@ -109,6 +112,7 @@ import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.OceanMonumentPieces;
 import net.minecraft.world.level.levelgen.structure.OceanRuinFeature;
 import net.minecraft.world.level.levelgen.structure.OceanRuinPieces;
+import net.minecraft.world.level.levelgen.structure.NetherBridgePieces;
 import net.minecraft.world.level.levelgen.structure.StrongholdPieces;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
@@ -4134,6 +4138,212 @@ public final class DeepPantryGameTests {
 		});
 	}
 
+	@GameTest(template = EMPTY, batch = "struct014world",
+			timeoutTicks = 12000)
+	public static void focusedLiquoriceFortressStructureAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean(
+				"cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed Liquorice Fortress audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel()
+				.getServer().getLevel(Level.NETHER);
+		require(helper, level != null,
+				"The fixed-seed server did not expose the Nether");
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						LiquoriceFortressFeature
+								.STRUCTURE_ID);
+		require(helper, configured != null,
+				"Liquorice Fortress native configured structure was absent from the live registry");
+		LocatedFortress fortress =
+				locateLiquoriceFortress(
+						helper, level, configured,
+						new BlockPos(0, 64, 0));
+		setFortressChunksForced(
+				level, fortress, true);
+		helper.runAfterDelay(240, () -> {
+			FortressWorldAudit audit =
+					auditLiquoriceFortress(
+							level, fortress);
+			boolean sentinelAlreadyNative =
+					level.getBlockState(
+							audit.sentinel())
+							.is(Blocks.NETHER_BRICKS);
+			int nativeMasonry =
+					audit.palette().getOrDefault(
+							Blocks.NETHER_BRICKS, 0)
+					+ audit.palette().getOrDefault(
+							Blocks.NETHER_BRICK_STAIRS,
+							0)
+					+ audit.palette().getOrDefault(
+							Blocks.NETHER_BRICK_FENCE,
+							0)
+					+ audit.palette().getOrDefault(
+							Blocks.NETHER_WART, 0);
+			LOGGER.info("Focused Liquorice Fortress audit: locate={}, bounds={}, biome={}, pieces={}, depth={}, palette={}, loot={}, blazeSpawners={}, cinnamonSparks={}, literalBlazes={}, nativeMasonry={}, sentinel={}, markerPhase={}",
+					fortress.located(),
+					fortress.bounds(),
+					audit.biome(),
+					audit.pieceKinds(),
+					audit.maximumDepth(),
+					audit.palette(),
+					audit.loot(),
+					audit.blazeSpawners(),
+					audit.cinnamonSparks(),
+					audit.literalBlazes(),
+					nativeMasonry,
+					audit.sentinel(),
+					sentinelAlreadyNative
+							? "reloaded"
+							: "seeded");
+			require(helper,
+					CakeWorldBiomes.FUDGE_WASTES
+							.getId().equals(
+									audit.biome())
+							&& audit
+									.literalEligible(),
+					"Natural Liquorice Fortress left Fudge Wastes or lost native/CakeWorld biome eligibility: biome="
+							+ audit.biome()
+							+ ", eligible="
+							+ audit
+									.literalEligible());
+			require(helper,
+					fortress.start().isValid()
+							&& fortress.start()
+									.getFeature()
+									== configured
+							&& fortress.start()
+									.getPieces()
+									.size() >= 10
+							&& fortress.start()
+									.getPieces()
+									.stream()
+									.allMatch(piece ->
+											piece.getClass()
+													.getEnclosingClass()
+													== NetherBridgePieces
+															.class)
+							&& audit.maximumDepth()
+									<= 30
+							&& fortress.bounds().minY()
+									>= 48
+							&& fortress.bounds().minY()
+									<= 70
+							&& audit.pieceKinds()
+									.size() >= 8,
+					"Natural Liquorice Fortress lost its native saved graph, depth-30 or minimum-height-48..70 contract: pieces="
+							+ fortress.start()
+									.getPieces().size()
+							+ ", kinds="
+							+ audit.pieceKinds()
+							+ ", depth="
+							+ audit.maximumDepth()
+							+ ", bounds="
+							+ fortress.bounds());
+			Map<Block, Integer> palette =
+					audit.palette();
+			require(helper,
+					palette.getOrDefault(
+							CakeWorldBlocks
+									.LIQUORICE_BRICKS
+									.get(), 0) > 100
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.LIQUORICE_STAIRS
+											.get(), 0)
+									> 0
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.LIQUORICE_FENCE
+											.get(), 0)
+									> 0
+							&& nativeMasonry
+									== (sentinelAlreadyNative
+											? 1 : 0),
+					"Natural Liquorice Fortress lost its complete piece-bounded masonry conversion or rewrote more than the explicit reload sentinel: native="
+							+ nativeMasonry
+							+ ", palette="
+							+ palette);
+			boolean hasThrone =
+					audit.pieceKinds().containsKey(
+							"MonsterThrone");
+			boolean hasFarm =
+					audit.pieceKinds().containsKey(
+							"CastleStalkRoom");
+			require(helper,
+					(!hasThrone
+							|| audit.blazeSpawners()
+									== audit
+											.pieceKinds()
+											.get(
+													"MonsterThrone"))
+							&& (!hasFarm
+									|| palette
+											.getOrDefault(
+													CakeWorldBlocks
+															.CINNAMON_WART
+															.get(),
+													0)
+											> 0
+											&& palette
+													.getOrDefault(
+															Blocks.SOUL_SAND,
+															0)
+													> 0),
+					"Natural Liquorice Fortress lost its native throne spawner or Cinnamon-Wart/Soul-Sand farm roles: thrones="
+							+ audit.pieceKinds()
+									.getOrDefault(
+											"MonsterThrone",
+											0)
+							+ ", spawners="
+							+ audit.blazeSpawners()
+							+ ", farms="
+							+ audit.pieceKinds()
+									.getOrDefault(
+											"CastleStalkRoom",
+											0)
+							+ ", palette="
+							+ palette);
+			require(helper,
+					audit.loot().stream()
+							.allMatch(loot ->
+									loot.equals(
+											BuiltInLootTables
+													.NETHER_BRIDGE))
+							&& audit.literalBlazes()
+									== 0,
+					"Natural Liquorice Fortress lost native chest loot identity or retained literal Blaze residue: loot="
+							+ audit.loot()
+							+ ", custom="
+							+ audit.cinnamonSparks()
+							+ ", literal="
+							+ audit.literalBlazes());
+			if (!sentinelAlreadyNative) {
+				level.setBlock(audit.sentinel(),
+						Blocks.NETHER_BRICKS
+								.defaultBlockState(),
+						2);
+				require(helper,
+						level.getBlockState(
+								audit.sentinel())
+								.is(Blocks
+										.NETHER_BRICKS),
+						"Could not seed the explicit player-placed Nether-Brick reload sentinel");
+			}
+			setFortressChunksForced(
+					level, fortress, false);
+			helper.succeed();
+		});
+	}
+
 	@GameTest(template = EMPTY, timeoutTicks = 1200)
 	public static void baseMetalsCounterpartsPreserveTagsRecipesAndGeneration(
 			GameTestHelper helper) {
@@ -5305,6 +5515,221 @@ public final class DeepPantryGameTests {
 		require(helper, !profile.toJson().get("manage_vanilla_ores").getAsBoolean(),
 				"Unsafe themed-ore takeover was enabled before OreSpawn can map source blocks");
 		helper.succeed();
+	}
+
+	private static LocatedFortress locateLiquoriceFortress(
+			GameTestHelper helper, ServerLevel level,
+			ConfiguredStructureFeature<?, ?> configured,
+			BlockPos origin) {
+		BlockPos located = level.findNearestMapFeature(
+				LiquoriceFortressFeature.STRUCTURE_TAG,
+				origin, 512, false);
+		require(helper, located != null,
+				"The fixed-seed CakeWorld contained no locatable Liquorice Fortress within 512 chunks of the Nether origin");
+		ChunkPos startChunk = new ChunkPos(located);
+		net.minecraft.world.level.chunk.LevelChunk
+				startLevelChunk =
+				level.getChunk(startChunk.x,
+						startChunk.z);
+		StructureStart start =
+				startLevelChunk.getStartForFeature(
+						configured);
+		if (start == null || !start.isValid()) {
+			List<StructureStart> references =
+					level.structureFeatureManager()
+							.startsForFeature(
+									net.minecraft.core
+											.SectionPos
+											.of(located),
+									configured);
+			start = references.stream()
+					.filter(StructureStart::isValid)
+					.findFirst().orElse(null);
+		}
+		require(helper,
+				start != null && start.isValid()
+						&& start.getFeature()
+								== configured
+						&& !start.getPieces()
+								.isEmpty(),
+				"The located Liquorice Fortress lost its saved native start");
+		return new LocatedFortress(
+				located, start.getBoundingBox(),
+				start.getChunkPos(), start);
+	}
+
+	private static void setFortressChunksForced(
+			ServerLevel level,
+			LocatedFortress fortress,
+			boolean forced) {
+		Set<ChunkPos> chunks =
+				new java.util.LinkedHashSet<>();
+		for (StructurePiece piece
+				: fortress.start().getPieces()) {
+			BoundingBox bounds =
+					piece.getBoundingBox();
+			int minimumChunkX = Math.floorDiv(
+					bounds.minX(), 16);
+			int maximumChunkX = Math.floorDiv(
+					bounds.maxX(), 16);
+			int minimumChunkZ = Math.floorDiv(
+					bounds.minZ(), 16);
+			int maximumChunkZ = Math.floorDiv(
+					bounds.maxZ(), 16);
+			for (int chunkX = minimumChunkX;
+					chunkX <= maximumChunkX;
+					chunkX++) {
+				for (int chunkZ = minimumChunkZ;
+						chunkZ <= maximumChunkZ;
+						chunkZ++) {
+					chunks.add(new ChunkPos(
+							chunkX, chunkZ));
+				}
+			}
+		}
+		for (ChunkPos chunk : chunks) {
+			level.setChunkForced(
+					chunk.x, chunk.z, forced);
+			if (forced) {
+				level.getChunk(chunk.x, chunk.z);
+			}
+		}
+	}
+
+	private static FortressWorldAudit
+			auditLiquoriceFortress(
+					ServerLevel level,
+					LocatedFortress fortress) {
+		Map<Block, Integer> palette =
+				new LinkedHashMap<>();
+		Map<String, Integer> pieceKinds =
+				new LinkedHashMap<>();
+		Set<ResourceLocation> loot =
+				new java.util.LinkedHashSet<>();
+		Set<Long> visited =
+				new java.util.HashSet<>();
+		int maximumDepth = -1;
+		int blazeSpawners = 0;
+		List<StructurePiece> orderedPieces =
+				fortress.start().getPieces().stream()
+						.sorted(java.util.Comparator
+								.comparingInt(
+										(StructurePiece piece) ->
+												piece.getBoundingBox()
+														.minX())
+								.thenComparingInt(piece ->
+										piece.getBoundingBox()
+												.minY())
+								.thenComparingInt(piece ->
+										piece.getBoundingBox()
+												.minZ())
+								.thenComparing(piece ->
+										piece.getClass()
+												.getSimpleName()))
+						.toList();
+		BoundingBox sentinelPiece =
+				orderedPieces.get(0)
+						.getBoundingBox();
+		BlockPos sentinel = new BlockPos(
+				sentinelPiece.minX(),
+				sentinelPiece.minY(),
+				sentinelPiece.minZ());
+		for (StructurePiece piece : orderedPieces) {
+			pieceKinds.merge(
+					piece.getClass().getSimpleName(),
+					1, Integer::sum);
+			maximumDepth = Math.max(maximumDepth,
+					piece.getGenDepth());
+			BoundingBox bounds =
+					piece.getBoundingBox();
+			for (int x = bounds.minX();
+					x <= bounds.maxX(); x++) {
+				for (int y = bounds.minY();
+						y <= bounds.maxY(); y++) {
+					for (int z = bounds.minZ();
+							z <= bounds.maxZ();
+							z++) {
+						BlockPos position =
+								new BlockPos(
+										x, y, z);
+						if (!visited.add(
+								position.asLong())) {
+							continue;
+						}
+						Block block =
+								level.getBlockState(
+										position)
+										.getBlock();
+						palette.merge(block, 1,
+								Integer::sum);
+						BlockEntity entity =
+								level.getBlockEntity(
+										position);
+						if (entity
+								instanceof SpawnerBlockEntity) {
+							String spawned =
+									entity.saveWithoutMetadata()
+											.getCompound(
+													"SpawnData")
+											.getCompound(
+													"entity")
+											.getString(
+													"id");
+							if ("minecraft:blaze"
+									.equals(spawned)) {
+								blazeSpawners++;
+							}
+						}
+						if (entity != null) {
+							String lootId =
+									entity.saveWithoutMetadata()
+											.getString(
+													"LootTable");
+							if (!lootId.isEmpty()) {
+								loot.add(
+										new ResourceLocation(
+												lootId));
+							}
+						}
+					}
+				}
+			}
+		}
+		BoundingBox bounds = fortress.bounds();
+		AABB area = new AABB(
+				bounds.minX(), bounds.minY(),
+				bounds.minZ(),
+				bounds.maxX() + 1,
+				bounds.maxY() + 1,
+				bounds.maxZ() + 1);
+		int cinnamonSparks =
+				level.getEntitiesOfClass(
+						CinnamonSpark.class, area)
+						.size();
+		int literalBlazes =
+				level.getEntitiesOfClass(
+						Blaze.class, area,
+						entity -> entity.getType()
+								== EntityType.BLAZE)
+						.size();
+		BlockPos centre = bounds.getCenter();
+		ResourceLocation biomeId =
+				level.getBiome(centre).unwrapKey()
+						.map(key -> key.location())
+						.orElse(null);
+		boolean literalEligible =
+				level.getBiome(centre).is(
+						BiomeTags
+								.HAS_NETHER_FORTRESS)
+						&& level.getBiome(centre).is(
+								LiquoriceFortressFeature
+										.GENERATES_IN);
+		return new FortressWorldAudit(
+				palette, biomeId, pieceKinds,
+				maximumDepth, loot,
+				blazeSpawners,
+				cinnamonSparks, literalBlazes,
+				literalEligible, sentinel);
 	}
 
 	private static LocatedSweetshop locateSunkenSweetshop(
@@ -6651,6 +7076,26 @@ public final class DeepPantryGameTests {
 			int soggyBiscuits,
 			int literalDrowned,
 			boolean literalEligible) {
+	}
+
+	private record LocatedFortress(
+			BlockPos located,
+			BoundingBox bounds,
+			ChunkPos startChunk,
+			StructureStart start) {
+	}
+
+	private record FortressWorldAudit(
+			Map<Block, Integer> palette,
+			ResourceLocation biome,
+			Map<String, Integer> pieceKinds,
+			int maximumDepth,
+			Set<ResourceLocation> loot,
+			int blazeSpawners,
+			int cinnamonSparks,
+			int literalBlazes,
+			boolean literalEligible,
+			BlockPos sentinel) {
 	}
 
 	private record LocatedPalace(

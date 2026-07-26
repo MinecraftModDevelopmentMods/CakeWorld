@@ -134,6 +134,7 @@ import com.mcmoddev.cakeworld.init.CakeWorldFluids;
 import com.mcmoddev.cakeworld.init.CakeWorldItems;
 import com.mcmoddev.cakeworld.init.CakeWorldSounds;
 import com.mcmoddev.cakeworld.item.JellylotlBucketItem;
+import com.mcmoddev.cakeworld.world.CakeWorldBlazeReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldPiglinReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldPiglinBruteReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldTurtleReplacement;
@@ -175,6 +176,8 @@ import com.mcmoddev.cakeworld.world.SodaPalaceFeature;
 import com.mcmoddev.cakeworld.world.SodaPalacePalette;
 import com.mcmoddev.cakeworld.world.SunkenSweetshopFeature;
 import com.mcmoddev.cakeworld.world.SunkenSweetshopPalette;
+import com.mcmoddev.cakeworld.world.LiquoriceFortressFeature;
+import com.mcmoddev.cakeworld.world.LiquoriceFortressPalette;
 import com.mcmoddev.cakeworld.world.WaferMineFeature;
 import com.mcmoddev.cakeworld.world.WaferMineStructureFeature;
 import com.mcmoddev.cakeworld.world.WaferWreckFeature;
@@ -305,6 +308,7 @@ import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.npc.VillagerData;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.VillagerType;
+import net.minecraft.world.entity.monster.Blaze;
 import net.minecraft.world.entity.monster.Drowned;
 import net.minecraft.world.entity.monster.AbstractSkeleton;
 import net.minecraft.world.entity.monster.Creeper;
@@ -392,6 +396,9 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.EndPortalFrameBlock;
+import net.minecraft.world.level.block.FenceBlock;
+import net.minecraft.world.level.block.NetherWartBlock;
+import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.WitherSkullBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BrewingStandBlockEntity;
@@ -406,6 +413,8 @@ import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BedPart;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.Half;
+import net.minecraft.world.level.block.state.properties.StairsShape;
 import net.minecraft.world.level.block.TurtleEggBlock;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeGenerationSettings;
@@ -418,8 +427,10 @@ import net.minecraft.world.level.levelgen.feature.NetherFortressFeature;
 import net.minecraft.data.worldgen.StructureFeatures;
 import net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature;
 import net.minecraft.world.level.levelgen.feature.StructureFeature;
+import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 import net.minecraft.world.level.levelgen.feature.configurations.OceanRuinConfiguration;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.levelgen.structure.NetherBridgePieces;
 import net.minecraft.world.level.levelgen.structure.OceanMonumentPieces;
 import net.minecraft.world.level.levelgen.structure.OceanRuinFeature;
 import net.minecraft.world.level.levelgen.structure.OceanRuinPieces;
@@ -37565,6 +37576,701 @@ public final class FirstBiteGameTests {
 		markerDrowned.get(0).discard();
 		markerConversion.discard();
 		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, batch = "struct014",
+			timeoutTicks = 2400)
+	public static void liquoriceFortressKeepsNativeGraphProgressionAndEncounters(
+			GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						LiquoriceFortressFeature
+								.STRUCTURE_ID);
+		Registry<net.minecraft.world.level.levelgen.structure.StructureSet>
+				structureSets =
+				level.registryAccess().registryOrThrow(
+						Registry.STRUCTURE_SET_REGISTRY);
+		net.minecraft.world.level.levelgen.structure.StructureSet
+				structureSet =
+				structureSets.get(
+						LiquoriceFortressFeature
+								.STRUCTURE_SET_ID);
+		boolean ownStructureTag =
+				structures.getTag(
+						LiquoriceFortressFeature
+								.STRUCTURE_TAG)
+						.map(tag -> tag.stream()
+								.anyMatch(holder ->
+										holder.value()
+												== configured))
+						.orElse(false);
+		Registry<Biome> biomes =
+				level.registryAccess().registryOrThrow(
+						Registry.BIOME_REGISTRY);
+		Holder<Biome> fudgeWastes =
+				biomes.getHolderOrThrow(
+						ResourceKey.create(
+								Registry.BIOME_REGISTRY,
+								CakeWorldBiomes
+										.FUDGE_WASTES
+										.getId()));
+		boolean ownBiomeTag = fudgeWastes.is(
+				LiquoriceFortressFeature.GENERATES_IN);
+		boolean nativeBiomeTag = fudgeWastes.is(
+				BiomeTags.HAS_NETHER_FORTRESS);
+		StructureSpawnOverride monsterOverride =
+				configured == null ? null
+						: configured.spawnOverrides.get(
+								MobCategory.MONSTER);
+		Set<String> spawnSignatures =
+				monsterOverride == null ? Set.of()
+						: monsterOverride.spawns()
+								.unwrap().stream()
+								.map(spawn ->
+										Registry.ENTITY_TYPE
+												.getKey(
+														spawn.type)
+												+ ":"
+												+ spawn
+														.getWeight()
+														.asInt()
+												+ ":"
+												+ spawn.minCount
+												+ "-"
+												+ spawn.maxCount)
+								.collect(java.util.stream
+										.Collectors.toSet());
+		Set<String> expectedSpawns = Set.of(
+				"minecraft:blaze:10:2-3",
+				"minecraft:zombified_piglin:5:4-4",
+				"minecraft:wither_skeleton:8:5-5",
+				"minecraft:skeleton:2:5-5",
+				"minecraft:magma_cube:3:4-4");
+		require(helper,
+				configured != null
+						&& configured.feature
+								== StructureFeature.FORTRESS
+						&& configured.config
+								== NoneFeatureConfiguration
+										.INSTANCE
+						&& !configured.adaptNoise
+						&& configured.feature.step()
+								== GenerationStep
+										.Decoration
+										.UNDERGROUND_DECORATION
+						&& ownStructureTag
+						&& ownBiomeTag
+						&& nativeBiomeTag
+						&& monsterOverride != null
+						&& monsterOverride.boundingBox()
+								== StructureSpawnOverride
+										.BoundingBoxType
+										.PIECE
+						&& spawnSignatures.equals(
+								expectedSpawns),
+				"Liquorice Fortress lost native identity, Fudge-Wastes eligibility or exact PIECE encounter table: ownStructure="
+						+ ownStructureTag
+						+ ", biomes=" + ownBiomeTag
+						+ "/" + nativeBiomeTag
+						+ ", spawns="
+						+ spawnSignatures);
+
+		Map<ResourceLocation, Integer> setEntries =
+				structureSet == null ? Map.of()
+						: structureSet.structures()
+								.stream().collect(
+										java.util.stream
+												.Collectors
+												.toMap(
+														entry ->
+																structures
+																		.getKey(
+																				entry.structure()
+																						.value()),
+														entry ->
+																entry.weight()));
+		require(helper,
+				structureSet != null
+						&& setEntries.equals(Map.of(
+								new ResourceLocation(
+										"minecraft",
+										"fortress"),
+								2,
+								new ResourceLocation(
+										"minecraft",
+										"bastion_remnant"),
+								3))
+						&& structureSet.placement()
+								instanceof net.minecraft.world.level
+										.levelgen.structure
+										.placement
+										.RandomSpreadStructurePlacement,
+				"Liquorice Fortress lost native competition with Bastions: "
+						+ setEntries);
+		net.minecraft.world.level.levelgen.structure.placement
+				.RandomSpreadStructurePlacement placement =
+				(net.minecraft.world.level.levelgen.structure
+						.placement.RandomSpreadStructurePlacement)
+						structureSet.placement();
+		require(helper,
+				placement.spacing() == 27
+						&& placement.separation() == 4
+						&& placement.spreadType()
+								== net.minecraft.world.level
+										.levelgen.structure
+										.placement
+										.RandomSpreadType
+										.LINEAR
+						&& placement.salt() == 30084232,
+				"Liquorice Fortress lost native 27/4/30084232 linear placement");
+
+		Set<String> bridgeWeights =
+				fortressPieceWeightSignatures(
+						"BRIDGE_PIECE_WEIGHTS");
+		Set<String> castleWeights =
+				fortressPieceWeightSignatures(
+						"CASTLE_PIECE_WEIGHTS");
+		require(helper,
+				bridgeWeights.equals(Set.of(
+						"BridgeStraight:30:0:true",
+						"BridgeCrossing:10:4:false",
+						"RoomCrossing:10:4:false",
+						"StairsRoom:10:3:false",
+						"MonsterThrone:5:2:false",
+						"CastleEntrance:5:1:false"))
+						&& castleWeights.equals(Set.of(
+								"CastleSmallCorridorPiece:25:0:true",
+								"CastleSmallCorridorCrossingPiece:15:5:false",
+								"CastleSmallCorridorRightTurnPiece:5:10:false",
+								"CastleSmallCorridorLeftTurnPiece:5:10:false",
+								"CastleCorridorStairsPiece:10:3:true",
+								"CastleCorridorTBalconyPiece:7:2:false",
+								"CastleStalkRoom:5:2:false")),
+				"Liquorice Fortress lost native weighted bridge/castle grammar: bridge="
+						+ bridgeWeights + ", castle="
+						+ castleWeights);
+
+		PiecesContainer graph = null;
+		long graphSeed = -1L;
+		for (long seed = 0L;
+				seed < 4096L && graph == null; seed++) {
+			Random random = new Random(seed);
+			StructurePiecesBuilder builder =
+					new StructurePiecesBuilder();
+			NetherBridgePieces.StartPiece start =
+					new NetherBridgePieces.StartPiece(
+							random, 2, 2);
+			builder.addPiece(start);
+			start.addChildren(start, builder, random);
+			while (!start.pendingChildren.isEmpty()) {
+				StructurePiece child =
+						start.pendingChildren.remove(
+								random.nextInt(
+										start.pendingChildren
+												.size()));
+				child.addChildren(start, builder, random);
+			}
+			builder.moveInsideHeights(random, 48, 70);
+			PiecesContainer candidate = builder.build();
+			boolean hasThrone =
+					candidate.pieces().stream().anyMatch(
+							NetherBridgePieces
+									.MonsterThrone.class
+									::isInstance);
+			boolean hasFarm =
+					candidate.pieces().stream().anyMatch(
+							NetherBridgePieces
+									.CastleStalkRoom.class
+									::isInstance);
+			boolean hasTurn =
+					candidate.pieces().stream().anyMatch(
+							piece -> piece
+									instanceof NetherBridgePieces
+											.CastleSmallCorridorLeftTurnPiece
+									|| piece
+											instanceof NetherBridgePieces
+													.CastleSmallCorridorRightTurnPiece);
+			if (hasThrone && hasFarm && hasTurn) {
+				graph = candidate;
+				graphSeed = seed;
+			}
+		}
+		require(helper, graph != null,
+				"Could not obtain a representative native Fortress graph in 4096 deterministic seeds");
+		BoundingBox graphBounds =
+				graph.calculateBoundingBox();
+		int maximumDepth = graph.pieces().stream()
+				.mapToInt(StructurePiece::getGenDepth)
+				.max().orElse(-1);
+		long pieceKinds = graph.pieces().stream()
+				.map(piece -> piece.getClass()
+						.getSimpleName())
+				.distinct().count();
+		require(helper,
+				maximumDepth <= 30
+						&& graphBounds.minY() >= 48
+						&& graphBounds.minY() <= 70
+						&& graphBounds.getXSpan() <= 256
+						&& graphBounds.getZSpan() <= 256
+						&& graph.pieces().size() >= 10
+						&& pieceKinds >= 8,
+				"Liquorice Fortress lost native depth-30, minimum-height-48..70 or bounded branching grammar: seed="
+						+ graphSeed + ", pieces="
+						+ graph.pieces().size()
+						+ ", kinds=" + pieceKinds
+						+ ", depth=" + maximumDepth
+						+ ", bounds=" + graphBounds);
+
+		BlockPos localAnchor =
+				helper.absolutePos(
+						new BlockPos(4, 4, 4));
+		BoundingBox throneBounds =
+				BoundingBox.orientBox(
+						localAnchor.getX(),
+						level.getMaxBuildHeight()
+								- 96,
+						localAnchor.getZ(),
+						-2, 0, 0, 7, 8, 9,
+						Direction.SOUTH);
+		StructurePiece throne =
+				new NetherBridgePieces.MonsterThrone(
+						1, throneBounds,
+						Direction.SOUTH);
+		BoundingBox stalkBounds =
+				BoundingBox.orientBox(
+						localAnchor.getX(),
+						level.getMaxBuildHeight()
+								- 72,
+						localAnchor.getZ(),
+						-5, -3, 0, 13, 14,
+						13, Direction.SOUTH);
+		StructurePiece stalkRoom =
+				new NetherBridgePieces.CastleStalkRoom(
+						1, stalkBounds,
+						Direction.SOUTH);
+		for (StructurePiece piece
+				: List.of(throne, stalkRoom)) {
+			BoundingBox bounds = piece.getBoundingBox();
+			piece.postProcess(level,
+					level.structureFeatureManager(),
+					level.getChunkSource()
+							.getGenerator(),
+					new Random(graphSeed), bounds,
+					new ChunkPos(bounds.minX() >> 4,
+							bounds.minZ() >> 4),
+					bounds.getCenter());
+		}
+		Map<Block, Integer> thronePalette =
+				scanBoundingBoxPalette(level,
+						throne.getBoundingBox());
+		Map<Block, Integer> farmPalette =
+				scanBoundingBoxPalette(level,
+						stalkRoom.getBoundingBox());
+		BlockPos spawnerPosition =
+				BlockPos.betweenClosedStream(
+						throne.getBoundingBox().minX(),
+						throne.getBoundingBox().minY(),
+						throne.getBoundingBox().minZ(),
+						throne.getBoundingBox().maxX(),
+						throne.getBoundingBox().maxY(),
+						throne.getBoundingBox().maxZ())
+						.filter(position ->
+								level.getBlockState(
+										position)
+										.is(Blocks.SPAWNER))
+						.map(BlockPos::immutable)
+						.findFirst().orElse(null);
+		CompoundTag spawnerState =
+				spawnerPosition == null
+						? new CompoundTag()
+						: level.getBlockEntity(
+								spawnerPosition)
+								instanceof SpawnerBlockEntity
+										spawner
+												? spawner
+														.saveWithoutMetadata()
+												: new CompoundTag();
+		String spawnerEntity = spawnerState
+				.getCompound("SpawnData")
+				.getCompound("entity").getString("id");
+		require(helper,
+				thronePalette.getOrDefault(
+						Blocks.SPAWNER, 0) == 1
+						&& "minecraft:blaze"
+								.equals(spawnerEntity)
+						&& farmPalette.getOrDefault(
+								Blocks.NETHER_WART,
+								0) > 0
+						&& farmPalette.getOrDefault(
+								Blocks.SOUL_SAND,
+								0) > 0,
+				"Liquorice Fortress lost its one native Blaze spawner or paired native Nether-Wart/Soul-Sand farm: throne="
+						+ thronePalette + ", spawner="
+						+ spawnerState + ", farm="
+						+ farmPalette);
+
+		BlockPos chestAnchor =
+				new BlockPos(localAnchor.getX(),
+						level.getMaxBuildHeight()
+								- 44,
+						localAnchor.getZ());
+		long chestSeed = 0L;
+		while (new Random(chestSeed).nextInt(3)
+				!= 0) {
+			chestSeed++;
+		}
+		BoundingBox turnBounds = BoundingBox.orientBox(
+				chestAnchor.getX(), chestAnchor.getY(),
+				chestAnchor.getZ(), -1, 0, 0,
+				5, 7, 5, Direction.SOUTH);
+		NetherBridgePieces
+				.CastleSmallCorridorLeftTurnPiece
+				chestTurn =
+				new NetherBridgePieces
+						.CastleSmallCorridorLeftTurnPiece(
+								1,
+								new Random(chestSeed),
+								turnBounds,
+								Direction.SOUTH);
+		chestTurn.postProcess(level,
+				level.structureFeatureManager(),
+				level.getChunkSource().getGenerator(),
+				new Random(chestSeed), turnBounds,
+				new ChunkPos(turnBounds.minX() >> 4,
+						turnBounds.minZ() >> 4),
+				turnBounds.getCenter());
+		CompoundTag fortressChest =
+				BlockPos.betweenClosedStream(
+						turnBounds.minX(),
+						turnBounds.minY(),
+						turnBounds.minZ(),
+						turnBounds.maxX(),
+						turnBounds.maxY(),
+						turnBounds.maxZ())
+						.map(level::getBlockEntity)
+						.filter(java.util.Objects
+								::nonNull)
+						.map(BlockEntity
+								::saveWithoutMetadata)
+						.filter(tag -> tag.contains(
+								"LootTable"))
+						.findFirst()
+						.orElse(new CompoundTag());
+		require(helper,
+				BuiltInLootTables.NETHER_BRIDGE
+						.toString().equals(
+								fortressChest
+										.getString(
+												"LootTable"))
+						&& level.getServer()
+								.getLootTables().get(
+										BuiltInLootTables
+												.NETHER_BRIDGE)
+								!= LootTable.EMPTY
+						&& level.getServer()
+								.getAdvancements()
+								.getAdvancement(
+										new ResourceLocation(
+												"minecraft",
+												"nether/find_fortress"))
+								!= null
+						&& level.getServer()
+								.getAdvancements()
+								.getAdvancement(
+										new ResourceLocation(
+												"minecraft",
+												"nether/find_fortress"))
+								.getCriteria()
+								.containsKey(
+										"fortress"),
+				"Liquorice Fortress lost native Nether-Bridge chest loot or A Terrible Fortress progression identity: "
+						+ fortressChest);
+
+		BlockPos fixtureAnchor =
+				new BlockPos(localAnchor.getX(),
+						level.getMaxBuildHeight()
+								- 24,
+						localAnchor.getZ());
+		BoundingBox fixtureBounds =
+				new BoundingBox(
+						fixtureAnchor.getX(),
+						fixtureAnchor.getY(),
+						fixtureAnchor.getZ(),
+						fixtureAnchor.getX() + 15,
+						fixtureAnchor.getY() + 3,
+						fixtureAnchor.getZ() + 15);
+		NetherBridgePieces.BridgeCrossing
+				palettePiece =
+				new NetherBridgePieces.BridgeCrossing(
+						0, fixtureBounds,
+						Direction.SOUTH);
+		List<BlockState> sources = List.of(
+				Blocks.NETHER_BRICKS
+						.defaultBlockState(),
+				Blocks.NETHER_BRICK_STAIRS
+						.defaultBlockState()
+						.setValue(
+								StairBlock.FACING,
+								Direction.WEST)
+						.setValue(StairBlock.HALF,
+								Half.TOP)
+						.setValue(StairBlock.SHAPE,
+								StairsShape.INNER_LEFT),
+				Blocks.NETHER_BRICK_FENCE
+						.defaultBlockState()
+						.setValue(FenceBlock.NORTH,
+								true)
+						.setValue(FenceBlock.EAST,
+								true),
+				Blocks.NETHER_WART.defaultBlockState()
+						.setValue(
+								NetherWartBlock.AGE,
+								3),
+				Blocks.SOUL_SAND.defaultBlockState(),
+				Blocks.LAVA.defaultBlockState(),
+				Blocks.SPAWNER.defaultBlockState(),
+				Blocks.CHEST.defaultBlockState());
+		List<BlockPos> fixturePositions =
+				new java.util.ArrayList<>();
+		for (int index = 0;
+				index < sources.size(); index++) {
+			BlockPos position = fixtureAnchor.offset(
+					index * 2, 0, 0);
+			fixturePositions.add(position);
+			if (index == 3) {
+				level.setBlock(position.below(),
+						Blocks.SOUL_SAND
+								.defaultBlockState(),
+						2);
+			}
+			level.setBlock(position,
+					sources.get(index), 2);
+		}
+		PiecesContainer fixture =
+				new PiecesContainer(
+						List.of(palettePiece));
+		LiquoriceFortressPalette
+				.applyEdiblePalette(
+						level, fixtureBounds, fixture);
+		List<BlockState> firstPass =
+				fixturePositions.stream()
+						.map(level::getBlockState)
+						.toList();
+		LiquoriceFortressPalette
+				.applyEdiblePalette(
+						level, fixtureBounds, fixture);
+		List<BlockState> secondPass =
+				fixturePositions.stream()
+						.map(level::getBlockState)
+						.toList();
+		BlockState themedStairs = firstPass.get(1);
+		BlockState themedFence = firstPass.get(2);
+		BlockState themedWart = firstPass.get(3);
+		require(helper,
+				firstPass.get(0).is(
+						CakeWorldBlocks
+								.LIQUORICE_BRICKS
+								.get())
+						&& themedStairs.is(
+								CakeWorldBlocks
+										.LIQUORICE_STAIRS
+										.get())
+						&& themedStairs.getValue(
+								StairBlock.FACING)
+								== Direction.WEST
+						&& themedStairs.getValue(
+								StairBlock.HALF)
+								== Half.TOP
+						&& themedStairs.getValue(
+								StairBlock.SHAPE)
+								== StairsShape
+										.INNER_LEFT
+						&& themedFence.is(
+								CakeWorldBlocks
+										.LIQUORICE_FENCE
+										.get())
+						&& themedFence.getValue(
+								FenceBlock.NORTH)
+						&& themedFence.getValue(
+								FenceBlock.EAST)
+						&& themedWart.is(
+								CakeWorldBlocks
+										.CINNAMON_WART
+										.get())
+						&& themedWart.getValue(
+								NetherWartBlock.AGE)
+								== 3
+						&& firstPass.get(4)
+								.is(Blocks.SOUL_SAND)
+						&& firstPass.get(5)
+								.is(Blocks.LAVA)
+						&& firstPass.get(6)
+								.is(Blocks.SPAWNER)
+						&& firstPass.get(7)
+								.is(Blocks.CHEST)
+						&& firstPass.equals(secondPass),
+				"Liquorice Fortress lost state-preserving masonry/wart conversion, protected native roles or idempotence: "
+						+ firstPass);
+		List<ItemStack> wartDrops =
+				Block.getDrops(themedWart, level,
+						fixturePositions.get(3),
+						null);
+		int wartCount = wartDrops.stream()
+				.filter(stack -> stack
+						.is(Items.NETHER_WART))
+				.mapToInt(ItemStack::getCount).sum();
+		require(helper,
+				CakeWorldBlocks.CINNAMON_WART.get()
+						instanceof NetherWartBlock
+						&& wartDrops.stream().allMatch(
+								stack -> stack.is(
+										Items.NETHER_WART))
+						&& wartCount >= 2
+						&& wartCount <= 4,
+				"Cinnamon Wart lost native growth type or real Nether-Wart brewing/replanting drops: "
+						+ wartDrops);
+
+		BlockPos blazePosition =
+				helper.absolutePos(
+						new BlockPos(8, 4, 8));
+		ResourceLocation blazeBiome =
+				level.getBiome(blazePosition)
+						.unwrapKey()
+						.map(key -> key.location())
+						.orElse(null);
+		Blaze blaze = EntityType.BLAZE.create(level);
+		require(helper,
+				blaze != null
+						&& blazeBiome != null
+						&& CakeWorld.MODID.equals(
+								blazeBiome
+										.getNamespace()),
+				"Fortress Blaze conversion fixture was unavailable or outside CakeWorld: "
+						+ blazeBiome);
+		blaze.moveTo(blazePosition.getX() + 0.5D,
+				blazePosition.getY(),
+				blazePosition.getZ() + 0.5D,
+				37.0F, 12.0F);
+		blaze.setHealth(7.0F);
+		blaze.setCustomName(new TextComponent(
+				"Fortress Spark"));
+		blaze.setNoAi(true);
+		blaze.setInvulnerable(true);
+		blaze.setPersistenceRequired();
+		blaze.invulnerableTime = 9;
+		CinnamonSpark replacement =
+				CakeWorldBlazeReplacement
+						.replaceIfInCakeWorldBiome(
+								level, blaze);
+		require(helper,
+				replacement != null
+						&& replacement.getType()
+								== CakeWorldEntities
+										.CINNAMON_SPARK
+										.get()
+						&& replacement.getHealth()
+								== 7.0F
+						&& replacement.hasCustomName()
+						&& "Fortress Spark".equals(
+								replacement
+										.getCustomName()
+										.getString())
+						&& replacement.isNoAi()
+						&& replacement.isInvulnerable()
+						&& replacement
+								.isPersistenceRequired()
+						&& replacement.invulnerableTime
+								== 9
+						&& replacement.getYRot()
+								== 37.0F
+						&& replacement.getXRot()
+								== 12.0F
+						&& blaze.isRemoved(),
+				"Fresh native Blaze did not become a state-preserving Cinnamon Spark: "
+						+ replacement);
+		replacement.discard();
+		helper.succeed();
+	}
+
+	private static Set<String>
+			fortressPieceWeightSignatures(
+					String fieldName) {
+		try {
+			Field weightsField =
+					NetherBridgePieces.class
+							.getDeclaredField(fieldName);
+			weightsField.setAccessible(true);
+			Object[] weights =
+					(Object[]) weightsField.get(null);
+			Set<String> signatures =
+					new java.util.LinkedHashSet<>();
+			for (Object weight : weights) {
+				Class<?> type = weight.getClass();
+				Field pieceClass =
+						type.getDeclaredField(
+								"pieceClass");
+				Field value = type.getDeclaredField(
+						"weight");
+				Field maximum =
+						type.getDeclaredField(
+								"maxPlaceCount");
+				Field repeat =
+						type.getDeclaredField(
+								"allowInRow");
+				pieceClass.setAccessible(true);
+				value.setAccessible(true);
+				maximum.setAccessible(true);
+				repeat.setAccessible(true);
+				signatures.add(
+						((Class<?>) pieceClass
+								.get(weight))
+										.getSimpleName()
+								+ ":"
+								+ value.getInt(weight)
+								+ ":"
+								+ maximum
+										.getInt(weight)
+								+ ":"
+								+ repeat.getBoolean(
+										weight));
+			}
+			return signatures;
+		} catch (ReflectiveOperationException exception) {
+			throw new AssertionError(
+					"Could not inspect native Fortress piece weights "
+							+ fieldName,
+					exception);
+		}
+	}
+
+	private static Map<Block, Integer>
+			scanBoundingBoxPalette(
+					ServerLevel level,
+					BoundingBox bounds) {
+		Map<Block, Integer> palette =
+				new java.util.LinkedHashMap<>();
+		for (int x = bounds.minX();
+				x <= bounds.maxX(); x++) {
+			for (int y = bounds.minY();
+					y <= bounds.maxY(); y++) {
+				for (int z = bounds.minZ();
+						z <= bounds.maxZ(); z++) {
+					palette.merge(
+							level.getBlockState(
+									new BlockPos(x,
+											y, z))
+									.getBlock(),
+							1, Integer::sum);
+				}
+			}
+		}
+		return palette;
 	}
 
 	private static boolean hasPlacedFeature(

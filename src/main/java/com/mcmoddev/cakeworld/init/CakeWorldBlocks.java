@@ -8,6 +8,7 @@ import com.mcmoddev.cakeworld.block.CakeOvenBlock;
 import com.mcmoddev.cakeworld.block.CandyCookerBlock;
 import com.mcmoddev.cakeworld.block.CandySproutBlock;
 import com.mcmoddev.cakeworld.block.ChocolateSpongeBlock;
+import com.mcmoddev.cakeworld.block.CinnamonWartBlock;
 import com.mcmoddev.cakeworld.block.CookbookKioskBlock;
 import com.mcmoddev.cakeworld.block.CookbookLibraryBlock;
 import com.mcmoddev.cakeworld.block.CoolingRackBlock;
@@ -24,12 +25,15 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.FenceBlock;
 import net.minecraft.world.level.block.GlassBlock;
 import net.minecraft.world.level.block.InfestedBlock;
 import net.minecraft.world.level.block.OreBlock;
 import net.minecraft.world.level.block.RedStoneOreBlock;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.Material;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -104,6 +108,28 @@ public final class CakeWorldBlocks {
 							.requiresCorrectToolForDrops()
 							.strength(1.5F, 6.0F)
 							.sound(SoundType.STONE));
+	public static final RegistryObject<Block> LIQUORICE_BRICKS =
+			block("liquorice_bricks",
+					BlockBehaviour.Properties
+							.copy(Blocks.POLISHED_BLACKSTONE_BRICKS));
+	public static final RegistryObject<Block> LIQUORICE_STAIRS =
+			block("liquorice_stairs",
+					() -> new StairBlock(
+							() -> LIQUORICE_BRICKS.get()
+									.defaultBlockState(),
+							BlockBehaviour.Properties.copy(
+									Blocks
+											.POLISHED_BLACKSTONE_BRICK_STAIRS)));
+	public static final RegistryObject<Block> LIQUORICE_FENCE =
+			block("liquorice_fence",
+					() -> new FenceBlock(
+							BlockBehaviour.Properties.copy(
+									Blocks.NETHER_BRICK_FENCE)));
+	public static final RegistryObject<Block> CINNAMON_WART =
+			BLOCKS.register("cinnamon_wart",
+					() -> new CinnamonWartBlock(
+							BlockBehaviour.Properties.copy(
+									Blocks.NETHER_WART)));
 	public static final RegistryObject<Block> FUDGE_ROCK = block("fudge_rock",
 			BlockBehaviour.Properties.of(Material.STONE).requiresCorrectToolForDrops()
 					.strength(2.0F, 6.0F).sound(SoundType.NETHERRACK));
