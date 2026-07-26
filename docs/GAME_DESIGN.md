@@ -412,7 +412,7 @@ specification gives them a clear CakeWorld purpose.
 
 | ID | Vanilla structure family | CakeWorld conversion | Key contract |
 |---|---|---|---|
-| STRUCT-001 | `minecraft:village` | Gingerbread Villages | Biome variants, candy-cane roads, gumdrop houses, workstations, farms, and Cookbook libraries. |
+| STRUCT-001 | `minecraft:village` | Gingerbread Villages | Functional first variant: a Candy Plains village with candy-cane and biscuit roads, three gumdrop-roof gingerbread houses, real beds, profession workstations, a farm, meeting bell, Cookbook library and loot, Wafer Windmill, four employed Gingerbread Folk, and a Jawbreaker Guardian. It is a genuine saved and locatable `VILLAGE` structure with occupied POIs and village/raid-location semantics. Hearthlands and other biome variants, expanding multi-piece layouts, presentation, and hands-on raid play remain. |
 | STRUCT-002 | `minecraft:pillager_outpost` | Biscuit Bandit Lookout | Raid-compatible lookout with readable bandit theming. |
 | STRUCT-003 | `minecraft:mineshaft` | Wafer Mine | Fragile supports, rail continuity, cave loot, and edible geology integration. |
 | STRUCT-004 | `minecraft:mansion` | Grand Gingerbread Manor | Sour Sorcerers, secret kitchens, rare recipes, and raid-role compatibility. |
@@ -430,6 +430,16 @@ specification gives them a clear CakeWorld purpose.
 | STRUCT-016 | `minecraft:buried_treasure` | Buried Sweet Tin | Map-compatible compact reward cache. |
 | STRUCT-017 | `minecraft:nether_fossil` | Rock-Candy Fossil | Fudge-realm geological landmark and bone-role material source. |
 | STRUCT-018 | `minecraft:bastion_remnant` | Burnt-Toffee Foundry | Fudge Folk society, treasure rooms, bridges, stables, and high-value loot. |
+
+The `STRUCT-001` prototype owns a dedicated configured structure, structure
+set, public locate tag, and CakeWorld-only Candy Plains biome tag. Its first
+start pool intentionally contains one procedural fixed-layout piece; this
+keeps the initial settlement deterministic and does not yet claim the spatial
+variety of a full multi-piece jigsaw village. It augments the vanilla
+`#minecraft:village` locate family without rewriting vanilla or third-party
+structures. Generated blocks, loot, the structure start, beds, jobs, meeting
+point, occupied-village state, residents, and defender survive save/reload.
+Biome-specific expansion begins when Gingerbread Hearthlands is delivered.
 
 ## Original Structure Additions
 

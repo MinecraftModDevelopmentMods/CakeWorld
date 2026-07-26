@@ -16,10 +16,14 @@ public final class CakeWorldFeatureRegistration {
 	@SubscribeEvent
 	public static void registerFeatures(RegistryEvent.Register<Feature<?>> event) {
 		event.getRegistry().register(StarterPicnicFeature.FEATURE);
+		event.getRegistry().register(GingerbreadVillageFeature.FEATURE);
 	}
 
 	@SubscribeEvent
 	public static void commonSetup(FMLCommonSetupEvent event) {
-		event.enqueueWork(StarterPicnicFeature::registerConfiguredFeature);
+		event.enqueueWork(() -> {
+			StarterPicnicFeature.registerConfiguredFeature();
+			GingerbreadVillageFeature.registerWorldgen();
+		});
 	}
 }

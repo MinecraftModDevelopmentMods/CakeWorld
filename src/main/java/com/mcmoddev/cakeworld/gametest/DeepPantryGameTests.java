@@ -17,9 +17,12 @@ import com.mojang.datafixers.util.Pair;
 import com.mojang.authlib.GameProfile;
 import com.mcmoddev.cakeworld.CakeWorld;
 import com.mcmoddev.cakeworld.compat.VanillaResourceAdvancements;
+import com.mcmoddev.cakeworld.entity.GingerbreadFolk;
+import com.mcmoddev.cakeworld.entity.JawbreakerGuardian;
 import com.mcmoddev.cakeworld.init.CakeWorldBiomes;
 import com.mcmoddev.cakeworld.init.CakeWorldBlocks;
 import com.mcmoddev.cakeworld.init.CakeWorldFluids;
+import com.mcmoddev.cakeworld.world.GingerbreadVillageFeature;
 import com.mcmoddev.orespawn.api.CompiledOrePattern;
 import com.mcmoddev.orespawn.api.GeologyColumn;
 import com.mcmoddev.orespawn.api.GeologyProfileView;
@@ -57,6 +60,7 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.levelgen.Aquifer;
 import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
@@ -1048,6 +1052,176 @@ public final class DeepPantryGameTests {
 				syrupStartBiomes.getOrDefault(id("soda_ocean"), 0) == 0,
 				"Soda Ocean exclusion allowed integrated Syrup output");
 		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 4800)
+	public static void focusedGingerbreadVillageStructureAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean(
+				"cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed Gingerbread Village audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						GingerbreadVillageFeature
+								.STRUCTURE_ID);
+		require(helper, configured != null,
+				"Gingerbread Village configured structure was absent from the live registry");
+		boolean tagged = structures.getTag(
+						GingerbreadVillageFeature
+								.STRUCTURE_TAG)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		require(helper, tagged,
+				"Gingerbread Village was absent from its public locate tag");
+
+		BlockPos located = level.findNearestMapFeature(
+				GingerbreadVillageFeature.STRUCTURE_TAG,
+				helper.absolutePos(new BlockPos(4, 4, 4)),
+				128, false);
+		require(helper, located != null,
+				"The fixed-seed CakeWorld contained no locatable Gingerbread Village within 128 chunks");
+		net.minecraft.world.level.ChunkPos startChunk =
+				new net.minecraft.world.level.ChunkPos(located);
+		level.setChunkForced(startChunk.x, startChunk.z, true);
+		net.minecraft.world.level.chunk.LevelChunk chunk =
+				level.getChunk(startChunk.x, startChunk.z);
+		net.minecraft.world.level.levelgen.structure.StructureStart
+				start = chunk.getStartForFeature(configured);
+		require(helper,
+				start != null && start.isValid()
+						&& start.getFeature() == configured
+						&& start.getPieces().size() == 1,
+				"The located Gingerbread Village lost its saved Village structure start");
+
+		BlockPos horizontalCentre =
+				new BlockPos(located.getX() + 8, 0,
+						located.getZ() + 8);
+		BlockPos bell = null;
+		for (int y = level.getMinBuildHeight();
+				y < level.getMaxBuildHeight(); y++) {
+			BlockPos candidate =
+					new BlockPos(horizontalCentre.getX(), y,
+							horizontalCentre.getZ());
+			if (level.getBlockState(candidate).is(Blocks.BELL)) {
+				bell = candidate;
+				break;
+			}
+		}
+		require(helper, bell != null,
+				"The located Gingerbread Village start produced no meeting bell");
+		BlockPos centre = bell.below();
+		Map<Block, Integer> palette = new LinkedHashMap<>();
+		for (int x = -10; x <= 10; x++) {
+			for (int y = 0; y <= 6; y++) {
+				for (int z = -10; z <= 10; z++) {
+					Block block = level.getBlockState(
+							centre.offset(x, y, z))
+							.getBlock();
+					palette.merge(block, 1, Integer::sum);
+				}
+			}
+		}
+		int gummyRoofs =
+				palette.getOrDefault(
+						CakeWorldBlocks
+								.RASPBERRY_GUMMY_BLOCK
+								.get(), 0)
+				+ palette.getOrDefault(
+						CakeWorldBlocks
+								.BLUEBERRY_GUMMY_BLOCK
+								.get(), 0)
+				+ palette.getOrDefault(
+						CakeWorldBlocks
+								.GRAPE_GUMMY_BLOCK
+								.get(), 0);
+		long homes = level.getPoiManager().getCountInRange(
+				net.minecraft.world.entity.ai.village.poi
+						.PoiType.HOME::equals,
+				centre, 32,
+				net.minecraft.world.entity.ai.village.poi
+						.PoiManager.Occupancy.ANY);
+		ResourceLocation biomeId = level.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY)
+				.getKey(level.getBiome(centre).value());
+		boolean literalPlainsVillageEligible =
+				level.getBiome(centre).is(
+						net.minecraft.tags.BiomeTags
+								.HAS_VILLAGE_PLAINS);
+		BlockPos meetingBell = bell;
+		// A locate query loads the structure chunk but its entity section may
+		// finish joining the level on a later server tick. Keep the remote
+		// chunk forced briefly so reload evidence observes the saved residents
+		// and guardian rather than racing the asynchronous entity manager.
+		helper.runAfterDelay(20, () -> {
+			List<GingerbreadFolk> residents =
+					level.getEntitiesOfClass(
+							GingerbreadFolk.class,
+							new net.minecraft.world.phys.AABB(
+									centre).inflate(16.0D));
+			List<JawbreakerGuardian> guardians =
+					level.getEntitiesOfClass(
+							JawbreakerGuardian.class,
+							new net.minecraft.world.phys.AABB(
+									centre).inflate(16.0D));
+			boolean meetingPoi =
+					level.getPoiManager()
+							.existsAtPosition(
+									net.minecraft.world.entity
+											.ai.village.poi
+											.PoiType.MEETING,
+									meetingBell);
+			boolean village = level.isVillage(centre);
+			level.setChunkForced(startChunk.x,
+					startChunk.z, false);
+			LOGGER.info("Focused Gingerbread Village audit: locate={}, centre={}, biome={}, palette={}, homes={}, meeting={}, village={}, residents={}, guardians={}, startPieces={}",
+					located, centre, biomeId, palette, homes,
+					meetingPoi, village, residents.size(),
+					guardians.size(),
+					start.getPieces().size());
+			require(helper,
+					id("candy_plains").equals(biomeId)
+							&& level.getBiome(centre).is(
+									GingerbreadVillageFeature
+											.GENERATES_IN)
+							&& !literalPlainsVillageEligible,
+					"Gingerbread Village generated outside its CakeWorld-only biome contract or enabled a literal Plains Village");
+			require(helper,
+					palette.getOrDefault(
+							CakeWorldBlocks
+									.GINGERBREAD_BRICKS
+									.get(), 0) > 250
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.CANDY_CANE_PILLAR
+											.get(), 0) >= 30
+							&& gummyRoofs >= 100
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.COOKBOOK_LIBRARY
+											.get(), 0) == 1
+							&& palette.getOrDefault(
+									Blocks.BELL, 0) == 1,
+					"The natural village lost its gingerbread, candy-cane, gumdrop, library or bell signature");
+			require(helper,
+					homes >= 8
+							&& meetingPoi
+							&& village
+							&& residents.size() == 4
+							&& guardians.size() == 1,
+					"The natural village lost bed/meeting POIs, raid-location semantics, residents or defender");
+			helper.succeed();
+		});
 	}
 
 	@GameTest(template = EMPTY, timeoutTicks = 1200)

@@ -150,6 +150,7 @@ import com.mcmoddev.cakeworld.world.CakeWorldZombieHorseReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldZombieVillagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldZombifiedPiglinReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldZoglinReplacement;
+import com.mcmoddev.cakeworld.world.GingerbreadVillageFeature;
 import com.mcmoddev.cakeworld.world.CakeWorldPillagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldRavagerReplacement;
 import com.mcmoddev.cakeworld.world.CakeWorldShulkerReplacement;
@@ -356,6 +357,7 @@ import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.NaturalSpawner;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.WitherSkullBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -25624,6 +25626,11 @@ public final class FirstBiteGameTests {
 				new TextComponent(
 						"Entity Join Gingerbread Folk"));
 		eventLiteral.setNoAi(true);
+		// This conversion is inspected after the 360-tick family simulation.
+		// The CakeWorld biome probe may resolve below the GameTest platform, so
+		// keep the named fixture alive rather than letting terrain suffocation
+		// turn a successful deferred conversion into a harness failure.
+		eventLiteral.setInvulnerable(true);
 		require(helper,
 				level.addFreshEntity(eventLiteral),
 				"Could not add literal Villager entity-join source");
@@ -33121,6 +33128,240 @@ public final class FirstBiteGameTests {
 					"Fresh literal or actual Truffle-Pig lightning source did not defer-convert with exact finalized state");
 			helper.succeed();
 		});
+	}
+
+	@GameTest(template = EMPTY, batch = "struct001",
+			timeoutTicks = 400)
+	public static void gingerbreadVillageKeepsStructureAndSettlementHooks(
+			GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						GingerbreadVillageFeature
+								.STRUCTURE_ID);
+		Registry<net.minecraft.world.level.levelgen.structure.StructureSet>
+				structureSets =
+				level.registryAccess().registryOrThrow(
+						Registry.STRUCTURE_SET_REGISTRY);
+		net.minecraft.world.level.levelgen.structure.StructureSet
+				structureSet =
+				structureSets.get(
+						GingerbreadVillageFeature
+								.STRUCTURE_SET_ID);
+		TagKey<ConfiguredStructureFeature<?, ?>>
+				vanillaVillageTag =
+				TagKey.create(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY,
+						new ResourceLocation(
+								"minecraft", "village"));
+		boolean ownTag = structures.getTag(
+						GingerbreadVillageFeature
+								.STRUCTURE_TAG)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		boolean vanillaTag = structures.getTag(
+						vanillaVillageTag)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		require(helper,
+				configured != null
+						&& configured.feature
+								== net.minecraft.world.level
+										.levelgen.feature
+										.StructureFeature
+										.VILLAGE
+						&& structureSet != null
+						&& structureSet.structures().size()
+								== 1
+						&& structureSet.structures().get(0)
+								.structure().value()
+								== configured
+						&& structureSet.placement()
+								instanceof net.minecraft.world
+										.level.levelgen
+										.structure.placement
+										.RandomSpreadStructurePlacement
+						&& ownTag && vanillaTag,
+				"Gingerbread Village lost its genuine Village structure, set or locate tags");
+		net.minecraft.world.level.levelgen.structure.placement
+				.RandomSpreadStructurePlacement placement =
+				(net.minecraft.world.level.levelgen.structure
+						.placement.RandomSpreadStructurePlacement)
+						structureSet.placement();
+		require(helper,
+				placement.spacing() == 24
+						&& placement.separation() == 8
+						&& placement.salt() == 1978001,
+				"Gingerbread Village lost its explicit independent spacing contract");
+
+		BlockPos column =
+				helper.absolutePos(new BlockPos(4, 4, 4));
+		BlockPos centre = new BlockPos(
+				column.getX(),
+				level.getMaxBuildHeight() - 16,
+				column.getZ());
+		BlockState platform =
+				CakeWorldBlocks.GINGERBREAD_BRICKS.get()
+						.defaultBlockState();
+		for (int x = -10; x <= 10; x++) {
+			for (int z = -10; z <= 10; z++) {
+				BlockPos floor = centre.offset(x, 0, z);
+				level.setBlock(floor, platform, 2);
+				for (int y = 1; y <= 7; y++) {
+					level.setBlock(floor.above(y),
+							Blocks.AIR.defaultBlockState(),
+							2);
+				}
+			}
+		}
+		require(helper,
+				GingerbreadVillageFeature.buildAt(
+						level, new Random(1978001L),
+						centre),
+				"Gingerbread Village refused a prepared safe site");
+
+		Map<Block, Integer> palette = new java.util.HashMap<>();
+		for (int x = -10; x <= 10; x++) {
+			for (int y = 0; y <= 6; y++) {
+				for (int z = -10; z <= 10; z++) {
+					Block block = level.getBlockState(
+							centre.offset(x, y, z))
+							.getBlock();
+					palette.merge(block, 1, Integer::sum);
+				}
+			}
+		}
+		int gummyRoofs =
+				palette.getOrDefault(
+						CakeWorldBlocks
+								.RASPBERRY_GUMMY_BLOCK
+								.get(), 0)
+				+ palette.getOrDefault(
+						CakeWorldBlocks
+								.BLUEBERRY_GUMMY_BLOCK
+								.get(), 0)
+				+ palette.getOrDefault(
+						CakeWorldBlocks
+								.GRAPE_GUMMY_BLOCK
+								.get(), 0);
+		require(helper,
+				palette.getOrDefault(
+						CakeWorldBlocks
+								.GINGERBREAD_BRICKS
+								.get(), 0) > 250
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CANDY_CANE_PILLAR
+										.get(), 0) >= 30
+						&& gummyRoofs >= 100
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.COOKBOOK_LIBRARY
+										.get(), 0) == 1
+						&& palette.getOrDefault(
+								Blocks.BELL, 0) == 1
+						&& palette.getOrDefault(
+								Blocks.RED_BED, 0) == 8
+						&& palette.getOrDefault(
+								Blocks.LECTERN, 0) == 1
+						&& palette.getOrDefault(
+								Blocks.SMOKER, 0) == 1
+						&& palette.getOrDefault(
+								Blocks.CARTOGRAPHY_TABLE,
+								0) == 1
+						&& palette.getOrDefault(
+								Blocks.COMPOSTER, 0)
+								== 1,
+				"Gingerbread Village lost its edible palette, gumdrop houses, roads, beds or profession stations: "
+						+ palette);
+
+		BlockPos bell = centre.above();
+		BlockPos libraryJob =
+				centre.offset(-5, 1, -7);
+		BlockPos bakerJob =
+				centre.offset(7, 1, -7);
+		BlockPos mapJob =
+				centre.offset(5, 1, 5);
+		BlockPos farmJob =
+				centre.offset(-6, 1, 3);
+		require(helper,
+				level.getPoiManager().existsAtPosition(
+						PoiType.MEETING, bell)
+						&& level.getPoiManager()
+								.existsAtPosition(
+										PoiType.LIBRARIAN,
+										libraryJob)
+						&& level.getPoiManager()
+								.existsAtPosition(
+										PoiType.BUTCHER,
+										bakerJob)
+						&& level.getPoiManager()
+								.existsAtPosition(
+										PoiType.CARTOGRAPHER,
+										mapJob)
+						&& level.getPoiManager()
+								.existsAtPosition(
+										PoiType.FARMER,
+										farmJob)
+						&& level.isVillage(centre),
+				"Gingerbread Village lost meeting, profession or raid-location POIs");
+
+		BlockPos chestPos =
+				centre.offset(-7, 1, -5);
+		BlockEntity chest =
+				level.getBlockEntity(chestPos);
+		CompoundTag chestState = chest == null
+				? new CompoundTag()
+				: chest.saveWithoutMetadata();
+		require(helper,
+				chestState.getString("LootTable").equals(
+						GingerbreadVillageFeature
+								.LIBRARY_LOOT.toString()),
+				"Gingerbread Village library chest lost its Cookbook loot role");
+
+		AABB residents = new AABB(centre).inflate(16.0D);
+		List<GingerbreadFolk> folk =
+				level.getEntitiesOfClass(
+						GingerbreadFolk.class,
+						residents);
+		List<JawbreakerGuardian> guardians =
+				level.getEntitiesOfClass(
+						JawbreakerGuardian.class,
+						residents);
+		Set<VillagerProfession> professions =
+				folk.stream()
+						.map(resident -> resident
+								.getVillagerData()
+								.getProfession())
+						.collect(java.util.stream.Collectors
+								.toSet());
+		require(helper,
+				folk.size() == 4
+						&& folk.stream().allMatch(
+								resident -> resident
+										.isPersistenceRequired())
+						&& professions.containsAll(Set.of(
+								VillagerProfession.LIBRARIAN,
+								VillagerProfession.BUTCHER,
+								VillagerProfession.CARTOGRAPHER,
+								VillagerProfession.FARMER))
+						&& guardians.size() == 1
+						&& guardians.get(0)
+								.isPersistenceRequired(),
+				"Gingerbread Village lost its four professions or Jawbreaker defender");
+		folk.forEach(GingerbreadFolk::discard);
+		guardians.forEach(JawbreakerGuardian::discard);
+		helper.succeed();
 	}
 
 	private static final class StaleFudgeFolkProbe
