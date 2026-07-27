@@ -7,5 +7,14 @@
         "type": "event"
       }
     ]
+  },
+  "hearthlands_chime": {
+    "subtitle": "subtitles.cakeworld.hearthlands.chime",
+    "sounds": [
+      {
+        "name": "minecraft:block.amethyst_block.chime",
+        "type": "event"
+      }
+    ]
   }
 }

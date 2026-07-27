@@ -20,7 +20,8 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(modid = CakeWorld.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class CakeWorldCreatureSpawns {
 	private static final Set<String> OVERWORLD_BIOMES = Set.of(
-			"candy_plains", "cookie_forest", "marshmallow_peaks", "soda_ocean");
+			"candy_plains", "gingerbread_hearthlands",
+			"cookie_forest", "marshmallow_peaks", "soda_ocean");
 
 	private CakeWorldCreatureSpawns() {
 	}
@@ -81,7 +82,9 @@ public final class CakeWorldCreatureSpawns {
 			replace(event, MobCategory.MONSTER, EntityType.CREEPER,
 					CakeWorldEntities.POP_ROCK_POPPER, 100, 4, 4);
 		}
-		if ("candy_plains".equals(biome.getPath())) {
+		if ("candy_plains".equals(biome.getPath())
+				|| "gingerbread_hearthlands"
+						.equals(biome.getPath())) {
 			replace(event, MobCategory.CREATURE, EntityType.BEE,
 					CakeWorldEntities.SUGAR_BEE, 8, 1, 3);
 			replace(event, MobCategory.CREATURE, EntityType.COW,
@@ -94,6 +97,10 @@ public final class CakeWorldCreatureSpawns {
 					CakeWorldEntities.GINGERBREAD_PONY, 5, 2, 6);
 			replace(event, MobCategory.CREATURE, EntityType.RABBIT,
 					CakeWorldEntities.GUMMY_BUNNY, 2, 2, 6);
+			replace(event, MobCategory.CREATURE,
+					EntityType.CHICKEN,
+					CakeWorldEntities.MALLOW_CHICK,
+					10, 2, 4);
 		}
 		if ("chocolate_sponge_meadows".equals(
 				biome.getPath())) {

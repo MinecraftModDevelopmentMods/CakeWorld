@@ -145,7 +145,7 @@ public final class CakeWorldLandmarks {
 		if (biome != null
 				&& CakeWorld.MODID.equals(
 						biome.getNamespace())
-				&& "candy_plains".equals(
+				&& isSettlementBiome(
 						biome.getPath())
 				&& confectionersCottageRepair != null) {
 			event.getGeneration().getFeatures(
@@ -159,7 +159,7 @@ public final class CakeWorldLandmarks {
 		if (biome != null
 				&& CakeWorld.MODID.equals(
 						biome.getNamespace())
-				&& "candy_plains".equals(
+				&& isSettlementBiome(
 						biome.getPath())
 				&& windmillRepair != null) {
 			event.getGeneration().getFeatures(
@@ -173,7 +173,7 @@ public final class CakeWorldLandmarks {
 		if (biome != null
 				&& CakeWorld.MODID.equals(
 						biome.getNamespace())
-				&& "candy_plains".equals(
+				&& isSettlementBiome(
 						biome.getPath())
 				&& bridgeRepair != null) {
 			event.getGeneration().getFeatures(
@@ -214,6 +214,7 @@ public final class CakeWorldLandmarks {
 	private static boolean isCurrentOverworldBiome(
 			String path) {
 		return "candy_plains".equals(path)
+				|| "gingerbread_hearthlands".equals(path)
 				|| "cookie_forest".equals(path)
 				|| "marshmallow_peaks".equals(path)
 				|| "soda_ocean".equals(path);
@@ -224,5 +225,10 @@ public final class CakeWorldLandmarks {
 		return "candy_plains".equals(path)
 				|| "cookie_forest".equals(path)
 				|| "marshmallow_peaks".equals(path);
+	}
+
+	private static boolean isSettlementBiome(String path) {
+		return "candy_plains".equals(path)
+				|| "gingerbread_hearthlands".equals(path);
 	}
 }

@@ -655,6 +655,11 @@ public final class DeepPantryGameTests {
 				"cakeworld:candy_plains", "cakeworld:icing_layer",
 				"cakeworld:chocolate_sponge", "cakeworld:biscuit_crumbs", 4);
 		assertPaletteContract(helper, palettes, "cakeworld:overworld_land",
+				"cakeworld:gingerbread_hearthlands",
+				"cakeworld:biscuit_crumbs",
+				"cakeworld:chocolate_sponge",
+				"cakeworld:biscuit_crumbs", 4);
+		assertPaletteContract(helper, palettes, "cakeworld:overworld_land",
 				"cakeworld:cookie_forest", "cakeworld:chocolate_sponge",
 				"cakeworld:chocolate_sponge", "cakeworld:biscuit_crumbs", 5);
 		assertPaletteContract(helper, palettes, "cakeworld:overworld_land",
@@ -668,10 +673,18 @@ public final class DeepPantryGameTests {
 				"cakeworld:biscuit_stone", "cakeworld:biscuit_stone", 5);
 
 		Map<String, SurfaceAudit> surfaces = new LinkedHashMap<>();
+		BlockPos hearthlands = locateBiome(helper, overworld,
+				id("gingerbread_hearthlands"));
 		surfaces.put("candy_plains", auditSurface(overworld,
 				locateBiome(helper, overworld, id("candy_plains")),
 				id("candy_plains"), CakeWorldBlocks.ICING_LAYER.get(),
 				CakeWorldBlocks.CHOCOLATE_SPONGE.get(), 2));
+		surfaces.put("gingerbread_hearthlands",
+				auditSurface(overworld, hearthlands,
+						id("gingerbread_hearthlands"),
+						CakeWorldBlocks.BISCUIT_CRUMBS.get(),
+						CakeWorldBlocks.CHOCOLATE_SPONGE.get(),
+						2));
 		surfaces.put("cookie_forest", auditSurface(overworld,
 				locateBiome(helper, overworld, id("cookie_forest")),
 				id("cookie_forest"), CakeWorldBlocks.CHOCOLATE_SPONGE.get(),
@@ -696,6 +709,21 @@ public final class DeepPantryGameTests {
 							+ entry.getKey() + ": " + entry.getValue());
 		}
 
+		Map<ResourceLocation, Integer> hearthlandsGeomes =
+				countGeomesForBiome(overworld, hearthlands,
+						id("gingerbread_hearthlands"), 4);
+		require(helper,
+				!hearthlandsGeomes.isEmpty()
+						&& hearthlandsGeomes.keySet().stream()
+								.allMatch(Set.of(
+										id("cocoa_basin"),
+										id("wafer_shelf"))
+										::contains)
+						&& hearthlandsGeomes.getOrDefault(
+								id("wafer_shelf"), 0) > 0,
+				"Natural Gingerbread Hearthlands did not stay within its Cocoa Basin/Wafer Shelf bias or expose its higher-weight Wafer Shelf: "
+						+ hearthlandsGeomes);
+
 		BlockPos sodaOcean = locateBiome(helper, overworld, id("soda_ocean"));
 		Map<Block, Integer> lemonadeFloor = countBlocksDirectlyUnderFluid(
 				overworld, CakeWorldFluids.LEMONADE.get(),
@@ -704,8 +732,8 @@ public final class DeepPantryGameTests {
 		require(helper, lemonadeFloor.getOrDefault(
 						CakeWorldBlocks.BISCUIT_CRUMBS.get(), 0) > 0,
 				"Soda Ocean exposed no Biscuit Crumbs underwater surface");
-		LOGGER.info("Focused biome surface/palette audit: surfaces={}, soda_floor={}",
-				surfaces, describe(lemonadeFloor));
+		LOGGER.info("Focused biome surface/palette audit: surfaces={}, hearthlands_geomes={}, soda_floor={}",
+				surfaces, hearthlandsGeomes, describe(lemonadeFloor));
 		helper.succeed();
 	}
 
@@ -816,6 +844,7 @@ public final class DeepPantryGameTests {
 				"CakeWorld matching biome dictionary types were not registered");
 		for (ResourceLocation biomeId : List.of(
 				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.GINGERBREAD_HEARTHLANDS.getId(),
 				CakeWorldBiomes.COOKIE_FOREST.getId(),
 				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
 				CakeWorldBiomes.SODA_OCEAN.getId(),
@@ -1285,12 +1314,19 @@ public final class DeepPantryGameTests {
 					guardians.size(),
 					start.getPieces().size());
 			require(helper,
-					id("candy_plains").equals(biomeId)
+					Set.of(
+							CakeWorldBiomes
+									.CANDY_PLAINS
+									.getId(),
+							CakeWorldBiomes
+									.GINGERBREAD_HEARTHLANDS
+									.getId())
+							.contains(biomeId)
 							&& level.getBiome(centre).is(
 									GingerbreadVillageFeature
 											.GENERATES_IN)
 							&& !literalPlainsVillageEligible,
-					"Gingerbread Village generated outside its CakeWorld-only biome contract or enabled a literal Plains Village");
+					"Gingerbread Village generated outside its CakeWorld settlement-biome contract or enabled a literal Plains Village");
 			require(helper,
 					palette.getOrDefault(
 							CakeWorldBlocks
@@ -3719,6 +3755,9 @@ public final class DeepPantryGameTests {
 											.CANDY_PLAINS
 											.getId(),
 									CakeWorldBiomes
+											.GINGERBREAD_HEARTHLANDS
+											.getId(),
+									CakeWorldBiomes
 											.COOKIE_FOREST
 											.getId(),
 									CakeWorldBiomes
@@ -5521,10 +5560,16 @@ public final class DeepPantryGameTests {
 							? "reloaded"
 							: "seeded");
 			require(helper,
-					CakeWorldBiomes.CANDY_PLAINS
-							.getId().equals(
+					Set.of(
+							CakeWorldBiomes
+									.CANDY_PLAINS
+									.getId(),
+							CakeWorldBiomes
+									.GINGERBREAD_HEARTHLANDS
+									.getId())
+							.contains(
 									audit.biome()),
-					"Natural Confectioner's Cottage left its explicit Candy-Plains prototype home: biome="
+					"Natural Confectioner's Cottage left its settlement-biome boundary: biome="
 							+ audit.biome());
 			require(helper,
 					cottage.bounds().getXSpan()
@@ -5761,10 +5806,16 @@ public final class DeepPantryGameTests {
 							? "reloaded"
 							: "seeded");
 			require(helper,
-					CakeWorldBiomes.CANDY_PLAINS
-							.getId().equals(
+					Set.of(
+							CakeWorldBiomes
+									.CANDY_PLAINS
+									.getId(),
+							CakeWorldBiomes
+									.GINGERBREAD_HEARTHLANDS
+									.getId())
+							.contains(
 									audit.biome()),
-					"Natural Wafer Windmill left its explicit Candy-Plains prototype home: biome="
+					"Natural Wafer Windmill left its settlement-biome boundary: biome="
 							+ audit.biome());
 			require(helper,
 					windmill.bounds().getXSpan()
@@ -5991,10 +6042,16 @@ public final class DeepPantryGameTests {
 							? "reloaded"
 							: "seeded");
 			require(helper,
-					CakeWorldBiomes.CANDY_PLAINS
-							.getId().equals(
+					Set.of(
+							CakeWorldBiomes
+									.CANDY_PLAINS
+									.getId(),
+							CakeWorldBiomes
+									.GINGERBREAD_HEARTHLANDS
+									.getId())
+							.contains(
 									audit.biome()),
-					"Natural Candy-Cane Bridge left its explicit Candy-Plains prototype home: biome="
+					"Natural Candy-Cane Bridge left its settlement-biome boundary: biome="
 							+ audit.biome());
 			require(helper,
 					bridge.bounds().getXSpan()

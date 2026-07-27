@@ -33820,6 +33820,9 @@ public final class FirstBiteGameTests {
 										.CANDY_PLAINS
 										.getId(),
 								CakeWorldBiomes
+										.GINGERBREAD_HEARTHLANDS
+										.getId(),
+								CakeWorldBiomes
 										.COOKIE_FOREST
 										.getId(),
 								CakeWorldBiomes
@@ -35215,6 +35218,7 @@ public final class FirstBiteGameTests {
 						.orElse(Set.of());
 		Set<ResourceLocation> expectedBiomes = Set.of(
 				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.GINGERBREAD_HEARTHLANDS.getId(),
 				CakeWorldBiomes.COOKIE_FOREST.getId(),
 				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
 				CakeWorldBiomes.SODA_OCEAN.getId(),
@@ -36381,6 +36385,9 @@ public final class FirstBiteGameTests {
 						&& eligibleBiomes.equals(Set.of(
 								CakeWorldBiomes
 										.CANDY_PLAINS
+										.getId(),
+								CakeWorldBiomes
+										.GINGERBREAD_HEARTHLANDS
 										.getId(),
 								CakeWorldBiomes
 										.COOKIE_FOREST
@@ -40233,6 +40240,15 @@ public final class FirstBiteGameTests {
 						GenerationStep.Decoration
 								.TOP_LAYER_MODIFICATION,
 						ConfectionersCottageRepairFeature
+								.ID)
+				&& hasPlacedFeature(
+						level,
+						CakeWorldBiomes
+								.GINGERBREAD_HEARTHLANDS
+								.getId(),
+						GenerationStep.Decoration
+								.TOP_LAYER_MODIFICATION,
+						ConfectionersCottageRepairFeature
 								.ID);
 		require(helper,
 				configured != null
@@ -40255,11 +40271,14 @@ public final class FirstBiteGameTests {
 						&& eligibleBiomes.equals(Set.of(
 								CakeWorldBiomes
 										.CANDY_PLAINS
+										.getId(),
+								CakeWorldBiomes
+										.GINGERBREAD_HEARTHLANDS
 										.getId()))
 						&& ConfectionersCottageRepairFeature
 								.placedFeature() != null
 						&& repairInstalled,
-				"Confectioner's Cottage lost its dedicated structure, Candy-Plains prototype boundary, no-spawn-override contract or late repair: eligible="
+				"Confectioner's Cottage lost its dedicated settlement-biome boundary, no-spawn-override contract or late repair: eligible="
 						+ eligibleBiomes
 						+ ", ownTag=" + ownTag
 						+ ", repair="
@@ -40747,6 +40766,14 @@ public final class FirstBiteGameTests {
 								.getId(),
 						GenerationStep.Decoration
 								.TOP_LAYER_MODIFICATION,
+						WaferWindmillRepairFeature.ID)
+				&& hasPlacedFeature(
+						level,
+						CakeWorldBiomes
+								.GINGERBREAD_HEARTHLANDS
+								.getId(),
+						GenerationStep.Decoration
+								.TOP_LAYER_MODIFICATION,
 						WaferWindmillRepairFeature.ID);
 		require(helper,
 				configured != null
@@ -40769,11 +40796,14 @@ public final class FirstBiteGameTests {
 						&& eligibleBiomes.equals(Set.of(
 								CakeWorldBiomes
 										.CANDY_PLAINS
+										.getId(),
+								CakeWorldBiomes
+										.GINGERBREAD_HEARTHLANDS
 										.getId()))
 						&& WaferWindmillRepairFeature
 								.placedFeature() != null
 						&& repairInstalled,
-				"Wafer Windmill lost its dedicated landmark identity, Candy-Plains prototype boundary, no-spawn contract or late repair: eligible="
+				"Wafer Windmill lost its dedicated settlement-biome identity, no-spawn contract or late repair: eligible="
 						+ eligibleBiomes
 						+ ", ownTag=" + ownTag
 						+ ", repair="
@@ -41193,6 +41223,14 @@ public final class FirstBiteGameTests {
 								.getId(),
 						GenerationStep.Decoration
 								.TOP_LAYER_MODIFICATION,
+						CandyCaneBridgeRepairFeature.ID)
+				&& hasPlacedFeature(
+						level,
+						CakeWorldBiomes
+								.GINGERBREAD_HEARTHLANDS
+								.getId(),
+						GenerationStep.Decoration
+								.TOP_LAYER_MODIFICATION,
 						CandyCaneBridgeRepairFeature.ID);
 		require(helper,
 				configured != null
@@ -41215,11 +41253,14 @@ public final class FirstBiteGameTests {
 						&& eligibleBiomes.equals(Set.of(
 								CakeWorldBiomes
 										.CANDY_PLAINS
+										.getId(),
+								CakeWorldBiomes
+										.GINGERBREAD_HEARTHLANDS
 										.getId()))
 						&& CandyCaneBridgeRepairFeature
 								.placedFeature() != null
 						&& repairInstalled,
-				"Candy-Cane Bridge lost its dedicated structure, Candy-Plains prototype boundary, no-spawn contract or late repair: eligible="
+				"Candy-Cane Bridge lost its dedicated settlement-biome boundary, no-spawn contract or late repair: eligible="
 						+ eligibleBiomes
 						+ ", ownTag=" + ownTag
 						+ ", repair="

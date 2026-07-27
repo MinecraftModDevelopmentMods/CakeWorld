@@ -8,7 +8,9 @@ import com.mcmoddev.orespawn.api.OreSpawnBiomes;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.biome.AmbientAdditionsSettings;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.BiomeSpecialEffects;
 import net.minecraftforge.common.BiomeDictionary;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -22,6 +24,8 @@ public final class CakeWorldBiomes {
 
 	public static final RegistryObject<Biome> CANDY_PLAINS = copy(
 			"candy_plains", "plains", 0.8F, 0.4F);
+	public static final RegistryObject<Biome> GINGERBREAD_HEARTHLANDS =
+			hearthlands();
 	public static final RegistryObject<Biome> COOKIE_FOREST = copy(
 			"cookie_forest", "forest", 0.7F, 0.8F);
 	public static final RegistryObject<Biome> MARSHMALLOW_PEAKS = copy(
@@ -43,6 +47,10 @@ public final class CakeWorldBiomes {
 	public static void commonSetup(FMLCommonSetupEvent event) {
 		event.enqueueWork(() -> {
 			BiomeDictionary.addTypes(key(CANDY_PLAINS),
+					BiomeDictionary.Type.OVERWORLD,
+					BiomeDictionary.Type.PLAINS);
+			BiomeDictionary.addTypes(
+					key(GINGERBREAD_HEARTHLANDS),
 					BiomeDictionary.Type.OVERWORLD,
 					BiomeDictionary.Type.PLAINS);
 			BiomeDictionary.addTypes(key(COOKIE_FOREST),
@@ -78,10 +86,61 @@ public final class CakeWorldBiomes {
 
 	private static RegistryObject<Biome> copy(String name, String vanilla,
 			float temperature, float downfall) {
-		ResourceLocation sourceId = new ResourceLocation("minecraft", vanilla);
 		return OreSpawnBiomes.copyAndRegister(BIOMES, name,
-				() -> Objects.requireNonNull(ForgeRegistries.BIOMES.getValue(sourceId),
-						"Missing vanilla biome " + sourceId),
+				() -> vanilla(vanilla),
 				builder -> builder.temperature(temperature).downfall(downfall));
+	}
+
+	private static RegistryObject<Biome> hearthlands() {
+		return OreSpawnBiomes.copyAndRegister(BIOMES,
+				"gingerbread_hearthlands",
+				() -> vanilla("plains"),
+				builder -> builder
+						.temperature(0.85F)
+						.downfall(0.55F)
+						.specialEffects(
+								hearthlandsEffects(
+										vanilla("plains")
+												.getSpecialEffects())));
+	}
+
+	private static BiomeSpecialEffects hearthlandsEffects(
+			BiomeSpecialEffects source) {
+		BiomeSpecialEffects.Builder builder =
+				new BiomeSpecialEffects.Builder()
+						.fogColor(source.getFogColor())
+						.waterColor(source.getWaterColor())
+						.waterFogColor(
+								source.getWaterFogColor())
+						.skyColor(source.getSkyColor())
+						.grassColorModifier(
+								source.getGrassColorModifier());
+		source.getFoliageColorOverride()
+				.ifPresent(builder::foliageColorOverride);
+		source.getGrassColorOverride()
+				.ifPresent(builder::grassColorOverride);
+		source.getAmbientParticleSettings()
+				.ifPresent(builder::ambientParticle);
+		source.getAmbientLoopSoundEvent()
+				.ifPresent(builder::ambientLoopSound);
+		source.getAmbientMoodSettings()
+				.ifPresent(builder::ambientMoodSound);
+		source.getAmbientAdditionsSettings()
+				.ifPresent(builder::ambientAdditionsSound);
+		source.getBackgroundMusic()
+				.ifPresent(builder::backgroundMusic);
+		return builder.ambientAdditionsSound(
+				new AmbientAdditionsSettings(
+						CakeWorldSounds.HEARTHLANDS_CHIME.get(),
+						0.001D))
+				.build();
+	}
+
+	private static Biome vanilla(String name) {
+		ResourceLocation sourceId =
+				new ResourceLocation("minecraft", name);
+		return Objects.requireNonNull(
+				ForgeRegistries.BIOMES.getValue(sourceId),
+				"Missing vanilla biome " + sourceId);
 	}
 }

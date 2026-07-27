@@ -18,6 +18,10 @@ public final class CakeWorldSounds {
 			SOUNDS.register("cookbook_discovery",
 					() -> new SoundEvent(new ResourceLocation(
 							CakeWorld.MODID, "cookbook_discovery")));
+	public static final RegistryObject<SoundEvent> HEARTHLANDS_CHIME =
+			SOUNDS.register("hearthlands_chime",
+					() -> new SoundEvent(new ResourceLocation(
+							CakeWorld.MODID, "hearthlands_chime")));
 
 	private CakeWorldSounds() {
 	}
