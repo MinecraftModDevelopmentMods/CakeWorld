@@ -6511,6 +6511,134 @@ public final class DeepPantryGameTests {
 		});
 	}
 
+	@GameTest(template = EMPTY, batch = "struct024world",
+			timeoutTicks = 16000)
+	public static void focusedNaturalCookbookKioskAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean(
+				"cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed natural Cookbook Kiosk audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel()
+				.getServer().getLevel(Level.OVERWORLD);
+		require(helper, level != null,
+				"The fixed-seed server did not expose the Overworld");
+		LocatedPicnic picnic = locateNaturalPicnic(
+				helper, level,
+				new BlockPos(280, 96, 440), 12);
+		LocatedCottage forcedBounds =
+				new LocatedCottage(
+						picnic.kiosk(),
+						picnic.centre(),
+						new BoundingBox(
+								picnic.centre()
+										.getX() - 4,
+								picnic.centre()
+										.getY(),
+								picnic.centre()
+										.getZ() - 4,
+								picnic.centre()
+										.getX() + 4,
+								picnic.centre()
+										.getY() + 4,
+								picnic.centre()
+										.getZ() + 4));
+		setCottageChunksForced(
+				level, forcedBounds, true);
+		helper.runAfterDelay(100, () -> {
+			PicnicWorldAudit audit =
+					auditNaturalPicnic(
+							level,
+							picnic.centre());
+			BlockPos sentinel =
+					picnic.centre()
+							.offset(4, 0, 4);
+			boolean sentinelAlreadyNative =
+					level.getBlockState(sentinel)
+							.is(Blocks.BRICKS);
+			LOGGER.info("Focused natural Cookbook Kiosk audit: centre={}, kiosk={}, biome={}, palette={}, companions={}, homeRestricted={}, sentinel={}, markerPhase={}, scannedChunks={}, kioskCandidates={}",
+					picnic.centre(),
+					picnic.kiosk(),
+					audit.biome(),
+					audit.palette(),
+					audit.persistentCompanions(),
+					audit.homeRestricted(),
+					sentinel,
+					sentinelAlreadyNative
+							? "reloaded"
+							: "seeded",
+					picnic.scannedChunks(),
+					picnic.kioskCandidates());
+			require(helper,
+					CakeWorldBiomes.CANDY_PLAINS
+							.getId().equals(
+									audit.biome()),
+					"Natural Cookbook Kiosk left the current Candy-Plains starter-biome boundary: biome="
+							+ audit.biome());
+			Map<Block, Integer> palette =
+					audit.palette();
+			require(helper,
+					palette.getOrDefault(
+							CakeWorldBlocks
+									.CHOCOLATE_SPONGE
+									.get(), 0)
+							== (sentinelAlreadyNative
+									? 34 : 35)
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.BISCUIT_STONE
+											.get(), 0)
+									== 61
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.BISCUIT_CRUMBS
+											.get(), 0)
+									== 5
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.ICING.get(),
+									0) == 18
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.ICING_LAYER
+											.get(), 0)
+									== 5
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.COOKBOOK_KIOSK
+											.get(), 0)
+									== 1
+							&& palette.getOrDefault(
+									Blocks.BRICKS, 0)
+									== (sentinelAlreadyNative
+											? 1 : 0),
+					"Natural Cookbook Kiosk did not belong to the exact sparse Picnic-Hamlet layout or lost the player-edit reload boundary: "
+							+ palette);
+			require(helper,
+					audit.readableLayout()
+							&& audit
+									.persistentCompanions()
+									== 1,
+					"Natural Cookbook Kiosk lost its path, two shelters, four soft seats or persistent companion: "
+							+ audit);
+			if (!sentinelAlreadyNative) {
+				level.setBlock(sentinel,
+						Blocks.BRICKS
+								.defaultBlockState(),
+						2);
+				require(helper,
+						level.getBlockState(sentinel)
+								.is(Blocks.BRICKS),
+						"Could not seed the explicit player-placed Brick reload sentinel in the Picnic-Hamlet border");
+			}
+			setCottageChunksForced(
+					level, forcedBounds, false);
+			helper.succeed();
+		});
+	}
+
 	@GameTest(template = EMPTY, timeoutTicks = 1200)
 	public static void baseMetalsCounterpartsPreserveTagsRecipesAndGeneration(
 			GameTestHelper helper) {
@@ -9865,6 +9993,116 @@ public final class DeepPantryGameTests {
 				located, centre, bounds);
 	}
 
+	private static LocatedPicnic locateNaturalPicnic(
+			GameTestHelper helper, ServerLevel level,
+			BlockPos anchor, int chunkRadius) {
+		ChunkPos anchorChunk = new ChunkPos(anchor);
+		int scannedChunks = 0;
+		int kioskCandidates = 0;
+		for (int radius = 0;
+				radius <= chunkRadius; radius++) {
+			for (int chunkX = anchorChunk.x - radius;
+					chunkX <= anchorChunk.x + radius;
+					chunkX++) {
+				for (int chunkZ = anchorChunk.z - radius;
+						chunkZ <= anchorChunk.z + radius;
+						chunkZ++) {
+					if (radius > 0
+							&& chunkX
+									!= anchorChunk.x
+											- radius
+							&& chunkX
+									!= anchorChunk.x
+											+ radius
+							&& chunkZ
+									!= anchorChunk.z
+											- radius
+							&& chunkZ
+									!= anchorChunk.z
+											+ radius) {
+						continue;
+					}
+					level.getChunk(chunkX, chunkZ);
+					scannedChunks++;
+					ChunkPos chunk =
+							new ChunkPos(
+									chunkX, chunkZ);
+					for (int x = chunk
+							.getMinBlockX();
+							x <= chunk
+									.getMaxBlockX();
+							x++) {
+						for (int z = chunk
+								.getMinBlockZ();
+								z <= chunk
+										.getMaxBlockZ();
+								z++) {
+							int y = level.getHeight(
+									Heightmap.Types
+											.WORLD_SURFACE,
+									x, z) - 1;
+							BlockPos kiosk =
+									new BlockPos(
+											x, y, z);
+							if (!level
+									.getBlockState(
+											kiosk)
+									.is(CakeWorldBlocks
+											.COOKBOOK_KIOSK
+											.get())) {
+								continue;
+							}
+							kioskCandidates++;
+							BlockPos centre =
+									kiosk.below();
+							PicnicWorldAudit audit =
+									auditNaturalPicnic(
+											level,
+											centre);
+							int sponge =
+									audit.palette()
+											.getOrDefault(
+													CakeWorldBlocks
+															.CHOCOLATE_SPONGE
+															.get(),
+													0);
+							if (audit.readableLayout()
+									&& (sponge == 35
+											|| sponge == 34)
+									&& audit.palette()
+											.getOrDefault(
+													CakeWorldBlocks
+															.BISCUIT_STONE
+															.get(),
+													0)
+											== 61
+									&& audit.palette()
+											.getOrDefault(
+													CakeWorldBlocks
+															.ICING
+															.get(),
+													0)
+											== 18) {
+								return new LocatedPicnic(
+										centre, kiosk,
+										scannedChunks,
+										kioskCandidates);
+							}
+						}
+					}
+				}
+			}
+		}
+		require(helper, false,
+				"The fixed-seed Candy-Plains survey found no natural exact Picnic-Hamlet Cookbook Kiosk after "
+						+ scannedChunks
+						+ " generated chunks and "
+						+ kioskCandidates
+						+ " surface Kiosk candidates");
+		throw new IllegalStateException(
+				"Unreachable after GameTest failure");
+	}
+
 	private static void setCottageChunksForced(
 			ServerLevel level,
 			LocatedCottage cottage,
@@ -10831,6 +11069,89 @@ public final class DeepPantryGameTests {
 						.rotate(rotation));
 	}
 
+	private static PicnicWorldAudit auditNaturalPicnic(
+			ServerLevel level, BlockPos centre) {
+		Map<Block, Integer> palette =
+				new LinkedHashMap<>();
+		for (int x = -4; x <= 4; x++) {
+			for (int y = 0; y <= 4; y++) {
+				for (int z = -4; z <= 4; z++) {
+					palette.merge(
+							level.getBlockState(
+									centre.offset(
+											x, y, z))
+									.getBlock(),
+							1, Integer::sum);
+				}
+			}
+		}
+		boolean readableLayout =
+				level.getBlockState(centre.above())
+						.is(CakeWorldBlocks
+								.COOKBOOK_KIOSK.get());
+		for (int z = 0; z <= 4; z++) {
+			readableLayout &= level.getBlockState(
+					centre.offset(0, 0, z))
+					.is(CakeWorldBlocks
+							.BISCUIT_CRUMBS.get());
+		}
+		for (int shelterX : new int[] {-2, 2}) {
+			for (int x = -1; x <= 1; x++) {
+				for (int z = -1; z <= 1; z++) {
+					readableLayout &=
+							level.getBlockState(
+									centre.offset(
+											shelterX
+													+ x,
+											3,
+											-2 + z))
+									.is(CakeWorldBlocks
+											.ICING.get());
+				}
+			}
+		}
+		for (Direction direction
+				: Direction.Plane.HORIZONTAL) {
+			BlockPos seat = centre
+					.relative(direction, 2)
+					.above();
+			readableLayout &=
+					level.getBlockState(seat)
+							.is(CakeWorldBlocks
+									.CHOCOLATE_SPONGE
+									.get())
+					&& level.getBlockState(
+							seat.above())
+							.is(CakeWorldBlocks
+									.ICING_LAYER.get());
+		}
+		List<CustardCat> companions =
+				level.getEntitiesOfClass(
+						CustardCat.class,
+						new AABB(centre)
+								.inflate(16.0D))
+						.stream()
+						.filter(CustardCat
+								::isPersistenceRequired)
+						.toList();
+		boolean homeRestricted =
+				companions.size() == 1
+						&& companions.get(0)
+								.hasRestriction()
+						&& companions.get(0)
+								.getRestrictCenter()
+								.equals(centre);
+		ResourceLocation biome =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.getKey(level.getBiome(centre)
+								.value());
+		return new PicnicWorldAudit(
+				palette, biome, readableLayout,
+				companions.size(), homeRestricted);
+	}
+
 	private static List<ItemStack> drops(GameTestHelper helper, Block block,
 			ItemStack tool, BlockPos origin) {
 		ResourceLocation blockId = Registry.BLOCK.getKey(block);
@@ -11165,6 +11486,19 @@ public final class DeepPantryGameTests {
 			boolean nativeSentinel,
 			int headframeTop,
 			String cacheLoot) {
+	}
+
+	private record LocatedPicnic(
+			BlockPos centre, BlockPos kiosk,
+			int scannedChunks, int kioskCandidates) {
+	}
+
+	private record PicnicWorldAudit(
+			Map<Block, Integer> palette,
+			ResourceLocation biome,
+			boolean readableLayout,
+			int persistentCompanions,
+			boolean homeRestricted) {
 	}
 
 	private record GeomePlacementSurvey(
