@@ -13,6 +13,7 @@ import com.mcmoddev.cakeworld.block.CookbookKioskBlock;
 import com.mcmoddev.cakeworld.block.CookbookLibraryBlock;
 import com.mcmoddev.cakeworld.block.CoolingRackBlock;
 import com.mcmoddev.cakeworld.block.GummyBlock;
+import com.mcmoddev.cakeworld.block.GummyVineBlock;
 import com.mcmoddev.cakeworld.block.IcingLayerBlock;
 import com.mcmoddev.cakeworld.block.MarshmallowBlock;
 import com.mcmoddev.cakeworld.block.MixingBowlBlock;
@@ -88,6 +89,16 @@ public final class CakeWorldBlocks {
 			gummy("blueberry_gummy_block");
 	public static final RegistryObject<Block> GRAPE_GUMMY_BLOCK =
 			gummy("grape_gummy_block");
+	public static final RegistryObject<Block> GUMMY_VINE =
+			block("gummy_vine",
+					() -> new GummyVineBlock(
+							BlockBehaviour.Properties
+									.of(Material
+											.REPLACEABLE_PLANT)
+									.noCollission()
+									.instabreak()
+									.sound(SoundType
+											.SLIME_BLOCK)));
 	public static final RegistryObject<Block> WAFER_BLOCK = block("wafer_block",
 			BlockBehaviour.Properties.of(Material.WOOD)
 					.strength(0.2F, 0.2F)

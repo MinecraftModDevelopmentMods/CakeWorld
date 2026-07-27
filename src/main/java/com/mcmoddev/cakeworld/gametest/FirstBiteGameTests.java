@@ -9084,8 +9084,31 @@ public final class FirstBiteGameTests {
 				.registryOrThrow(Registry.BIOME_REGISTRY);
 		ResourceLocation gummyJungle = new ResourceLocation(
 				CakeWorld.MODID, "gummy_jungle");
-		require(helper, biomes.get(gummyJungle) == null,
-				"Gummy Jungle unexpectedly exists; MOB-035's staged spawn gate must be revisited");
+		Biome liveGummyJungle = biomes.get(gummyJungle);
+		require(helper, liveGummyJungle != null,
+				"Gummy Jungle is missing from MOB-035's live spawn gate");
+		MobSpawnSettings.SpawnerData liveSpawn =
+				liveGummyJungle.getMobSettings()
+						.getMobs(MobCategory.CREATURE)
+						.unwrap().stream()
+						.filter(spawn -> spawn.type
+								== CakeWorldEntities
+										.CHOCOLATE_PANDA
+										.get())
+						.findFirst().orElse(null);
+		require(helper,
+				liveSpawn != null
+						&& liveSpawn.getWeight().asInt() == 80
+						&& liveSpawn.minCount == 1
+						&& liveSpawn.maxCount == 2
+						&& liveGummyJungle.getMobSettings()
+								.getMobs(
+										MobCategory.CREATURE)
+								.unwrap().stream()
+								.noneMatch(spawn ->
+										spawn.type
+												== EntityType.PANDA),
+				"Live Gummy Jungle lost the exact Bamboo Jungle 80/1-2 Chocolate Panda replacement");
 		MobSpawnSettingsBuilder futureSpawns =
 				new MobSpawnSettingsBuilder(
 						MobSpawnSettings.EMPTY);
@@ -9144,7 +9167,7 @@ public final class FirstBiteGameTests {
 													== CakeWorldEntities
 															.CHOCOLATE_PANDA
 															.get()),
-					"Current biome leaked Panda/Chocolate Panda spawning before Gummy Jungle exists: "
+					"Biome outside Gummy Jungle leaked Panda/Chocolate Panda spawning: "
 							+ biomeId);
 		}
 
@@ -9570,9 +9593,45 @@ public final class FirstBiteGameTests {
 					new ResourceLocation(
 							CakeWorld.MODID,
 							futureBiome);
-			require(helper, biomes.get(biomeId) == null,
-					futureBiome
-							+ " unexpectedly exists; MOB-036's staged spawn gate must be revisited");
+			Biome liveBiome = biomes.get(biomeId);
+			if ("gummy_jungle".equals(futureBiome)) {
+				MobSpawnSettings.SpawnerData liveSpawn =
+						liveBiome == null
+								? null
+								: liveBiome
+										.getMobSettings()
+										.getMobs(
+												MobCategory
+														.CREATURE)
+										.unwrap().stream()
+										.filter(spawn ->
+												spawn.type
+														== CakeWorldEntities
+																.LOLLIPOP_LORIKEET
+																.get())
+										.findFirst()
+										.orElse(null);
+				require(helper,
+						liveSpawn != null
+								&& liveSpawn.getWeight()
+										.asInt() == 40
+								&& liveSpawn.minCount == 1
+								&& liveSpawn.maxCount == 2
+								&& liveBiome.getMobSettings()
+										.getMobs(
+												MobCategory
+														.CREATURE)
+										.unwrap().stream()
+										.noneMatch(spawn ->
+												spawn.type
+														== EntityType
+																.PARROT),
+						"Live Gummy Jungle lost the exact Jungle 40/1-2 Lollipop Lorikeet replacement");
+			} else {
+				require(helper, liveBiome == null,
+						futureBiome
+								+ " unexpectedly exists; MOB-036's staged spawn gate must be revisited");
+			}
 			MobSpawnSettingsBuilder futureSpawns =
 					new MobSpawnSettingsBuilder(
 							MobSpawnSettings.EMPTY);
@@ -9636,7 +9695,7 @@ public final class FirstBiteGameTests {
 													== CakeWorldEntities
 															.LOLLIPOP_LORIKEET
 															.get()),
-					"Current biome leaked Parrot/Lollipop Lorikeet spawning before its biomes exist: "
+					"Biome outside Gummy Jungle/Lollipop Orchards leaked Parrot/Lollipop Lorikeet spawning: "
 							+ biomeId);
 		}
 
@@ -34238,8 +34297,11 @@ public final class FirstBiteGameTests {
 						&& eligibleBiomes.equals(Set.of(
 								CakeWorldBiomes
 										.COOKIE_FOREST
+										.getId(),
+								CakeWorldBiomes
+										.GUMMY_JUNGLE
 										.getId())),
-				"Gummy Shrine lost its configured structure, locate tag, surface step, installed late repair or temporary Cookie Forest contract: eligible="
+				"Gummy Shrine lost its configured structure, locate tag, surface step, installed late repair or Cookie Forest/Gummy Jungle contract: eligible="
 						+ eligibleBiomes
 						+ ", repairInstalled="
 						+ repairInstalled);

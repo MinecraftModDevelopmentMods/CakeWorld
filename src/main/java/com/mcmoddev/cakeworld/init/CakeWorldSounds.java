@@ -31,6 +31,11 @@ public final class CakeWorldSounds {
 					() -> new SoundEvent(new ResourceLocation(
 							CakeWorld.MODID,
 							"peppermint_pinewoods_chime")));
+	public static final RegistryObject<SoundEvent> GUMMY_JUNGLE_WOBBLE =
+			SOUNDS.register("gummy_jungle_wobble",
+					() -> new SoundEvent(new ResourceLocation(
+							CakeWorld.MODID,
+							"gummy_jungle_wobble")));
 
 	private CakeWorldSounds() {
 	}

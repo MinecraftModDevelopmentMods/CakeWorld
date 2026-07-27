@@ -38,6 +38,13 @@ public final class CandySproutBlock extends CropBlock {
 	protected boolean mayPlaceOn(BlockState state,
 			BlockGetter level, BlockPos position) {
 		return state.is(CakeWorldBlocks.CHOCOLATE_SPONGE.get())
+				|| state.is(CakeWorldBlocks.GUMMY_BLOCK.get())
+				|| state.is(CakeWorldBlocks
+						.RASPBERRY_GUMMY_BLOCK.get())
+				|| state.is(CakeWorldBlocks
+						.BLUEBERRY_GUMMY_BLOCK.get())
+				|| state.is(CakeWorldBlocks
+						.GRAPE_GUMMY_BLOCK.get())
 				|| super.mayPlaceOn(state, level, position);
 	}
 

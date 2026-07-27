@@ -57,6 +57,7 @@ import com.mcmoddev.cakeworld.world.RockCandyCrystalMineStructureFeature;
 import com.mcmoddev.cakeworld.world.RoadsideCuriosityFeature;
 import com.mcmoddev.cakeworld.world.GingerbreadVillageFeature;
 import com.mcmoddev.cakeworld.world.GrandGingerbreadManorFeature;
+import com.mcmoddev.cakeworld.world.GummyJungleBounceGroveFeature;
 import com.mcmoddev.cakeworld.world.GummyShrineFeature;
 import com.mcmoddev.cakeworld.world.IceCreamParlourFeature;
 import com.mcmoddev.cakeworld.world.SherbetPyramidFeature;
@@ -670,6 +671,11 @@ public final class DeepPantryGameTests {
 				"cakeworld:peppermint_rock",
 				"cakeworld:biscuit_crumbs", 5);
 		assertPaletteContract(helper, palettes, "cakeworld:overworld_land",
+				"cakeworld:gummy_jungle",
+				"cakeworld:gummy_block",
+				"cakeworld:chocolate_sponge",
+				"cakeworld:blueberry_gummy_block", 4);
+		assertPaletteContract(helper, palettes, "cakeworld:overworld_land",
 				"cakeworld:marshmallow_peaks", "cakeworld:icing_layer",
 				"cakeworld:biscuit_stone", "cakeworld:biscuit_crumbs", 5);
 		assertPaletteContract(helper, palettes, "cakeworld:nether",
@@ -684,6 +690,8 @@ public final class DeepPantryGameTests {
 				id("gingerbread_hearthlands"));
 		BlockPos peppermintPinewoods = locateBiome(helper,
 				overworld, id("peppermint_pinewoods"));
+		BlockPos gummyJungle = locateBiome(helper,
+				overworld, id("gummy_jungle"));
 		surfaces.put("candy_plains", auditSurface(overworld,
 				locateBiome(helper, overworld, id("candy_plains")),
 				id("candy_plains"), CakeWorldBlocks.ICING_LAYER.get(),
@@ -704,6 +712,14 @@ public final class DeepPantryGameTests {
 						id("peppermint_pinewoods"),
 						CakeWorldBlocks.ICING_LAYER.get(),
 						CakeWorldBlocks.PEPPERMINT_ROCK.get(),
+						2));
+		surfaces.put("gummy_jungle",
+				auditSurface(overworld,
+						gummyJungle,
+						id("gummy_jungle"),
+						CakeWorldBlocks.GUMMY_BLOCK.get(),
+						CakeWorldBlocks.CHOCOLATE_SPONGE
+								.get(),
 						2));
 		surfaces.put("marshmallow_peaks", auditSurface(overworld,
 				locateBiome(helper, overworld, id("marshmallow_peaks")),
@@ -732,6 +748,10 @@ public final class DeepPantryGameTests {
 				countGeomesForBiome(overworld,
 						peppermintPinewoods,
 						id("peppermint_pinewoods"), 4);
+		Map<ResourceLocation, Integer> gummyGeomes =
+				countGeomesForBiome(overworld,
+						gummyJungle,
+						id("gummy_jungle"), 4);
 		require(helper,
 				!hearthlandsGeomes.isEmpty()
 						&& hearthlandsGeomes.keySet().stream()
@@ -754,6 +774,17 @@ public final class DeepPantryGameTests {
 								id("peppermint_fold"), 0) > 0,
 				"Natural Peppermint Pinewoods did not stay within its Peppermint Fold/Rock-Candy Uplift bias or expose its higher-weight Peppermint Fold: "
 						+ peppermintGeomes);
+		require(helper,
+				!gummyGeomes.isEmpty()
+						&& gummyGeomes.keySet().stream()
+								.allMatch(Set.of(
+										id("cocoa_basin"),
+										id("wafer_shelf"),
+										id("rock_candy_uplift"),
+										id("fudge_mantle"))
+										::contains),
+				"Natural Gummy Jungle escaped its three explicit flavour geomes plus inherited HOT/Fudge-Mantle dictionary seam: "
+						+ gummyGeomes);
 
 		BlockPos sodaOcean = locateBiome(helper, overworld, id("soda_ocean"));
 		Map<Block, Integer> lemonadeFloor = countBlocksDirectlyUnderFluid(
@@ -763,9 +794,10 @@ public final class DeepPantryGameTests {
 		require(helper, lemonadeFloor.getOrDefault(
 						CakeWorldBlocks.BISCUIT_CRUMBS.get(), 0) > 0,
 				"Soda Ocean exposed no Biscuit Crumbs underwater surface");
-		LOGGER.info("Focused biome surface/palette audit: surfaces={}, hearthlands_geomes={}, peppermint_geomes={}, soda_floor={}",
+		LOGGER.info("Focused biome surface/palette audit: surfaces={}, hearthlands_geomes={}, peppermint_geomes={}, gummy_geomes={}, soda_floor={}",
 				surfaces, hearthlandsGeomes,
-				peppermintGeomes, describe(lemonadeFloor));
+				peppermintGeomes, gummyGeomes,
+				describe(lemonadeFloor));
 		helper.succeed();
 	}
 
@@ -6996,6 +7028,66 @@ public final class DeepPantryGameTests {
 		});
 	}
 
+	@GameTest(template = EMPTY, batch = "bioow005world",
+			timeoutTicks = 24000)
+	public static void focusedNaturalGummyJungleBounceGroveAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean(
+				"cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed natural Gummy Jungle Bounce Grove audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel()
+				.getServer().getLevel(Level.OVERWORLD);
+		require(helper, level != null,
+				"The fixed-seed server did not expose the Overworld");
+		BlockPos gummyJungle = locateBiome(helper, level,
+				CakeWorldBiomes.GUMMY_JUNGLE.getId());
+		LocatedGummyGrove grove =
+				locateNaturalGummyGrove(
+						helper, level, gummyJungle, 20);
+		setGummyGroveChunksForced(level, grove, true);
+		helper.runAfterDelay(40, () -> {
+			GummyGroveWorldAudit audit =
+					auditNaturalGummyGrove(
+							level, grove);
+			LOGGER.info("Focused natural Gummy Jungle Bounce Grove audit: centre={}, biome={}, rotation={}, palette={}, layout={}, sentinel={}, markerPhase={}, scannedChunks={}, beaconCandidates={}",
+					grove.centre(),
+					audit.biome(),
+					audit.rotation(),
+					audit.palette(),
+					audit.readableLayout(),
+					audit.sentinel(),
+					audit.brickSentinel()
+							? "reloaded"
+							: "seeded",
+					grove.scannedChunks(),
+					grove.beaconCandidates());
+			require(helper,
+					CakeWorldBiomes.GUMMY_JUNGLE
+							.getId()
+							.equals(audit.biome())
+							&& audit.readableLayout(),
+					"Natural Gummy Jungle Bounce Grove lost its exact biome, three lollipop trees, flavour pools, elastic vines, sprouts or bubble beacon: "
+							+ audit);
+			if (!audit.brickSentinel()) {
+				level.setBlock(audit.sentinel(),
+						Blocks.BRICKS
+								.defaultBlockState(),
+						2);
+				require(helper,
+						level.getBlockState(
+								audit.sentinel())
+								.is(Blocks.BRICKS),
+						"Could not seed the explicit player-placed Brick reload sentinel beside the Gummy Jungle Bounce Grove");
+			}
+			setGummyGroveChunksForced(
+					level, grove, false);
+			helper.succeed();
+		});
+	}
+
 	@GameTest(template = EMPTY, timeoutTicks = 1200)
 	public static void baseMetalsCounterpartsPreserveTagsRecipesAndGeneration(
 			GameTestHelper helper) {
@@ -10845,7 +10937,12 @@ public final class DeepPantryGameTests {
 										audit.readableLayout(),
 										scannedChunks,
 										crystalCandidates);
-								if (audit.readableLayout()) {
+								if (audit.readableLayout()
+										&& CakeWorldBiomes
+												.PEPPERMINT_PINEWOODS
+												.getId()
+												.equals(
+														audit.biome())) {
 									return clearing;
 								}
 							}
@@ -10986,6 +11083,405 @@ public final class DeepPantryGameTests {
 							base.above(tree[2]))
 							.is(CakeWorldBlocks.ICING
 									.get())) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private static LocatedGummyGrove
+			locateNaturalGummyGrove(
+					GameTestHelper helper,
+					ServerLevel level,
+					BlockPos anchor,
+					int chunkRadius) {
+		ChunkPos anchorChunk = new ChunkPos(anchor);
+		int scannedChunks = 0;
+		int beaconCandidates = 0;
+		int gummyColumns = 0;
+		Map<Block, Integer> naturalSurfacePalette =
+				new LinkedHashMap<>();
+		for (int radius = 0;
+				radius <= chunkRadius; radius++) {
+			for (int chunkX =
+					anchorChunk.x - radius;
+					chunkX <= anchorChunk.x
+							+ radius;
+					chunkX++) {
+				for (int chunkZ =
+						anchorChunk.z - radius;
+						chunkZ <= anchorChunk.z
+								+ radius;
+						chunkZ++) {
+					if (radius > 0
+							&& chunkX
+									!= anchorChunk.x
+											- radius
+							&& chunkX
+									!= anchorChunk.x
+											+ radius
+							&& chunkZ
+									!= anchorChunk.z
+											- radius
+							&& chunkZ
+									!= anchorChunk.z
+											+ radius) {
+						continue;
+					}
+					level.getChunk(chunkX, chunkZ);
+					scannedChunks++;
+					for (int x = chunkX << 4;
+							x < (chunkX + 1) << 4;
+							x++) {
+						for (int z = chunkZ << 4;
+								z < (chunkZ + 1) << 4;
+								z++) {
+							int surfaceY = level.getHeight(
+									Heightmap.Types
+											.MOTION_BLOCKING_NO_LEAVES,
+									x, z) - 1;
+							BlockPos naturalSurface =
+									findNaturalTerrainSurface(
+											level, x, z,
+											surfaceY);
+							if (CakeWorldBiomes
+									.GUMMY_JUNGLE
+									.getId()
+									.equals(level.getBiome(
+											naturalSurface)
+											.unwrapKey()
+											.map(ResourceKey
+													::location)
+											.orElse(null))) {
+								gummyColumns++;
+								naturalSurfacePalette
+										.merge(level
+												.getBlockState(
+														naturalSurface)
+												.getBlock(),
+												1,
+												Integer::sum);
+							}
+							int minimumY = Math.max(
+									level.getMinBuildHeight(),
+									surfaceY - 14);
+							int maximumY = Math.min(
+									level.getMaxBuildHeight()
+											- 1,
+									surfaceY + 2);
+							for (int y = minimumY;
+									y <= maximumY;
+									y++) {
+								BlockPos glass =
+										new BlockPos(
+												x, y,
+												z);
+								if (!level
+										.getBlockState(
+												glass)
+										.is(CakeWorldBlocks
+												.CANDY_GLASS
+												.get())
+										|| !level
+												.getBlockState(
+														glass
+																.below())
+												.is(CakeWorldBlocks
+														.CANDY_CANE_PILLAR
+														.get())
+										|| !level
+												.getBlockState(
+														glass
+																.above())
+												.is(CakeWorldBlocks
+														.GUMMY_BLOCK
+														.get())) {
+									continue;
+								}
+								beaconCandidates++;
+								LocatedGummyGrove grove =
+										new LocatedGummyGrove(
+												glass.below(2),
+												scannedChunks,
+												beaconCandidates);
+								GummyGroveWorldAudit
+										audit =
+												auditNaturalGummyGrove(
+														level,
+														grove);
+								LOGGER.info("Gummy Jungle Bounce Grove beacon candidate: centre={}, biome={}, rotation={}, palette={}, layout={}, scannedChunks={}, beaconCandidates={}",
+										grove.centre(),
+										audit.biome(),
+										audit.rotation(),
+										audit.palette(),
+										audit.readableLayout(),
+										scannedChunks,
+										beaconCandidates);
+								if (audit.readableLayout()
+										&& CakeWorldBiomes
+												.GUMMY_JUNGLE
+												.getId()
+												.equals(
+														audit.biome())) {
+									return grove;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		require(helper, false,
+				"The fixed-seed Gummy Jungle survey found no natural Bounce Grove after "
+						+ scannedChunks
+						+ " generated chunks and "
+						+ beaconCandidates
+						+ " bubble-beacon candidates near "
+						+ anchor
+						+ "; gummyColumns="
+						+ gummyColumns
+						+ ", naturalSurfacePalette="
+						+ describe(
+								naturalSurfacePalette));
+		throw new IllegalStateException(
+				"Unreachable after GameTest failure");
+	}
+
+	private static BlockPos findNaturalTerrainSurface(
+			ServerLevel level, int x, int z,
+			int startingY) {
+		int y = Math.min(startingY,
+				level.getMaxBuildHeight() - 1);
+		BlockPos.MutableBlockPos cursor =
+				new BlockPos.MutableBlockPos(x, y, z);
+		while (y > level.getMinBuildHeight()) {
+			BlockState state =
+					level.getBlockState(cursor);
+			if (!level.getFluidState(cursor).isEmpty()
+					|| !state.getMaterial().isReplaceable()
+							&& !state.is(BlockTags.LEAVES)
+							&& !state.is(BlockTags.LOGS)) {
+				break;
+			}
+			cursor.setY(--y);
+		}
+		return cursor.immutable();
+	}
+
+	private static GummyGroveWorldAudit
+			auditNaturalGummyGrove(
+					ServerLevel level,
+					LocatedGummyGrove grove) {
+		BlockPos centre = grove.centre();
+		Rotation rotation =
+				GummyJungleBounceGroveFeature.orientation(
+						level.getSeed(), centre);
+		BlockPos sentinel = local(centre, rotation,
+				5, 2, 5);
+		boolean brickSentinel =
+				level.getBlockState(sentinel)
+						.is(Blocks.BRICKS);
+		Map<Block, Integer> palette =
+				new LinkedHashMap<>();
+		for (int x = -5; x <= 5; x++) {
+			for (int y = -1; y <= 11; y++) {
+				for (int z = -5; z <= 5; z++) {
+					palette.merge(
+							level.getBlockState(
+									centre.offset(
+											x, y, z))
+									.getBlock(),
+							1, Integer::sum);
+				}
+			}
+		}
+		ResourceLocation biome =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.getKey(level.getBiome(centre)
+								.value());
+		boolean readable =
+				matchesGummyGroveLayout(
+						level, centre, rotation)
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.RASPBERRY_GUMMY_BLOCK
+										.get(),
+								0) == 54
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.BLUEBERRY_GUMMY_BLOCK
+										.get(),
+								0) == 54
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.GRAPE_GUMMY_BLOCK
+										.get(),
+								0) == 54
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CANDY_CANE_PILLAR
+										.get(),
+								0) == 23
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.GUMMY_VINE.get(),
+								0) == 21
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CANDY_SPROUT
+										.get(),
+								0) == 4
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CANDY_GLASS.get(),
+								0) == 1
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.GUMMY_BLOCK.get(),
+								0) >= 38
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CHOCOLATE_SPONGE
+										.get(),
+								0) >= 49;
+		return new GummyGroveWorldAudit(
+				palette, biome, rotation,
+				readable, sentinel,
+				brickSentinel);
+	}
+
+	private static boolean matchesGummyGroveLayout(
+			ServerLevel level, BlockPos centre,
+			Rotation rotation) {
+		if (!level.getBlockState(local(
+				centre, rotation, 0, 1, 0))
+				.is(CakeWorldBlocks
+						.CANDY_CANE_PILLAR.get())
+				|| !level.getBlockState(local(
+						centre, rotation, 0, 2, 0))
+						.is(CakeWorldBlocks
+								.CANDY_GLASS.get())
+				|| !level.getBlockState(local(
+						centre, rotation, 0, 3, 0))
+						.is(CakeWorldBlocks
+								.GUMMY_BLOCK.get())
+				|| !level.getBlockState(local(
+						centre, rotation, 4, 0, 0))
+						.is(CakeWorldBlocks
+								.GUMMY_BLOCK.get())
+				|| !level.getBlockState(local(
+						centre, rotation, 4, -1, 0))
+						.is(CakeWorldBlocks
+								.CHOCOLATE_SPONGE
+								.get())) {
+			return false;
+		}
+		if (!matchesGummyTree(level, centre,
+				rotation, -3, -3, 7,
+				CakeWorldBlocks
+						.RASPBERRY_GUMMY_BLOCK.get())
+				|| !matchesGummyTree(level, centre,
+						rotation, 3, -3, 8,
+						CakeWorldBlocks
+								.BLUEBERRY_GUMMY_BLOCK
+								.get())
+				|| !matchesGummyTree(level, centre,
+						rotation, 0, 3, 7,
+						CakeWorldBlocks
+								.GRAPE_GUMMY_BLOCK
+								.get())) {
+			return false;
+		}
+		int[][] pools = {
+				{-2, 1, 0},
+				{2, 1, 1},
+				{0, -1, 2}
+		};
+		Block[] flavours = {
+				CakeWorldBlocks
+						.RASPBERRY_GUMMY_BLOCK.get(),
+				CakeWorldBlocks
+						.BLUEBERRY_GUMMY_BLOCK.get(),
+				CakeWorldBlocks
+						.GRAPE_GUMMY_BLOCK.get()
+		};
+		int[][] cross = {
+				{0, 0},
+				{-1, 0},
+				{1, 0},
+				{0, -1},
+				{0, 1}
+		};
+		for (int[] pool : pools) {
+			for (int[] offset : cross) {
+				if (!level.getBlockState(local(
+						centre, rotation,
+						pool[0] + offset[0], 0,
+						pool[1] + offset[1]))
+						.is(flavours[pool[2]])) {
+					return false;
+				}
+			}
+		}
+		int[][] sprouts = {
+				{-4, 0},
+				{4, 0},
+				{0, -4},
+				{0, 4}
+		};
+		for (int[] sprout : sprouts) {
+			if (!level.getBlockState(local(
+					centre, rotation,
+					sprout[0], 1, sprout[1]))
+					.is(CakeWorldBlocks
+							.CANDY_SPROUT.get())) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private static boolean matchesGummyTree(
+			ServerLevel level, BlockPos centre,
+			Rotation rotation, int x, int z,
+			int height, Block flavour) {
+		BlockPos base = local(centre, rotation,
+				x, 0, z);
+		if (!level.getBlockState(base)
+				.is(CakeWorldBlocks
+						.CANDY_CANE_PILLAR.get())
+				|| !level.getBlockState(
+						base.above(height - 1))
+						.is(CakeWorldBlocks
+								.CANDY_CANE_PILLAR
+								.get())
+				|| !level.getBlockState(local(
+						base, rotation,
+						1, height, 0))
+						.is(flavour)
+				|| !level.getBlockState(
+						base.above(height + 1))
+						.is(CakeWorldBlocks
+								.GUMMY_BLOCK.get())) {
+			return false;
+		}
+		for (int step = 0; step < 3; step++) {
+			if (!level.getBlockState(local(
+					base, rotation, -2,
+					height - 3 - step, 0))
+					.is(CakeWorldBlocks
+							.GUMMY_VINE.get())) {
+				return false;
+			}
+		}
+		for (int step = 0; step < 4; step++) {
+			if (!level.getBlockState(local(
+					base, rotation, 2,
+					height - 3 - step, 0))
+					.is(CakeWorldBlocks
+							.GUMMY_VINE.get())) {
 				return false;
 			}
 		}
@@ -11459,6 +11955,30 @@ public final class DeepPantryGameTests {
 					clearing.centre().getZ() - 5, 16);
 					chunkZ <= Math.floorDiv(
 							clearing.centre().getZ()
+									+ 5,
+							16);
+					chunkZ++) {
+				level.setChunkForced(
+						chunkX, chunkZ,
+						forced);
+			}
+		}
+	}
+
+	private static void setGummyGroveChunksForced(
+			ServerLevel level,
+			LocatedGummyGrove grove,
+			boolean forced) {
+		for (int chunkX = Math.floorDiv(
+				grove.centre().getX() - 5, 16);
+				chunkX <= Math.floorDiv(
+						grove.centre().getX() + 5,
+						16);
+				chunkX++) {
+			for (int chunkZ = Math.floorDiv(
+					grove.centre().getZ() - 5, 16);
+					chunkZ <= Math.floorDiv(
+							grove.centre().getZ()
 									+ 5,
 							16);
 					chunkZ++) {
@@ -12906,6 +13426,20 @@ public final class DeepPantryGameTests {
 	}
 
 	private record PeppermintClearingWorldAudit(
+			Map<Block, Integer> palette,
+			ResourceLocation biome,
+			Rotation rotation,
+			boolean readableLayout,
+			BlockPos sentinel,
+			boolean brickSentinel) {
+	}
+
+	private record LocatedGummyGrove(
+			BlockPos centre, int scannedChunks,
+			int beaconCandidates) {
+	}
+
+	private record GummyGroveWorldAudit(
 			Map<Block, Integer> palette,
 			ResourceLocation biome,
 			Rotation rotation,

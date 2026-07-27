@@ -22,7 +22,8 @@ public final class CakeWorldCreatureSpawns {
 	private static final Set<String> OVERWORLD_BIOMES = Set.of(
 			"candy_plains", "gingerbread_hearthlands",
 			"cookie_forest", "peppermint_pinewoods",
-			"marshmallow_peaks", "soda_ocean");
+			"gummy_jungle", "marshmallow_peaks",
+			"soda_ocean");
 
 	private CakeWorldCreatureSpawns() {
 	}
@@ -122,6 +123,15 @@ public final class CakeWorldCreatureSpawns {
 					8, 4, 8);
 		}
 		if ("gummy_jungle".equals(biome.getPath())) {
+			replaceExisting(event, MobCategory.CREATURE,
+					EntityType.COW,
+					CakeWorldEntities.COCOA_COW);
+			replaceExisting(event, MobCategory.CREATURE,
+					EntityType.PIG,
+					CakeWorldEntities.TRUFFLE_PIG);
+			replaceExisting(event, MobCategory.CREATURE,
+					EntityType.CHICKEN,
+					CakeWorldEntities.MALLOW_CHICK);
 			replace(event, MobCategory.CREATURE,
 					EntityType.RABBIT,
 					CakeWorldEntities.GUMMY_BUNNY,

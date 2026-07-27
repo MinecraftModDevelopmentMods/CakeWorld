@@ -34,5 +34,14 @@
         "type": "event"
       }
     ]
+  },
+  "gummy_jungle_wobble": {
+    "subtitle": "subtitles.cakeworld.gummy_jungle.wobble",
+    "sounds": [
+      {
+        "name": "minecraft:block.slime_block.place",
+        "type": "event"
+      }
+    ]
   }
 }

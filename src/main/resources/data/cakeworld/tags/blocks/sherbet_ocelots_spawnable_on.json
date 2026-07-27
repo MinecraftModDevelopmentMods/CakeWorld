@@ -4,6 +4,9 @@
     "minecraft:grass_block",
     "#minecraft:leaves",
     "cakeworld:chocolate_sponge",
-    "cakeworld:gummy_block"
+    "cakeworld:gummy_block",
+    "cakeworld:raspberry_gummy_block",
+    "cakeworld:blueberry_gummy_block",
+    "cakeworld:grape_gummy_block"
   ]
 }
