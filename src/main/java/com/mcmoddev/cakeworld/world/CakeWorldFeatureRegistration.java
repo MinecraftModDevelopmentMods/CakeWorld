@@ -66,6 +66,10 @@ public final class CakeWorldFeatureRegistration {
 				CraterKitchenFeature.FEATURE);
 		event.getRegistry().register(
 				CraterKitchenRepairFeature.FEATURE);
+		event.getRegistry().register(
+				RockCandyCrystalMineFeature.FEATURE);
+		event.getRegistry().register(
+				RockCandyCrystalMineRepairFeature.FEATURE);
 	}
 
 	@SubscribeEvent
@@ -101,6 +105,9 @@ public final class CakeWorldFeatureRegistration {
 						.STRUCTURE_FEATURE);
 		event.getRegistry().register(
 				CraterKitchenFeature
+						.STRUCTURE_FEATURE);
+		event.getRegistry().register(
+				RockCandyCrystalMineFeature
 						.STRUCTURE_FEATURE);
 	}
 
@@ -144,6 +151,10 @@ public final class CakeWorldFeatureRegistration {
 					.registerConfiguredFeature();
 			CraterKitchenFeature.registerWorldgen();
 			CraterKitchenRepairFeature
+					.registerConfiguredFeature();
+			RockCandyCrystalMineFeature
+					.registerWorldgen();
+			RockCandyCrystalMineRepairFeature
 					.registerConfiguredFeature();
 		});
 	}

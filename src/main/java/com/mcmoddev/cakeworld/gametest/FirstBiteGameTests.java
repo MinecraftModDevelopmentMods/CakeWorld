@@ -168,6 +168,9 @@ import com.mcmoddev.cakeworld.world.CandyCaneBridgeFeature;
 import com.mcmoddev.cakeworld.world.CandyCaneBridgeRepairFeature;
 import com.mcmoddev.cakeworld.world.CraterKitchenFeature;
 import com.mcmoddev.cakeworld.world.CraterKitchenRepairFeature;
+import com.mcmoddev.cakeworld.world.RockCandyCrystalMineFeature;
+import com.mcmoddev.cakeworld.world.RockCandyCrystalMineRepairFeature;
+import com.mcmoddev.cakeworld.world.RockCandyCrystalMineStructureFeature;
 import com.mcmoddev.cakeworld.world.WaferWindmillFeature;
 import com.mcmoddev.cakeworld.world.WaferWindmillRepairFeature;
 import com.mcmoddev.cakeworld.world.GingerbreadVillageFeature;
@@ -414,6 +417,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.EndPortalFrameBlock;
 import net.minecraft.world.level.block.FenceBlock;
+import net.minecraft.world.level.block.LadderBlock;
 import net.minecraft.world.level.block.NetherWartBlock;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.SlabBlock;
@@ -41993,6 +41997,441 @@ public final class FirstBiteGameTests {
 												.getString(
 														"LootTable")),
 				"Crater Kitchen repair did not restore the quiet rim and functional recipe cache");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, batch = "struct023",
+			timeoutTicks = 1200)
+	public static void rockCandyCrystalMineTeachesSafeGeology(
+			GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						RockCandyCrystalMineFeature
+								.STRUCTURE_ID);
+		Registry<net.minecraft.world.level.levelgen.structure.StructureSet>
+				structureSets =
+				level.registryAccess().registryOrThrow(
+						Registry.STRUCTURE_SET_REGISTRY);
+		net.minecraft.world.level.levelgen.structure.StructureSet
+				structureSet =
+				structureSets.get(
+						RockCandyCrystalMineFeature
+								.STRUCTURE_SET_ID);
+		boolean ownTag = structures.getTag(
+						RockCandyCrystalMineFeature
+								.STRUCTURE_TAG)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		Set<ResourceLocation> eligibleBiomes =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.getTag(
+								RockCandyCrystalMineFeature
+										.GENERATES_IN)
+						.map(tag -> tag.stream()
+								.map(holder -> holder
+										.unwrapKey()
+										.orElseThrow()
+										.location())
+								.collect(
+										java.util.stream
+												.Collectors
+												.toSet()))
+						.orElse(Set.of());
+		boolean repairInstalled =
+				hasPlacedFeature(
+						level,
+						CakeWorldBiomes
+								.MARSHMALLOW_PEAKS
+								.getId(),
+						GenerationStep.Decoration
+								.TOP_LAYER_MODIFICATION,
+						RockCandyCrystalMineRepairFeature
+								.ID);
+		require(helper,
+				configured != null
+						&& configured.feature
+								== RockCandyCrystalMineFeature
+										.STRUCTURE_FEATURE
+						&& !configured.adaptNoise
+						&& configured.spawnOverrides
+								.isEmpty()
+						&& configured.feature.step()
+								== GenerationStep.Decoration
+										.UNDERGROUND_STRUCTURES
+						&& structureSet != null
+						&& structureSet.structures().size()
+								== 1
+						&& structureSet.structures().get(0)
+								.structure().value()
+								== configured
+						&& ownTag
+						&& eligibleBiomes.equals(Set.of(
+								CakeWorldBiomes
+										.MARSHMALLOW_PEAKS
+										.getId()))
+						&& RockCandyCrystalMineRepairFeature
+								.placedFeature() != null
+						&& repairInstalled,
+				"Rock-Candy Crystal Mine lost its dedicated no-spawn structure, Marshmallow-Peaks prototype boundary or late repair: eligible="
+						+ eligibleBiomes
+						+ ", ownTag=" + ownTag
+						+ ", repair="
+						+ repairInstalled);
+
+		net.minecraft.world.level.levelgen.structure.placement
+				.RandomSpreadStructurePlacement placement =
+				(net.minecraft.world.level.levelgen.structure
+						.placement.RandomSpreadStructurePlacement)
+						structureSet.placement();
+		require(helper,
+				placement.spacing() == 80
+						&& placement.separation() == 32
+						&& placement.spreadType()
+								== net.minecraft.world.level
+										.levelgen.structure
+										.placement
+										.RandomSpreadType
+										.LINEAR
+						&& placement.salt()
+								== RockCandyCrystalMineFeature
+										.PLACEMENT_SALT,
+				"Rock-Candy Crystal Mine lost its sparse 80/32/1978023 linear placement");
+
+		StructurePoolElement element =
+				RockCandyCrystalMineFeature.pool().value()
+						.getRandomTemplate(
+								new Random(
+										RockCandyCrystalMineFeature
+												.PLACEMENT_SALT));
+		BoundingBox pieceBounds =
+				element.getBoundingBox(
+						level.getStructureManager(),
+						BlockPos.ZERO,
+						Rotation.NONE);
+		require(helper,
+				element
+						instanceof CakeWorldFeaturePoolElement
+						&& pieceBounds.getXSpan() == 33
+						&& pieceBounds.getYSpan() == 49
+						&& pieceBounds.getZSpan() == 33,
+				"Rock-Candy Crystal Mine lost its serializable 33x49x33 saved envelope");
+
+		Set<Rotation> rotations =
+				new java.util.HashSet<>();
+		for (int index = 0;
+				index < 128
+						&& rotations.size() < 4;
+				index++) {
+			rotations.add(
+					RockCandyCrystalMineFeature
+							.orientation(
+									level.getSeed(),
+									new BlockPos(
+											index * 73,
+											30,
+											index * -83)));
+		}
+		require(helper, rotations.size() == 4,
+				"Rock-Candy Crystal Mine deterministic orientation did not expose all four cardinal headframes: "
+						+ rotations);
+
+		BlockPos centre = new BlockPos(
+				helper.absolutePos(
+						new BlockPos(4, 4, 4))
+						.getX(),
+				level.getMaxBuildHeight() - 144,
+				helper.absolutePos(
+						new BlockPos(4, 4, 4))
+						.getZ());
+		for (int x = -16; x <= 16; x++) {
+			for (int y = 0; y <= 48; y++) {
+				for (int z = -16; z <= 16; z++) {
+					level.setBlock(
+							centre.offset(x, y, z),
+							Blocks.STONE
+									.defaultBlockState(),
+							2);
+				}
+			}
+		}
+		require(helper,
+				RockCandyCrystalMineFeature.buildAt(
+						level,
+						new Random(
+								RockCandyCrystalMineFeature
+										.PLACEMENT_SALT),
+						centre),
+				"Rock-Candy Crystal Mine refused a forced solid-rock fixture");
+
+		Map<Block, Integer> palette =
+				scanBlockPalette(level, centre,
+						16, 0, 48);
+		require(helper,
+				palette.getOrDefault(
+						CakeWorldBlocks.WAFER_BLOCK.get(),
+						0) >= 550
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CANDY_CANE_PILLAR
+										.get(), 0)
+								== 99
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.MARSHMALLOW
+										.get(), 0)
+								== 14
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CANDY_GLASS
+										.get(), 0)
+								== 13
+						&& palette.getOrDefault(
+								Blocks.LADDER, 0) == 35
+						&& palette.getOrDefault(
+								Blocks.LANTERN, 0) == 8
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.ICING.get(), 0)
+								== 49
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.WAFER_STAIRS
+										.get(), 0)
+								== 5
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.BISCUIT_CRUMBS
+										.get(), 0)
+								== 9
+						&& palette.getOrDefault(
+								Blocks.CHEST, 0) == 1,
+				"Rock-Candy Crystal Mine lost its gallery, recoverable shaft, surface headframe, lighting or field cache: "
+						+ palette);
+		require(helper,
+				palette.getOrDefault(
+						CakeWorldBlocks.COCOA_CLOUD
+								.get(), 0) == 9
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.LIQUORICE_VEIN
+										.get(), 0)
+								== 6
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.MINT_CRYSTAL
+										.get(), 0)
+								== 1
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.ROCK_CANDY_DEPOSIT
+										.get(), 0)
+								== 12
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.ROCK_CANDY_DIAMOND
+										.get(), 0)
+								== 1
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.SPRINKLE_CLUSTER
+										.get(), 0)
+								== 5
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.RICH_SPRINKLE_CLUSTER
+										.get(), 0)
+								== 1,
+				"Rock-Candy Crystal Mine lost its authored cloud, vein, precise crystal, compact deposit or weighted-cluster teaching silhouettes: "
+						+ palette);
+		require(helper,
+				palette.getOrDefault(
+						CakeWorldBlocks.BISCUIT_STONE
+								.get(), 0) >= 24
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.WAFER_ROCK
+										.get(), 0)
+								>= 30
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.PEPPERMINT_ROCK
+										.get(), 0)
+								== 54
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.NOUGAT_ROCK
+										.get(), 0)
+								== 30
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.FUDGE_ROCK
+										.get(), 0)
+								== 24
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.BURNT_SUGAR_ROCK
+										.get(), 0)
+								== 30,
+				"Rock-Candy Crystal Mine lost one of its four colour-readable host-family walls: "
+						+ palette);
+
+		Rotation orientation =
+				RockCandyCrystalMineFeature
+						.orientation(
+								level.getSeed(), centre);
+		BlockPos shaftBottom =
+				RockCandyCrystalMineFeature
+						.shaftBottomPosition(
+								level.getSeed(),
+								centre);
+		BlockPos entrance =
+				RockCandyCrystalMineFeature
+						.entrancePosition(
+								level.getSeed(),
+								centre);
+		BlockPos sentinel =
+				RockCandyCrystalMineFeature
+						.reloadSentinelPosition(
+								level.getSeed(),
+								centre);
+		require(helper,
+				level.getBlockState(shaftBottom)
+								.is(CakeWorldBlocks
+										.MARSHMALLOW
+										.get())
+						&& level.getBlockState(
+								shaftBottom.above())
+								.isAir()
+						&& level.getBlockState(entrance)
+								.is(CakeWorldBlocks
+										.BISCUIT_STONE
+										.get())
+						&& level.getBlockState(sentinel)
+								.is(CakeWorldBlocks
+										.WAFER_BLOCK
+										.get()),
+				"Rock-Candy Crystal Mine stopped linking its visible headframe to a cushioned underground gallery");
+		Direction ladderFacing =
+				orientation.rotate(Direction.SOUTH);
+		for (int y = 1; y <= 35; y++) {
+			BlockPos ladder = centre.offset(
+					new BlockPos(0, y, -13)
+							.rotate(orientation));
+			BlockPos support = centre.offset(
+					new BlockPos(0, y, -14)
+							.rotate(orientation));
+			require(helper,
+					level.getBlockState(ladder)
+									.is(Blocks.LADDER)
+							&& level.getBlockState(
+									ladder)
+									.getValue(
+											LadderBlock
+													.FACING)
+									== ladderFacing
+							&& level.getBlockState(
+									support)
+									.is(CakeWorldBlocks
+											.CANDY_CANE_PILLAR
+											.get()),
+					"Rock-Candy Crystal Mine lost a supported axis-correct ladder rung at "
+							+ ladder);
+		}
+
+		BlockPos cache =
+				RockCandyCrystalMineFeature
+						.cachePosition(
+								level.getSeed(),
+								centre);
+		BlockEntity cacheEntity =
+				level.getBlockEntity(cache);
+		CompoundTag cacheState =
+				cacheEntity == null
+						? new CompoundTag()
+						: cacheEntity
+								.saveWithoutMetadata();
+		require(helper,
+				RockCandyCrystalMineFeature.LOOT_ID
+						.toString().equals(
+								cacheState.getString(
+										"LootTable")),
+				"Rock-Candy Crystal Mine cache lost its dedicated field-kit loot identity");
+		LootTable loot = level.getServer()
+				.getLootTables()
+				.get(RockCandyCrystalMineFeature
+						.LOOT_ID);
+		LootContext lootContext =
+				new LootContext.Builder(level)
+						.withParameter(
+								LootContextParams.ORIGIN,
+								Vec3.atCenterOf(cache))
+						.create(
+								LootContextParamSets.CHEST);
+		List<ItemStack> cacheLoot =
+				loot.getRandomItems(lootContext);
+		int torches = cacheLoot.stream()
+				.filter(stack -> stack.is(Items.TORCH))
+				.mapToInt(ItemStack::getCount).sum();
+		int biscuits = cacheLoot.stream()
+				.filter(stack -> stack.is(
+						CakeWorldItems
+								.SIMPLE_BISCUIT.get()))
+				.mapToInt(ItemStack::getCount).sum();
+		int rescueBlocks = cacheLoot.stream()
+				.filter(stack -> stack.is(
+						CakeWorldBlocks.MARSHMALLOW
+								.get().asItem()))
+				.mapToInt(ItemStack::getCount).sum();
+		require(helper,
+				cacheLoot.stream().anyMatch(
+						stack -> stack.is(
+								Items.IRON_PICKAXE))
+						&& torches == 16
+						&& biscuits == 4
+						&& rescueBlocks == 4,
+				"Rock-Candy Crystal Mine did not guarantee its modest mining, lighting, food and recovery kit: "
+						+ cacheLoot);
+
+		level.setBlock(sentinel,
+				Blocks.AIR.defaultBlockState(), 2);
+		level.setBlock(cache,
+				Blocks.AIR.defaultBlockState(), 2);
+		require(helper,
+				RockCandyCrystalMineFeature.repairAt(
+						level,
+						new Random(
+								RockCandyCrystalMineFeature
+										.PLACEMENT_SALT),
+						centre),
+				"Rock-Candy Crystal Mine late repair refused its fixture");
+		BlockEntity repairedCache =
+				level.getBlockEntity(cache);
+		require(helper,
+				level.getBlockState(sentinel)
+								.is(CakeWorldBlocks
+										.WAFER_BLOCK
+										.get())
+						&& level.getBlockState(cache)
+								.is(Blocks.CHEST)
+						&& repairedCache != null
+						&& RockCandyCrystalMineFeature
+								.LOOT_ID.toString()
+								.equals(
+										repairedCache
+												.saveWithoutMetadata()
+												.getString(
+														"LootTable")),
+				"Rock-Candy Crystal Mine repair did not restore the visible headframe and functional field cache");
 		helper.succeed();
 	}
 

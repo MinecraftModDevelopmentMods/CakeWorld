@@ -181,6 +181,20 @@ public final class CakeWorldLandmarks {
 							.TOP_LAYER_MODIFICATION)
 					.add(craterKitchenRepair);
 		}
+		Holder<PlacedFeature> crystalMineRepair =
+				RockCandyCrystalMineRepairFeature
+						.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(
+						biome.getNamespace())
+				&& "marshmallow_peaks".equals(
+						biome.getPath())
+				&& crystalMineRepair != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration
+							.TOP_LAYER_MODIFICATION)
+					.add(crystalMineRepair);
+		}
 	}
 
 	private static boolean isCurrentOverworldBiome(

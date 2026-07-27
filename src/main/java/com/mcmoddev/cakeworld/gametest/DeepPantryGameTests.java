@@ -50,6 +50,8 @@ import com.mcmoddev.cakeworld.world.CaramelCottageFeature;
 import com.mcmoddev.cakeworld.world.ConfectionersCottageFeature;
 import com.mcmoddev.cakeworld.world.CraterKitchenFeature;
 import com.mcmoddev.cakeworld.world.CraterKitchenStructureFeature;
+import com.mcmoddev.cakeworld.world.RockCandyCrystalMineFeature;
+import com.mcmoddev.cakeworld.world.RockCandyCrystalMineStructureFeature;
 import com.mcmoddev.cakeworld.world.GingerbreadVillageFeature;
 import com.mcmoddev.cakeworld.world.GrandGingerbreadManorFeature;
 import com.mcmoddev.cakeworld.world.GummyShrineFeature;
@@ -122,6 +124,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.EndPortalFrameBlock;
+import net.minecraft.world.level.block.LadderBlock;
 import net.minecraft.world.level.block.RedStoneOreBlock;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.RotatedPillarBlock;
@@ -6289,6 +6292,225 @@ public final class DeepPantryGameTests {
 		});
 	}
 
+	@GameTest(template = EMPTY, batch = "struct023world",
+			timeoutTicks = 12000)
+	public static void focusedRockCandyCrystalMineStructureAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean(
+				"cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed Rock-Candy Crystal Mine audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel()
+				.getServer().getLevel(Level.OVERWORLD);
+		require(helper, level != null,
+				"The fixed-seed server did not expose the Overworld");
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry
+										.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						RockCandyCrystalMineFeature
+								.STRUCTURE_ID);
+		require(helper, configured != null,
+				"Rock-Candy Crystal Mine configured structure was absent from the live registry");
+		boolean locatedTag = structures.getTag(
+						RockCandyCrystalMineFeature
+								.STRUCTURE_TAG)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		require(helper, locatedTag,
+				"Rock-Candy Crystal Mine lost its public configured-structure locate tag");
+
+		LocatedCottage mine =
+				locateRockCandyCrystalMine(
+						helper, level, configured,
+						new BlockPos(1024, 96,
+								1024));
+		setCottageChunksForced(level, mine, true);
+		helper.runAfterDelay(200, () -> {
+			CrystalMineWorldAudit audit =
+					auditRockCandyCrystalMine(
+							level, mine);
+			BlockPos sentinel =
+					RockCandyCrystalMineFeature
+							.reloadSentinelPosition(
+									level.getSeed(),
+									mine.centre());
+			boolean sentinelAlreadyNative =
+					level.getBlockState(sentinel)
+							.is(Blocks.BRICKS);
+			int nativeSentinels =
+					audit.palette()
+							.getOrDefault(
+									Blocks.BRICKS, 0);
+			LOGGER.info("Focused Rock-Candy Crystal Mine audit: locate={}, centre={}, bounds={}, biome={}, orientation={}, palette={}, surfaceAccess={}, shaft={}, safety={}, hostFamilies={}, patterns={}, headframeTop={}, cacheLoot={}, sentinel={}, markerPhase={}",
+					mine.located(),
+					mine.centre(),
+					mine.bounds(),
+					audit.biome(),
+					audit.orientation(),
+					audit.palette(),
+					audit.surfaceAccess(),
+					audit.shaft(),
+					audit.safety(),
+					audit.hostFamilies(),
+					audit.patterns(),
+					audit.headframeTop(),
+					audit.cacheLoot(),
+					sentinel,
+					sentinelAlreadyNative
+							? "reloaded"
+							: "seeded");
+			require(helper,
+					CakeWorldBiomes
+							.MARSHMALLOW_PEAKS
+							.getId().equals(
+									audit.biome()),
+					"Natural Rock-Candy Crystal Mine left its explicit Marshmallow-Peaks proving ground: biome="
+							+ audit.biome());
+			require(helper,
+					mine.bounds().getXSpan()
+							== 33
+							&& mine.bounds()
+									.getYSpan()
+									== 49
+							&& mine.bounds()
+									.getZSpan()
+									== 33
+							&& mine.centre().getY()
+									>= level
+											.getMinBuildHeight()
+											+ 4,
+					"Natural Rock-Candy Crystal Mine lost its exact saved envelope or safe build height: bounds="
+							+ mine.bounds()
+							+ ", centre="
+							+ mine.centre());
+			Map<Block, Integer> palette =
+					audit.palette();
+			require(helper,
+					palette.getOrDefault(
+							CakeWorldBlocks
+									.WAFER_BLOCK
+									.get(), 0)
+							>= (sentinelAlreadyNative
+									? 549 : 550)
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.CANDY_CANE_PILLAR
+											.get(), 0)
+									>= 99
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.MARSHMALLOW
+											.get(), 0)
+									>= 14
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.CANDY_GLASS
+											.get(), 0)
+									>= 13
+							&& palette.getOrDefault(
+									Blocks.LADDER, 0)
+									== 35
+							&& palette.getOrDefault(
+									Blocks.LANTERN, 0)
+									== 8
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.ICING.get(),
+									0) >= 49
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.WAFER_STAIRS
+											.get(), 0)
+									== 5
+							&& palette.getOrDefault(
+									Blocks.CHEST, 0)
+									== 1
+							&& nativeSentinels
+									== (sentinelAlreadyNative
+											? 1 : 0),
+					"Natural Rock-Candy Crystal Mine lost its gallery, access shaft, headframe, rescue floor, lighting, cache or player-edit reload boundary: "
+							+ palette);
+			require(helper,
+					palette.getOrDefault(
+							CakeWorldBlocks
+									.COCOA_CLOUD.get(),
+							0) >= 9
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.LIQUORICE_VEIN
+											.get(), 0)
+									>= 6
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.MINT_CRYSTAL
+											.get(), 0)
+									>= 1
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.ROCK_CANDY_DEPOSIT
+											.get(), 0)
+									>= 12
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.ROCK_CANDY_DIAMOND
+											.get(), 0)
+									>= 1
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.SPRINKLE_CLUSTER
+											.get(), 0)
+									>= 5
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.RICH_SPRINKLE_CLUSTER
+											.get(), 0)
+									>= 1,
+					"Natural Rock-Candy Crystal Mine lost an authored pattern exhibit: "
+							+ palette);
+			require(helper,
+					audit.surfaceAccess()
+							&& audit.shaft()
+							&& audit.safety()
+							&& audit.hostFamilies()
+							&& audit.patterns()
+							&& audit.headframeTop()
+									>= mine.centre()
+											.getY() + 40
+							&& (sentinelAlreadyNative
+									|| audit
+											.nativeSentinel())
+							&& RockCandyCrystalMineFeature
+									.LOOT_ID.toString()
+									.equals(
+											audit.cacheLoot()),
+					"Natural Rock-Candy Crystal Mine stopped being a visible, recoverable and truthful geology gallery: "
+							+ audit);
+			if (!sentinelAlreadyNative) {
+				level.setBlock(sentinel,
+						Blocks.BRICKS
+								.defaultBlockState(),
+						2);
+				require(helper,
+						level.getBlockState(
+								sentinel)
+								.is(Blocks.BRICKS),
+						"Could not seed the explicit player-placed Brick reload sentinel in the Crystal Mine headframe");
+			}
+			setCottageChunksForced(
+					level, mine, false);
+			helper.succeed();
+		});
+	}
+
 	@GameTest(template = EMPTY, timeoutTicks = 1200)
 	public static void baseMetalsCounterpartsPreserveTagsRecipesAndGeneration(
 			GameTestHelper helper) {
@@ -9601,6 +9823,48 @@ public final class DeepPantryGameTests {
 				located, centre, bounds);
 	}
 
+	private static LocatedCottage
+			locateRockCandyCrystalMine(
+					GameTestHelper helper,
+					ServerLevel level,
+					ConfiguredStructureFeature<?, ?>
+							configured,
+					BlockPos origin) {
+		BlockPos located =
+				level.findNearestMapFeature(
+						RockCandyCrystalMineFeature
+								.STRUCTURE_TAG,
+						origin, 512, false);
+		require(helper, located != null,
+				"The fixed-seed CakeWorld contained no locatable Rock-Candy Crystal Mine within 512 chunks of Marshmallow Peaks");
+		ChunkPos startChunk = new ChunkPos(located);
+		net.minecraft.world.level.chunk.LevelChunk
+				startLevelChunk =
+				level.getChunk(startChunk.x,
+						startChunk.z);
+		StructureStart start =
+				startLevelChunk.getStartForFeature(
+						configured);
+		require(helper,
+				start != null && start.isValid()
+						&& start.getFeature()
+								== configured
+						&& start.getPieces()
+								.size() == 1,
+				"The located Rock-Candy Crystal Mine lost its saved one-piece structure start");
+		BoundingBox bounds = start.getBoundingBox();
+		BlockPos centre = new BlockPos(
+				bounds.minX()
+						+ RockCandyCrystalMineStructureFeature
+								.CENTRE_OFFSET,
+				bounds.minY(),
+				bounds.minZ()
+						+ RockCandyCrystalMineStructureFeature
+								.CENTRE_OFFSET);
+		return new LocatedCottage(
+				located, centre, bounds);
+	}
+
 	private static void setCottageChunksForced(
 			ServerLevel level,
 			LocatedCottage cottage,
@@ -10307,6 +10571,266 @@ public final class DeepPantryGameTests {
 				nativeSentinel, cacheLoot);
 	}
 
+	private static CrystalMineWorldAudit
+			auditRockCandyCrystalMine(
+					ServerLevel level,
+					LocatedCottage mine) {
+		Map<Block, Integer> palette =
+				new LinkedHashMap<>();
+		for (BlockPos position
+				: BlockPos.betweenClosed(
+						mine.bounds().minX(),
+						mine.bounds().minY(),
+						mine.bounds().minZ(),
+						mine.bounds().maxX(),
+						mine.bounds().maxY(),
+						mine.bounds().maxZ())) {
+			palette.merge(
+					level.getBlockState(position)
+							.getBlock(),
+					1, Integer::sum);
+		}
+		Rotation rotation =
+				RockCandyCrystalMineFeature.orientation(
+						level.getSeed(),
+						mine.centre());
+		BlockPos centre = mine.centre();
+		BlockPos entrance =
+				RockCandyCrystalMineFeature
+						.entrancePosition(
+								level.getSeed(),
+								centre);
+		boolean surfaceAccess =
+				level.getBlockState(entrance)
+								.is(CakeWorldBlocks
+										.BISCUIT_STONE
+										.get())
+						&& entrance.getY()
+								== centre.getY()
+										+ RockCandyCrystalMineStructureFeature
+												.SURFACE_OFFSET;
+		Direction stairFacing =
+				rotation.rotate(Direction.SOUTH);
+		for (int x = -2; x <= 2; x++) {
+			BlockPos stair = local(
+					centre, rotation, x,
+					RockCandyCrystalMineStructureFeature
+							.SURFACE_OFFSET,
+					-6);
+			BlockState state =
+					level.getBlockState(stair);
+			surfaceAccess &= state.is(
+							CakeWorldBlocks.WAFER_STAIRS
+									.get())
+					&& state.getValue(
+							StairBlock.FACING)
+							== stairFacing;
+		}
+		boolean shaft = true;
+		Direction ladderFacing =
+				rotation.rotate(Direction.SOUTH);
+		for (int y = 1; y <= 35; y++) {
+			BlockPos ladder = local(
+					centre, rotation, 0, y, -13);
+			BlockPos support = local(
+					centre, rotation, 0, y, -14);
+			BlockState ladderState =
+					level.getBlockState(ladder);
+			BlockState supportState =
+					level.getBlockState(support);
+			shaft &= ladderState.is(Blocks.LADDER)
+					&& ladderState.getValue(
+							LadderBlock.FACING)
+							== ladderFacing
+					&& supportState.is(
+							CakeWorldBlocks
+									.CANDY_CANE_PILLAR
+									.get())
+					&& supportState.getValue(
+							RotatedPillarBlock.AXIS)
+							== Direction.Axis.Y;
+		}
+		boolean safety = true;
+		for (int[] pad : new int[][] {
+				{0, 0}, {4, 0}, {-4, 0},
+				{0, 4}, {0, -4}}) {
+			safety &= level.getBlockState(
+					local(centre, rotation,
+							pad[0], 0, pad[1]))
+					.is(CakeWorldBlocks
+							.MARSHMALLOW.get());
+		}
+		for (int x = -1; x <= 1; x++) {
+			for (int z = -13; z <= -11; z++) {
+				safety &= level.getBlockState(
+						local(centre, rotation,
+								x, 0, z))
+						.is(CakeWorldBlocks
+								.MARSHMALLOW.get());
+			}
+		}
+		boolean hostFamilies = true;
+		for (int across = -4;
+				across <= 4; across++) {
+			for (int y = 1; y <= 6; y++) {
+				hostFamilies &=
+						level.getBlockState(
+								local(centre,
+										rotation,
+										across, y,
+										-16))
+								.is(across < 0
+										? CakeWorldBlocks
+												.BISCUIT_STONE
+												.get()
+										: CakeWorldBlocks
+												.WAFER_ROCK
+												.get())
+						&& level.getBlockState(
+								local(centre,
+										rotation,
+										16, y,
+										across))
+								.is(CakeWorldBlocks
+										.PEPPERMINT_ROCK
+										.get())
+						&& level.getBlockState(
+								local(centre,
+										rotation,
+										across, y,
+										16))
+								.is(across < 0
+										? CakeWorldBlocks
+												.ROCK_CANDY
+												.get()
+										: CakeWorldBlocks
+												.NOUGAT_ROCK
+												.get())
+						&& level.getBlockState(
+								local(centre,
+										rotation,
+										-16, y,
+										across))
+								.is(across < 0
+										? CakeWorldBlocks
+												.FUDGE_ROCK
+												.get()
+										: CakeWorldBlocks
+												.BURNT_SUGAR_ROCK
+												.get());
+			}
+		}
+		boolean patterns = true;
+		for (int[] offset : new int[][] {
+				{-2, 2, -15}, {-1, 2, -15},
+				{0, 2, -15}, {1, 2, -15},
+				{2, 2, -15}, {-1, 3, -15},
+				{0, 3, -15}, {1, 3, -15},
+				{0, 4, -15}}) {
+			patterns &= level.getBlockState(
+					local(centre, rotation,
+							offset[0], offset[1],
+							offset[2]))
+					.is(CakeWorldBlocks.COCOA_CLOUD
+							.get());
+		}
+		for (int x : new int[] {
+				-3, -2, -1, 1, 2, 3}) {
+			patterns &= level.getBlockState(
+					local(centre, rotation,
+							x, 1, -14))
+					.is(CakeWorldBlocks.LIQUORICE_VEIN
+							.get());
+		}
+		patterns &= level.getBlockState(
+				local(centre, rotation,
+						15, 3, 0))
+				.is(CakeWorldBlocks.MINT_CRYSTAL.get());
+		for (int[] offset : new int[][] {
+				{0, 3, 14},
+				{-1, 3, 14}, {1, 3, 14},
+				{0, 2, 14}, {0, 4, 14},
+				{-1, 2, 14}, {1, 2, 14},
+				{-1, 4, 14}, {1, 4, 14},
+				{0, 3, 15}, {-2, 3, 14},
+				{2, 3, 14}}) {
+			patterns &= level.getBlockState(
+					local(centre, rotation,
+							offset[0], offset[1],
+							offset[2]))
+					.is(CakeWorldBlocks
+							.ROCK_CANDY_DEPOSIT.get());
+		}
+		patterns &= level.getBlockState(
+				local(centre, rotation,
+						0, 3, 13))
+				.is(CakeWorldBlocks
+						.ROCK_CANDY_DIAMOND.get());
+		for (int[] offset : new int[][] {
+				{-15, 2, -1}, {-15, 2, 0},
+				{-15, 2, 1}, {-15, 3, 0},
+				{-15, 3, 1}}) {
+			patterns &= level.getBlockState(
+					local(centre, rotation,
+							offset[0], offset[1],
+							offset[2]))
+					.is(CakeWorldBlocks
+							.SPRINKLE_CLUSTER.get());
+		}
+		patterns &= level.getBlockState(
+				local(centre, rotation,
+						-15, 4, 0))
+				.is(CakeWorldBlocks
+						.RICH_SPRINKLE_CLUSTER.get());
+		BlockPos cache =
+				RockCandyCrystalMineFeature
+						.cachePosition(
+								level.getSeed(),
+								centre);
+		BlockEntity cacheEntity =
+				level.getBlockEntity(cache);
+		String cacheLoot =
+				cacheEntity == null ? ""
+						: cacheEntity
+								.saveWithoutMetadata()
+								.getString(
+										"LootTable");
+		BlockState sentinel =
+				level.getBlockState(
+						RockCandyCrystalMineFeature
+								.reloadSentinelPosition(
+										level.getSeed(),
+										centre));
+		boolean nativeSentinel =
+				sentinel.is(CakeWorldBlocks
+						.WAFER_BLOCK.get());
+		int headframeTop = level.getHeight(
+				Heightmap.Types
+						.MOTION_BLOCKING_NO_LEAVES,
+				entrance.getX(),
+				entrance.getZ()) - 1;
+		ResourceLocation biome =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.getKey(level.getBiome(centre)
+								.value());
+		return new CrystalMineWorldAudit(
+				palette, biome, rotation,
+				surfaceAccess, shaft, safety,
+				hostFamilies, patterns,
+				nativeSentinel, headframeTop,
+				cacheLoot);
+	}
+
+	private static BlockPos local(
+			BlockPos centre, Rotation rotation,
+			int x, int y, int z) {
+		return centre.offset(
+				new BlockPos(x, y, z)
+						.rotate(rotation));
+	}
+
 	private static List<ItemStack> drops(GameTestHelper helper, Block block,
 			ItemStack tool, BlockPos origin) {
 		ResourceLocation blockId = Registry.BLOCK.getKey(block);
@@ -10626,6 +11150,20 @@ public final class DeepPantryGameTests {
 			boolean safetyPads,
 			boolean stations,
 			boolean nativeSentinel,
+			String cacheLoot) {
+	}
+
+	private record CrystalMineWorldAudit(
+			Map<Block, Integer> palette,
+			ResourceLocation biome,
+			Rotation orientation,
+			boolean surfaceAccess,
+			boolean shaft,
+			boolean safety,
+			boolean hostFamilies,
+			boolean patterns,
+			boolean nativeSentinel,
+			int headframeTop,
 			String cacheLoot) {
 	}
 
