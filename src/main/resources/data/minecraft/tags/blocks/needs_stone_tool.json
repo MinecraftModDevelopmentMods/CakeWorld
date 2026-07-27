@@ -20,6 +20,11 @@
     "cakeworld:mint_wafer_nickel",
     "cakeworld:liquorice_bricks",
     "cakeworld:liquorice_stairs",
-    "cakeworld:liquorice_fence"
+    "cakeworld:liquorice_fence",
+    "cakeworld:macaron_bricks",
+    "cakeworld:macaron_pillar",
+    "cakeworld:macaron_stairs",
+    "cakeworld:macaron_slab",
+    "cakeworld:meringue_bricks"
   ]
 }

@@ -32,6 +32,7 @@ import net.minecraft.world.level.block.InfestedBlock;
 import net.minecraft.world.level.block.OreBlock;
 import net.minecraft.world.level.block.RedStoneOreBlock;
 import net.minecraft.world.level.block.RotatedPillarBlock;
+import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -130,6 +131,48 @@ public final class CakeWorldBlocks {
 					() -> new CinnamonWartBlock(
 							BlockBehaviour.Properties.copy(
 									Blocks.NETHER_WART)));
+	public static final RegistryObject<Block> MACARON_BRICKS =
+			block("macaron_bricks",
+					BlockBehaviour.Properties.copy(
+							Blocks.PURPUR_BLOCK));
+	public static final RegistryObject<Block> MACARON_PILLAR =
+			block("macaron_pillar",
+					() -> new RotatedPillarBlock(
+							BlockBehaviour.Properties.copy(
+									Blocks.PURPUR_PILLAR)));
+	public static final RegistryObject<Block> MACARON_STAIRS =
+			block("macaron_stairs",
+					() -> new StairBlock(
+							() -> MACARON_BRICKS.get()
+									.defaultBlockState(),
+							BlockBehaviour.Properties.copy(
+									Blocks.PURPUR_STAIRS)));
+	public static final RegistryObject<Block> MACARON_SLAB =
+			block("macaron_slab",
+					() -> new SlabBlock(
+							BlockBehaviour.Properties.copy(
+									Blocks.PURPUR_SLAB)));
+	public static final RegistryObject<Block> MERINGUE_BRICKS =
+			block("meringue_bricks",
+					BlockBehaviour.Properties.copy(
+							Blocks.END_STONE_BRICKS));
+	public static final RegistryObject<Block> WAFER_PILLAR =
+			block("wafer_pillar",
+					() -> new RotatedPillarBlock(
+							BlockBehaviour.Properties.copy(
+									WAFER_BLOCK.get())));
+	public static final RegistryObject<Block> WAFER_STAIRS =
+			block("wafer_stairs",
+					() -> new StairBlock(
+							() -> WAFER_BLOCK.get()
+									.defaultBlockState(),
+							BlockBehaviour.Properties.copy(
+									WAFER_BLOCK.get())));
+	public static final RegistryObject<Block> WAFER_SLAB =
+			block("wafer_slab",
+					() -> new SlabBlock(
+							BlockBehaviour.Properties.copy(
+									WAFER_BLOCK.get())));
 	public static final RegistryObject<Block> FUDGE_ROCK = block("fudge_rock",
 			BlockBehaviour.Properties.of(Material.STONE).requiresCorrectToolForDrops()
 					.strength(2.0F, 6.0F).sound(SoundType.NETHERRACK));

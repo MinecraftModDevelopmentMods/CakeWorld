@@ -26,6 +26,7 @@ import com.mcmoddev.cakeworld.entity.GrandGumballGuardian;
 import com.mcmoddev.cakeworld.entity.GingerbreadFolk;
 import com.mcmoddev.cakeworld.entity.GumballGuardian;
 import com.mcmoddev.cakeworld.entity.JawbreakerGuardian;
+import com.mcmoddev.cakeworld.entity.MacaronClam;
 import com.mcmoddev.cakeworld.entity.SoggyBiscuit;
 import com.mcmoddev.cakeworld.init.CakeWorldBiomes;
 import com.mcmoddev.cakeworld.init.CakeWorldBlocks;
@@ -44,6 +45,8 @@ import com.mcmoddev.cakeworld.world.SodaPalaceFeature;
 import com.mcmoddev.cakeworld.world.SodaPalacePalette;
 import com.mcmoddev.cakeworld.world.SunkenSweetshopFeature;
 import com.mcmoddev.cakeworld.world.LiquoriceFortressFeature;
+import com.mcmoddev.cakeworld.world.MacaronCitadelFeature;
+import com.mcmoddev.cakeworld.world.MacaronCitadelPalette;
 import com.mcmoddev.cakeworld.world.WaferMineFeature;
 import com.mcmoddev.cakeworld.world.WaferWreckFeature;
 import com.mcmoddev.orespawn.api.CompiledOrePattern;
@@ -80,6 +83,8 @@ import net.minecraft.world.entity.monster.ElderGuardian;
 import net.minecraft.world.entity.monster.Guardian;
 import net.minecraft.world.entity.monster.Drowned;
 import net.minecraft.world.entity.monster.Blaze;
+import net.minecraft.world.entity.monster.Shulker;
+import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.VillagerType;
 import net.minecraft.world.entity.raid.Raid;
@@ -109,6 +114,7 @@ import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.levelgen.structure.EndCityPieces;
 import net.minecraft.world.level.levelgen.structure.OceanMonumentPieces;
 import net.minecraft.world.level.levelgen.structure.OceanRuinFeature;
 import net.minecraft.world.level.levelgen.structure.OceanRuinPieces;
@@ -116,6 +122,7 @@ import net.minecraft.world.level.levelgen.structure.NetherBridgePieces;
 import net.minecraft.world.level.levelgen.structure.StrongholdPieces;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
+import net.minecraft.world.level.levelgen.structure.TemplateStructurePiece;
 import net.minecraft.world.level.portal.PortalShape;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 import net.minecraft.world.level.storage.loot.LootContext;
@@ -4344,6 +4351,284 @@ public final class DeepPantryGameTests {
 		});
 	}
 
+	@GameTest(template = EMPTY, batch = "struct015world",
+			timeoutTicks = 12000)
+	public static void focusedMacaronCitadelStructureAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean(
+				"cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed Macaron Citadel audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel()
+				.getServer().getLevel(Level.END);
+		require(helper, level != null,
+				"The fixed-seed server did not expose the End");
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						MacaronCitadelFeature
+								.STRUCTURE_ID);
+		require(helper, configured != null,
+				"Macaron Citadel native configured structure was absent from the live registry");
+		LocatedCitadel citadel =
+				locateMacaronCitadel(
+						helper, level, configured,
+						new BlockPos(1024, 96,
+								1024));
+		setCitadelChunksForced(
+				level, citadel, true);
+		helper.runAfterDelay(240, () -> {
+			CitadelWorldAudit audit =
+					auditMacaronCitadel(
+							level, citadel);
+			require(helper, audit.sentinel() != null,
+					"Natural Macaron Citadel exposed no stable Macaron-Brick reload sentinel");
+			boolean sentinelAlreadyNative =
+					level.getBlockState(
+							audit.sentinel())
+							.is(Blocks.PURPUR_BLOCK);
+			Map<Block, Integer> palette =
+					audit.palette();
+			int nativeMasonry =
+					palette.getOrDefault(
+							Blocks.PURPUR_BLOCK, 0)
+					+ palette.getOrDefault(
+							Blocks.PURPUR_PILLAR, 0)
+					+ palette.getOrDefault(
+							Blocks.PURPUR_STAIRS, 0)
+					+ palette.getOrDefault(
+							Blocks.PURPUR_SLAB, 0)
+					+ palette.getOrDefault(
+							Blocks.END_STONE_BRICKS,
+							0)
+					+ palette.getOrDefault(
+							Blocks
+									.MAGENTA_STAINED_GLASS,
+							0);
+			LOGGER.info("Focused Macaron Citadel audit: locate={}, bounds={}, biome={}, templates={}, depth={}, shipPieces={}, palette={}, loot={}, lootChests={}, macaronClams={}, literalShulkers={}, elytraFrames={}, dragonHeads={}, enderChests={}, brewingStands={}, healingPotions={}, nativeMasonry={}, sentinel={}, markerPhase={}",
+					citadel.located(),
+					citadel.bounds(),
+					audit.biome(),
+					audit.templates(),
+					audit.maximumDepth(),
+					audit.shipPieces(),
+					audit.palette(),
+					audit.loot(),
+					audit.lootChests(),
+					audit.macaronClams(),
+					audit.literalShulkers(),
+					audit.elytraFrames(),
+					audit.dragonHeads(),
+					audit.enderChests(),
+					audit.brewingStands(),
+					audit.healingPotions(),
+					nativeMasonry,
+					audit.sentinel(),
+					sentinelAlreadyNative
+							? "reloaded"
+							: "seeded");
+			require(helper,
+					CakeWorldBiomes.MERINGUE_ISLANDS
+							.getId().equals(
+									audit.biome())
+							&& audit
+									.literalEligible(),
+					"Natural Macaron Citadel left Meringue Islands or lost native/CakeWorld biome eligibility: biome="
+							+ audit.biome()
+							+ ", eligible="
+							+ audit
+									.literalEligible());
+			require(helper,
+					citadel.start().isValid()
+							&& citadel.start()
+									.getFeature()
+									== configured
+							&& citadel.start()
+									.getPieces()
+									.size() >= 4
+							&& citadel.start()
+									.getPieces()
+									.stream()
+									.allMatch(
+											EndCityPieces
+													.EndCityPiece
+													.class
+													::isInstance)
+							&& audit.maximumDepth()
+									<= 8
+							&& citadel.bounds()
+									.minY() >= 60
+							&& audit.templates()
+									.keySet().stream()
+									.anyMatch(name ->
+											name.contains(
+													"tower"))
+							&& audit.shipPieces()
+									<= 1,
+					"Natural Macaron Citadel lost its native saved tower graph, depth-eight, height gate or at-most-one-airship contract: pieces="
+							+ citadel.start()
+									.getPieces()
+									.size()
+							+ ", templates="
+							+ audit.templates()
+							+ ", depth="
+							+ audit.maximumDepth()
+							+ ", bounds="
+							+ citadel.bounds());
+			require(helper,
+					palette.getOrDefault(
+							CakeWorldBlocks
+									.MACARON_BRICKS
+									.get(), 0) > 25
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.MACARON_PILLAR
+											.get(),
+									0) > 0
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.MACARON_STAIRS
+											.get(),
+									0) > 0
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.MERINGUE_BRICKS
+											.get(),
+									0) > 0
+							&& nativeMasonry
+									== (sentinelAlreadyNative
+											? 1 : 0),
+					"Natural Macaron Citadel lost its complete piece-bounded tower palette or rewrote more than the explicit reload sentinel: native="
+							+ nativeMasonry
+							+ ", palette="
+							+ palette);
+			require(helper,
+					audit.loot().stream()
+							.allMatch(loot -> loot
+									.equals(
+											BuiltInLootTables
+													.END_CITY_TREASURE))
+							&& audit.literalShulkers()
+									== 0
+							&& audit.macaronClams()
+									> 0,
+					"Natural Macaron Citadel lost native treasure identity or retained literal Shulker markers: loot="
+							+ audit.loot()
+							+ ", custom="
+							+ audit.macaronClams()
+							+ ", literal="
+							+ audit.literalShulkers());
+			int thirdFloorTwos =
+					audit.templates().entrySet()
+							.stream()
+							.filter(entry -> entry
+									.getKey()
+									.equals(
+											"third_floor_2")
+									|| entry.getKey()
+											.endsWith(
+													"/third_floor_2"))
+							.mapToInt(
+									Map.Entry::getValue)
+							.sum();
+			require(helper,
+					audit.enderChests()
+									== thirdFloorTwos
+							&& (audit.lootChests()
+									== 0
+									|| audit.loot().equals(
+											Set.of(
+													BuiltInLootTables
+															.END_CITY_TREASURE))),
+					"Natural Macaron Citadel lost saved third-floor Ender-Chest or treasure-container roles: thirdFloor2="
+							+ thirdFloorTwos
+							+ ", enderChests="
+							+ audit.enderChests()
+							+ ", lootChests="
+							+ audit.lootChests()
+							+ ", loot="
+							+ audit.loot());
+			if (audit.shipPieces() == 1) {
+				require(helper,
+						palette.getOrDefault(
+								CakeWorldBlocks
+										.WAFER_BLOCK
+										.get(), 0)
+										> 0
+								&& palette
+										.getOrDefault(
+												CakeWorldBlocks
+														.WAFER_PILLAR
+														.get(),
+												0)
+										> 0
+								&& palette
+										.getOrDefault(
+												CakeWorldBlocks
+														.WAFER_STAIRS
+														.get(),
+												0)
+										> 0
+								&& palette
+										.getOrDefault(
+												CakeWorldBlocks
+														.WAFER_SLAB
+														.get(),
+												0)
+										> 0
+								&& audit.elytraFrames()
+										== 1
+								&& audit.dragonHeads()
+										== 1
+								&& audit.brewingStands()
+										== 1
+								&& audit.healingPotions()
+										== 2,
+						"Natural Wafer Airship lost its separate palette, Elytra, Dragon Head or healing supplies: palette="
+								+ palette
+								+ ", frames="
+								+ audit.elytraFrames()
+								+ ", heads="
+								+ audit.dragonHeads()
+								+ ", brewing="
+								+ audit.brewingStands()
+								+ ", healing="
+								+ audit.healingPotions());
+			} else {
+				require(helper,
+						audit.elytraFrames() == 0
+								&& audit.dragonHeads()
+										== 0
+								&& audit.brewingStands()
+										== 0
+								&& audit.healingPotions()
+										== 0,
+						"Ship-only End-City rewards appeared in a natural graph with no Wafer Airship");
+			}
+			if (!sentinelAlreadyNative) {
+				level.setBlock(audit.sentinel(),
+						Blocks.PURPUR_BLOCK
+								.defaultBlockState(),
+						2);
+				require(helper,
+						level.getBlockState(
+								audit.sentinel())
+								.is(Blocks
+										.PURPUR_BLOCK),
+						"Could not seed the explicit player-placed Purpur reload sentinel");
+			}
+			setCitadelChunksForced(
+					level, citadel, false);
+			helper.succeed();
+		});
+	}
+
 	@GameTest(template = EMPTY, timeoutTicks = 1200)
 	public static void baseMetalsCounterpartsPreserveTagsRecipesAndGeneration(
 			GameTestHelper helper) {
@@ -5515,6 +5800,289 @@ public final class DeepPantryGameTests {
 		require(helper, !profile.toJson().get("manage_vanilla_ores").getAsBoolean(),
 				"Unsafe themed-ore takeover was enabled before OreSpawn can map source blocks");
 		helper.succeed();
+	}
+
+	private static LocatedCitadel locateMacaronCitadel(
+			GameTestHelper helper, ServerLevel level,
+			ConfiguredStructureFeature<?, ?> configured,
+			BlockPos origin) {
+		BlockPos located = level.findNearestMapFeature(
+				MacaronCitadelFeature.STRUCTURE_TAG,
+				origin, 512, false);
+		require(helper, located != null,
+				"The fixed-seed CakeWorld contained no locatable Macaron Citadel within 512 chunks of the End search anchor");
+		ChunkPos startChunk = new ChunkPos(located);
+		net.minecraft.world.level.chunk.LevelChunk
+				startLevelChunk =
+				level.getChunk(startChunk.x,
+						startChunk.z);
+		StructureStart start =
+				startLevelChunk.getStartForFeature(
+						configured);
+		if (start == null || !start.isValid()) {
+			List<StructureStart> references =
+					level.structureFeatureManager()
+							.startsForFeature(
+									net.minecraft.core
+											.SectionPos
+											.of(located),
+									configured);
+			start = references.stream()
+					.filter(StructureStart::isValid)
+					.findFirst().orElse(null);
+		}
+		require(helper,
+				start != null && start.isValid()
+						&& start.getFeature()
+								== configured
+						&& !start.getPieces()
+								.isEmpty(),
+				"The located Macaron Citadel lost its saved native End-City start");
+		return new LocatedCitadel(
+				located, start.getBoundingBox(),
+				start.getChunkPos(), start);
+	}
+
+	private static void setCitadelChunksForced(
+			ServerLevel level,
+			LocatedCitadel citadel,
+			boolean forced) {
+		Set<ChunkPos> chunks =
+				new java.util.LinkedHashSet<>();
+		for (StructurePiece piece
+				: citadel.start().getPieces()) {
+			BoundingBox bounds =
+					piece.getBoundingBox();
+			int minimumChunkX = Math.floorDiv(
+					bounds.minX(), 16);
+			int maximumChunkX = Math.floorDiv(
+					bounds.maxX(), 16);
+			int minimumChunkZ = Math.floorDiv(
+					bounds.minZ(), 16);
+			int maximumChunkZ = Math.floorDiv(
+					bounds.maxZ(), 16);
+			for (int chunkX = minimumChunkX;
+					chunkX <= maximumChunkX;
+					chunkX++) {
+				for (int chunkZ = minimumChunkZ;
+						chunkZ <= maximumChunkZ;
+						chunkZ++) {
+					chunks.add(new ChunkPos(
+							chunkX, chunkZ));
+				}
+			}
+		}
+		for (ChunkPos chunk : chunks) {
+			level.setChunkForced(
+					chunk.x, chunk.z, forced);
+			if (forced) {
+				level.getChunk(chunk.x, chunk.z);
+			}
+		}
+	}
+
+	private static CitadelWorldAudit
+			auditMacaronCitadel(
+					ServerLevel level,
+					LocatedCitadel citadel) {
+		Map<Block, Integer> palette =
+				new LinkedHashMap<>();
+		Map<String, Integer> templates =
+				new LinkedHashMap<>();
+		Set<ResourceLocation> loot =
+				new java.util.LinkedHashSet<>();
+		Set<Long> visited =
+				new java.util.HashSet<>();
+		int maximumDepth = -1;
+		int shipPieces = 0;
+		int lootChests = 0;
+		int dragonHeads = 0;
+		int enderChests = 0;
+		int brewingStands = 0;
+		int healingPotions = 0;
+		BlockPos sentinel = null;
+		List<StructurePiece> orderedPieces =
+				citadel.start().getPieces().stream()
+						.sorted(java.util.Comparator
+								.comparingInt(
+										(StructurePiece piece) ->
+												piece.getBoundingBox()
+														.minX())
+								.thenComparingInt(piece ->
+										piece.getBoundingBox()
+												.minY())
+								.thenComparingInt(piece ->
+										piece.getBoundingBox()
+												.minZ())
+								.thenComparing(piece ->
+										savedEndCityTemplateName(
+												piece)))
+						.toList();
+		for (StructurePiece piece : orderedPieces) {
+			String template =
+					savedEndCityTemplateName(piece);
+			templates.merge(template, 1,
+					Integer::sum);
+			maximumDepth = Math.max(maximumDepth,
+					piece.getGenDepth());
+			if (MacaronCitadelPalette
+					.isWaferAirship(
+							piece.getBoundingBox())) {
+				shipPieces++;
+			}
+			BoundingBox bounds =
+					piece.getBoundingBox();
+			for (int x = bounds.minX();
+					x <= bounds.maxX(); x++) {
+				for (int y = bounds.minY();
+						y <= bounds.maxY(); y++) {
+					for (int z = bounds.minZ();
+							z <= bounds.maxZ();
+							z++) {
+						BlockPos position =
+								new BlockPos(
+										x, y, z);
+						if (!visited.add(
+								position.asLong())) {
+							continue;
+						}
+						Block block =
+								level.getBlockState(
+										position)
+										.getBlock();
+						palette.merge(block, 1,
+								Integer::sum);
+						if (sentinel == null
+								&& (block
+										== CakeWorldBlocks
+												.MACARON_BRICKS
+												.get()
+										|| block
+												== Blocks
+														.PURPUR_BLOCK)) {
+							sentinel =
+									position.immutable();
+						}
+						if (block
+								== Blocks
+										.DRAGON_WALL_HEAD) {
+							dragonHeads++;
+						}
+						if (block
+								== Blocks.ENDER_CHEST) {
+							enderChests++;
+						}
+						BlockEntity entity =
+								level.getBlockEntity(
+										position);
+						if (entity
+								instanceof BrewingStandBlockEntity
+										stand) {
+							brewingStands++;
+							for (int slot = 0;
+									slot < stand
+											.getContainerSize();
+									slot++) {
+								if (PotionUtils
+										.getPotion(
+												stand.getItem(
+														slot))
+										== Potions
+												.STRONG_HEALING) {
+									healingPotions++;
+								}
+							}
+						}
+						if (entity != null) {
+							String lootId =
+									entity.saveWithoutMetadata()
+											.getString(
+													"LootTable");
+							if (!lootId.isEmpty()) {
+								lootChests++;
+								loot.add(
+										new ResourceLocation(
+												lootId));
+							}
+						}
+					}
+				}
+			}
+		}
+		BoundingBox bounds = citadel.bounds();
+		AABB area = new AABB(
+				bounds.minX(), bounds.minY(),
+				bounds.minZ(),
+				bounds.maxX() + 1,
+				bounds.maxY() + 1,
+				bounds.maxZ() + 1);
+		int macaronClams =
+				level.getEntitiesOfClass(
+						MacaronClam.class, area)
+						.size();
+		int literalShulkers =
+				(int)level.getEntitiesOfClass(
+						Shulker.class, area)
+						.stream()
+						.filter(shulker ->
+								shulker.getType()
+										== EntityType
+												.SHULKER)
+						.count();
+		int elytraFrames =
+				(int)level.getEntitiesOfClass(
+						ItemFrame.class, area)
+						.stream()
+						.filter(frame -> frame.getItem()
+								.is(Items.ELYTRA))
+						.count();
+		BlockPos centre = bounds.getCenter();
+		ResourceLocation biomeId =
+				level.getBiome(centre).unwrapKey()
+						.map(key -> key.location())
+						.orElse(null);
+		boolean literalEligible =
+				level.getBiome(centre).is(
+						BiomeTags.HAS_END_CITY)
+						&& level.getBiome(centre).is(
+								MacaronCitadelFeature
+										.GENERATES_IN);
+		return new CitadelWorldAudit(
+				palette, biomeId, templates,
+				maximumDepth, shipPieces, loot,
+				lootChests, macaronClams,
+				literalShulkers, elytraFrames,
+				dragonHeads, enderChests,
+				brewingStands, healingPotions,
+				literalEligible, sentinel);
+	}
+
+	private static String savedEndCityTemplateName(
+			StructurePiece piece) {
+		requireEndCityPiece(piece);
+		try {
+			Field templateName =
+					TemplateStructurePiece.class
+							.getDeclaredField(
+									"templateName");
+			templateName.setAccessible(true);
+			return templateName.get(piece).toString();
+		} catch (ReflectiveOperationException exception) {
+			throw new AssertionError(
+					"Could not inspect saved End-City template identity",
+					exception);
+		}
+	}
+
+	private static void requireEndCityPiece(
+			StructurePiece piece) {
+		if (!(piece
+				instanceof EndCityPieces.EndCityPiece)) {
+			throw new AssertionError(
+					"Macaron Citadel saved a non-End-City piece: "
+							+ piece.getClass()
+									.getName());
+		}
 	}
 
 	private static LocatedFortress locateLiquoriceFortress(
@@ -7076,6 +7644,32 @@ public final class DeepPantryGameTests {
 			int soggyBiscuits,
 			int literalDrowned,
 			boolean literalEligible) {
+	}
+
+	private record LocatedCitadel(
+			BlockPos located,
+			BoundingBox bounds,
+			ChunkPos startChunk,
+			StructureStart start) {
+	}
+
+	private record CitadelWorldAudit(
+			Map<Block, Integer> palette,
+			ResourceLocation biome,
+			Map<String, Integer> templates,
+			int maximumDepth,
+			int shipPieces,
+			Set<ResourceLocation> loot,
+			int lootChests,
+			int macaronClams,
+			int literalShulkers,
+			int elytraFrames,
+			int dragonHeads,
+			int enderChests,
+			int brewingStands,
+			int healingPotions,
+			boolean literalEligible,
+			BlockPos sentinel) {
 	}
 
 	private record LocatedFortress(

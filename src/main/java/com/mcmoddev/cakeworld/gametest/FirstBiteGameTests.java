@@ -178,6 +178,8 @@ import com.mcmoddev.cakeworld.world.SunkenSweetshopFeature;
 import com.mcmoddev.cakeworld.world.SunkenSweetshopPalette;
 import com.mcmoddev.cakeworld.world.LiquoriceFortressFeature;
 import com.mcmoddev.cakeworld.world.LiquoriceFortressPalette;
+import com.mcmoddev.cakeworld.world.MacaronCitadelFeature;
+import com.mcmoddev.cakeworld.world.MacaronCitadelPalette;
 import com.mcmoddev.cakeworld.world.WaferMineFeature;
 import com.mcmoddev.cakeworld.world.WaferMineStructureFeature;
 import com.mcmoddev.cakeworld.world.WaferWreckFeature;
@@ -267,6 +269,7 @@ import net.minecraft.world.entity.ai.sensing.HoglinSpecificSensor;
 import net.minecraft.world.entity.ai.sensing.NearestLivingEntitySensor;
 import net.minecraft.world.entity.ai.sensing.PiglinSpecificSensor;
 import net.minecraft.world.entity.ai.village.ReputationEventType;
+import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.SpawnPlacements;
@@ -399,6 +402,7 @@ import net.minecraft.world.level.block.EndPortalFrameBlock;
 import net.minecraft.world.level.block.FenceBlock;
 import net.minecraft.world.level.block.NetherWartBlock;
 import net.minecraft.world.level.block.StairBlock;
+import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.WitherSkullBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BrewingStandBlockEntity;
@@ -415,6 +419,7 @@ import net.minecraft.world.level.block.state.properties.BedPart;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.Half;
 import net.minecraft.world.level.block.state.properties.StairsShape;
+import net.minecraft.world.level.block.state.properties.SlabType;
 import net.minecraft.world.level.block.TurtleEggBlock;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeGenerationSettings;
@@ -430,6 +435,7 @@ import net.minecraft.world.level.levelgen.feature.StructureFeature;
 import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 import net.minecraft.world.level.levelgen.feature.configurations.OceanRuinConfiguration;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.levelgen.structure.EndCityPieces;
 import net.minecraft.world.level.levelgen.structure.NetherBridgePieces;
 import net.minecraft.world.level.levelgen.structure.OceanMonumentPieces;
 import net.minecraft.world.level.levelgen.structure.OceanRuinFeature;
@@ -38196,6 +38202,636 @@ public final class FirstBiteGameTests {
 						+ replacement);
 		replacement.discard();
 		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, batch = "struct015",
+			timeoutTicks = 2400)
+	public static void macaronCitadelKeepsNativeGraphAirshipLootAndElytra(
+			GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						MacaronCitadelFeature
+								.STRUCTURE_ID);
+		Registry<net.minecraft.world.level.levelgen.structure.StructureSet>
+				structureSets =
+				level.registryAccess().registryOrThrow(
+						Registry.STRUCTURE_SET_REGISTRY);
+		net.minecraft.world.level.levelgen.structure.StructureSet
+				structureSet =
+				structureSets.get(
+						MacaronCitadelFeature
+								.STRUCTURE_SET_ID);
+		boolean ownStructureTag =
+				structures.getTag(
+						MacaronCitadelFeature
+								.STRUCTURE_TAG)
+						.map(tag -> tag.stream()
+								.anyMatch(holder ->
+										holder.value()
+												== configured))
+						.orElse(false);
+		Registry<Biome> biomes =
+				level.registryAccess().registryOrThrow(
+						Registry.BIOME_REGISTRY);
+		Holder<Biome> meringueIslands =
+				biomes.getHolderOrThrow(
+						ResourceKey.create(
+								Registry.BIOME_REGISTRY,
+								CakeWorldBiomes
+										.MERINGUE_ISLANDS
+										.getId()));
+		boolean ownBiomeTag = meringueIslands.is(
+				MacaronCitadelFeature.GENERATES_IN);
+		boolean nativeBiomeTag = meringueIslands.is(
+				BiomeTags.HAS_END_CITY);
+		require(helper,
+				configured != null
+						&& configured.feature
+								== StructureFeature.END_CITY
+						&& configured.config
+								== NoneFeatureConfiguration
+										.INSTANCE
+						&& !configured.adaptNoise
+						&& configured.feature.step()
+								== GenerationStep
+										.Decoration
+										.SURFACE_STRUCTURES
+						&& configured.spawnOverrides
+								.isEmpty()
+						&& ownStructureTag
+						&& ownBiomeTag
+						&& nativeBiomeTag,
+				"Macaron Citadel lost native End-City identity, empty override table or Meringue-Islands eligibility: ownStructure="
+						+ ownStructureTag
+						+ ", biomes=" + ownBiomeTag
+						+ "/" + nativeBiomeTag);
+
+		require(helper,
+				structureSet != null
+						&& structureSet.structures()
+								.size() == 1
+						&& structureSet.structures()
+								.get(0).weight() == 1
+						&& structureSet.structures()
+								.get(0).structure()
+								.value() == configured
+						&& structureSet.placement()
+								instanceof net.minecraft.world.level
+										.levelgen.structure.placement
+										.RandomSpreadStructurePlacement,
+				"Macaron Citadel lost the one-entry native End Cities set");
+		net.minecraft.world.level.levelgen.structure.placement
+				.RandomSpreadStructurePlacement placement =
+				(net.minecraft.world.level.levelgen.structure
+						.placement.RandomSpreadStructurePlacement)
+						structureSet.placement();
+		require(helper,
+				placement.spacing() == 20
+						&& placement.separation() == 11
+						&& placement.spreadType()
+								== net.minecraft.world.level
+										.levelgen.structure
+										.placement
+										.RandomSpreadType
+										.TRIANGULAR
+						&& placement.salt() == 10387313,
+				"Macaron Citadel lost native 20/11/10387313 triangular placement");
+
+		String[] nativeTemplates = {
+			"base_floor", "base_roof", "bridge_end",
+			"bridge_gentle_stairs", "bridge_piece",
+			"bridge_steep_stairs", "fat_tower_base",
+			"fat_tower_middle", "fat_tower_top",
+			"second_floor_1", "second_floor_2",
+			"second_roof", "ship", "third_floor_1",
+			"third_floor_2", "third_roof", "tower_base",
+			"tower_floor", "tower_piece", "tower_top"
+		};
+		List<String> missingTemplates =
+				java.util.Arrays.stream(nativeTemplates)
+						.filter(name -> level
+								.getStructureManager()
+								.get(new ResourceLocation(
+										"minecraft",
+										"end_city/" + name))
+								.isEmpty())
+						.toList();
+		require(helper, missingTemplates.isEmpty(),
+				"Macaron Citadel lost native End-City tower, bridge or ship templates: "
+						+ missingTemplates);
+
+		PiecesContainer graph = null;
+		Set<String> graphTemplates = Set.of();
+		long graphSeed = -1L;
+		try {
+			Field maximumDepth =
+					EndCityPieces.class.getDeclaredField(
+							"MAX_GEN_DEPTH");
+			Field templateName =
+					TemplateStructurePiece.class
+							.getDeclaredField(
+									"templateName");
+			maximumDepth.setAccessible(true);
+			templateName.setAccessible(true);
+			require(helper,
+					maximumDepth.getInt(null) == 8,
+					"Macaron Citadel lost native recursive depth eight");
+			BlockPos graphAnchor =
+					new BlockPos(0, 96, 0);
+			for (long seed = 0L;
+					seed < 4096L && graph == null; seed++) {
+				List<StructurePiece> pieces =
+						new java.util.ArrayList<>();
+				EndCityPieces.startHouseTower(
+						level.getStructureManager(),
+						graphAnchor, Rotation.NONE,
+						pieces, new Random(seed));
+				Set<String> names =
+						new java.util.LinkedHashSet<>();
+				for (StructurePiece piece : pieces) {
+					names.add(templateName.get(piece)
+							.toString());
+				}
+				long ships = pieces.stream()
+						.filter(piece -> {
+							try {
+								return templateName
+										.get(piece)
+										.toString()
+										.endsWith(
+												"/ship");
+							} catch (IllegalAccessException
+									exception) {
+								throw new AssertionError(
+										exception);
+							}
+						}).count();
+				require(helper, ships <= 1,
+						"Native End-City graph created more than one ship at seed "
+								+ seed + ": "
+								+ names);
+				boolean representative =
+						pieces.size() >= 10
+								&& names.stream()
+										.anyMatch(name ->
+												name.contains(
+														"bridge"))
+								&& names.stream()
+										.anyMatch(name ->
+												name.contains(
+														"tower"));
+				if (representative) {
+					graph = new PiecesContainer(
+							pieces);
+					graphTemplates = names;
+					graphSeed = seed;
+				}
+			}
+		} catch (ReflectiveOperationException exception) {
+			throw new AssertionError(
+					"Could not inspect native End-City depth or saved template identity",
+					exception);
+		}
+		require(helper,
+				graph != null
+						&& graph.pieces().size() >= 10
+						&& graph.pieces().stream()
+								.allMatch(
+										EndCityPieces
+												.EndCityPiece
+												.class
+												::isInstance)
+						&& graphTemplates.stream()
+								.anyMatch(name -> name
+										.contains("bridge"))
+						&& graphTemplates.stream()
+								.anyMatch(name -> name
+										.contains("tower")),
+				"Could not obtain a representative native End-City tower/bridge graph in 4096 seeds: seed="
+						+ graphSeed + ", templates="
+						+ graphTemplates);
+		BoundingBox graphBounds =
+				graph.calculateBoundingBox();
+		require(helper,
+				graphBounds.getXSpan() <= 320
+						&& graphBounds.getYSpan() <= 160
+						&& graphBounds.getZSpan() <= 320,
+				"Native End-City graph escaped its bounded recursive envelope: "
+						+ graphBounds);
+
+		BlockPos local =
+				helper.absolutePos(
+						new BlockPos(4, 4, 4));
+		BlockPos towerAnchor = new BlockPos(
+				local.getX(),
+				level.getMaxBuildHeight() - 120,
+				local.getZ());
+		BlockPos shipAnchor = new BlockPos(
+				local.getX(),
+				level.getMaxBuildHeight() - 64,
+				local.getZ());
+		EndCityPieces.EndCityPiece tower =
+				new EndCityPieces.EndCityPiece(
+						level.getStructureManager(),
+						"third_floor_2",
+						towerAnchor, Rotation.NONE,
+						true);
+		EndCityPieces.EndCityPiece ship =
+				new EndCityPieces.EndCityPiece(
+						level.getStructureManager(),
+						"ship", shipAnchor,
+						Rotation.NONE, true);
+		BoundingBox towerBounds =
+				tower.getBoundingBox();
+		BoundingBox shipBounds = ship.getBoundingBox();
+		AABB towerArea = new AABB(
+				towerBounds.minX(), towerBounds.minY(),
+				towerBounds.minZ(),
+				towerBounds.maxX() + 1,
+				towerBounds.maxY() + 1,
+				towerBounds.maxZ() + 1);
+		AABB shipArea = new AABB(
+				shipBounds.minX(), shipBounds.minY(),
+				shipBounds.minZ(),
+				shipBounds.maxX() + 1,
+				shipBounds.maxY() + 1,
+				shipBounds.maxZ() + 1);
+		level.getEntitiesOfClass(
+				Entity.class, towerArea)
+				.forEach(Entity::discard);
+		level.getEntitiesOfClass(
+				Entity.class, shipArea)
+				.forEach(Entity::discard);
+		for (EndCityPieces.EndCityPiece piece
+				: List.of(tower, ship)) {
+			BoundingBox bounds = piece.getBoundingBox();
+			piece.postProcess(level,
+					level.structureFeatureManager(),
+					level.getChunkSource()
+							.getGenerator(),
+					new Random(graphSeed), bounds,
+					new ChunkPos(bounds.getCenter()),
+					bounds.getCenter());
+		}
+		require(helper,
+				!MacaronCitadelPalette
+						.isWaferAirship(towerBounds)
+						&& MacaronCitadelPalette
+								.isWaferAirship(
+										shipBounds),
+				"Macaron Citadel lost its reflection-free unique 13x24x29 Airship boundary: tower="
+						+ towerBounds + ", ship="
+						+ shipBounds);
+
+		BlockPos pillarPosition =
+				BlockPos.betweenClosedStream(
+						shipBounds.minX(),
+						shipBounds.minY(),
+						shipBounds.minZ(),
+						shipBounds.maxX(),
+						shipBounds.maxY(),
+						shipBounds.maxZ())
+						.filter(position -> level
+								.getBlockState(position)
+								.is(Blocks.PURPUR_PILLAR))
+						.map(BlockPos::immutable)
+						.findFirst().orElse(null);
+		BlockPos stairPosition =
+				BlockPos.betweenClosedStream(
+						shipBounds.minX(),
+						shipBounds.minY(),
+						shipBounds.minZ(),
+						shipBounds.maxX(),
+						shipBounds.maxY(),
+						shipBounds.maxZ())
+						.filter(position -> level
+								.getBlockState(position)
+								.is(Blocks.PURPUR_STAIRS))
+						.map(BlockPos::immutable)
+						.findFirst().orElse(null);
+		BlockPos slabPosition =
+				BlockPos.betweenClosedStream(
+						shipBounds.minX(),
+						shipBounds.minY(),
+						shipBounds.minZ(),
+						shipBounds.maxX(),
+						shipBounds.maxY(),
+						shipBounds.maxZ())
+						.filter(position -> level
+								.getBlockState(position)
+								.is(Blocks.PURPUR_SLAB))
+						.map(BlockPos::immutable)
+						.findFirst().orElse(null);
+		require(helper,
+				pillarPosition != null
+						&& stairPosition != null
+						&& slabPosition != null,
+				"Native Wafer Airship fixture lost pillar, stair or slab source states");
+		BlockState pillarSource =
+				level.getBlockState(pillarPosition);
+		BlockState stairSource =
+				level.getBlockState(stairPosition);
+		BlockState slabSource =
+				level.getBlockState(slabPosition);
+
+		MacaronCitadelPalette.applyEdiblePalette(
+				level, towerBounds,
+				new PiecesContainer(List.of(tower)));
+		MacaronCitadelPalette.applyEdiblePalette(
+				level, shipBounds,
+				new PiecesContainer(List.of(ship)));
+		Map<Block, Integer> towerPalette =
+				scanBoundingBoxPalette(level,
+						towerBounds);
+		Map<Block, Integer> shipPalette =
+				scanBoundingBoxPalette(level,
+						shipBounds);
+		MacaronCitadelPalette.applyEdiblePalette(
+				level, towerBounds,
+				new PiecesContainer(List.of(tower)));
+		MacaronCitadelPalette.applyEdiblePalette(
+				level, shipBounds,
+				new PiecesContainer(List.of(ship)));
+		require(helper,
+				towerPalette.equals(
+						scanBoundingBoxPalette(
+								level,
+								towerBounds))
+						&& shipPalette.equals(
+								scanBoundingBoxPalette(
+										level,
+										shipBounds)),
+				"Macaron Citadel palette was not idempotent");
+
+		int towerNative = towerPalette.getOrDefault(
+				Blocks.PURPUR_BLOCK, 0)
+				+ towerPalette.getOrDefault(
+						Blocks.PURPUR_PILLAR, 0)
+				+ towerPalette.getOrDefault(
+						Blocks.PURPUR_STAIRS, 0)
+				+ towerPalette.getOrDefault(
+						Blocks.PURPUR_SLAB, 0)
+				+ towerPalette.getOrDefault(
+						Blocks.END_STONE_BRICKS, 0)
+				+ towerPalette.getOrDefault(
+						Blocks.MAGENTA_STAINED_GLASS,
+						0);
+		int shipNative = shipPalette.getOrDefault(
+				Blocks.PURPUR_BLOCK, 0)
+				+ shipPalette.getOrDefault(
+						Blocks.PURPUR_PILLAR, 0)
+				+ shipPalette.getOrDefault(
+						Blocks.PURPUR_STAIRS, 0)
+				+ shipPalette.getOrDefault(
+						Blocks.PURPUR_SLAB, 0)
+				+ shipPalette.getOrDefault(
+						Blocks.END_STONE_BRICKS, 0)
+				+ shipPalette.getOrDefault(
+						Blocks.MAGENTA_STAINED_GLASS,
+						0);
+		require(helper,
+				towerPalette.getOrDefault(
+						CakeWorldBlocks.MACARON_BRICKS
+								.get(), 0) > 0
+						&& towerPalette.getOrDefault(
+								CakeWorldBlocks
+										.MACARON_PILLAR
+										.get(),
+								0) > 0
+						&& towerPalette.getOrDefault(
+								CakeWorldBlocks
+										.MACARON_STAIRS
+										.get(),
+								0) > 0
+						&& towerPalette.getOrDefault(
+								CakeWorldBlocks
+										.MERINGUE_BRICKS
+										.get(),
+								0) > 0
+						&& towerPalette.getOrDefault(
+								CakeWorldBlocks
+										.CANDY_GLASS
+										.get(),
+								0) > 0
+						&& shipPalette.getOrDefault(
+								CakeWorldBlocks
+										.WAFER_BLOCK
+										.get(),
+								0) > 0
+						&& shipPalette.getOrDefault(
+								CakeWorldBlocks
+										.WAFER_PILLAR
+										.get(),
+								0) > 0
+						&& shipPalette.getOrDefault(
+								CakeWorldBlocks
+										.WAFER_STAIRS
+										.get(),
+								0) > 0
+						&& shipPalette.getOrDefault(
+								CakeWorldBlocks
+										.WAFER_SLAB
+										.get(),
+								0) > 0
+						&& shipPalette.getOrDefault(
+								CakeWorldBlocks
+										.CANDY_GLASS
+										.get(),
+								0) > 0
+						&& towerNative == 0
+						&& shipNative == 0,
+				"Macaron Citadel or Wafer Airship lost complete tower/ship palette separation: tower="
+						+ towerPalette + ", ship="
+						+ shipPalette);
+
+		BlockState pillarThemed =
+				level.getBlockState(pillarPosition);
+		BlockState stairThemed =
+				level.getBlockState(stairPosition);
+		BlockState slabThemed =
+				level.getBlockState(slabPosition);
+		require(helper,
+				pillarThemed.is(
+						CakeWorldBlocks.WAFER_PILLAR
+								.get())
+						&& pillarThemed.getValue(
+								RotatedPillarBlock
+										.AXIS)
+								== pillarSource.getValue(
+										RotatedPillarBlock
+												.AXIS)
+						&& stairThemed.is(
+								CakeWorldBlocks.WAFER_STAIRS
+										.get())
+						&& stairThemed.getValue(
+								StairBlock.FACING)
+								== stairSource.getValue(
+										StairBlock
+												.FACING)
+						&& stairThemed.getValue(
+								StairBlock.HALF)
+								== stairSource.getValue(
+										StairBlock.HALF)
+						&& stairThemed.getValue(
+								StairBlock.SHAPE)
+								== stairSource.getValue(
+										StairBlock
+												.SHAPE)
+						&& slabThemed.is(
+								CakeWorldBlocks.WAFER_SLAB
+										.get())
+						&& slabThemed.getValue(
+								SlabBlock.TYPE)
+								== slabSource.getValue(
+										SlabBlock.TYPE),
+				"Wafer Airship lost axis, stair or slab state during palette conversion: "
+						+ List.of(pillarSource,
+								pillarThemed,
+								stairSource,
+								stairThemed,
+								slabSource,
+								slabThemed));
+
+		List<BoundingBox> fixtureBounds =
+				List.of(towerBounds, shipBounds);
+		Set<ResourceLocation> loot =
+				new java.util.LinkedHashSet<>();
+		int lootChests = 0;
+		BrewingStandBlockEntity brewingStand = null;
+		for (BoundingBox bounds : fixtureBounds) {
+			for (int x = bounds.minX();
+					x <= bounds.maxX(); x++) {
+				for (int y = bounds.minY();
+						y <= bounds.maxY(); y++) {
+					for (int z = bounds.minZ();
+							z <= bounds.maxZ(); z++) {
+						BlockEntity blockEntity =
+								level.getBlockEntity(
+										new BlockPos(
+												x, y,
+												z));
+						if (blockEntity == null) {
+							continue;
+						}
+						if (blockEntity
+								instanceof BrewingStandBlockEntity
+										stand) {
+							brewingStand = stand;
+						}
+						CompoundTag saved =
+								blockEntity
+										.saveWithoutMetadata();
+						if (saved.contains(
+								"LootTable")) {
+							lootChests++;
+							loot.add(
+									new ResourceLocation(
+											saved.getString(
+													"LootTable")));
+						}
+					}
+				}
+			}
+		}
+		require(helper,
+				lootChests == 3
+						&& loot.equals(Set.of(
+								BuiltInLootTables
+										.END_CITY_TREASURE))
+						&& brewingStand != null
+						&& PotionUtils.getPotion(
+								brewingStand.getItem(0))
+								== Potions.STRONG_HEALING
+						&& PotionUtils.getPotion(
+								brewingStand.getItem(2))
+								== Potions.STRONG_HEALING
+						&& shipPalette.getOrDefault(
+								Blocks.DRAGON_WALL_HEAD,
+								0) == 1
+						&& towerPalette.getOrDefault(
+								Blocks.ENDER_CHEST, 0)
+								== 1
+						&& shipPalette.getOrDefault(
+								Blocks.BREWING_STAND, 0)
+								== 1
+						&& shipPalette.getOrDefault(
+								Blocks.OBSIDIAN, 0)
+								> 0
+						&& shipPalette.getOrDefault(
+								Blocks.END_ROD, 0)
+								> 0,
+				"Macaron Citadel lost native End-City loot, healing supplies, Dragon Head, Ender Chest, Obsidian or End Rod progression: loot="
+						+ loot + ", ship="
+						+ shipPalette);
+		require(helper,
+				level.getServer().getAdvancements()
+						.getAdvancement(
+								new ResourceLocation(
+										"minecraft",
+										"end/find_end_city"))
+						.getCriteria().containsKey(
+								"in_city")
+						&& level.getServer()
+								.getAdvancements()
+								.getAdvancement(
+										new ResourceLocation(
+												"minecraft",
+												"end/elytra"))
+								.getCriteria()
+								.containsKey("elytra")
+						&& level.getServer()
+								.getLootTables()
+								.get(BuiltInLootTables
+										.END_CITY_TREASURE)
+								!= LootTable.EMPTY,
+				"Macaron Citadel lost native End-City locate, Elytra or treasure progression identities");
+
+		helper.runAfterDelay(5, () -> {
+			List<ItemFrame> frames =
+					level.getEntitiesOfClass(
+							ItemFrame.class, shipArea);
+			List<MacaronClam> clams =
+					new java.util.ArrayList<>();
+			clams.addAll(level.getEntitiesOfClass(
+					MacaronClam.class, towerArea));
+			clams.addAll(level.getEntitiesOfClass(
+					MacaronClam.class, shipArea));
+			long literalShulkers =
+					java.util.stream.Stream.concat(
+							level.getEntitiesOfClass(
+									Shulker.class,
+									towerArea).stream(),
+							level.getEntitiesOfClass(
+									Shulker.class,
+									shipArea).stream())
+							.filter(shulker ->
+									shulker.getType()
+											== EntityType
+													.SHULKER)
+							.count();
+			require(helper,
+					frames.size() == 1
+							&& frames.get(0)
+									.getItem()
+									.is(Items.ELYTRA)
+							&& clams.size() == 5
+							&& literalShulkers == 0,
+					"Macaron Citadel lost the one native Elytra frame or five Sentry-to-Macaron-Clam markers: frames="
+							+ frames.size()
+							+ ", clams="
+							+ clams.size()
+							+ ", literal="
+							+ literalShulkers);
+			frames.forEach(Entity::discard);
+			clams.forEach(Entity::discard);
+			helper.succeed();
+		});
 	}
 
 	private static Set<String>

@@ -2,6 +2,10 @@
   "replace": false,
   "values": [
     "cakeworld:mixing_bowl",
-    "cakeworld:candy_cane_pillar"
+    "cakeworld:candy_cane_pillar",
+    "cakeworld:wafer_block",
+    "cakeworld:wafer_pillar",
+    "cakeworld:wafer_stairs",
+    "cakeworld:wafer_slab"
   ]
 }
