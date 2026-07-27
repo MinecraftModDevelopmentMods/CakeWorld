@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "axis=y": {
+      "model": "cakeworld:block/liquorice_root"
+    },
+    "axis=z": {
+      "model": "cakeworld:block/liquorice_root",
+      "x": 90
+    },
+    "axis=x": {
+      "model": "cakeworld:block/liquorice_root",
+      "x": 90,
+      "y": 90
+    }
+  }
+}

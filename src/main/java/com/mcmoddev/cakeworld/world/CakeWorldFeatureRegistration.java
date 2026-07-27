@@ -39,6 +39,8 @@ public final class CakeWorldFeatureRegistration {
 				WaffleSyrupSkywheelFeature.FEATURE);
 		event.getRegistry().register(
 				CupcakeBloomCircleFeature.FEATURE);
+		event.getRegistry().register(
+				LiquoriceRootMazeFeature.FEATURE);
 		event.getRegistry().register(GingerbreadVillageFeature.FEATURE);
 		event.getRegistry().register(
 				BiscuitBanditLookoutFeature.FEATURE);
@@ -159,6 +161,8 @@ public final class CakeWorldFeatureRegistration {
 			WaffleSyrupSkywheelFeature
 					.registerConfiguredFeature();
 			CupcakeBloomCircleFeature
+					.registerConfiguredFeature();
+			LiquoriceRootMazeFeature
 					.registerConfiguredFeature();
 			GingerbreadVillageFeature.registerWorldgen();
 			BiscuitBanditLookoutFeature.registerWorldgen();

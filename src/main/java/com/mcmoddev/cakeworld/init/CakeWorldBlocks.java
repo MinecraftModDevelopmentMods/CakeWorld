@@ -147,6 +147,17 @@ public final class CakeWorldBlocks {
 							.requiresCorrectToolForDrops()
 							.strength(1.5F, 6.0F)
 							.sound(SoundType.STONE));
+	public static final RegistryObject<Block> LIQUORICE_LOAM =
+			block("liquorice_loam",
+					BlockBehaviour.Properties.of(Material.DIRT)
+							.strength(0.6F)
+							.sound(SoundType.ROOTED_DIRT));
+	public static final RegistryObject<Block> LIQUORICE_ROOT =
+			block("liquorice_root",
+					() -> new RotatedPillarBlock(
+							BlockBehaviour.Properties.of(Material.WOOD)
+									.strength(1.2F)
+									.sound(SoundType.WOOD)));
 	public static final RegistryObject<Block> LIQUORICE_BRICKS =
 			block("liquorice_bricks",
 					BlockBehaviour.Properties

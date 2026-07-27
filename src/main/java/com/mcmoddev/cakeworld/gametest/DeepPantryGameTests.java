@@ -2314,12 +2314,16 @@ public final class DeepPantryGameTests {
 					level.getBiome(centre).is(
 							GrandGingerbreadManorFeature
 									.GENERATES_IN)
-							&& CakeWorldBiomes
-									.COOKIE_FOREST
-									.getId()
-									.equals(biomeId)
+							&& Set.of(
+									CakeWorldBiomes
+											.COOKIE_FOREST
+											.getId(),
+									CakeWorldBiomes
+											.LIQUORICE_DARKWOOD
+											.getId())
+									.contains(biomeId)
 							&& !literalMansionEligible,
-					"Grand Gingerbread Manor generated outside Cookie Forest or enabled a literal vanilla Mansion: "
+					"Grand Gingerbread Manor generated outside Cookie Forest/Liquorice Darkwood or enabled a literal vanilla Mansion: "
 							+ biomeId);
 			require(helper,
 					palette.getOrDefault(

@@ -12,6 +12,7 @@ import com.mcmoddev.cakeworld.item.ReusableKitchenToolItem;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.BowlFoodItem;
 import net.minecraft.world.item.CreativeModeTab;
@@ -102,6 +103,16 @@ public final class CakeWorldItems {
 									.effect(() -> new MobEffectInstance(
 											CakeWorldEffects.SUGAR_RUSH.get(),
 											120), 1.0F)
+									.build())));
+	public static final RegistryObject<Item> LIQUORICE_TWIST =
+			ITEMS.register("liquorice_twist",
+					() -> new Item(new Item.Properties()
+							.tab(CreativeModeTab.TAB_FOOD)
+							.food(new FoodProperties.Builder()
+									.nutrition(5).saturationMod(0.6F)
+									.effect(() -> new MobEffectInstance(
+											MobEffects.NIGHT_VISION,
+											240), 1.0F)
 									.build())));
 	public static final RegistryObject<Item> FIZZY_POPPERS =
 			ITEMS.register("fizzy_poppers",

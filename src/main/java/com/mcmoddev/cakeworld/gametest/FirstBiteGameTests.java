@@ -34164,7 +34164,11 @@ public final class FirstBiteGameTests {
 		Biome cookieForest = level.registryAccess()
 				.registryOrThrow(Registry.BIOME_REGISTRY)
 				.get(CakeWorldBiomes.COOKIE_FOREST.getId());
+		Biome liquoriceDarkwood = level.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY)
+				.get(CakeWorldBiomes.LIQUORICE_DARKWOOD.getId());
 		boolean repairInstalled = false;
+		boolean darkwoodRepairInstalled = false;
 		if (cookieForest != null) {
 			for (Holder<PlacedFeature> feature
 					: cookieForest.getGenerationSettings()
@@ -34176,6 +34180,21 @@ public final class FirstBiteGameTests {
 						.equals(GrandGingerbreadManorRepairFeature
 								.ID)).orElse(false)) {
 					repairInstalled = true;
+					break;
+				}
+			}
+		}
+		if (liquoriceDarkwood != null) {
+			for (Holder<PlacedFeature> feature
+					: liquoriceDarkwood.getGenerationSettings()
+							.features().get(
+									GenerationStep.Decoration
+											.TOP_LAYER_MODIFICATION
+											.ordinal())) {
+				if (feature.unwrapKey().map(key -> key.location()
+						.equals(GrandGingerbreadManorRepairFeature
+								.ID)).orElse(false)) {
+					darkwoodRepairInstalled = true;
 					break;
 				}
 			}
@@ -34204,13 +34223,18 @@ public final class FirstBiteGameTests {
 						&& GrandGingerbreadManorRepairFeature
 								.placedFeature() != null
 						&& repairInstalled
+						&& darkwoodRepairInstalled
 						&& eligibleBiomes.equals(Set.of(
 								CakeWorldBiomes
 										.COOKIE_FOREST
+										.getId(),
+								CakeWorldBiomes
+										.LIQUORICE_DARKWOOD
 										.getId())),
-				"Grand Gingerbread Manor lost its configured structure, map tag, surface step, terrain floor, installed late repair or Cookie Forest contract: eligible="
-						+ eligibleBiomes + ", repairInstalled="
-						+ repairInstalled);
+				"Grand Gingerbread Manor lost its configured structure, map tag, surface step, terrain floor, installed late repair or Cookie/Darkwood contract: eligible="
+						+ eligibleBiomes + ", cookieRepair="
+						+ repairInstalled + ", darkwoodRepair="
+						+ darkwoodRepairInstalled);
 
 		net.minecraft.world.level.levelgen.structure.placement
 				.RandomSpreadStructurePlacement placement =

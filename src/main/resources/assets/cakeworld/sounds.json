@@ -106,5 +106,14 @@
         "type": "event"
       }
     ]
+  },
+  "liquorice_darkwood_rustle": {
+    "subtitle": "subtitles.cakeworld.liquorice_darkwood.rustle",
+    "sounds": [
+      {
+        "name": "minecraft:block.roots.step",
+        "type": "event"
+      }
+    ]
   }
 }

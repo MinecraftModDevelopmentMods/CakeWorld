@@ -71,6 +71,11 @@ public final class CakeWorldSounds {
 					() -> new SoundEvent(new ResourceLocation(
 							CakeWorld.MODID,
 							"cupcake_gardens_hum")));
+	public static final RegistryObject<SoundEvent> LIQUORICE_DARKWOOD_RUSTLE =
+			SOUNDS.register("liquorice_darkwood_rustle",
+					() -> new SoundEvent(new ResourceLocation(
+							CakeWorld.MODID,
+							"liquorice_darkwood_rustle")));
 
 	private CakeWorldSounds() {
 	}

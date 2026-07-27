@@ -178,6 +178,20 @@ public final class CakeWorldLandmarks {
 							.TOP_LAYER_MODIFICATION)
 					.add(cupcakeBloomCircle);
 		}
+		Holder<PlacedFeature> liquoriceRootMaze =
+				LiquoriceRootMazeFeature
+						.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(
+						biome.getNamespace())
+				&& "liquorice_darkwood".equals(
+						biome.getPath())
+				&& liquoriceRootMaze != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration
+							.TOP_LAYER_MODIFICATION)
+					.add(liquoriceRootMaze);
+		}
 		Holder<PlacedFeature> manorRepair =
 				GrandGingerbreadManorRepairFeature
 						.placedFeature();
@@ -366,6 +380,7 @@ public final class CakeWorldLandmarks {
 				|| "ice_cream_tundra".equals(path)
 				|| "waffle_plateaus".equals(path)
 				|| "cupcake_gardens".equals(path)
+				|| "liquorice_darkwood".equals(path)
 				|| "soda_ocean".equals(path);
 	}
 
@@ -378,7 +393,8 @@ public final class CakeWorldLandmarks {
 				|| "marshmallow_peaks".equals(path)
 				|| "ice_cream_tundra".equals(path)
 				|| "waffle_plateaus".equals(path)
-				|| "cupcake_gardens".equals(path);
+				|| "cupcake_gardens".equals(path)
+				|| "liquorice_darkwood".equals(path);
 	}
 
 	private static boolean isSettlementBiome(String path) {

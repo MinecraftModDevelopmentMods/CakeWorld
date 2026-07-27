@@ -48,6 +48,8 @@ public final class CakeWorldBiomes {
 			wafflePlateaus();
 	public static final RegistryObject<Biome> CUPCAKE_GARDENS =
 			cupcakeGardens();
+	public static final RegistryObject<Biome> LIQUORICE_DARKWOOD =
+			liquoriceDarkwood();
 	public static final RegistryObject<Biome> SODA_OCEAN = copy(
 			"soda_ocean", "ocean", 0.5F, 0.5F);
 	public static final RegistryObject<Biome> FUDGE_WASTES = copy(
@@ -131,6 +133,11 @@ public final class CakeWorldBiomes {
 					BiomeDictionary.Type.OVERWORLD,
 					BiomeDictionary.Type.PLAINS,
 					BiomeDictionary.Type.LUSH);
+			BiomeDictionary.addTypes(key(LIQUORICE_DARKWOOD),
+					BiomeDictionary.Type.OVERWORLD,
+					BiomeDictionary.Type.FOREST,
+					BiomeDictionary.Type.DENSE,
+					BiomeDictionary.Type.SPOOKY);
 			BiomeDictionary.addTypes(key(SODA_OCEAN),
 					BiomeDictionary.Type.OVERWORLD,
 					BiomeDictionary.Type.OCEAN,
@@ -271,6 +278,19 @@ public final class CakeWorldBiomes {
 												.getSpecialEffects())));
 	}
 
+	private static RegistryObject<Biome> liquoriceDarkwood() {
+		return OreSpawnBiomes.copyAndRegister(BIOMES,
+				"liquorice_darkwood",
+				() -> vanilla("dark_forest"),
+				builder -> builder
+						.temperature(0.7F)
+						.downfall(0.8F)
+						.specialEffects(
+								withLiquoriceDarkwoodEffects(
+										vanilla("dark_forest")
+												.getSpecialEffects())));
+	}
+
 	private static RegistryObject<Biome> copyWithAmbient(
 			String name, String vanilla,
 			float temperature, float downfall,
@@ -382,6 +402,20 @@ public final class CakeWorldBiomes {
 										.CUPCAKE_GARDENS_HUM
 										.get(),
 								0.0012D))
+				.build();
+	}
+
+	private static BiomeSpecialEffects withLiquoriceDarkwoodEffects(
+			BiomeSpecialEffects source) {
+		return effectsBuilder(source)
+				.ambientParticle(new AmbientParticleSettings(
+						ParticleTypes.MYCELIUM, 0.0009F))
+				.ambientAdditionsSound(
+						new AmbientAdditionsSettings(
+								CakeWorldSounds
+										.LIQUORICE_DARKWOOD_RUSTLE
+										.get(),
+								0.001D))
 				.build();
 	}
 
