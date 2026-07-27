@@ -153,6 +153,20 @@ public final class CakeWorldLandmarks {
 							.TOP_LAYER_MODIFICATION)
 					.add(windmillRepair);
 		}
+		Holder<PlacedFeature> bridgeRepair =
+				CandyCaneBridgeRepairFeature
+						.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(
+						biome.getNamespace())
+				&& "candy_plains".equals(
+						biome.getPath())
+				&& bridgeRepair != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration
+							.TOP_LAYER_MODIFICATION)
+					.add(bridgeRepair);
+		}
 	}
 
 	private static boolean isCurrentOverworldBiome(

@@ -44,6 +44,8 @@ import com.mcmoddev.cakeworld.world.BurntSugarArchFeature;
 import com.mcmoddev.cakeworld.world.BurntToffeeFoundryFeature;
 import com.mcmoddev.cakeworld.world.BuriedSweetTinFeature;
 import com.mcmoddev.cakeworld.world.BuriedSweetTinRepair;
+import com.mcmoddev.cakeworld.world.CandyCaneBridgeFeature;
+import com.mcmoddev.cakeworld.world.CandyCaneBridgeStructureFeature;
 import com.mcmoddev.cakeworld.world.CaramelCottageFeature;
 import com.mcmoddev.cakeworld.world.ConfectionersCottageFeature;
 import com.mcmoddev.cakeworld.world.GingerbreadVillageFeature;
@@ -121,6 +123,7 @@ import net.minecraft.world.level.block.EndPortalFrameBlock;
 import net.minecraft.world.level.block.RedStoneOreBlock;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.RotatedPillarBlock;
+import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BrewingStandBlockEntity;
 import net.minecraft.world.level.block.entity.DispenserBlockEntity;
@@ -5910,6 +5913,189 @@ public final class DeepPantryGameTests {
 		});
 	}
 
+	@GameTest(template = EMPTY, batch = "struct021world",
+			timeoutTicks = 7200)
+	public static void focusedCandyCaneBridgeStructureAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean(
+				"cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed Candy-Cane Bridge audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry
+										.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						CandyCaneBridgeFeature
+								.STRUCTURE_ID);
+		require(helper, configured != null,
+				"Candy-Cane Bridge configured structure was absent from the live registry");
+		boolean locatedTag = structures.getTag(
+						CandyCaneBridgeFeature
+								.STRUCTURE_TAG)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		require(helper, locatedTag,
+				"Candy-Cane Bridge lost its public configured-structure locate tag");
+
+		LocatedCottage bridge =
+				locateCandyCaneBridge(
+						helper, level, configured,
+						new BlockPos(96, 64, 128));
+		setCottageChunksForced(level, bridge, true);
+		helper.runAfterDelay(160, () -> {
+			BridgeWorldAudit audit =
+					auditCandyCaneBridge(
+							level, bridge);
+			BlockPos sentinel =
+					CandyCaneBridgeFeature
+							.reloadSentinelPosition(
+									level.getSeed(),
+									bridge.centre());
+			boolean sentinelAlreadyNative =
+					level.getBlockState(sentinel)
+							.is(Blocks.BRICKS);
+			int nativeSentinels =
+					audit.palette()
+							.getOrDefault(
+									Blocks.BRICKS, 0);
+			LOGGER.info("Focused Candy-Cane Bridge audit: locate={}, centre={}, bounds={}, biome={}, orientation={}, palette={}, channel={}, deck={}, clearance={}, axes={}, approaches={}, stairs={}, sentinel={}, markerPhase={}",
+					bridge.located(),
+					bridge.centre(),
+					bridge.bounds(),
+					audit.biome(),
+					audit.orientation(),
+					audit.palette(),
+					audit.channel(),
+					audit.deck(),
+					audit.clearance(),
+					audit.axes(),
+					audit.approaches(),
+					audit.stairs(),
+					sentinel,
+					sentinelAlreadyNative
+							? "reloaded"
+							: "seeded");
+			require(helper,
+					CakeWorldBiomes.CANDY_PLAINS
+							.getId().equals(
+									audit.biome()),
+					"Natural Candy-Cane Bridge left its explicit Candy-Plains prototype home: biome="
+							+ audit.biome());
+			require(helper,
+					bridge.bounds().getXSpan()
+							== 33
+							&& bridge.bounds()
+									.getYSpan()
+									== 10
+							&& bridge.bounds()
+									.getZSpan()
+									== 33
+							&& bridge.centre()
+									.getY()
+									>= level
+											.getSeaLevel()
+											- 8,
+					"Natural Candy-Cane Bridge lost its exact saved envelope or surface alignment: bounds="
+							+ bridge.bounds()
+							+ ", centre="
+							+ bridge.centre()
+							+ ", seaLevel="
+							+ level.getSeaLevel());
+			Map<Block, Integer> palette =
+					audit.palette();
+			int gummyCaps =
+					palette.getOrDefault(
+							CakeWorldBlocks
+									.RASPBERRY_GUMMY_BLOCK
+									.get(), 0)
+							+ palette.getOrDefault(
+									CakeWorldBlocks
+											.BLUEBERRY_GUMMY_BLOCK
+											.get(), 0);
+			require(helper,
+					palette.getOrDefault(
+							CakeWorldBlocks
+									.BISCUIT_STONE
+									.get(), 0)
+							>= 480
+							&& palette.getOrDefault(
+									CakeWorldFluids
+											.LEMONADE_BLOCK
+											.get(), 0)
+									>= 450
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.BISCUIT_CRUMBS
+											.get(), 0)
+									>= 60
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.WAFER_BLOCK
+											.get(), 0)
+									== 205
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.WAFER_STAIRS
+											.get(), 0)
+									== 40
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.CANDY_CANE_PILLAR
+											.get(), 0)
+									>= (sentinelAlreadyNative
+											? 99 : 100)
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.MARSHMALLOW
+											.get(), 0)
+									== 8
+							&& palette.getOrDefault(
+									Blocks.LANTERN, 0)
+									== 4
+							&& gummyCaps == 4
+							&& nativeSentinels
+									== (sentinelAlreadyNative
+											? 1 : 0),
+					"Natural Candy-Cane Bridge lost its road, real Lemonade cutting, deck, truss, rescue points or player-edit reload boundary: "
+							+ palette);
+			require(helper,
+					audit.channel()
+							&& audit.deck()
+							&& audit.clearance()
+							&& audit.axes()
+							&& audit.approaches()
+							&& audit.stairs()
+							&& (sentinelAlreadyNative
+									|| audit
+											.nativeSentinel()),
+					"Natural Candy-Cane Bridge stopped being a readable, axis-correct, safely traversable crossing: "
+							+ audit);
+			if (!sentinelAlreadyNative) {
+				level.setBlock(sentinel,
+						Blocks.BRICKS
+								.defaultBlockState(),
+						2);
+				require(helper,
+						level.getBlockState(
+								sentinel)
+								.is(Blocks.BRICKS),
+						"Could not seed the explicit player-placed Brick reload sentinel in the Candy-Cane Bridge rail");
+			}
+			setCottageChunksForced(
+					level, bridge, false);
+			helper.succeed();
+		});
+	}
+
 	@GameTest(template = EMPTY, timeoutTicks = 1200)
 	public static void baseMetalsCounterpartsPreserveTagsRecipesAndGeneration(
 			GameTestHelper helper) {
@@ -9142,6 +9328,47 @@ public final class DeepPantryGameTests {
 				located, centre, bounds);
 	}
 
+	private static LocatedCottage locateCandyCaneBridge(
+			GameTestHelper helper, ServerLevel level,
+			ConfiguredStructureFeature<?, ?> configured,
+			BlockPos origin) {
+		BlockPos located =
+				level.findNearestMapFeature(
+						CandyCaneBridgeFeature
+								.STRUCTURE_TAG,
+						origin, 512, false);
+		require(helper, located != null,
+				"The fixed-seed CakeWorld contained no locatable Candy-Cane Bridge within 512 chunks of Candy Plains");
+		ChunkPos startChunk =
+				new ChunkPos(located);
+		net.minecraft.world.level.chunk.LevelChunk
+				startLevelChunk =
+				level.getChunk(startChunk.x,
+						startChunk.z);
+		StructureStart start =
+				startLevelChunk.getStartForFeature(
+						configured);
+		require(helper,
+				start != null && start.isValid()
+						&& start.getFeature()
+								== configured
+						&& start.getPieces()
+								.size() == 1,
+				"The located Candy-Cane Bridge lost its saved one-piece structure start");
+		BoundingBox bounds =
+				start.getBoundingBox();
+		BlockPos centre = new BlockPos(
+				bounds.minX()
+						+ CandyCaneBridgeStructureFeature
+								.CENTRE_OFFSET,
+				bounds.minY(),
+				bounds.minZ()
+						+ CandyCaneBridgeStructureFeature
+								.CENTRE_OFFSET);
+		return new LocatedCottage(
+				located, centre, bounds);
+	}
+
 	private static void setCottageChunksForced(
 			ServerLevel level,
 			LocatedCottage cottage,
@@ -9508,6 +9735,185 @@ public final class DeepPantryGameTests {
 				pantryLoot);
 	}
 
+	private static BridgeWorldAudit auditCandyCaneBridge(
+			ServerLevel level,
+			LocatedCottage bridge) {
+		Map<Block, Integer> palette =
+				new LinkedHashMap<>();
+		for (BlockPos position
+				: BlockPos.betweenClosed(
+						bridge.bounds().minX(),
+						bridge.centre().getY() - 3,
+						bridge.bounds().minZ(),
+						bridge.bounds().maxX(),
+						bridge.bounds().maxY(),
+						bridge.bounds().maxZ())) {
+			palette.merge(
+					level.getBlockState(position)
+							.getBlock(),
+					1, Integer::sum);
+		}
+		Rotation rotation =
+				CandyCaneBridgeFeature.orientation(
+						level.getSeed(),
+						bridge.centre());
+		BlockPos centre = bridge.centre();
+		BlockPos channel =
+				CandyCaneBridgeFeature.channelPosition(
+						level.getSeed(), centre);
+		BlockPos deck =
+				CandyCaneBridgeFeature.deckPosition(
+						level.getSeed(), centre);
+		boolean channelContract =
+				level.getBlockState(channel)
+						.is(CakeWorldFluids
+								.LEMONADE_BLOCK.get())
+						&& level.getBlockState(
+								channel.below())
+								.is(CakeWorldFluids
+										.LEMONADE_BLOCK
+										.get())
+						&& level.getBlockState(
+								channel.below(2))
+								.is(CakeWorldBlocks
+										.BISCUIT_STONE
+										.get());
+		boolean deckContract =
+				level.getBlockState(deck)
+						.is(CakeWorldBlocks
+								.WAFER_BLOCK.get());
+		boolean clearance =
+				level.getBlockState(
+						deck.below()).isAir()
+						&& level.getBlockState(
+								deck.below(2)).isAir()
+						&& level.getBlockState(
+								deck.below(3)).isAir();
+
+		BlockPos verticalPosition =
+				centre.offset(new BlockPos(
+						3, 4, 0)
+								.rotate(rotation));
+		BlockPos roadBeamPosition =
+				centre.offset(new BlockPos(
+						3, 5, -1)
+								.rotate(rotation));
+		BlockPos crossBeamPosition =
+				centre.offset(new BlockPos(
+						0, 2, 6)
+								.rotate(rotation));
+		Direction.Axis roadAxis =
+				rotation.rotate(Direction.SOUTH)
+						.getAxis();
+		Direction.Axis crossAxis =
+				rotation.rotate(Direction.EAST)
+						.getAxis();
+		boolean axes =
+				level.getBlockState(verticalPosition)
+								.is(CakeWorldBlocks
+										.CANDY_CANE_PILLAR
+										.get())
+						&& level.getBlockState(
+								verticalPosition)
+								.getValue(
+										RotatedPillarBlock
+												.AXIS)
+								== Direction.Axis.Y
+						&& level.getBlockState(
+								roadBeamPosition)
+								.is(CakeWorldBlocks
+										.CANDY_CANE_PILLAR
+										.get())
+						&& level.getBlockState(
+								roadBeamPosition)
+								.getValue(
+										RotatedPillarBlock
+												.AXIS)
+								== roadAxis
+						&& level.getBlockState(
+								crossBeamPosition)
+								.is(CakeWorldBlocks
+										.CANDY_CANE_PILLAR
+										.get())
+						&& level.getBlockState(
+								crossBeamPosition)
+								.getValue(
+										RotatedPillarBlock
+												.AXIS)
+								== crossAxis;
+
+		BlockPos northApproach =
+				centre.offset(new BlockPos(
+						0, 0, -16)
+								.rotate(rotation));
+		BlockPos southApproach =
+				centre.offset(new BlockPos(
+						0, 0, 16)
+								.rotate(rotation));
+		boolean approaches =
+				level.getBlockState(northApproach)
+								.is(CakeWorldBlocks
+										.BISCUIT_CRUMBS
+										.get())
+						&& level.getBlockState(
+								southApproach)
+								.is(CakeWorldBlocks
+										.BISCUIT_CRUMBS
+										.get());
+		BlockPos northStair =
+				centre.offset(new BlockPos(
+						0, 0, -10)
+								.rotate(rotation));
+		BlockPos southStair =
+				centre.offset(new BlockPos(
+						0, 0, 10)
+								.rotate(rotation));
+		boolean stairs =
+				level.getBlockState(northStair)
+								.is(CakeWorldBlocks
+										.WAFER_STAIRS
+										.get())
+						&& level.getBlockState(
+								northStair)
+								.getValue(
+										StairBlock.FACING)
+								== rotation.rotate(
+										Direction.SOUTH)
+						&& level.getBlockState(
+								southStair)
+								.is(CakeWorldBlocks
+										.WAFER_STAIRS
+										.get())
+						&& level.getBlockState(
+								southStair)
+								.getValue(
+										StairBlock.FACING)
+								== rotation.rotate(
+										Direction.NORTH);
+		BlockState sentinel = level.getBlockState(
+				CandyCaneBridgeFeature
+						.reloadSentinelPosition(
+								level.getSeed(), centre));
+		boolean nativeSentinel =
+				sentinel.is(CakeWorldBlocks
+						.CANDY_CANE_PILLAR.get())
+						&& sentinel.getValue(
+								RotatedPillarBlock.AXIS)
+								== roadAxis;
+		ResourceLocation biome =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.getKey(level.getBiome(
+								bridge.centre())
+								.value());
+		return new BridgeWorldAudit(
+				palette, biome, rotation,
+				channelContract, deckContract,
+				clearance, axes, approaches,
+				stairs, nativeSentinel);
+	}
+
 	private static List<ItemStack> drops(GameTestHelper helper, Block block,
 			ItemStack tool, BlockPos origin) {
 		ResourceLocation blockId = Registry.BLOCK.getKey(block);
@@ -9801,6 +10207,19 @@ public final class DeepPantryGameTests {
 			boolean signalSource,
 			int signal,
 			String pantryLoot) {
+	}
+
+	private record BridgeWorldAudit(
+			Map<Block, Integer> palette,
+			ResourceLocation biome,
+			Rotation orientation,
+			boolean channel,
+			boolean deck,
+			boolean clearance,
+			boolean axes,
+			boolean approaches,
+			boolean stairs,
+			boolean nativeSentinel) {
 	}
 
 	private record GeomePlacementSurvey(

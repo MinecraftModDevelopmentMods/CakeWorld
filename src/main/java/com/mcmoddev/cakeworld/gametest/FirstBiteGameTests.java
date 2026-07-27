@@ -164,6 +164,8 @@ import com.mcmoddev.cakeworld.world.CaramelCottageFeature;
 import com.mcmoddev.cakeworld.world.CaramelCottageRepairFeature;
 import com.mcmoddev.cakeworld.world.ConfectionersCottageFeature;
 import com.mcmoddev.cakeworld.world.ConfectionersCottageRepairFeature;
+import com.mcmoddev.cakeworld.world.CandyCaneBridgeFeature;
+import com.mcmoddev.cakeworld.world.CandyCaneBridgeRepairFeature;
 import com.mcmoddev.cakeworld.world.WaferWindmillFeature;
 import com.mcmoddev.cakeworld.world.WaferWindmillRepairFeature;
 import com.mcmoddev.cakeworld.world.GingerbreadVillageFeature;
@@ -41122,6 +41124,385 @@ public final class FirstBiteGameTests {
 										.getString(
 												"LootTable")),
 				"Wafer Windmill repair did not restore its live hub, roof and pantry identity");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, batch = "struct021",
+			timeoutTicks = 1200)
+	public static void candyCaneBridgeCreatesARealSafeRoadCrossing(
+			GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						CandyCaneBridgeFeature
+								.STRUCTURE_ID);
+		Registry<net.minecraft.world.level.levelgen.structure.StructureSet>
+				structureSets =
+				level.registryAccess().registryOrThrow(
+						Registry.STRUCTURE_SET_REGISTRY);
+		net.minecraft.world.level.levelgen.structure.StructureSet
+				structureSet =
+				structureSets.get(
+						CandyCaneBridgeFeature
+								.STRUCTURE_SET_ID);
+		boolean ownTag = structures.getTag(
+						CandyCaneBridgeFeature
+								.STRUCTURE_TAG)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		Set<ResourceLocation> eligibleBiomes =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.getTag(
+								CandyCaneBridgeFeature
+										.GENERATES_IN)
+						.map(tag -> tag.stream()
+								.map(holder -> holder
+										.unwrapKey()
+										.orElseThrow()
+										.location())
+								.collect(
+										java.util.stream
+												.Collectors
+												.toSet()))
+						.orElse(Set.of());
+		boolean repairInstalled =
+				hasPlacedFeature(
+						level,
+						CakeWorldBiomes.CANDY_PLAINS
+								.getId(),
+						GenerationStep.Decoration
+								.TOP_LAYER_MODIFICATION,
+						CandyCaneBridgeRepairFeature.ID);
+		require(helper,
+				configured != null
+						&& configured.feature
+								== CandyCaneBridgeFeature
+										.STRUCTURE_FEATURE
+						&& !configured.adaptNoise
+						&& configured.spawnOverrides
+								.isEmpty()
+						&& configured.feature.step()
+								== GenerationStep.Decoration
+										.SURFACE_STRUCTURES
+						&& structureSet != null
+						&& structureSet.structures().size()
+								== 1
+						&& structureSet.structures().get(0)
+								.structure().value()
+								== configured
+						&& ownTag
+						&& eligibleBiomes.equals(Set.of(
+								CakeWorldBiomes
+										.CANDY_PLAINS
+										.getId()))
+						&& CandyCaneBridgeRepairFeature
+								.placedFeature() != null
+						&& repairInstalled,
+				"Candy-Cane Bridge lost its dedicated structure, Candy-Plains prototype boundary, no-spawn contract or late repair: eligible="
+						+ eligibleBiomes
+						+ ", ownTag=" + ownTag
+						+ ", repair="
+						+ repairInstalled);
+
+		net.minecraft.world.level.levelgen.structure.placement
+				.RandomSpreadStructurePlacement placement =
+				(net.minecraft.world.level.levelgen.structure
+						.placement.RandomSpreadStructurePlacement)
+						structureSet.placement();
+		require(helper,
+				placement.spacing() == 64
+						&& placement.separation() == 24
+						&& placement.spreadType()
+								== net.minecraft.world.level
+										.levelgen.structure
+										.placement
+										.RandomSpreadType
+										.LINEAR
+						&& placement.salt()
+								== CandyCaneBridgeFeature
+										.PLACEMENT_SALT,
+				"Candy-Cane Bridge lost its sparse 64/24/1978021 linear placement");
+
+		net.minecraft.world.level.levelgen.structure.pools
+				.StructurePoolElement element =
+				CandyCaneBridgeFeature.pool().value()
+						.getRandomTemplate(
+								new Random(
+										CandyCaneBridgeFeature
+												.PLACEMENT_SALT));
+		BoundingBox pieceBounds =
+				element.getBoundingBox(
+						level.getStructureManager(),
+						BlockPos.ZERO,
+						Rotation.NONE);
+		require(helper,
+				element
+						instanceof CakeWorldFeaturePoolElement
+						&& pieceBounds.getXSpan() == 33
+						&& pieceBounds.getYSpan() == 10
+						&& pieceBounds.getZSpan() == 33,
+				"Candy-Cane Bridge lost its serializable 33x10x33 saved envelope");
+
+		Set<Rotation> rotations =
+				new java.util.HashSet<>();
+		for (int index = 0;
+				index < 128
+						&& rotations.size() < 4;
+				index++) {
+			rotations.add(
+					CandyCaneBridgeFeature.orientation(
+							level.getSeed(),
+							new BlockPos(
+									index * 61,
+									80,
+									index * -67)));
+		}
+		require(helper, rotations.size() == 4,
+				"Candy-Cane Bridge deterministic orientation did not expose all four cardinal routes: "
+						+ rotations);
+
+		BlockPos centre = new BlockPos(
+				helper.absolutePos(
+						new BlockPos(4, 4, 4))
+						.getX(),
+				level.getMaxBuildHeight() - 112,
+				helper.absolutePos(
+						new BlockPos(4, 4, 4))
+						.getZ());
+		for (int x = -16; x <= 16; x++) {
+			for (int y = -5; y <= 9; y++) {
+				for (int z = -16; z <= 16; z++) {
+					level.setBlock(
+							centre.offset(x, y, z),
+							y == -5
+									? CakeWorldBlocks
+											.BISCUIT_STONE
+											.get()
+											.defaultBlockState()
+									: Blocks.AIR
+											.defaultBlockState(),
+							2);
+				}
+			}
+		}
+		require(helper,
+				CandyCaneBridgeFeature.buildAt(
+						level,
+						new Random(
+								CandyCaneBridgeFeature
+										.PLACEMENT_SALT),
+						centre),
+				"Candy-Cane Bridge refused a forced crossing fixture");
+
+		Map<Block, Integer> palette =
+				scanBlockPalette(level, centre,
+						16, 5, 9);
+		int gummyCaps = palette.getOrDefault(
+				CakeWorldBlocks
+						.RASPBERRY_GUMMY_BLOCK.get(),
+				0)
+				+ palette.getOrDefault(
+						CakeWorldBlocks
+								.BLUEBERRY_GUMMY_BLOCK
+								.get(),
+						0);
+		require(helper,
+				palette.getOrDefault(
+						CakeWorldBlocks
+								.BISCUIT_STONE
+								.get(), 0) >= 480
+						&& palette.getOrDefault(
+								CakeWorldFluids
+										.LEMONADE_BLOCK
+										.get(), 0)
+								>= 450
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.BISCUIT_CRUMBS
+										.get(), 0)
+								== 60
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.WAFER_BLOCK
+										.get(), 0)
+								== 205
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.WAFER_STAIRS
+										.get(), 0)
+								== 40
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CANDY_CANE_PILLAR
+										.get(), 0)
+								>= 100
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.MARSHMALLOW
+										.get(), 0)
+								== 8
+						&& palette.getOrDefault(
+								Blocks.LANTERN, 0) == 4
+						&& gummyCaps == 4,
+				"Candy-Cane Bridge lost its road, channel, deck, truss, lights or rescue spots: "
+						+ palette);
+
+		Rotation orientation =
+				CandyCaneBridgeFeature.orientation(
+						level.getSeed(), centre);
+		BlockPos channel =
+				CandyCaneBridgeFeature.channelPosition(
+						level.getSeed(), centre);
+		BlockPos deck =
+				CandyCaneBridgeFeature.deckPosition(
+						level.getSeed(), centre);
+		require(helper,
+				level.getBlockState(channel)
+						.is(CakeWorldFluids
+								.LEMONADE_BLOCK.get())
+						&& level.getBlockState(
+								channel.below())
+								.is(CakeWorldFluids
+										.LEMONADE_BLOCK
+										.get())
+						&& level.getBlockState(
+								channel.below(2))
+								.is(CakeWorldBlocks
+										.BISCUIT_STONE
+										.get())
+						&& level.getBlockState(deck)
+								.is(CakeWorldBlocks
+										.WAFER_BLOCK.get())
+						&& level.getBlockState(
+								deck.below()).isAir()
+						&& level.getBlockState(
+								deck.below(2)).isAir()
+						&& level.getBlockState(
+								deck.below(3)).isAir(),
+				"Candy-Cane Bridge stopped solving its own two-source-deep Lemonade crossing with three blocks of safe clearance");
+
+		BlockPos verticalPosition =
+				centre.offset(new BlockPos(
+						3, 4, 0)
+								.rotate(orientation));
+		BlockPos roadBeamPosition =
+				centre.offset(new BlockPos(
+						3, 5, 1)
+								.rotate(orientation));
+		BlockPos crossBeamPosition =
+				centre.offset(new BlockPos(
+						0, 2, 6)
+								.rotate(orientation));
+		Direction.Axis roadAxis =
+				orientation.rotate(Direction.SOUTH)
+						.getAxis();
+		Direction.Axis crossAxis =
+				orientation.rotate(Direction.EAST)
+						.getAxis();
+		require(helper,
+				level.getBlockState(verticalPosition)
+								.getValue(
+										RotatedPillarBlock
+												.AXIS)
+								== Direction.Axis.Y
+						&& level.getBlockState(
+								roadBeamPosition)
+								.getValue(
+										RotatedPillarBlock
+												.AXIS)
+								== roadAxis
+						&& level.getBlockState(
+								crossBeamPosition)
+								.getValue(
+										RotatedPillarBlock
+												.AXIS)
+								== crossAxis,
+				"Candy-Cane Bridge lost the deliberate vertical/route/crossing pillar axes");
+
+		BlockPos northApproach =
+				centre.offset(new BlockPos(
+						0, 0, -16)
+								.rotate(orientation));
+		BlockPos southApproach =
+				centre.offset(new BlockPos(
+						0, 0, 16)
+								.rotate(orientation));
+		BlockPos northStair =
+				centre.offset(new BlockPos(
+						0, 0, -10)
+								.rotate(orientation));
+		BlockPos southStair =
+				centre.offset(new BlockPos(
+						0, 0, 10)
+								.rotate(orientation));
+		require(helper,
+				level.getBlockState(northApproach)
+								.is(CakeWorldBlocks
+										.BISCUIT_CRUMBS
+										.get())
+						&& level.getBlockState(
+								southApproach)
+								.is(CakeWorldBlocks
+										.BISCUIT_CRUMBS
+										.get())
+						&& level.getBlockState(
+								northStair)
+								.getValue(
+										StairBlock.FACING)
+								== orientation.rotate(
+										Direction.SOUTH)
+						&& level.getBlockState(
+								southStair)
+								.getValue(
+										StairBlock.FACING)
+								== orientation.rotate(
+										Direction.NORTH),
+				"Candy-Cane Bridge lost its readable two-ended path or mirrored stair approach");
+
+		BlockPos damagedRail =
+				CandyCaneBridgeFeature
+						.reloadSentinelPosition(
+								level.getSeed(), centre);
+		level.setBlock(damagedRail,
+				Blocks.AIR.defaultBlockState(), 2);
+		level.setBlock(deck,
+				Blocks.AIR.defaultBlockState(), 2);
+		require(helper,
+				CandyCaneBridgeFeature.repairAt(
+						level,
+						new Random(
+								CandyCaneBridgeFeature
+										.PLACEMENT_SALT),
+						centre),
+				"Candy-Cane Bridge late repair refused its fixture");
+		require(helper,
+				level.getBlockState(damagedRail)
+								.is(CakeWorldBlocks
+										.CANDY_CANE_PILLAR
+										.get())
+						&& level.getBlockState(
+								damagedRail)
+								.getValue(
+										RotatedPillarBlock
+												.AXIS)
+								== roadAxis
+						&& level.getBlockState(deck)
+								.is(CakeWorldBlocks
+										.WAFER_BLOCK.get())
+						&& level.getBlockState(channel)
+								.is(CakeWorldFluids
+										.LEMONADE_BLOCK
+										.get()),
+				"Candy-Cane Bridge repair did not restore the rail, deck and safe crossing");
 		helper.succeed();
 	}
 
