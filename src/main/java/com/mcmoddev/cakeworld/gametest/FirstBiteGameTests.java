@@ -180,6 +180,8 @@ import com.mcmoddev.cakeworld.world.LiquoriceFortressFeature;
 import com.mcmoddev.cakeworld.world.LiquoriceFortressPalette;
 import com.mcmoddev.cakeworld.world.MacaronCitadelFeature;
 import com.mcmoddev.cakeworld.world.MacaronCitadelPalette;
+import com.mcmoddev.cakeworld.world.BuriedSweetTinFeature;
+import com.mcmoddev.cakeworld.world.BuriedSweetTinRepair;
 import com.mcmoddev.cakeworld.world.WaferMineFeature;
 import com.mcmoddev.cakeworld.world.WaferMineStructureFeature;
 import com.mcmoddev.cakeworld.world.WaferWreckFeature;
@@ -429,12 +431,15 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.LegacyRandomSource;
 import net.minecraft.world.level.levelgen.WorldgenRandom;
 import net.minecraft.world.level.levelgen.feature.NetherFortressFeature;
+import net.minecraft.world.level.levelgen.feature.BuriedTreasureFeature;
 import net.minecraft.data.worldgen.StructureFeatures;
 import net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature;
 import net.minecraft.world.level.levelgen.feature.StructureFeature;
 import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 import net.minecraft.world.level.levelgen.feature.configurations.OceanRuinConfiguration;
+import net.minecraft.world.level.levelgen.feature.configurations.ProbabilityFeatureConfiguration;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.levelgen.structure.BuriedTreasurePieces;
 import net.minecraft.world.level.levelgen.structure.EndCityPieces;
 import net.minecraft.world.level.levelgen.structure.NetherBridgePieces;
 import net.minecraft.world.level.levelgen.structure.OceanMonumentPieces;
@@ -35733,7 +35738,7 @@ public final class FirstBiteGameTests {
 				!lostCargoMap.isEmpty()
 						&& lostCargoMap.getHoverName()
 								instanceof TranslatableComponent
-						&& "filled_map.cakeworld.wafer_wreck"
+						&& "filled_map.cakeworld.buried_sweet_tin"
 								.equals(
 										((TranslatableComponent)
 												lostCargoMap
@@ -35743,7 +35748,7 @@ public final class FirstBiteGameTests {
 				!lostCargoMap.isEmpty()
 						&& lostCargoMap.hasTag()
 						&& namedMap,
-				"Wafer Wreck map cargo did not produce a real named filled exploration map to another unvisited Wreck: "
+				"Wafer Wreck map cargo did not produce a real named filled exploration map to a Buried Sweet Tin: "
 						+ mapCargo);
 
 		List<ItemStack> supplyCargo =
@@ -38830,6 +38835,433 @@ public final class FirstBiteGameTests {
 							+ literalShulkers);
 			frames.forEach(Entity::discard);
 			clams.forEach(Entity::discard);
+			helper.succeed();
+		});
+	}
+
+	@GameTest(template = EMPTY, batch = "struct016",
+			timeoutTicks = 2400)
+	public static void buriedSweetTinKeepsNativeMapPlacementAndHeartLoot(
+			GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						BuriedSweetTinFeature
+								.STRUCTURE_ID);
+		Registry<net.minecraft.world.level.levelgen.structure.StructureSet>
+				structureSets =
+				level.registryAccess().registryOrThrow(
+						Registry.STRUCTURE_SET_REGISTRY);
+		net.minecraft.world.level.levelgen.structure.StructureSet
+				structureSet =
+				structureSets.get(
+						BuriedSweetTinFeature
+								.STRUCTURE_SET_ID);
+		boolean ownStructureTag =
+				structures.getTag(
+						BuriedSweetTinFeature
+								.STRUCTURE_TAG)
+						.map(tag -> tag.stream()
+								.anyMatch(holder ->
+										holder.value()
+												== configured))
+						.orElse(false);
+		boolean treasureMapTag =
+				structures.getTag(
+						ConfiguredStructureTags
+								.ON_TREASURE_MAPS)
+						.map(tag -> tag.stream()
+								.anyMatch(holder ->
+										holder.value()
+												== configured))
+						.orElse(false);
+		Registry<Biome> biomes =
+				level.registryAccess().registryOrThrow(
+						Registry.BIOME_REGISTRY);
+		Holder<Biome> sodaOcean =
+				biomes.getHolderOrThrow(
+						ResourceKey.create(
+								Registry.BIOME_REGISTRY,
+								CakeWorldBiomes
+										.SODA_OCEAN
+										.getId()));
+		require(helper,
+				configured != null
+						&& configured.feature
+								== StructureFeature
+										.BURIED_TREASURE
+						&& configured.feature
+								instanceof BuriedTreasureFeature
+						&& configured.config
+								instanceof ProbabilityFeatureConfiguration
+						&& close(
+								((ProbabilityFeatureConfiguration)
+										configured.config)
+												.probability,
+								0.01D)
+						&& !configured.adaptNoise
+						&& configured.feature.step()
+								== GenerationStep
+										.Decoration
+										.UNDERGROUND_STRUCTURES
+						&& configured.spawnOverrides
+								.isEmpty()
+						&& ownStructureTag
+						&& treasureMapTag
+						&& sodaOcean.is(
+								BuriedSweetTinFeature
+										.GENERATES_IN)
+						&& sodaOcean.is(
+								BiomeTags
+										.HAS_BURIED_TREASURE),
+				"Buried Sweet Tin lost native probability/feature, Treasure-Map identity or Soda-Ocean eligibility: tags="
+						+ ownStructureTag + "/"
+						+ treasureMapTag);
+
+		require(helper,
+				structureSet != null
+						&& structureSet.structures()
+								.size() == 1
+						&& structureSet.structures()
+								.get(0).weight() == 1
+						&& structureSet.structures()
+								.get(0).structure()
+								.value() == configured
+						&& structureSet.placement()
+								instanceof net.minecraft.world.level
+										.levelgen.structure.placement
+										.RandomSpreadStructurePlacement,
+				"Buried Sweet Tin lost the one-entry native Buried Treasures set");
+		net.minecraft.world.level.levelgen.structure.placement
+				.RandomSpreadStructurePlacement placement =
+				(net.minecraft.world.level.levelgen.structure
+						.placement.RandomSpreadStructurePlacement)
+						structureSet.placement();
+		require(helper,
+				placement.spacing() == 1
+						&& placement.separation() == 0
+						&& placement.spreadType()
+								== net.minecraft.world.level
+										.levelgen.structure
+										.placement
+										.RandomSpreadType
+										.LINEAR
+						&& placement.salt() == 0
+						&& placement
+								.locateOffset()
+								.getX() == 9
+						&& placement
+								.locateOffset()
+								.getY() == 0
+						&& placement
+								.locateOffset()
+								.getZ() == 9,
+				"Buried Sweet Tin lost native one-percent-per-chunk candidate placement or +9/+9 locate offset");
+		try {
+			Field randomSalt =
+					BuriedTreasureFeature.class
+							.getDeclaredField(
+									"RANDOM_SALT");
+			randomSalt.setAccessible(true);
+			require(helper,
+					randomSalt.getInt(null)
+							== 10387320,
+					"Buried Sweet Tin lost native candidate salt 10387320");
+		} catch (ReflectiveOperationException exception) {
+			throw new AssertionError(
+					"Could not inspect native Buried-Treasure candidate salt",
+					exception);
+		}
+
+		BlockPos local = helper.absolutePos(
+				new BlockPos(4, 4, 4));
+		int fixtureY =
+				level.getMaxBuildHeight() - 96;
+		BlockPos nativeChest =
+				new BlockPos(local.getX(), fixtureY,
+						local.getZ());
+		BlockPos edibleChest =
+				new BlockPos(local.getX() + 8,
+						fixtureY,
+						local.getZ());
+		for (BlockPos target :
+				List.of(nativeChest, edibleChest)) {
+			for (BlockPos position
+					: BlockPos.betweenClosed(
+							target.offset(-2, -2,
+									-2),
+							target.offset(2, 3,
+									2))) {
+				level.setBlock(position,
+						Blocks.AIR
+								.defaultBlockState(),
+						2);
+			}
+		}
+		level.setBlock(nativeChest.below(),
+				Blocks.STONE.defaultBlockState(), 2);
+		level.setBlock(nativeChest,
+				Blocks.SAND.defaultBlockState(), 2);
+		BuriedTreasurePieces.BuriedTreasurePiece
+				nativePiece =
+				new BuriedTreasurePieces
+						.BuriedTreasurePiece(
+								new BlockPos(
+										nativeChest
+												.getX(),
+										90,
+										nativeChest
+												.getZ()));
+		BoundingBox nativeColumn =
+				new BoundingBox(
+						nativeChest.getX(),
+						level.getMinBuildHeight(),
+						nativeChest.getZ(),
+						nativeChest.getX(),
+						level.getMaxBuildHeight()
+								- 1,
+						nativeChest.getZ());
+		nativePiece.postProcess(level,
+				level.structureFeatureManager(),
+				level.getChunkSource().getGenerator(),
+				new Random(10387320L), nativeColumn,
+				new ChunkPos(nativeChest),
+				nativeChest);
+		BlockEntity nativeEntity =
+				level.getBlockEntity(nativeChest);
+		CompoundTag nativeState =
+				nativeEntity == null
+						? new CompoundTag()
+						: nativeEntity
+								.saveWithoutMetadata();
+		require(helper,
+				level.getBlockState(nativeChest)
+						.is(Blocks.CHEST)
+						&& nativePiece.getBoundingBox()
+								.equals(new BoundingBox(
+										nativeChest))
+						&& BuiltInLootTables
+								.BURIED_TREASURE
+								.toString()
+								.equals(nativeState
+										.getString(
+												"LootTable")),
+				"Native Buried-Treasure piece lost its descending exact-support chest and loot contract: bounds="
+						+ nativePiece
+								.getBoundingBox()
+						+ ", state=" + nativeState);
+
+		level.setBlock(edibleChest.below(),
+				CakeWorldBlocks.BISCUIT_STONE.get()
+						.defaultBlockState(),
+				2);
+		for (Direction direction
+				: Direction.Plane.HORIZONTAL) {
+			level.setBlock(
+					edibleChest.relative(direction)
+							.below(),
+					CakeWorldFluids.LEMONADE_BLOCK.get()
+							.defaultBlockState(),
+					2);
+			level.setBlock(
+					edibleChest.relative(direction),
+					(direction == Direction.NORTH
+							|| direction
+									== Direction.SOUTH)
+											? CakeWorldBlocks
+													.BISCUIT_CRUMBS
+													.get()
+													.defaultBlockState()
+											: CakeWorldFluids
+													.LEMONADE_BLOCK
+													.get()
+													.defaultBlockState(),
+					2);
+		}
+		level.setBlock(edibleChest.above(),
+				CakeWorldFluids.LEMONADE_BLOCK.get()
+						.defaultBlockState(),
+				2);
+		BlockPos placed =
+				BuriedSweetTinRepair.placeSweetTin(
+						level,
+						new BlockPos(
+								edibleChest.getX(),
+								90,
+								edibleChest.getZ()),
+						10387320L);
+		require(helper, edibleChest.equals(placed),
+				"Buried Sweet Tin did not accept the solid edible support at the ocean-floor height: expected="
+						+ edibleChest + ", actual="
+						+ placed);
+		BlockEntity edibleEntity =
+				level.getBlockEntity(edibleChest);
+		CompoundTag firstState =
+				edibleEntity == null
+						? new CompoundTag()
+						: edibleEntity
+								.saveWithoutMetadata();
+		BlockPos repeated =
+				BuriedSweetTinRepair.placeSweetTin(
+						level,
+						new BlockPos(
+								edibleChest.getX(),
+								90,
+								edibleChest.getZ()),
+						1978L);
+		CompoundTag repeatedState =
+				level.getBlockEntity(edibleChest)
+						.saveWithoutMetadata();
+		Map<Block, Integer> ediblePalette =
+				scanBoundingBoxPalette(level,
+						BuriedSweetTinRepair
+								.cacheBounds(
+										edibleChest));
+		boolean supportedRing = true;
+		for (Direction direction
+				: Direction.Plane.HORIZONTAL) {
+			supportedRing &=
+					level.getBlockState(
+							edibleChest
+									.relative(direction)
+									.below())
+							.is(CakeWorldBlocks
+									.BISCUIT_STONE
+									.get());
+		}
+		require(helper,
+				edibleChest.equals(repeated)
+						&& firstState.equals(
+								repeatedState)
+						&& level.getBlockState(
+								edibleChest)
+								.is(Blocks.CHEST)
+						&& ediblePalette
+								.getOrDefault(
+										Blocks.CHEST,
+										0) == 1
+						&& ediblePalette
+								.getOrDefault(
+										CakeWorldBlocks
+												.BISCUIT_SAND
+												.get(),
+										0) == 4
+						&& ediblePalette
+								.getOrDefault(
+										CakeWorldBlocks
+												.BISCUIT_CRUMBS
+												.get(),
+										0) == 1
+						&& supportedRing
+						&& BuiltInLootTables
+								.BURIED_TREASURE
+								.toString()
+								.equals(firstState
+										.getString(
+												"LootTable"))
+						&& firstState.contains(
+								"CustomName")
+						&& firstState
+								.getString(
+										"CustomName")
+								.contains(
+										"container.cakeworld.buried_sweet_tin"),
+				"Buried Sweet Tin lost its idempotent named chest, native loot or compact Biscuit-Sand/Crumb cache: palette="
+						+ ediblePalette
+						+ ", first=" + firstState
+						+ ", repeated="
+						+ repeatedState);
+		/*
+		 * Reproduce the LevelChunk handoff observed in integrated generation:
+		 * the reported ocean floor can rise well above the already-created
+		 * native chest. Idempotence must remain tied to the exact native
+		 * start column, not to a narrow band around the latest heightmap.
+		 */
+		BlockPos raisedSupport = edibleChest.above(20);
+		level.setBlock(raisedSupport,
+				CakeWorldBlocks.BISCUIT_STONE.get()
+						.defaultBlockState(),
+				2);
+		BlockPos afterSurfaceRise =
+				BuriedSweetTinRepair.placeSweetTin(
+						level,
+						new BlockPos(
+								edibleChest.getX(),
+								90,
+								edibleChest.getZ()),
+						1979L);
+		require(helper,
+				edibleChest.equals(afterSurfaceRise)
+						&& level.getBlockState(
+								raisedSupport.above())
+								.isAir(),
+				"Buried Sweet Tin abandoned its existing native-column chest after the ocean-floor height rose: expected="
+						+ edibleChest + ", actual="
+						+ afterSurfaceRise);
+		level.setBlock(raisedSupport,
+				Blocks.AIR.defaultBlockState(), 2);
+
+		LootContext lootContext =
+				new LootContext.Builder(level)
+						.withParameter(
+								LootContextParams.ORIGIN,
+								Vec3.atCenterOf(
+										edibleChest))
+						.create(
+								LootContextParamSets.CHEST);
+		List<ItemStack> loot =
+				level.getServer().getLootTables()
+						.get(BuiltInLootTables
+								.BURIED_TREASURE)
+						.getRandomItems(lootContext);
+		int hearts = loot.stream()
+				.filter(stack -> stack.is(
+						Items.HEART_OF_THE_SEA))
+				.mapToInt(ItemStack::getCount)
+				.sum();
+		require(helper,
+				hearts == 1
+						&& loot.stream()
+								.anyMatch(stack ->
+										stack.is(
+												Items.COOKED_COD)
+												|| stack.is(
+														Items.COOKED_SALMON))
+						&& level.getServer()
+								.getLootTables()
+								.get(BuiltInLootTables
+										.BURIED_TREASURE)
+								!= LootTable.EMPTY,
+				"Buried Sweet Tin lost guaranteed Heart-of-the-Sea, food or native loot-table progression: "
+						+ loot);
+		helper.runAfterDelay(20, () -> {
+			Map<Block, Integer> settledPalette =
+					scanBoundingBoxPalette(level,
+							BuriedSweetTinRepair
+									.cacheBounds(
+											edibleChest));
+			require(helper,
+					settledPalette.getOrDefault(
+							Blocks.CHEST, 0) == 1
+							&& settledPalette
+									.getOrDefault(
+											CakeWorldBlocks
+													.BISCUIT_SAND
+													.get(),
+											0) == 4
+							&& settledPalette
+									.getOrDefault(
+											CakeWorldBlocks
+													.BISCUIT_CRUMBS
+													.get(),
+											0) == 1,
+					"Buried Sweet Tin cache did not survive twenty live Lemonade-fluid ticks: "
+							+ settledPalette);
 			helper.succeed();
 		});
 	}

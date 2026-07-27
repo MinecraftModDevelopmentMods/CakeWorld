@@ -10,16 +10,16 @@
           "functions": [
             {
               "function": "minecraft:exploration_map",
-              "destination": "cakeworld:wafer_wreck",
+              "destination": "cakeworld:buried_sweet_tin",
               "decoration": "red_x",
               "zoom": 1,
               "search_radius": 50,
-              "skip_existing_chunks": true
+              "skip_existing_chunks": false
             },
             {
               "function": "minecraft:set_name",
               "name": {
-                "translate": "filled_map.cakeworld.wafer_wreck"
+                "translate": "filled_map.cakeworld.buried_sweet_tin"
               }
             }
           ]

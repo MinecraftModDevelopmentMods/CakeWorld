@@ -35,6 +35,8 @@ import com.mcmoddev.cakeworld.init.CakeWorldEntities;
 import com.mcmoddev.cakeworld.world.AncientCakeVaultFeature;
 import com.mcmoddev.cakeworld.world.BiscuitBanditLookoutFeature;
 import com.mcmoddev.cakeworld.world.BurntSugarArchFeature;
+import com.mcmoddev.cakeworld.world.BuriedSweetTinFeature;
+import com.mcmoddev.cakeworld.world.BuriedSweetTinRepair;
 import com.mcmoddev.cakeworld.world.CaramelCottageFeature;
 import com.mcmoddev.cakeworld.world.GingerbreadVillageFeature;
 import com.mcmoddev.cakeworld.world.GrandGingerbreadManorFeature;
@@ -66,6 +68,8 @@ import net.minecraft.advancements.Advancement;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -114,6 +118,7 @@ import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.levelgen.structure.BuriedTreasurePieces;
 import net.minecraft.world.level.levelgen.structure.EndCityPieces;
 import net.minecraft.world.level.levelgen.structure.OceanMonumentPieces;
 import net.minecraft.world.level.levelgen.structure.OceanRuinFeature;
@@ -4629,6 +4634,255 @@ public final class DeepPantryGameTests {
 		});
 	}
 
+	@GameTest(template = EMPTY, batch = "struct016world",
+			timeoutTicks = 7200)
+	public static void focusedBuriedSweetTinStructureAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean(
+				"cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed Buried Sweet Tin audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						BuriedSweetTinFeature
+								.STRUCTURE_ID);
+		require(helper, configured != null,
+				"Buried Sweet Tin native configured structure was absent from the live registry");
+		BlockPos wreck =
+				level.findNearestMapFeature(
+						WaferWreckFeature
+								.STRUCTURE_TAG,
+						new BlockPos(-256, 64,
+								320),
+						32, false);
+		require(helper, wreck != null,
+				"The fixed-seed world lost its Wafer Wreck map origin");
+		LocatedTin tin = locateBuriedSweetTin(
+				helper, level, configured, wreck);
+		level.setChunkForced(
+				tin.startChunk().x,
+				tin.startChunk().z, true);
+		level.getChunk(tin.startChunk().x,
+				tin.startChunk().z);
+		helper.runAfterDelay(120, () -> {
+			BlockPos chest =
+					findBuriedSweetTinChest(
+							level, tin.startChunk());
+			require(helper, chest != null,
+					"Natural Buried Sweet Tin start did not create or repair its native-compatible chest");
+			Map<Block, Integer> palette =
+					scanBuriedSweetTinPalette(
+							level, chest);
+			BlockEntity entity =
+					level.getBlockEntity(chest);
+			CompoundTag chestState =
+					entity == null
+							? new CompoundTag()
+							: entity
+									.saveWithoutMetadata();
+			BlockPos sentinel = chest.above();
+			boolean sentinelAlreadyNative =
+					level.getBlockState(sentinel)
+							.is(Blocks.SAND);
+			boolean cacheComplete =
+					level.getBlockState(sentinel)
+							.is(sentinelAlreadyNative
+									? Blocks.SAND
+									: CakeWorldBlocks
+											.BISCUIT_CRUMBS
+											.get());
+			for (Direction direction
+					: Direction.Plane.HORIZONTAL) {
+				cacheComplete &=
+						level.getBlockState(
+								chest.relative(
+										direction))
+								.is(CakeWorldBlocks
+										.BISCUIT_SAND
+										.get());
+			}
+			BlockPos anchor = new BlockPos(
+					tin.startChunk().getBlockX(9),
+					64,
+					tin.startChunk().getBlockZ(9));
+			ResourceLocation biome =
+					level.getBiome(anchor)
+							.unwrapKey()
+							.map(key -> key
+									.location())
+							.orElse(null);
+			boolean eligible =
+					level.getBiome(anchor).is(
+							BuriedSweetTinFeature
+									.GENERATES_IN)
+							&& level.getBiome(anchor)
+									.is(BiomeTags
+											.HAS_BURIED_TREASURE);
+
+			LootContext mapContext =
+					new LootContext.Builder(level)
+							.withParameter(
+									LootContextParams
+											.ORIGIN,
+									Vec3.atCenterOf(
+											wreck))
+							.create(
+									LootContextParamSets
+											.CHEST);
+			List<ItemStack> mapLoot =
+					level.getServer()
+							.getLootTables()
+							.get(WaferWreckFeature
+									.MAP_LOOT_ID)
+							.getRandomItems(
+									mapContext);
+			ItemStack treasureMap =
+					mapLoot.stream()
+							.filter(stack ->
+									stack.is(
+											Items.FILLED_MAP))
+							.findFirst()
+							.orElse(
+									ItemStack.EMPTY);
+			ListTag decorations =
+					treasureMap.hasTag()
+							? treasureMap.getTag()
+									.getList(
+											"Decorations",
+											Tag.TAG_COMPOUND)
+							: new ListTag();
+			CompoundTag target =
+					decorations.isEmpty()
+							? new CompoundTag()
+							: decorations
+									.getCompound(0);
+			boolean namedMap =
+					!treasureMap.isEmpty()
+							&& treasureMap
+									.getHoverName()
+									instanceof net.minecraft.network.chat
+											.TranslatableComponent
+							&& "filled_map.cakeworld.buried_sweet_tin"
+									.equals(
+											((net.minecraft.network.chat
+													.TranslatableComponent)
+													treasureMap
+															.getHoverName())
+																	.getKey());
+			LOGGER.info("Focused Buried Sweet Tin audit: wreck={}, locate={}, startChunk={}, startBounds={}, chest={}, biome={}, palette={}, loot={}, customName={}, mapTarget=({},{}), sentinel={}, markerPhase={}",
+					wreck, tin.located(),
+					tin.startChunk(),
+					tin.start().getBoundingBox(),
+					chest, biome, palette,
+					chestState.getString(
+							"LootTable"),
+					chestState.getString(
+							"CustomName"),
+					target.getDouble("x"),
+					target.getDouble("z"),
+					sentinel,
+					sentinelAlreadyNative
+							? "reloaded"
+							: "seeded");
+			require(helper,
+					CakeWorldBiomes.SODA_OCEAN
+							.getId().equals(biome)
+							&& eligible,
+					"Natural Buried Sweet Tin left Soda Ocean or lost native/CakeWorld biome eligibility: biome="
+							+ biome + ", eligible="
+							+ eligible);
+			require(helper,
+					tin.start().isValid()
+							&& tin.start()
+									.getFeature()
+									== configured
+							&& tin.start()
+									.getPieces()
+									.size() == 1
+							&& tin.start()
+									.getPieces()
+									.get(0)
+									instanceof BuriedTreasurePieces
+											.BuriedTreasurePiece
+							&& chest.getX()
+									== tin.startChunk()
+											.getBlockX(
+													9)
+							&& chest.getZ()
+									== tin.startChunk()
+											.getBlockZ(
+													9)
+							&& chest.getY()
+									<= level
+											.getSeaLevel(),
+					"Natural Buried Sweet Tin lost its one native saved piece, +9/+9 anchor or ocean-floor placement: start="
+							+ tin.start()
+									.getBoundingBox()
+							+ ", chest=" + chest);
+			require(helper,
+					palette.getOrDefault(
+							Blocks.CHEST, 0)
+									== 1
+							&& cacheComplete
+							&& BuiltInLootTables
+									.BURIED_TREASURE
+									.toString()
+									.equals(chestState
+											.getString(
+													"LootTable"))
+							&& chestState
+									.getString(
+											"CustomName")
+									.contains(
+											"container.cakeworld.buried_sweet_tin"),
+					"Natural Buried Sweet Tin lost its compact edible cache, named native chest/loot or durable reload sentinel: palette="
+							+ palette
+							+ ", state="
+							+ chestState);
+			require(helper,
+					namedMap
+							&& decorations.size()
+									== 1
+							&& target.getDouble(
+									"x")
+									== tin.located()
+											.getX()
+							&& target.getDouble(
+									"z")
+									== tin.located()
+											.getZ(),
+					"Natural Wafer-Wreck map did not target the locatable Buried Sweet Tin: map="
+							+ treasureMap
+							+ ", decorations="
+							+ decorations
+							+ ", locate="
+							+ tin.located());
+			if (!sentinelAlreadyNative) {
+				level.setBlock(sentinel,
+						Blocks.SAND
+								.defaultBlockState(),
+						2);
+				require(helper,
+						level.getBlockState(
+								sentinel)
+								.is(Blocks.SAND),
+						"Could not seed the explicit player-placed Sand reload sentinel above the Sweet Tin");
+			}
+			level.setChunkForced(
+					tin.startChunk().x,
+					tin.startChunk().z, false);
+			helper.succeed();
+		});
+	}
+
 	@GameTest(template = EMPTY, timeoutTicks = 1200)
 	public static void baseMetalsCounterpartsPreserveTagsRecipesAndGeneration(
 			GameTestHelper helper) {
@@ -5800,6 +6054,95 @@ public final class DeepPantryGameTests {
 		require(helper, !profile.toJson().get("manage_vanilla_ores").getAsBoolean(),
 				"Unsafe themed-ore takeover was enabled before OreSpawn can map source blocks");
 		helper.succeed();
+	}
+
+	private static LocatedTin locateBuriedSweetTin(
+			GameTestHelper helper, ServerLevel level,
+			ConfiguredStructureFeature<?, ?> configured,
+			BlockPos origin) {
+		BlockPos located = level.findNearestMapFeature(
+				BuriedSweetTinFeature.STRUCTURE_TAG,
+				origin, 50, false);
+		require(helper, located != null,
+				"The fixed-seed CakeWorld contained no locatable Buried Sweet Tin within the native Treasure-Map radius");
+		ChunkPos startChunk = new ChunkPos(located);
+		net.minecraft.world.level.chunk.LevelChunk
+				startLevelChunk =
+				level.getChunk(startChunk.x,
+						startChunk.z);
+		StructureStart start =
+				startLevelChunk.getStartForFeature(
+						configured);
+		if (start == null || !start.isValid()) {
+			List<StructureStart> references =
+					level.structureFeatureManager()
+							.startsForFeature(
+									net.minecraft.core
+											.SectionPos
+											.of(located),
+									configured);
+			start = references.stream()
+					.filter(StructureStart::isValid)
+					.findFirst().orElse(null);
+		}
+		require(helper,
+				start != null && start.isValid()
+						&& start.getFeature()
+								== configured
+						&& start.getPieces()
+								.size() == 1,
+				"The located Buried Sweet Tin lost its one saved native treasure start");
+		return new LocatedTin(
+				located, startChunk, start);
+	}
+
+	private static BlockPos findBuriedSweetTinChest(
+			ServerLevel level, ChunkPos startChunk) {
+		int x = startChunk.getBlockX(9);
+		int z = startChunk.getBlockZ(9);
+		int surface = level.getHeight(
+				Heightmap.Types.OCEAN_FLOOR, x, z);
+		int maximumY = Math.min(
+				level.getMaxBuildHeight() - 1,
+				surface + 4);
+		BlockPos.MutableBlockPos cursor =
+				new BlockPos.MutableBlockPos();
+		for (int y = maximumY;
+				y >= level.getMinBuildHeight(); y--) {
+			cursor.set(x, y, z);
+			if (level.getBlockState(cursor)
+					.is(Blocks.CHEST)) {
+				return cursor.immutable();
+			}
+		}
+		return null;
+	}
+
+	private static Map<Block, Integer>
+			scanBuriedSweetTinPalette(
+					ServerLevel level,
+					BlockPos chest) {
+		Map<Block, Integer> palette =
+				new LinkedHashMap<>();
+		BoundingBox bounds =
+				BuriedSweetTinRepair
+						.cacheBounds(chest);
+		for (int x = bounds.minX();
+				x <= bounds.maxX(); x++) {
+			for (int y = bounds.minY();
+					y <= bounds.maxY(); y++) {
+				for (int z = bounds.minZ();
+						z <= bounds.maxZ(); z++) {
+					palette.merge(
+							level.getBlockState(
+									new BlockPos(
+											x, y, z))
+									.getBlock(),
+							1, Integer::sum);
+				}
+			}
+		}
+		return palette;
 	}
 
 	private static LocatedCitadel locateMacaronCitadel(
@@ -7644,6 +7987,12 @@ public final class DeepPantryGameTests {
 			int soggyBiscuits,
 			int literalDrowned,
 			boolean literalEligible) {
+	}
+
+	private record LocatedTin(
+			BlockPos located,
+			ChunkPos startChunk,
+			StructureStart start) {
 	}
 
 	private record LocatedCitadel(
