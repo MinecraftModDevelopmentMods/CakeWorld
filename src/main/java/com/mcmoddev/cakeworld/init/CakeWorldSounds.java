@@ -26,6 +26,11 @@ public final class CakeWorldSounds {
 			SOUNDS.register("cookie_forest_rustle",
 					() -> new SoundEvent(new ResourceLocation(
 							CakeWorld.MODID, "cookie_forest_rustle")));
+	public static final RegistryObject<SoundEvent> PEPPERMINT_PINEWOODS_CHIME =
+			SOUNDS.register("peppermint_pinewoods_chime",
+					() -> new SoundEvent(new ResourceLocation(
+							CakeWorld.MODID,
+							"peppermint_pinewoods_chime")));
 
 	private CakeWorldSounds() {
 	}

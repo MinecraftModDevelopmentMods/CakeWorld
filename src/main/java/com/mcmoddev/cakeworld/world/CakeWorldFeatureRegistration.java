@@ -21,6 +21,8 @@ public final class CakeWorldFeatureRegistration {
 				RoadsideCuriosityFeature.FEATURE);
 		event.getRegistry().register(
 				CookieCrumbGroveFeature.FEATURE);
+		event.getRegistry().register(
+				PeppermintClearingFeature.FEATURE);
 		event.getRegistry().register(GingerbreadVillageFeature.FEATURE);
 		event.getRegistry().register(
 				BiscuitBanditLookoutFeature.FEATURE);
@@ -123,6 +125,8 @@ public final class CakeWorldFeatureRegistration {
 			RoadsideCuriosityFeature
 					.registerConfiguredFeature();
 			CookieCrumbGroveFeature
+					.registerConfiguredFeature();
+			PeppermintClearingFeature
 					.registerConfiguredFeature();
 			GingerbreadVillageFeature.registerWorldgen();
 			BiscuitBanditLookoutFeature.registerWorldgen();

@@ -51,6 +51,7 @@ import com.mcmoddev.cakeworld.world.ConfectionersCottageFeature;
 import com.mcmoddev.cakeworld.world.CookieCrumbGroveFeature;
 import com.mcmoddev.cakeworld.world.CraterKitchenFeature;
 import com.mcmoddev.cakeworld.world.CraterKitchenStructureFeature;
+import com.mcmoddev.cakeworld.world.PeppermintClearingFeature;
 import com.mcmoddev.cakeworld.world.RockCandyCrystalMineFeature;
 import com.mcmoddev.cakeworld.world.RockCandyCrystalMineStructureFeature;
 import com.mcmoddev.cakeworld.world.RoadsideCuriosityFeature;
@@ -664,6 +665,11 @@ public final class DeepPantryGameTests {
 				"cakeworld:cookie_forest", "cakeworld:chocolate_sponge",
 				"cakeworld:chocolate_sponge", "cakeworld:biscuit_crumbs", 5);
 		assertPaletteContract(helper, palettes, "cakeworld:overworld_land",
+				"cakeworld:peppermint_pinewoods",
+				"cakeworld:icing_layer",
+				"cakeworld:peppermint_rock",
+				"cakeworld:biscuit_crumbs", 5);
+		assertPaletteContract(helper, palettes, "cakeworld:overworld_land",
 				"cakeworld:marshmallow_peaks", "cakeworld:icing_layer",
 				"cakeworld:biscuit_stone", "cakeworld:biscuit_crumbs", 5);
 		assertPaletteContract(helper, palettes, "cakeworld:nether",
@@ -676,6 +682,8 @@ public final class DeepPantryGameTests {
 		Map<String, SurfaceAudit> surfaces = new LinkedHashMap<>();
 		BlockPos hearthlands = locateBiome(helper, overworld,
 				id("gingerbread_hearthlands"));
+		BlockPos peppermintPinewoods = locateBiome(helper,
+				overworld, id("peppermint_pinewoods"));
 		surfaces.put("candy_plains", auditSurface(overworld,
 				locateBiome(helper, overworld, id("candy_plains")),
 				id("candy_plains"), CakeWorldBlocks.ICING_LAYER.get(),
@@ -690,6 +698,13 @@ public final class DeepPantryGameTests {
 				locateBiome(helper, overworld, id("cookie_forest")),
 				id("cookie_forest"), CakeWorldBlocks.CHOCOLATE_SPONGE.get(),
 				CakeWorldBlocks.CHOCOLATE_SPONGE.get(), 2));
+		surfaces.put("peppermint_pinewoods",
+				auditSurface(overworld,
+						peppermintPinewoods,
+						id("peppermint_pinewoods"),
+						CakeWorldBlocks.ICING_LAYER.get(),
+						CakeWorldBlocks.PEPPERMINT_ROCK.get(),
+						2));
 		surfaces.put("marshmallow_peaks", auditSurface(overworld,
 				locateBiome(helper, overworld, id("marshmallow_peaks")),
 				id("marshmallow_peaks"), CakeWorldBlocks.ICING_LAYER.get(),
@@ -713,6 +728,10 @@ public final class DeepPantryGameTests {
 		Map<ResourceLocation, Integer> hearthlandsGeomes =
 				countGeomesForBiome(overworld, hearthlands,
 						id("gingerbread_hearthlands"), 4);
+		Map<ResourceLocation, Integer> peppermintGeomes =
+				countGeomesForBiome(overworld,
+						peppermintPinewoods,
+						id("peppermint_pinewoods"), 4);
 		require(helper,
 				!hearthlandsGeomes.isEmpty()
 						&& hearthlandsGeomes.keySet().stream()
@@ -724,6 +743,17 @@ public final class DeepPantryGameTests {
 								id("wafer_shelf"), 0) > 0,
 				"Natural Gingerbread Hearthlands did not stay within its Cocoa Basin/Wafer Shelf bias or expose its higher-weight Wafer Shelf: "
 						+ hearthlandsGeomes);
+		require(helper,
+				!peppermintGeomes.isEmpty()
+						&& peppermintGeomes.keySet().stream()
+								.allMatch(Set.of(
+										id("peppermint_fold"),
+										id("rock_candy_uplift"))
+										::contains)
+						&& peppermintGeomes.getOrDefault(
+								id("peppermint_fold"), 0) > 0,
+				"Natural Peppermint Pinewoods did not stay within its Peppermint Fold/Rock-Candy Uplift bias or expose its higher-weight Peppermint Fold: "
+						+ peppermintGeomes);
 
 		BlockPos sodaOcean = locateBiome(helper, overworld, id("soda_ocean"));
 		Map<Block, Integer> lemonadeFloor = countBlocksDirectlyUnderFluid(
@@ -733,8 +763,9 @@ public final class DeepPantryGameTests {
 		require(helper, lemonadeFloor.getOrDefault(
 						CakeWorldBlocks.BISCUIT_CRUMBS.get(), 0) > 0,
 				"Soda Ocean exposed no Biscuit Crumbs underwater surface");
-		LOGGER.info("Focused biome surface/palette audit: surfaces={}, hearthlands_geomes={}, soda_floor={}",
-				surfaces, hearthlandsGeomes, describe(lemonadeFloor));
+		LOGGER.info("Focused biome surface/palette audit: surfaces={}, hearthlands_geomes={}, peppermint_geomes={}, soda_floor={}",
+				surfaces, hearthlandsGeomes,
+				peppermintGeomes, describe(lemonadeFloor));
 		helper.succeed();
 	}
 
@@ -6903,6 +6934,68 @@ public final class DeepPantryGameTests {
 		});
 	}
 
+	@GameTest(template = EMPTY, batch = "bioow004world",
+			timeoutTicks = 24000)
+	public static void focusedNaturalPeppermintClearingAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean(
+				"cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed natural Peppermint Clearing audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel()
+				.getServer().getLevel(Level.OVERWORLD);
+		require(helper, level != null,
+				"The fixed-seed server did not expose the Overworld");
+		BlockPos pinewoods = locateBiome(helper, level,
+				CakeWorldBiomes.PEPPERMINT_PINEWOODS.getId());
+		LocatedPeppermintClearing clearing =
+				locateNaturalPeppermintClearing(
+						helper, level, pinewoods, 20);
+		setPeppermintClearingChunksForced(
+				level, clearing, true);
+		helper.runAfterDelay(40, () -> {
+			PeppermintClearingWorldAudit audit =
+					auditNaturalPeppermintClearing(
+							level, clearing);
+			LOGGER.info("Focused natural Peppermint Clearing audit: centre={}, biome={}, rotation={}, palette={}, layout={}, sentinel={}, markerPhase={}, scannedChunks={}, crystalCandidates={}",
+					clearing.centre(),
+					audit.biome(),
+					audit.rotation(),
+					audit.palette(),
+					audit.readableLayout(),
+					audit.sentinel(),
+					audit.brickSentinel()
+							? "reloaded"
+							: "seeded",
+					clearing.scannedChunks(),
+					clearing.crystalCandidates());
+			require(helper,
+					CakeWorldBiomes
+							.PEPPERMINT_PINEWOODS
+							.getId()
+							.equals(audit.biome())
+							&& audit.readableLayout(),
+					"Natural Peppermint Clearing lost its exact Pinewoods biome, three striped pines, frosted clearing or chime post: "
+							+ audit);
+			if (!audit.brickSentinel()) {
+				level.setBlock(audit.sentinel(),
+						Blocks.BRICKS
+								.defaultBlockState(),
+						2);
+				require(helper,
+						level.getBlockState(
+								audit.sentinel())
+								.is(Blocks.BRICKS),
+						"Could not seed the explicit player-placed Brick reload sentinel beside the Peppermint Clearing");
+			}
+			setPeppermintClearingChunksForced(
+					level, clearing, false);
+			helper.succeed();
+		});
+	}
+
 	@GameTest(template = EMPTY, timeoutTicks = 1200)
 	public static void baseMetalsCounterpartsPreserveTagsRecipesAndGeneration(
 			GameTestHelper helper) {
@@ -10654,6 +10747,251 @@ public final class DeepPantryGameTests {
 				brickSentinel);
 	}
 
+	private static LocatedPeppermintClearing
+			locateNaturalPeppermintClearing(
+					GameTestHelper helper,
+					ServerLevel level,
+					BlockPos anchor,
+					int chunkRadius) {
+		ChunkPos anchorChunk = new ChunkPos(anchor);
+		int scannedChunks = 0;
+		int crystalCandidates = 0;
+		for (int radius = 0;
+				radius <= chunkRadius; radius++) {
+			for (int chunkX =
+					anchorChunk.x - radius;
+					chunkX <= anchorChunk.x
+							+ radius;
+					chunkX++) {
+				for (int chunkZ =
+						anchorChunk.z - radius;
+						chunkZ <= anchorChunk.z
+								+ radius;
+						chunkZ++) {
+					if (radius > 0
+							&& chunkX
+									!= anchorChunk.x
+											- radius
+							&& chunkX
+									!= anchorChunk.x
+											+ radius
+							&& chunkZ
+									!= anchorChunk.z
+											- radius
+							&& chunkZ
+									!= anchorChunk.z
+											+ radius) {
+						continue;
+					}
+					level.getChunk(chunkX, chunkZ);
+					scannedChunks++;
+					for (int x = chunkX << 4;
+							x < (chunkX + 1) << 4;
+							x++) {
+						for (int z = chunkZ << 4;
+								z < (chunkZ + 1) << 4;
+								z++) {
+							int surfaceY = level.getHeight(
+									Heightmap.Types
+											.MOTION_BLOCKING_NO_LEAVES,
+									x, z) - 1;
+							int minimumY = Math.max(
+									level.getMinBuildHeight(),
+									surfaceY - 12);
+							int maximumY = Math.min(
+									level.getMaxBuildHeight()
+											- 1,
+									surfaceY + 8);
+							for (int y = minimumY;
+									y <= maximumY;
+									y++) {
+								BlockPos crystal =
+										new BlockPos(
+												x, y,
+												z);
+								if (!level
+										.getBlockState(
+												crystal)
+										.is(CakeWorldBlocks
+												.MINT_CRYSTAL
+												.get())
+										|| !level
+												.getBlockState(
+														crystal
+																.below())
+												.is(CakeWorldBlocks
+														.CANDY_CANE_PILLAR
+														.get())) {
+									continue;
+								}
+								crystalCandidates++;
+								LocatedPeppermintClearing
+										clearing =
+												new LocatedPeppermintClearing(
+														crystal.below(
+																3),
+														scannedChunks,
+														crystalCandidates);
+								PeppermintClearingWorldAudit
+										audit =
+												auditNaturalPeppermintClearing(
+														level,
+														clearing);
+								LOGGER.info("Peppermint Clearing crystal candidate: centre={}, biome={}, rotation={}, palette={}, layout={}, scannedChunks={}, crystalCandidates={}",
+										clearing.centre(),
+										audit.biome(),
+										audit.rotation(),
+										audit.palette(),
+										audit.readableLayout(),
+										scannedChunks,
+										crystalCandidates);
+								if (audit.readableLayout()) {
+									return clearing;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		require(helper, false,
+				"The fixed-seed Pinewoods survey found no natural Peppermint Clearing after "
+						+ scannedChunks
+						+ " generated chunks and "
+						+ crystalCandidates
+						+ " surface crystal candidates near "
+						+ anchor);
+		throw new IllegalStateException(
+				"Unreachable after GameTest failure");
+	}
+
+	private static PeppermintClearingWorldAudit
+			auditNaturalPeppermintClearing(
+					ServerLevel level,
+					LocatedPeppermintClearing
+							clearing) {
+		BlockPos centre = clearing.centre();
+		Rotation rotation =
+				PeppermintClearingFeature.orientation(
+						level.getSeed(), centre);
+		BlockPos sentinel = local(centre, rotation,
+				5, 2, 5);
+		boolean brickSentinel =
+				level.getBlockState(sentinel)
+						.is(Blocks.BRICKS);
+		Map<Block, Integer> palette =
+				new LinkedHashMap<>();
+		for (int x = -5; x <= 5; x++) {
+			for (int y = 0; y <= 8; y++) {
+				for (int z = -5; z <= 5; z++) {
+					palette.merge(
+							level.getBlockState(
+									centre.offset(
+											x, y, z))
+									.getBlock(),
+							1, Integer::sum);
+				}
+			}
+		}
+		ResourceLocation biome =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.getKey(level.getBiome(centre)
+								.value());
+		boolean readable =
+				matchesPeppermintClearingLayout(
+						level, centre, rotation)
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.ICING_LAYER
+										.get(),
+								0) >= 45
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CANDY_CANE_PILLAR
+										.get(),
+								0) == 22
+						&& palette.getOrDefault(
+								CakeWorldBlocks.ICING
+										.get(),
+								0) == 147
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CANDY_GLASS
+										.get(),
+								0) == 4
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.MINT_CRYSTAL
+										.get(),
+								0) == 1;
+		return new PeppermintClearingWorldAudit(
+				palette, biome, rotation,
+				readable, sentinel,
+				brickSentinel);
+	}
+
+	private static boolean
+			matchesPeppermintClearingLayout(
+					ServerLevel level,
+					BlockPos centre,
+					Rotation rotation) {
+		if (!level.getBlockState(local(
+				centre, rotation, 0, 3, 0))
+				.is(CakeWorldBlocks.MINT_CRYSTAL.get())) {
+			return false;
+		}
+		for (int y = 0; y <= 2; y++) {
+			if (!level.getBlockState(local(
+					centre, rotation, 0, y, 0))
+					.is(CakeWorldBlocks
+							.CANDY_CANE_PILLAR.get())) {
+				return false;
+			}
+		}
+		int[][] chimes = {
+				{1, 0},
+				{-1, 0},
+				{0, 1},
+				{0, -1}
+		};
+		for (int[] chime : chimes) {
+			if (!level.getBlockState(local(
+					centre, rotation,
+					chime[0], 2, chime[1]))
+					.is(CakeWorldBlocks
+							.CANDY_GLASS.get())) {
+				return false;
+			}
+		}
+		int[][] trees = {
+				{-3, -2, 6},
+				{3, -2, 7},
+				{0, 3, 6}
+		};
+		for (int[] tree : trees) {
+			BlockPos base = local(centre, rotation,
+					tree[0], 0, tree[1]);
+			if (!level.getBlockState(base)
+					.is(CakeWorldBlocks
+							.CANDY_CANE_PILLAR.get())
+					|| !level.getBlockState(
+							base.above(
+									tree[2] - 1))
+							.is(CakeWorldBlocks
+									.CANDY_CANE_PILLAR
+									.get())
+					|| !level.getBlockState(
+							base.above(tree[2]))
+							.is(CakeWorldBlocks.ICING
+									.get())) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 	private static boolean matchesCookieGroveLayout(
 			ServerLevel level, BlockPos centre,
 			Rotation rotation) {
@@ -11098,6 +11436,30 @@ public final class DeepPantryGameTests {
 					chunkZ <= Math.floorDiv(
 							grove.centre().getZ()
 									+ 11,
+							16);
+					chunkZ++) {
+				level.setChunkForced(
+						chunkX, chunkZ,
+						forced);
+			}
+		}
+	}
+
+	private static void setPeppermintClearingChunksForced(
+			ServerLevel level,
+			LocatedPeppermintClearing clearing,
+			boolean forced) {
+		for (int chunkX = Math.floorDiv(
+				clearing.centre().getX() - 5, 16);
+				chunkX <= Math.floorDiv(
+						clearing.centre().getX() + 5,
+						16);
+				chunkX++) {
+			for (int chunkZ = Math.floorDiv(
+					clearing.centre().getZ() - 5, 16);
+					chunkZ <= Math.floorDiv(
+							clearing.centre().getZ()
+									+ 5,
 							16);
 					chunkZ++) {
 				level.setChunkForced(
@@ -12533,6 +12895,20 @@ public final class DeepPantryGameTests {
 			ResourceLocation biome,
 			Rotation rotation,
 			String cacheLoot,
+			boolean readableLayout,
+			BlockPos sentinel,
+			boolean brickSentinel) {
+	}
+
+	private record LocatedPeppermintClearing(
+			BlockPos centre, int scannedChunks,
+			int crystalCandidates) {
+	}
+
+	private record PeppermintClearingWorldAudit(
+			Map<Block, Integer> palette,
+			ResourceLocation biome,
+			Rotation rotation,
 			boolean readableLayout,
 			BlockPos sentinel,
 			boolean brickSentinel) {

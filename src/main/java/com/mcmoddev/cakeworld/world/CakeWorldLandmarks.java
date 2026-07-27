@@ -52,6 +52,20 @@ public final class CakeWorldLandmarks {
 							.TOP_LAYER_MODIFICATION)
 					.add(cookieGrove);
 		}
+		Holder<PlacedFeature> peppermintClearing =
+				PeppermintClearingFeature
+						.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(
+						biome.getNamespace())
+				&& "peppermint_pinewoods".equals(
+						biome.getPath())
+				&& peppermintClearing != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration
+							.TOP_LAYER_MODIFICATION)
+					.add(peppermintClearing);
+		}
 		Holder<PlacedFeature> manorRepair =
 				GrandGingerbreadManorRepairFeature
 						.placedFeature();
@@ -230,6 +244,7 @@ public final class CakeWorldLandmarks {
 		return "candy_plains".equals(path)
 				|| "gingerbread_hearthlands".equals(path)
 				|| "cookie_forest".equals(path)
+				|| "peppermint_pinewoods".equals(path)
 				|| "marshmallow_peaks".equals(path)
 				|| "soda_ocean".equals(path);
 	}
@@ -238,6 +253,7 @@ public final class CakeWorldLandmarks {
 			String path) {
 		return "candy_plains".equals(path)
 				|| "cookie_forest".equals(path)
+				|| "peppermint_pinewoods".equals(path)
 				|| "marshmallow_peaks".equals(path);
 	}
 

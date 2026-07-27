@@ -25,5 +25,14 @@
         "type": "event"
       }
     ]
+  },
+  "peppermint_pinewoods_chime": {
+    "subtitle": "subtitles.cakeworld.peppermint_pinewoods.chime",
+    "sounds": [
+      {
+        "name": "minecraft:block.amethyst_block.chime",
+        "type": "event"
+      }
+    ]
   }
 }

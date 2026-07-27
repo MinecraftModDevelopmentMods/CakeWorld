@@ -158,8 +158,8 @@ public final class CookieCrumbForestGameTests {
 			GameTestHelper helper) {
 		JsonObject provider = readObject(PROVIDER);
 		require(helper,
-				provider.get("provider_revision").getAsInt() == 13,
-				"Cookie Crumb Forest requires OreSpawn provider revision 13");
+				provider.get("provider_revision").getAsInt() >= 13,
+				"Cookie Crumb Forest requires OreSpawn provider revision 13 or later");
 		JsonObject templates = provider.getAsJsonObject("templates");
 		for (String templateId : TEMPLATES) {
 			JsonObject profile = templates.getAsJsonObject(templateId)

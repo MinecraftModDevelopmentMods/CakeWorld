@@ -21,7 +21,8 @@ import net.minecraftforge.fml.common.Mod;
 public final class CakeWorldCreatureSpawns {
 	private static final Set<String> OVERWORLD_BIOMES = Set.of(
 			"candy_plains", "gingerbread_hearthlands",
-			"cookie_forest", "marshmallow_peaks", "soda_ocean");
+			"cookie_forest", "peppermint_pinewoods",
+			"marshmallow_peaks", "soda_ocean");
 
 	private CakeWorldCreatureSpawns() {
 	}
@@ -42,6 +43,9 @@ public final class CakeWorldCreatureSpawns {
 		replaceExisting(event, MobCategory.CREATURE,
 				EntityType.WOLF,
 				CakeWorldEntities.GINGER_SNAP_HOUND);
+		replaceExisting(event, MobCategory.CREATURE,
+				EntityType.FOX,
+				CakeWorldEntities.PEPPERMINT_FOX);
 		replaceExisting(event, MobCategory.MONSTER,
 				EntityType.ZOGLIN,
 				CakeWorldEntities.STALE_FUDGE_BOAR);
@@ -160,6 +164,21 @@ public final class CakeWorldCreatureSpawns {
 					CakeWorldEntities.TRUFFLE_PIG, 8, 2, 4);
 			replace(event, MobCategory.CREATURE, EntityType.CHICKEN,
 					CakeWorldEntities.MALLOW_CHICK, 10, 2, 4);
+		}
+		if ("peppermint_pinewoods".equals(
+				biome.getPath())) {
+			replaceExisting(event, MobCategory.CREATURE,
+					EntityType.COW,
+					CakeWorldEntities.COCOA_COW);
+			replaceExisting(event, MobCategory.CREATURE,
+					EntityType.PIG,
+					CakeWorldEntities.TRUFFLE_PIG);
+			replaceExisting(event, MobCategory.CREATURE,
+					EntityType.CHICKEN,
+					CakeWorldEntities.MALLOW_CHICK);
+			replaceExisting(event, MobCategory.CREATURE,
+					EntityType.RABBIT,
+					CakeWorldEntities.GUMMY_BUNNY);
 		}
 		if ("marshmallow_peaks".equals(biome.getPath())) {
 			replace(event, MobCategory.CREATURE, EntityType.GOAT,

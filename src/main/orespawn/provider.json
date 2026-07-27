@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "provider_modid": "cakeworld",
-  "provider_revision": 13,
+  "provider_revision": 14,
   "templates": {
     "cakeworld:edible_world": {
       "name_key": "template.cakeworld.edible_world",
@@ -223,6 +223,10 @@
           "cakeworld:cookie_forest": {
             "cakeworld:cocoa_basin": 6.0,
             "cakeworld:wafer_shelf": 8.0
+          },
+          "cakeworld:peppermint_pinewoods": {
+            "cakeworld:peppermint_fold": 12.0,
+            "cakeworld:rock_candy_uplift": 3.0
           },
           "cakeworld:marshmallow_peaks": {
             "cakeworld:peppermint_fold": 6.0,
@@ -712,6 +716,26 @@
                 "surface": {
                   "top_block": "cakeworld:chocolate_sponge",
                   "filler_block": "cakeworld:chocolate_sponge",
+                  "underwater_block": "cakeworld:biscuit_crumbs",
+                  "filler_depth": 5
+                }
+              },
+              "cakeworld:peppermint_pinewoods": {
+                "enabled": true,
+                "weight": 1.5,
+                "similar_biomes": [
+                  "minecraft:snowy_taiga",
+                  "minecraft:taiga",
+                  "minecraft:old_growth_pine_taiga"
+                ],
+                "required_similar_biomes": [],
+                "min_temperature": -2.0,
+                "max_temperature": 0.3,
+                "min_downfall": 0.35,
+                "max_downfall": 1.0,
+                "surface": {
+                  "top_block": "cakeworld:icing_layer",
+                  "filler_block": "cakeworld:peppermint_rock",
                   "underwater_block": "cakeworld:biscuit_crumbs",
                   "filler_depth": 5
                 }

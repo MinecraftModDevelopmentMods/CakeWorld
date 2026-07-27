@@ -4069,8 +4069,12 @@ public final class FirstBiteGameTests {
 				.registryOrThrow(Registry.BIOME_REGISTRY)
 				.get(new ResourceLocation(CakeWorld.MODID,
 						"peppermint_pinewoods"));
-		require(helper, peppermintPinewoods == null,
-				"Peppermint Pinewoods now exists; replace this dependency gate with exact Fox spawn-role proof");
+		require(helper, peppermintPinewoods != null,
+				"Peppermint Fox role has no Peppermint Pinewoods biome");
+		requireSpawnReplacement(helper, peppermintPinewoods,
+				EntityType.FOX,
+				CakeWorldEntities.PEPPERMINT_FOX.get(),
+				MobCategory.CREATURE);
 		helper.succeed();
 	}
 
