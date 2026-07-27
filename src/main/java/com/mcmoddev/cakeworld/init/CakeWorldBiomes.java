@@ -42,6 +42,8 @@ public final class CakeWorldBiomes {
 			candyCaneBadlands();
 	public static final RegistryObject<Biome> MARSHMALLOW_PEAKS =
 			marshmallowPeaks();
+	public static final RegistryObject<Biome> ICE_CREAM_TUNDRA =
+			iceCreamTundra();
 	public static final RegistryObject<Biome> SODA_OCEAN = copy(
 			"soda_ocean", "ocean", 0.5F, 0.5F);
 	public static final RegistryObject<Biome> FUDGE_WASTES = copy(
@@ -109,6 +111,12 @@ public final class CakeWorldBiomes {
 					BiomeDictionary.Type.PEAK,
 					BiomeDictionary.Type.COLD,
 					BiomeDictionary.Type.SNOWY);
+			BiomeDictionary.addTypes(key(ICE_CREAM_TUNDRA),
+					BiomeDictionary.Type.OVERWORLD,
+					BiomeDictionary.Type.PLAINS,
+					BiomeDictionary.Type.COLD,
+					BiomeDictionary.Type.SNOWY,
+					BiomeDictionary.Type.WASTELAND);
 			BiomeDictionary.addTypes(key(SODA_OCEAN),
 					BiomeDictionary.Type.OVERWORLD,
 					BiomeDictionary.Type.OCEAN,
@@ -210,6 +218,19 @@ public final class CakeWorldBiomes {
 												.getSpecialEffects())));
 	}
 
+	private static RegistryObject<Biome> iceCreamTundra() {
+		return OreSpawnBiomes.copyAndRegister(BIOMES,
+				"ice_cream_tundra",
+				() -> vanilla("snowy_plains"),
+				builder -> builder
+						.temperature(-0.5F)
+						.downfall(0.4F)
+						.specialEffects(
+								withIceCreamTundraEffects(
+										vanilla("snowy_plains")
+												.getSpecialEffects())));
+	}
+
 	private static RegistryObject<Biome> copyWithAmbient(
 			String name, String vanilla,
 			float temperature, float downfall,
@@ -277,6 +298,20 @@ public final class CakeWorldBiomes {
 						new AmbientAdditionsSettings(
 								CakeWorldSounds
 										.MARSHMALLOW_PEAKS_BREEZE
+										.get(),
+								0.001D))
+				.build();
+	}
+
+	private static BiomeSpecialEffects withIceCreamTundraEffects(
+			BiomeSpecialEffects source) {
+		return effectsBuilder(source)
+				.ambientParticle(new AmbientParticleSettings(
+						ParticleTypes.SNOWFLAKE, 0.001F))
+				.ambientAdditionsSound(
+						new AmbientAdditionsSettings(
+								CakeWorldSounds
+										.ICE_CREAM_TUNDRA_CHILL
 										.get(),
 								0.001D))
 				.build();

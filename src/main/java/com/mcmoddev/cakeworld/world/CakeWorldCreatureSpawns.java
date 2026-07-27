@@ -26,6 +26,7 @@ public final class CakeWorldCreatureSpawns {
 			"sherbet_dunes",
 			"candy_cane_badlands",
 			"marshmallow_peaks",
+			"ice_cream_tundra",
 			"soda_ocean");
 
 	private CakeWorldCreatureSpawns() {
@@ -219,6 +220,9 @@ public final class CakeWorldCreatureSpawns {
 					EntityType.SALMON,
 					CakeWorldEntities.SHERBET_SALMON,
 					15, 1, 5);
+			addIfAbsent(event, MobCategory.MONSTER,
+					CakeWorldEntities.FROSTED_ARCHER,
+					80, 4, 4);
 		}
 		if ("custard_coast".equals(biome.getPath())) {
 			replace(event, MobCategory.CREATURE,
@@ -315,5 +319,18 @@ public final class CakeWorldCreatureSpawns {
 		}
 		spawns.removeIf(spawn -> spawn.type == vanilla);
 		spawns.addAll(replacements);
+	}
+
+	private static <T extends Mob> void addIfAbsent(
+			BiomeLoadingEvent event, MobCategory category,
+			Supplier<EntityType<T>> cakeWorld, int weight,
+			int minimum, int maximum) {
+		List<MobSpawnSettings.SpawnerData> spawns =
+				event.getSpawns().getSpawner(category);
+		EntityType<T> type = cakeWorld.get();
+		if (spawns.stream().noneMatch(spawn -> spawn.type == type)) {
+			spawns.add(new MobSpawnSettings.SpawnerData(
+					type, weight, minimum, maximum));
+		}
 	}
 }

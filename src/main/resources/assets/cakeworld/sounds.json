@@ -79,5 +79,14 @@
         "type": "event"
       }
     ]
+  },
+  "ice_cream_tundra_chill": {
+    "subtitle": "subtitles.cakeworld.ice_cream_tundra.chill",
+    "sounds": [
+      {
+        "name": "minecraft:block.glass.hit",
+        "type": "event"
+      }
+    ]
   }
 }

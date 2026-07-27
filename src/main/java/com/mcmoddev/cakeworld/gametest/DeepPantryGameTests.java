@@ -3154,10 +3154,10 @@ public final class DeepPantryGameTests {
 					pendingHandoff);
 			require(helper,
 					CakeWorldBiomes
-							.MARSHMALLOW_PEAKS
+							.ICE_CREAM_TUNDRA
 							.getId().equals(biomeId)
 							&& !literalIglooEligible,
-					"The natural Ice-Cream Parlour lost its temporary Marshmallow Peaks home or leaked literal Igloo eligibility: biome="
+					"The natural Ice-Cream Parlour lost its exclusive Ice-Cream Tundra home or leaked literal Igloo eligibility: biome="
 							+ biomeId
 							+ ", literalIglooEligible="
 							+ literalIglooEligible);

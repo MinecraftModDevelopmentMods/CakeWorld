@@ -11947,7 +11947,7 @@ public final class FirstBiteGameTests {
 										spawn -> spawn.type
 												== EntityType
 														.POLAR_BEAR),
-				"Future Ice-Cream Tundra hook lost the exact snowy 1/1-2 Polar Bear replacement");
+				"Ice-Cream Tundra hook lost the exact snowy 1/1-2 Polar Bear replacement");
 
 		for (ResourceLocation biomeId : List.of(
 				CakeWorldBiomes.CANDY_PLAINS.getId(),
@@ -11978,7 +11978,7 @@ public final class FirstBiteGameTests {
 													== CakeWorldEntities
 															.VANILLA_ICE_BEAR
 															.get()),
-					"Current biome leaked Polar/Vanilla-Ice Bear spawning before Ice-Cream Tundra exists: "
+					"Biome outside Ice-Cream Tundra leaked Polar/Vanilla-Ice Bear spawning: "
 							+ biomeId);
 		}
 
@@ -14155,7 +14155,7 @@ public final class FirstBiteGameTests {
 										spawn -> spawn.type
 												== EntityType
 														.SALMON),
-				"Future Ice-Cream Tundra lost its exact frozen-lake Sherbet Salmon profile");
+				"Ice-Cream Tundra lost its exact frozen-lake Sherbet Salmon profile");
 
 		for (ResourceLocation biomeId : List.of(
 				CakeWorldBiomes.CANDY_PLAINS.getId(),
@@ -16784,7 +16784,7 @@ public final class FirstBiteGameTests {
 													== CakeWorldEntities
 															.FROSTED_ARCHER
 															.get()),
-					"Stray ecology was invented before Ice-Cream Tundra in "
+					"Biome outside Ice-Cream Tundra leaked Frosted Archer ecology: "
 							+ biomeId);
 		}
 
@@ -34871,17 +34871,17 @@ public final class FirstBiteGameTests {
 												.Collectors
 												.toSet()))
 						.orElse(Set.of());
-		Biome marshmallowPeaks =
+		Biome iceCreamTundra =
 				level.registryAccess()
 						.registryOrThrow(
 								Registry.BIOME_REGISTRY)
 						.get(CakeWorldBiomes
-								.MARSHMALLOW_PEAKS
+								.ICE_CREAM_TUNDRA
 								.getId());
 		boolean repairInstalled = false;
-		if (marshmallowPeaks != null) {
+		if (iceCreamTundra != null) {
 			for (Holder<PlacedFeature> feature
-					: marshmallowPeaks
+					: iceCreamTundra
 							.getGenerationSettings()
 							.features().get(
 									GenerationStep.Decoration
@@ -34922,9 +34922,9 @@ public final class FirstBiteGameTests {
 						&& repairInstalled
 						&& eligibleBiomes.equals(Set.of(
 								CakeWorldBiomes
-										.MARSHMALLOW_PEAKS
+										.ICE_CREAM_TUNDRA
 										.getId())),
-				"Ice-Cream Parlour lost its configured structure, projected surface envelope, locate tag, installed late repair or temporary Marshmallow Peaks contract: eligible="
+				"Ice-Cream Parlour lost its configured structure, projected surface envelope, locate tag, installed late repair or exclusive Ice-Cream Tundra contract: eligible="
 						+ eligibleBiomes
 						+ ", repairInstalled="
 						+ repairInstalled);
