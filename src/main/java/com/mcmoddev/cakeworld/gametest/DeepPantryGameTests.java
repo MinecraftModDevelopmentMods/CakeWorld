@@ -22,6 +22,9 @@ import com.mcmoddev.cakeworld.entity.BitterBaker;
 import com.mcmoddev.cakeworld.entity.CrumbledGingerbreadFolk;
 import com.mcmoddev.cakeworld.entity.CinnamonSpark;
 import com.mcmoddev.cakeworld.entity.CustardCat;
+import com.mcmoddev.cakeworld.entity.FudgeBoar;
+import com.mcmoddev.cakeworld.entity.FudgeBrute;
+import com.mcmoddev.cakeworld.entity.FudgeFolk;
 import com.mcmoddev.cakeworld.entity.GrandGumballGuardian;
 import com.mcmoddev.cakeworld.entity.GingerbreadFolk;
 import com.mcmoddev.cakeworld.entity.GumballGuardian;
@@ -35,6 +38,7 @@ import com.mcmoddev.cakeworld.init.CakeWorldEntities;
 import com.mcmoddev.cakeworld.world.AncientCakeVaultFeature;
 import com.mcmoddev.cakeworld.world.BiscuitBanditLookoutFeature;
 import com.mcmoddev.cakeworld.world.BurntSugarArchFeature;
+import com.mcmoddev.cakeworld.world.BurntToffeeFoundryFeature;
 import com.mcmoddev.cakeworld.world.BuriedSweetTinFeature;
 import com.mcmoddev.cakeworld.world.BuriedSweetTinRepair;
 import com.mcmoddev.cakeworld.world.CaramelCottageFeature;
@@ -89,6 +93,9 @@ import net.minecraft.world.entity.monster.Guardian;
 import net.minecraft.world.entity.monster.Drowned;
 import net.minecraft.world.entity.monster.Blaze;
 import net.minecraft.world.entity.monster.Shulker;
+import net.minecraft.world.entity.monster.hoglin.Hoglin;
+import net.minecraft.world.entity.monster.piglin.Piglin;
+import net.minecraft.world.entity.monster.piglin.PiglinBrute;
 import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.VillagerType;
@@ -127,6 +134,7 @@ import net.minecraft.world.level.levelgen.structure.OceanRuinFeature;
 import net.minecraft.world.level.levelgen.structure.OceanRuinPieces;
 import net.minecraft.world.level.levelgen.structure.NetherBridgePieces;
 import net.minecraft.world.level.levelgen.structure.NetherFossilPieces;
+import net.minecraft.world.level.levelgen.structure.PoolElementStructurePiece;
 import net.minecraft.world.level.levelgen.structure.StrongholdPieces;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
@@ -5161,6 +5169,271 @@ public final class DeepPantryGameTests {
 		});
 	}
 
+	@GameTest(template = EMPTY, batch = "struct018world",
+			timeoutTicks = 12000)
+	public static void focusedBurntToffeeFoundryStructureAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean(
+				"cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed Burnt-Toffee Foundry audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel()
+				.getServer().getLevel(Level.NETHER);
+		require(helper, level != null,
+				"The fixed-seed server did not expose the Nether");
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						BurntToffeeFoundryFeature
+								.STRUCTURE_ID);
+		require(helper, configured != null,
+				"Burnt-Toffee Foundry native configured structure was absent from the live registry");
+		LocatedFoundry foundry =
+				locateBurntToffeeFoundry(
+						helper, level, configured,
+						new BlockPos(0, 64, 0));
+		setFoundryChunksForced(
+				level, foundry, true);
+		helper.runAfterDelay(360, () -> {
+			FoundryWorldAudit audit =
+					auditBurntToffeeFoundry(
+							level, foundry);
+			boolean sentinelAlreadyNative =
+					isNativeBastionMasonry(
+							level.getBlockState(
+									audit.sentinel())
+									.getBlock());
+			int nativeMasonry =
+					audit.palette().entrySet()
+							.stream()
+							.filter(entry ->
+									isNativeBastionMasonry(
+											entry.getKey()))
+							.mapToInt(Map.Entry::getValue)
+							.sum();
+			int themedMasonry = List.of(
+					CakeWorldBlocks
+							.BURNT_SUGAR_ROCK.get(),
+					CakeWorldBlocks
+							.BURNT_TOFFEE_BRICKS.get(),
+					CakeWorldBlocks
+							.CRACKED_BURNT_TOFFEE_BRICKS
+							.get(),
+					CakeWorldBlocks
+							.BURNT_TOFFEE_STAIRS.get(),
+					CakeWorldBlocks
+							.BURNT_TOFFEE_SLAB.get(),
+					CakeWorldBlocks
+							.BURNT_TOFFEE_WALL.get(),
+					CakeWorldBlocks
+							.STAMPED_BURNT_TOFFEE.get(),
+					CakeWorldBlocks
+							.GILDED_BURNT_TOFFEE.get(),
+					CakeWorldBlocks
+							.BURNT_TOFFEE_PILLAR.get())
+							.stream()
+							.mapToInt(block ->
+									audit.palette()
+											.getOrDefault(
+													block, 0))
+							.sum();
+			LOGGER.info("Focused Burnt-Toffee Foundry audit: locate={}, startChunk={}, bounds={}, biome={}, pieces={}, templates={}, startFamily={}, palette={}, themedMasonry={}, nativeMasonry={}, loot={}, chests={}, goldBlocks={}, magmaCubeSpawners={}, fudgeFolk={}, fudgeBrutes={}, fudgeBoars={}, literalPiglins={}, literalBrutes={}, literalHoglins={}, sentinel={}, markerPhase={}",
+					foundry.located(),
+					foundry.startChunk(),
+					foundry.bounds(),
+					audit.biome(),
+					foundry.start().getPieces()
+							.size(),
+					audit.templates(),
+					audit.startFamily(),
+					audit.palette(),
+					themedMasonry,
+					nativeMasonry,
+					audit.loot(),
+					audit.chests(),
+					audit.palette()
+							.getOrDefault(
+									Blocks.GOLD_BLOCK,
+									0),
+					audit.magmaCubeSpawners(),
+					audit.fudgeFolk(),
+					audit.fudgeBrutes(),
+					audit.fudgeBoars(),
+					audit.literalPiglins(),
+					audit.literalBrutes(),
+					audit.literalHoglins(),
+					audit.sentinel(),
+					sentinelAlreadyNative
+							? "reloaded"
+							: "seeded");
+			require(helper,
+					CakeWorldBiomes.FUDGE_WASTES
+							.getId().equals(
+									audit.biome())
+							&& audit
+									.literalEligible(),
+					"Natural Burnt-Toffee Foundry left Fudge Wastes or lost native/CakeWorld Bastion eligibility: biome="
+							+ audit.biome()
+							+ ", eligible="
+							+ audit
+									.literalEligible());
+			require(helper,
+					foundry.start().isValid()
+							&& foundry.start()
+									.getFeature()
+									== configured
+							&& foundry.start()
+									.getPieces()
+									.size() >= 8
+							&& foundry.start()
+									.getPieces()
+									.stream()
+									.allMatch(
+											PoolElementStructurePiece
+													.class
+													::isInstance)
+							&& audit.templates()
+									.keySet().stream()
+									.allMatch(name ->
+											name.contains(
+													"bastion/"))
+							&& audit.startFamily()
+									!= null
+							&& foundry.start()
+									.getPieces()
+									.stream()
+									.map(
+											PoolElementStructurePiece
+													.class
+													::cast)
+									.anyMatch(piece ->
+											piece.getPosition()
+													.getX()
+													== foundry
+															.startChunk()
+															.getMinBlockX()
+													&& piece
+															.getPosition()
+															.getZ()
+															== foundry
+																	.startChunk()
+																	.getMinBlockZ()
+													&& piece
+															.getBoundingBox()
+															.minY()
+															+ piece
+																	.getGroundLevelDelta()
+															== 33
+													&& isBastionStartTemplate(
+															piece.getElement()
+																	.toString())),
+					"Natural Burnt-Toffee Foundry lost its saved native depth-six Jigsaw graph, start family or Y=33 anchor: pieces="
+							+ foundry.start()
+									.getPieces().size()
+							+ ", family="
+							+ audit.startFamily()
+							+ ", templates="
+							+ audit.templates()
+							+ ", bounds="
+							+ foundry.bounds());
+			require(helper,
+					themedMasonry > 100
+							&& audit.palette()
+									.getOrDefault(
+											CakeWorldBlocks
+													.BURNT_TOFFEE_BRICKS
+													.get(),
+											0) > 0
+							&& audit.palette()
+									.getOrDefault(
+											CakeWorldBlocks
+													.GILDED_BURNT_TOFFEE
+													.get(),
+											0) > 0
+							&& nativeMasonry
+									== (sentinelAlreadyNative
+											? 1 : 0),
+					"Natural Burnt-Toffee Foundry lost its complete piece-bounded palette or rewrote more than the explicit reload sentinel: themed="
+							+ themedMasonry
+							+ ", native="
+							+ nativeMasonry
+							+ ", palette="
+							+ audit.palette());
+			Set<ResourceLocation> nativeLoot = Set.of(
+					BuiltInLootTables.BASTION_BRIDGE,
+					BuiltInLootTables
+							.BASTION_HOGLIN_STABLE,
+					BuiltInLootTables.BASTION_OTHER,
+					BuiltInLootTables
+							.BASTION_TREASURE);
+			require(helper,
+					audit.chests() > 0
+							&& !audit.loot().isEmpty()
+							&& audit.loot().stream()
+									.allMatch(
+											nativeLoot::contains)
+							&& audit.palette()
+									.getOrDefault(
+											Blocks.GOLD_BLOCK,
+											0) > 0
+							&& (!"treasure".equals(
+									audit.startFamily())
+									|| audit
+											.magmaCubeSpawners()
+											== 1),
+					"Natural Burnt-Toffee Foundry lost native chests/loot, Gold-Block progression or its treasure-room Magma-Cube spawner: loot="
+							+ audit.loot()
+							+ ", gold="
+							+ audit.palette()
+									.getOrDefault(
+											Blocks.GOLD_BLOCK,
+											0)
+							+ ", spawners="
+							+ audit
+									.magmaCubeSpawners());
+			require(helper,
+					audit.literalPiglins() == 0
+							&& audit.literalBrutes()
+									== 0
+							&& audit.literalHoglins()
+									== 0,
+					"Natural Burnt-Toffee Foundry retained literal Piglin/Hoglin residue instead of its existing Fudge roles: folk="
+							+ audit.fudgeFolk()
+							+ ", brutes="
+							+ audit.fudgeBrutes()
+							+ ", boars="
+							+ audit.fudgeBoars()
+							+ ", literalPiglins="
+							+ audit.literalPiglins()
+							+ ", literalBrutes="
+							+ audit.literalBrutes()
+							+ ", literalHoglins="
+							+ audit.literalHoglins());
+			if (!sentinelAlreadyNative) {
+				level.setBlock(audit.sentinel(),
+						Blocks
+								.POLISHED_BLACKSTONE_BRICKS
+								.defaultBlockState(),
+						2);
+				require(helper,
+						level.getBlockState(
+								audit.sentinel())
+								.is(Blocks
+										.POLISHED_BLACKSTONE_BRICKS),
+						"Could not seed the explicit player-placed Polished-Blackstone-Bricks reload sentinel");
+			}
+			setFoundryChunksForced(
+					level, foundry, false);
+			helper.succeed();
+		});
+	}
+
 	@GameTest(template = EMPTY, timeoutTicks = 1200)
 	public static void baseMetalsCounterpartsPreserveTagsRecipesAndGeneration(
 			GameTestHelper helper) {
@@ -6921,6 +7194,290 @@ public final class DeepPantryGameTests {
 				literalEligible, sentinel);
 	}
 
+	private static LocatedFoundry locateBurntToffeeFoundry(
+			GameTestHelper helper, ServerLevel level,
+			ConfiguredStructureFeature<?, ?> configured,
+			BlockPos origin) {
+		BlockPos located = level.findNearestMapFeature(
+				BurntToffeeFoundryFeature.STRUCTURE_TAG,
+				origin, 512, false);
+		require(helper, located != null,
+				"The fixed-seed CakeWorld contained no locatable Burnt-Toffee Foundry within 512 chunks of the Nether origin");
+		ChunkPos startChunk = new ChunkPos(located);
+		net.minecraft.world.level.chunk.LevelChunk
+				startLevelChunk =
+				level.getChunk(startChunk.x,
+						startChunk.z);
+		StructureStart start =
+				startLevelChunk.getStartForFeature(
+						configured);
+		if (start == null || !start.isValid()) {
+			start = level.structureFeatureManager()
+					.startsForFeature(
+							net.minecraft.core.SectionPos
+									.of(located),
+							configured)
+					.stream()
+					.filter(StructureStart::isValid)
+					.findFirst().orElse(null);
+		}
+		require(helper,
+				start != null && start.isValid()
+						&& start.getFeature()
+								== configured
+						&& !start.getPieces()
+								.isEmpty(),
+				"The located Burnt-Toffee Foundry lost its saved native Bastion start");
+		return new LocatedFoundry(
+				located, start.getBoundingBox(),
+				start.getChunkPos(), start);
+	}
+
+	private static void setFoundryChunksForced(
+			ServerLevel level,
+			LocatedFoundry foundry,
+			boolean forced) {
+		Set<ChunkPos> chunks =
+				new java.util.LinkedHashSet<>();
+		for (StructurePiece piece
+				: foundry.start().getPieces()) {
+			BoundingBox bounds =
+					piece.getBoundingBox();
+			int minimumChunkX = Math.floorDiv(
+					bounds.minX(), 16);
+			int maximumChunkX = Math.floorDiv(
+					bounds.maxX(), 16);
+			int minimumChunkZ = Math.floorDiv(
+					bounds.minZ(), 16);
+			int maximumChunkZ = Math.floorDiv(
+					bounds.maxZ(), 16);
+			for (int chunkX = minimumChunkX;
+					chunkX <= maximumChunkX;
+					chunkX++) {
+				for (int chunkZ = minimumChunkZ;
+						chunkZ <= maximumChunkZ;
+						chunkZ++) {
+					chunks.add(new ChunkPos(
+							chunkX, chunkZ));
+				}
+			}
+		}
+		for (ChunkPos chunk : chunks) {
+			level.setChunkForced(
+					chunk.x, chunk.z, forced);
+			if (forced) {
+				level.getChunk(chunk.x, chunk.z);
+			}
+		}
+	}
+
+	private static FoundryWorldAudit
+			auditBurntToffeeFoundry(
+					ServerLevel level,
+					LocatedFoundry foundry) {
+		Map<Block, Integer> palette =
+				new LinkedHashMap<>();
+		Map<String, Integer> templates =
+				new LinkedHashMap<>();
+		Set<ResourceLocation> loot =
+				new java.util.LinkedHashSet<>();
+		Set<Long> visited =
+				new java.util.HashSet<>();
+		int chests = 0;
+		int magmaCubeSpawners = 0;
+		String startFamily = null;
+		List<StructurePiece> orderedPieces =
+				foundry.start().getPieces().stream()
+						.sorted(java.util.Comparator
+								.comparingInt(
+										(StructurePiece piece) ->
+												piece.getBoundingBox()
+														.minX())
+								.thenComparingInt(piece ->
+										piece.getBoundingBox()
+												.minY())
+								.thenComparingInt(piece ->
+										piece.getBoundingBox()
+												.minZ())
+								.thenComparing(Object::toString))
+						.toList();
+		BoundingBox sentinelPiece =
+				orderedPieces.get(0)
+						.getBoundingBox();
+		BlockPos sentinel = new BlockPos(
+				sentinelPiece.minX(),
+				sentinelPiece.minY(),
+				sentinelPiece.minZ());
+		for (StructurePiece piece : orderedPieces) {
+			if (!(piece
+					instanceof PoolElementStructurePiece
+							poolPiece)) {
+				continue;
+			}
+			String template =
+					poolPiece.getElement().toString();
+			templates.merge(template, 1,
+					Integer::sum);
+			if (template.contains(
+					"bastion/units/air_base")) {
+				startFamily = "units";
+			} else if (template.contains(
+					"bastion/hoglin_stable/air_base")) {
+				startFamily = "hoglin_stable";
+			} else if (template.contains(
+					"bastion/treasure/big_air_full")) {
+				startFamily = "treasure";
+			} else if (template.contains(
+					"bastion/bridge/starting_pieces/entrance_base")) {
+				startFamily = "bridge";
+			}
+			BoundingBox bounds =
+					piece.getBoundingBox();
+			for (int x = bounds.minX();
+					x <= bounds.maxX(); x++) {
+				for (int y = bounds.minY();
+						y <= bounds.maxY(); y++) {
+					for (int z = bounds.minZ();
+							z <= bounds.maxZ();
+							z++) {
+						BlockPos position =
+								new BlockPos(
+										x, y, z);
+						if (!visited.add(
+								position.asLong())) {
+							continue;
+						}
+						BlockState state =
+								level.getBlockState(
+										position);
+						palette.merge(
+								state.getBlock(),
+								1, Integer::sum);
+						BlockEntity entity =
+								level.getBlockEntity(
+										position);
+						if (entity == null) {
+							continue;
+						}
+						CompoundTag saved =
+								entity
+										.saveWithoutMetadata();
+						String lootId =
+								saved.getString(
+										"LootTable");
+						if (!lootId.isEmpty()) {
+							chests++;
+							loot.add(
+									new ResourceLocation(
+											lootId));
+						}
+						if (entity
+								instanceof SpawnerBlockEntity
+								&& "minecraft:magma_cube"
+										.equals(saved
+												.getCompound(
+														"SpawnData")
+												.getCompound(
+														"entity")
+												.getString(
+														"id"))) {
+							magmaCubeSpawners++;
+						}
+					}
+				}
+			}
+		}
+		BoundingBox bounds = foundry.bounds();
+		AABB area = new AABB(
+				bounds.minX(), bounds.minY(),
+				bounds.minZ(),
+				bounds.maxX() + 1,
+				bounds.maxY() + 1,
+				bounds.maxZ() + 1);
+		int fudgeFolk =
+				level.getEntitiesOfClass(
+						FudgeFolk.class, area)
+						.size();
+		int fudgeBrutes =
+				level.getEntitiesOfClass(
+						FudgeBrute.class, area)
+						.size();
+		int fudgeBoars =
+				level.getEntitiesOfClass(
+						FudgeBoar.class, area)
+						.size();
+		int literalPiglins =
+				level.getEntitiesOfClass(
+						Piglin.class, area,
+						entity -> entity.getType()
+								== EntityType.PIGLIN)
+						.size();
+		int literalBrutes =
+				level.getEntitiesOfClass(
+						PiglinBrute.class, area,
+						entity -> entity.getType()
+								== EntityType
+										.PIGLIN_BRUTE)
+						.size();
+		int literalHoglins =
+				level.getEntitiesOfClass(
+						Hoglin.class, area,
+						entity -> entity.getType()
+								== EntityType.HOGLIN)
+						.size();
+		BlockPos centre = bounds.getCenter();
+		ResourceLocation biomeId =
+				level.getBiome(centre).unwrapKey()
+						.map(key -> key.location())
+						.orElse(null);
+		boolean literalEligible =
+				level.getBiome(centre).is(
+						BiomeTags
+								.HAS_BASTION_REMNANT)
+						&& level.getBiome(centre).is(
+								BurntToffeeFoundryFeature
+										.GENERATES_IN);
+		return new FoundryWorldAudit(
+				palette, biomeId, templates,
+				startFamily, loot, chests,
+				magmaCubeSpawners,
+				fudgeFolk, fudgeBrutes,
+				fudgeBoars, literalPiglins,
+				literalBrutes, literalHoglins,
+				literalEligible, sentinel);
+	}
+
+	private static boolean isNativeBastionMasonry(
+			Block block) {
+		return block == Blocks.BLACKSTONE
+				|| block == Blocks
+						.POLISHED_BLACKSTONE_BRICKS
+				|| block == Blocks
+						.CRACKED_POLISHED_BLACKSTONE_BRICKS
+				|| block == Blocks
+						.POLISHED_BLACKSTONE_BRICK_STAIRS
+				|| block == Blocks.BLACKSTONE_STAIRS
+				|| block == Blocks.BLACKSTONE_SLAB
+				|| block == Blocks.BLACKSTONE_WALL
+				|| block == Blocks
+						.CHISELED_POLISHED_BLACKSTONE
+				|| block == Blocks.GILDED_BLACKSTONE
+				|| block == Blocks.BASALT
+				|| block == Blocks.POLISHED_BASALT;
+	}
+
+	private static boolean isBastionStartTemplate(
+			String template) {
+		return template.contains(
+				"bastion/units/air_base")
+				|| template.contains(
+						"bastion/hoglin_stable/air_base")
+				|| template.contains(
+						"bastion/treasure/big_air_full")
+				|| template.contains(
+						"bastion/bridge/starting_pieces/entrance_base");
+	}
+
 	private static LocatedSweetshop locateSunkenSweetshop(
 			GameTestHelper helper, ServerLevel level,
 			ConfiguredStructureFeature<?, ?> cold,
@@ -8315,6 +8872,31 @@ public final class DeepPantryGameTests {
 			int blazeSpawners,
 			int cinnamonSparks,
 			int literalBlazes,
+			boolean literalEligible,
+			BlockPos sentinel) {
+	}
+
+	private record LocatedFoundry(
+			BlockPos located,
+			BoundingBox bounds,
+			ChunkPos startChunk,
+			StructureStart start) {
+	}
+
+	private record FoundryWorldAudit(
+			Map<Block, Integer> palette,
+			ResourceLocation biome,
+			Map<String, Integer> templates,
+			String startFamily,
+			Set<ResourceLocation> loot,
+			int chests,
+			int magmaCubeSpawners,
+			int fudgeFolk,
+			int fudgeBrutes,
+			int fudgeBoars,
+			int literalPiglins,
+			int literalBrutes,
+			int literalHoglins,
 			boolean literalEligible,
 			BlockPos sentinel) {
 	}

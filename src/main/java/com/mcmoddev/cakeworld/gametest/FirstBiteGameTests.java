@@ -155,6 +155,8 @@ import com.mcmoddev.cakeworld.world.BiscuitBanditLookoutFeature;
 import com.mcmoddev.cakeworld.world.BurntSugarArchFeature;
 import com.mcmoddev.cakeworld.world.BurntSugarArchRepairFeature;
 import com.mcmoddev.cakeworld.world.BurntSugarArchStructureFeature;
+import com.mcmoddev.cakeworld.world.BurntToffeeFoundryFeature;
+import com.mcmoddev.cakeworld.world.BurntToffeeFoundryPalette;
 import com.mcmoddev.cakeworld.world.AncientCakeVaultFeature;
 import com.mcmoddev.cakeworld.world.AncientCakeVaultPalette;
 import com.mcmoddev.cakeworld.world.CakeWorldFeaturePoolElement;
@@ -407,6 +409,7 @@ import net.minecraft.world.level.block.FenceBlock;
 import net.minecraft.world.level.block.NetherWartBlock;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.SlabBlock;
+import net.minecraft.world.level.block.WallBlock;
 import net.minecraft.world.level.block.WitherSkullBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BrewingStandBlockEntity;
@@ -424,6 +427,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.Half;
 import net.minecraft.world.level.block.state.properties.StairsShape;
 import net.minecraft.world.level.block.state.properties.SlabType;
+import net.minecraft.world.level.block.state.properties.WallSide;
 import net.minecraft.world.level.block.TurtleEggBlock;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeGenerationSettings;
@@ -433,6 +437,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.LegacyRandomSource;
 import net.minecraft.world.level.levelgen.WorldgenRandom;
 import net.minecraft.world.level.levelgen.feature.NetherFortressFeature;
+import net.minecraft.world.level.levelgen.feature.BastionFeature;
 import net.minecraft.world.level.levelgen.feature.BuriedTreasureFeature;
 import net.minecraft.data.worldgen.StructureFeatures;
 import net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature;
@@ -441,12 +446,14 @@ import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConf
 import net.minecraft.world.level.levelgen.feature.configurations.OceanRuinConfiguration;
 import net.minecraft.world.level.levelgen.feature.configurations.ProbabilityFeatureConfiguration;
 import net.minecraft.world.level.levelgen.feature.configurations.RangeConfiguration;
+import net.minecraft.world.level.levelgen.feature.configurations.JigsawConfiguration;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.BuriedTreasurePieces;
 import net.minecraft.world.level.levelgen.structure.EndCityPieces;
 import net.minecraft.world.level.levelgen.structure.NetherBridgePieces;
 import net.minecraft.world.level.levelgen.structure.NetherFossilFeature;
 import net.minecraft.world.level.levelgen.structure.NetherFossilPieces;
+import net.minecraft.world.level.levelgen.structure.PoolElementStructurePiece;
 import net.minecraft.world.level.levelgen.structure.OceanMonumentPieces;
 import net.minecraft.world.level.levelgen.structure.OceanRuinFeature;
 import net.minecraft.world.level.levelgen.structure.OceanRuinPieces;
@@ -456,6 +463,8 @@ import net.minecraft.world.level.levelgen.structure.StructureSpawnOverride;
 import net.minecraft.world.level.levelgen.structure.TemplateStructurePiece;
 import net.minecraft.world.level.levelgen.structure.pieces.PiecesContainer;
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePiecesBuilder;
+import net.minecraft.world.level.levelgen.structure.pools.StructurePoolElement;
+import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
 import net.minecraft.world.level.levelgen.structure.placement.ConcentricRingsStructurePlacement;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.minecraft.world.level.portal.PortalShape;
@@ -39558,6 +39567,596 @@ public final class FirstBiteGameTests {
 						&& result.getCount() == 9,
 				"Rock-Candy Fossil did not preserve native one-block-to-nine-Bone-Meal resource value: "
 						+ result);
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, batch = "struct018",
+			timeoutTicks = 2400)
+	public static void burntToffeeFoundryKeepsNativeBastionGraphProgressionAndPalette(
+			GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>> structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						BurntToffeeFoundryFeature
+								.STRUCTURE_ID);
+		require(helper,
+				configured != null
+						&& configured.feature
+								== StructureFeature
+										.BASTION_REMNANT
+						&& configured.feature
+								instanceof BastionFeature
+						&& configured.config
+								instanceof JigsawConfiguration
+						&& !configured.adaptNoise
+						&& configured.spawnOverrides
+								.isEmpty()
+						&& configured.feature.step()
+								== GenerationStep
+										.Decoration
+										.SURFACE_STRUCTURES,
+				"Burnt-Toffee Foundry lost native Bastion feature, surface step or no-override identity");
+
+		JigsawConfiguration jigsaw =
+				(JigsawConfiguration) configured.config;
+		StructureTemplatePool startPool =
+				jigsaw.startPool().value();
+		require(helper,
+				jigsaw.maxDepth() == 6
+						&& startPool.getName().equals(
+								new ResourceLocation(
+										"minecraft",
+										"bastion/starts"))
+						&& startPool.getFallback()
+								.equals(
+										new ResourceLocation(
+												"minecraft",
+												"empty"))
+						&& startPool.size() == 4,
+				"Burnt-Toffee Foundry lost native Bastion depth-six, four-start Jigsaw contract: depth="
+						+ jigsaw.maxDepth()
+						+ ", pool=" + startPool.getName()
+						+ ", size=" + startPool.size());
+
+		List<com.mojang.datafixers.util.Pair<
+				StructurePoolElement, Integer>> rawStarts;
+		try {
+			Field rawTemplates =
+					StructureTemplatePool.class
+							.getDeclaredField(
+									"rawTemplates");
+			rawTemplates.setAccessible(true);
+			@SuppressWarnings("unchecked")
+			List<com.mojang.datafixers.util.Pair<
+					StructurePoolElement, Integer>> entries =
+				(List<com.mojang.datafixers.util.Pair<
+						StructurePoolElement, Integer>>)
+						rawTemplates.get(startPool);
+			rawStarts = entries;
+		} catch (ReflectiveOperationException exception) {
+			throw new AssertionError(
+					"Could not inspect native Bastion start pool",
+					exception);
+		}
+		Set<String> expectedStarts = Set.of(
+				"bastion/units/air_base",
+				"bastion/hoglin_stable/air_base",
+				"bastion/treasure/big_air_full",
+				"bastion/bridge/starting_pieces/entrance_base");
+		Set<String> actualStarts =
+				new java.util.LinkedHashSet<>();
+		for (com.mojang.datafixers.util.Pair<
+				StructurePoolElement, Integer> entry
+				: rawStarts) {
+			String description =
+					entry.getFirst().toString();
+			for (String expected : expectedStarts) {
+				if (description.contains(expected)) {
+					actualStarts.add(expected);
+				}
+			}
+			require(helper, entry.getSecond() == 1,
+					"Native Bastion start variant lost equal weight: "
+							+ entry);
+		}
+		require(helper,
+				rawStarts.size() == 4
+						&& actualStarts
+								.equals(expectedStarts),
+				"Burnt-Toffee Foundry lost a native Bastion start family: "
+						+ actualStarts);
+
+		java.util.Collection<ResourceLocation>
+				bastionTemplates =
+				level.getServer().getResourceManager()
+						.listResources(
+								"structures/bastion",
+								path -> path.endsWith(
+										".nbt"))
+						.stream()
+						.filter(id -> id.getNamespace()
+								.equals("minecraft"))
+						.toList();
+		Map<String, Long> templateFamilies =
+				Map.of(
+						"blocks", bastionTemplates.stream()
+								.filter(id -> id.getPath()
+										.startsWith(
+												"structures/bastion/blocks/"))
+								.count(),
+						"bridge", bastionTemplates.stream()
+								.filter(id -> id.getPath()
+										.startsWith(
+												"structures/bastion/bridge/"))
+								.count(),
+						"hoglin_stable",
+						bastionTemplates.stream()
+								.filter(id -> id.getPath()
+										.startsWith(
+												"structures/bastion/hoglin_stable/"))
+								.count(),
+						"mobs", bastionTemplates.stream()
+								.filter(id -> id.getPath()
+										.startsWith(
+												"structures/bastion/mobs/"))
+								.count(),
+						"treasure",
+						bastionTemplates.stream()
+								.filter(id -> id.getPath()
+										.startsWith(
+												"structures/bastion/treasure/"))
+								.count(),
+						"units", bastionTemplates.stream()
+								.filter(id -> id.getPath()
+										.startsWith(
+												"structures/bastion/units/"))
+								.count());
+		require(helper,
+				bastionTemplates.size() == 167
+						&& templateFamilies.equals(
+								Map.of(
+										"blocks", 2L,
+										"bridge", 13L,
+										"hoglin_stable",
+										54L,
+										"mobs", 6L,
+										"treasure", 61L,
+										"units", 31L)),
+				"Burnt-Toffee Foundry lost the complete 167-template native Bastion catalogue: total="
+						+ bastionTemplates.size()
+						+ ", families="
+						+ templateFamilies);
+
+		Registry<net.minecraft.world.level.levelgen.structure.StructureSet>
+				structureSets =
+				level.registryAccess().registryOrThrow(
+						Registry.STRUCTURE_SET_REGISTRY);
+		net.minecraft.world.level.levelgen.structure.StructureSet
+				structureSet =
+				structureSets.get(
+						BurntToffeeFoundryFeature
+								.STRUCTURE_SET_ID);
+		ConfiguredStructureFeature<?, ?> fortress =
+				structures.get(new ResourceLocation(
+						"minecraft", "fortress"));
+		require(helper,
+				structureSet != null
+						&& structureSet.structures()
+								.size() == 2
+						&& structureSet.structures()
+								.stream().anyMatch(
+										entry -> entry
+												.structure()
+												.value()
+												== configured
+												&& entry.weight()
+														== 3)
+						&& structureSet.structures()
+								.stream().anyMatch(
+										entry -> entry
+												.structure()
+												.value()
+												== fortress
+												&& entry.weight()
+														== 2)
+						&& structureSet.placement()
+								instanceof net.minecraft.world.level
+										.levelgen.structure.placement
+										.RandomSpreadStructurePlacement,
+				"Burnt-Toffee Foundry lost native 3:2 Bastion/Fortress nether-complex weighting");
+		net.minecraft.world.level.levelgen.structure.placement
+				.RandomSpreadStructurePlacement placement =
+				(net.minecraft.world.level.levelgen.structure
+						.placement.RandomSpreadStructurePlacement)
+						structureSet.placement();
+		require(helper,
+				placement.spacing() == 27
+						&& placement.separation() == 4
+						&& placement.spreadType()
+								== net.minecraft.world.level
+										.levelgen.structure
+										.placement
+										.RandomSpreadType
+										.LINEAR
+						&& placement.salt() == 30084232,
+				"Burnt-Toffee Foundry lost native 27/4/30084232 linear placement");
+
+		Registry<Biome> biomes =
+				level.registryAccess().registryOrThrow(
+						Registry.BIOME_REGISTRY);
+		Holder<Biome> fudgeWastes =
+				biomes.getHolderOrThrow(
+						ResourceKey.create(
+								Registry.BIOME_REGISTRY,
+								CakeWorldBiomes
+										.FUDGE_WASTES
+										.getId()));
+		boolean ownStructureTag =
+				structures.getTag(
+						BurntToffeeFoundryFeature
+								.STRUCTURE_TAG)
+						.map(tag -> tag.stream()
+								.anyMatch(holder ->
+										holder.value()
+												== configured))
+						.orElse(false);
+		require(helper,
+				fudgeWastes.is(
+						BurntToffeeFoundryFeature
+								.GENERATES_IN)
+						&& fudgeWastes.is(
+								BiomeTags
+										.HAS_BASTION_REMNANT)
+						&& ownStructureTag,
+				"Burnt-Toffee Foundry lost Fudge-Wastes native/CakeWorld biome eligibility or configured tag");
+
+		BlockPos anchor = helper.absolutePos(
+				new BlockPos(3, 3, 3));
+		BoundingBox bounds = new BoundingBox(
+				anchor.getX(), anchor.getY(),
+				anchor.getZ(), anchor.getX() + 12,
+				anchor.getY(), anchor.getZ());
+		PoolElementStructurePiece syntheticPiece =
+				new PoolElementStructurePiece(
+						level.getStructureManager(),
+						rawStarts.get(0).getFirst(),
+						anchor, 1, Rotation.NONE,
+						bounds);
+		List<BlockState> nativeStates = List.of(
+				Blocks.BLACKSTONE.defaultBlockState(),
+				Blocks.POLISHED_BLACKSTONE_BRICKS
+						.defaultBlockState(),
+				Blocks.CRACKED_POLISHED_BLACKSTONE_BRICKS
+						.defaultBlockState(),
+				Blocks.POLISHED_BLACKSTONE_BRICK_STAIRS
+						.defaultBlockState()
+						.setValue(
+								StairBlock.FACING,
+								Direction.WEST)
+						.setValue(StairBlock.HALF,
+								Half.TOP)
+						.setValue(StairBlock.SHAPE,
+								StairsShape
+										.INNER_LEFT),
+				Blocks.BLACKSTONE_STAIRS
+						.defaultBlockState()
+						.setValue(
+								StairBlock.FACING,
+								Direction.NORTH)
+						.setValue(StairBlock.HALF,
+								Half.BOTTOM)
+						.setValue(StairBlock.SHAPE,
+								StairsShape
+										.OUTER_RIGHT),
+				Blocks.BLACKSTONE_SLAB
+						.defaultBlockState()
+						.setValue(SlabBlock.TYPE,
+								SlabType.TOP),
+				Blocks.BLACKSTONE_WALL
+						.defaultBlockState()
+						.setValue(WallBlock.UP,
+								false)
+						.setValue(
+								WallBlock.NORTH_WALL,
+								WallSide.TALL)
+						.setValue(
+								WallBlock.EAST_WALL,
+								WallSide.LOW),
+				Blocks.CHISELED_POLISHED_BLACKSTONE
+						.defaultBlockState(),
+				Blocks.GILDED_BLACKSTONE
+						.defaultBlockState(),
+				Blocks.BASALT.defaultBlockState()
+						.setValue(
+								RotatedPillarBlock.AXIS,
+								Direction.Axis.X),
+				Blocks.POLISHED_BASALT
+						.defaultBlockState()
+						.setValue(
+								RotatedPillarBlock.AXIS,
+								Direction.Axis.Z),
+				Blocks.GOLD_BLOCK.defaultBlockState(),
+				Blocks.LODESTONE.defaultBlockState());
+		for (int index = 0;
+				index < nativeStates.size(); index++) {
+			level.setBlock(anchor.east(index),
+					nativeStates.get(index), 2);
+		}
+		List<BlockState> placedNativeStates =
+				java.util.stream.IntStream
+						.range(0, nativeStates.size())
+						.mapToObj(index ->
+								level.getBlockState(
+										anchor.east(index)))
+						.toList();
+		BurntToffeeFoundryPalette.applyEdiblePalette(
+				level, bounds,
+				new PiecesContainer(
+						List.of(syntheticPiece)));
+		List<BlockState> firstPalette =
+				java.util.stream.IntStream
+						.range(0, nativeStates.size())
+						.mapToObj(index ->
+								level.getBlockState(
+										anchor.east(index)))
+						.toList();
+		BurntToffeeFoundryPalette.applyEdiblePalette(
+				level, bounds,
+				new PiecesContainer(
+						List.of(syntheticPiece)));
+		List<BlockState> repeatedPalette =
+				java.util.stream.IntStream
+						.range(0, nativeStates.size())
+						.mapToObj(index ->
+								level.getBlockState(
+										anchor.east(index)))
+						.toList();
+		require(helper,
+				firstPalette.equals(repeatedPalette)
+						&& firstPalette.get(0).is(
+								CakeWorldBlocks
+										.BURNT_SUGAR_ROCK
+										.get())
+						&& firstPalette.get(1).is(
+								CakeWorldBlocks
+										.BURNT_TOFFEE_BRICKS
+										.get())
+						&& firstPalette.get(2).is(
+								CakeWorldBlocks
+										.CRACKED_BURNT_TOFFEE_BRICKS
+										.get())
+						&& firstPalette.get(3).is(
+								CakeWorldBlocks
+										.BURNT_TOFFEE_STAIRS
+										.get())
+						&& firstPalette.get(3)
+								.getValue(
+										StairBlock.FACING)
+								== placedNativeStates
+										.get(3)
+										.getValue(
+												StairBlock
+														.FACING)
+						&& firstPalette.get(3)
+								.getValue(
+										StairBlock.HALF)
+								== placedNativeStates
+										.get(3)
+										.getValue(
+												StairBlock
+														.HALF)
+						&& firstPalette.get(3)
+								.getValue(
+										StairBlock.SHAPE)
+								== placedNativeStates
+										.get(3)
+										.getValue(
+												StairBlock
+														.SHAPE)
+						&& firstPalette.get(4).is(
+								CakeWorldBlocks
+										.BURNT_TOFFEE_STAIRS
+										.get())
+						&& firstPalette.get(5).is(
+								CakeWorldBlocks
+										.BURNT_TOFFEE_SLAB
+										.get())
+						&& firstPalette.get(5)
+								.getValue(SlabBlock.TYPE)
+								== placedNativeStates
+										.get(5)
+										.getValue(
+												SlabBlock
+														.TYPE)
+						&& firstPalette.get(6).is(
+								CakeWorldBlocks
+										.BURNT_TOFFEE_WALL
+										.get())
+						&& firstPalette.get(6)
+								.getValue(WallBlock.UP)
+								== placedNativeStates
+										.get(6)
+										.getValue(
+												WallBlock.UP)
+						&& firstPalette.get(6)
+								.getValue(
+										WallBlock.NORTH_WALL)
+								== placedNativeStates
+										.get(6)
+										.getValue(
+												WallBlock
+														.NORTH_WALL)
+						&& firstPalette.get(7).is(
+								CakeWorldBlocks
+										.STAMPED_BURNT_TOFFEE
+										.get())
+						&& firstPalette.get(8).is(
+								CakeWorldBlocks
+										.GILDED_BURNT_TOFFEE
+										.get())
+						&& firstPalette.get(9).is(
+								CakeWorldBlocks
+										.BURNT_TOFFEE_PILLAR
+										.get())
+						&& firstPalette.get(9)
+								.getValue(
+										RotatedPillarBlock
+												.AXIS)
+								== Direction.Axis.X
+						&& firstPalette.get(10).is(
+								CakeWorldBlocks
+										.BURNT_TOFFEE_PILLAR
+										.get())
+						&& firstPalette.get(10)
+								.getValue(
+										RotatedPillarBlock
+												.AXIS)
+								== Direction.Axis.Z
+						&& firstPalette.get(11).is(
+								Blocks.GOLD_BLOCK)
+						&& firstPalette.get(12).is(
+								Blocks.LODESTONE),
+				"Burnt-Toffee Foundry palette was incomplete, destructive or non-idempotent: "
+						+ firstPalette);
+
+		List<Block> themedBlocks = List.of(
+				CakeWorldBlocks.BURNT_TOFFEE_BRICKS
+						.get(),
+				CakeWorldBlocks
+						.CRACKED_BURNT_TOFFEE_BRICKS
+						.get(),
+				CakeWorldBlocks.BURNT_TOFFEE_STAIRS
+						.get(),
+				CakeWorldBlocks.BURNT_TOFFEE_SLAB
+						.get(),
+				CakeWorldBlocks.BURNT_TOFFEE_WALL
+						.get(),
+				CakeWorldBlocks.STAMPED_BURNT_TOFFEE
+						.get(),
+				CakeWorldBlocks.GILDED_BURNT_TOFFEE
+						.get(),
+				CakeWorldBlocks.BURNT_TOFFEE_PILLAR
+						.get());
+		require(helper,
+				themedBlocks.stream().allMatch(
+						block -> block
+								.defaultBlockState()
+								.is(BlockTags
+										.MINEABLE_WITH_PICKAXE))
+						&& CakeWorldBlocks
+								.BURNT_TOFFEE_STAIRS
+								.get()
+								.defaultBlockState()
+								.is(BlockTags.STAIRS)
+						&& CakeWorldBlocks
+								.BURNT_TOFFEE_SLAB
+								.get()
+								.defaultBlockState()
+								.is(BlockTags.SLABS)
+						&& CakeWorldBlocks
+								.BURNT_TOFFEE_WALL
+								.get()
+								.defaultBlockState()
+								.is(BlockTags.WALLS)
+						&& themedBlocks.stream()
+								.allMatch(block ->
+										level.getServer()
+												.getLootTables()
+												.get(block
+														.getLootTable())
+												!= LootTable.EMPTY),
+				"Burnt-Toffee masonry lost mining, shape tags or block loot");
+
+		ItemStack silkPick = new ItemStack(
+				Items.DIAMOND_PICKAXE);
+		silkPick.enchant(Enchantments.SILK_TOUCH, 1);
+		ItemStack fortunePick = new ItemStack(
+				Items.DIAMOND_PICKAXE);
+		fortunePick.enchant(Enchantments.BLOCK_FORTUNE, 3);
+		LootTable gildedLoot =
+				level.getServer().getLootTables()
+						.get(CakeWorldBlocks
+								.GILDED_BURNT_TOFFEE
+								.get().getLootTable());
+		java.util.function.Function<ItemStack,
+				List<ItemStack>> gildedDrops =
+			tool -> gildedLoot.getRandomItems(
+					new LootContext.Builder(level)
+							.withParameter(
+									LootContextParams.ORIGIN,
+									Vec3.atCenterOf(anchor))
+							.withParameter(
+									LootContextParams
+											.BLOCK_STATE,
+									CakeWorldBlocks
+											.GILDED_BURNT_TOFFEE
+											.get()
+											.defaultBlockState())
+							.withParameter(
+									LootContextParams.TOOL,
+									tool)
+							.create(
+									LootContextParamSets
+											.BLOCK));
+		List<ItemStack> silkDrops =
+				gildedDrops.apply(silkPick);
+		List<ItemStack> fortuneDrops =
+				gildedDrops.apply(fortunePick);
+		require(helper,
+				silkDrops.size() == 1
+						&& silkDrops.get(0).is(
+								CakeWorldBlocks
+										.GILDED_BURNT_TOFFEE
+										.get().asItem())
+						&& fortuneDrops.size() == 1
+						&& fortuneDrops.get(0).is(
+								Items.GOLD_NUGGET)
+						&& fortuneDrops.get(0)
+								.getCount() >= 2
+						&& fortuneDrops.get(0)
+								.getCount() <= 5,
+				"Gilded Burnt Toffee lost native Silk Touch/Fortune-III resource behavior: silk="
+						+ silkDrops + ", fortune="
+						+ fortuneDrops);
+
+		LootContext chestContext =
+				new LootContext.Builder(level)
+						.withParameter(
+								LootContextParams.ORIGIN,
+								Vec3.atCenterOf(anchor))
+						.create(
+								LootContextParamSets.CHEST);
+		for (ResourceLocation lootId : List.of(
+				BuiltInLootTables.BASTION_BRIDGE,
+				BuiltInLootTables.BASTION_HOGLIN_STABLE,
+				BuiltInLootTables.BASTION_OTHER,
+				BuiltInLootTables.BASTION_TREASURE)) {
+			require(helper,
+					level.getServer().getLootTables()
+							.get(lootId)
+							!= LootTable.EMPTY
+							&& !level.getServer()
+									.getLootTables()
+									.get(lootId)
+									.getRandomItems(
+											chestContext)
+									.isEmpty(),
+					"Burnt-Toffee Foundry lost native Bastion loot table "
+							+ lootId);
+		}
+		require(helper,
+				level.getServer().getLootTables()
+						.get(BuiltInLootTables
+								.BASTION_BRIDGE)
+						.getRandomItems(chestContext)
+						.stream().anyMatch(
+								stack -> stack.is(
+										Items.LODESTONE)),
+				"Burnt-Toffee Foundry lost guaranteed native Bastion-Bridge Lodestone progression");
 		helper.succeed();
 	}
 

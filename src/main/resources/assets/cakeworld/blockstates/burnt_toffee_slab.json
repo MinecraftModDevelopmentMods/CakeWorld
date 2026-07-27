@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "type=bottom": {"model": "cakeworld:block/burnt_toffee_slab"},
+    "type=double": {"model": "cakeworld:block/burnt_toffee_bricks"},
+    "type=top": {"model": "cakeworld:block/burnt_toffee_slab_top"}
+  }
+}

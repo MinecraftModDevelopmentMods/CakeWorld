@@ -35,6 +35,7 @@ import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.StairBlock;
+import net.minecraft.world.level.block.WallBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.Material;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -192,6 +193,45 @@ public final class CakeWorldBlocks {
 					.sound(SoundType.GLASS).noOcclusion()));
 	public static final RegistryObject<Block> BURNT_SUGAR_ROCK =
 			stone("burnt_sugar_rock", 2.8F);
+	public static final RegistryObject<Block> BURNT_TOFFEE_BRICKS =
+			block("burnt_toffee_bricks",
+					BlockBehaviour.Properties.copy(
+							Blocks.POLISHED_BLACKSTONE_BRICKS));
+	public static final RegistryObject<Block> CRACKED_BURNT_TOFFEE_BRICKS =
+			block("cracked_burnt_toffee_bricks",
+					BlockBehaviour.Properties.copy(
+							Blocks.CRACKED_POLISHED_BLACKSTONE_BRICKS));
+	public static final RegistryObject<Block> BURNT_TOFFEE_STAIRS =
+			block("burnt_toffee_stairs",
+					() -> new StairBlock(
+							() -> BURNT_TOFFEE_BRICKS.get()
+									.defaultBlockState(),
+							BlockBehaviour.Properties.copy(
+									Blocks
+											.POLISHED_BLACKSTONE_BRICK_STAIRS)));
+	public static final RegistryObject<Block> BURNT_TOFFEE_SLAB =
+			block("burnt_toffee_slab",
+					() -> new SlabBlock(
+							BlockBehaviour.Properties.copy(
+									Blocks.BLACKSTONE_SLAB)));
+	public static final RegistryObject<Block> BURNT_TOFFEE_WALL =
+			block("burnt_toffee_wall",
+					() -> new WallBlock(
+							BlockBehaviour.Properties.copy(
+									Blocks.BLACKSTONE_WALL)));
+	public static final RegistryObject<Block> STAMPED_BURNT_TOFFEE =
+			block("stamped_burnt_toffee",
+					BlockBehaviour.Properties.copy(
+							Blocks.CHISELED_POLISHED_BLACKSTONE));
+	public static final RegistryObject<Block> GILDED_BURNT_TOFFEE =
+			block("gilded_burnt_toffee",
+					BlockBehaviour.Properties.copy(
+							Blocks.GILDED_BLACKSTONE));
+	public static final RegistryObject<Block> BURNT_TOFFEE_PILLAR =
+			block("burnt_toffee_pillar",
+					() -> new RotatedPillarBlock(
+							BlockBehaviour.Properties.copy(
+									Blocks.BASALT)));
 
 	public static final RegistryObject<Block> ROCK_CANDY_DEPOSIT =
 			stone("rock_candy_deposit", 2.5F);
