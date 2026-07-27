@@ -40,8 +40,8 @@ public final class CakeWorldBiomes {
 			sherbetDunes();
 	public static final RegistryObject<Biome> CANDY_CANE_BADLANDS =
 			candyCaneBadlands();
-	public static final RegistryObject<Biome> MARSHMALLOW_PEAKS = copy(
-			"marshmallow_peaks", "jagged_peaks", -0.3F, 0.5F);
+	public static final RegistryObject<Biome> MARSHMALLOW_PEAKS =
+			marshmallowPeaks();
 	public static final RegistryObject<Biome> SODA_OCEAN = copy(
 			"soda_ocean", "ocean", 0.5F, 0.5F);
 	public static final RegistryObject<Biome> FUDGE_WASTES = copy(
@@ -197,6 +197,19 @@ public final class CakeWorldBiomes {
 												.getSpecialEffects())));
 	}
 
+	private static RegistryObject<Biome> marshmallowPeaks() {
+		return OreSpawnBiomes.copyAndRegister(BIOMES,
+				"marshmallow_peaks",
+				() -> vanilla("jagged_peaks"),
+				builder -> builder
+						.temperature(-0.3F)
+						.downfall(0.5F)
+						.specialEffects(
+								withMarshmallowPeaksEffects(
+										vanilla("jagged_peaks")
+												.getSpecialEffects())));
+	}
+
 	private static RegistryObject<Biome> copyWithAmbient(
 			String name, String vanilla,
 			float temperature, float downfall,
@@ -250,6 +263,20 @@ public final class CakeWorldBiomes {
 						new AmbientAdditionsSettings(
 								CakeWorldSounds
 										.CANDY_CANE_BADLANDS_CHIME
+										.get(),
+								0.001D))
+				.build();
+	}
+
+	private static BiomeSpecialEffects withMarshmallowPeaksEffects(
+			BiomeSpecialEffects source) {
+		return effectsBuilder(source)
+				.ambientParticle(new AmbientParticleSettings(
+						ParticleTypes.CLOUD, 0.0008F))
+				.ambientAdditionsSound(
+						new AmbientAdditionsSettings(
+								CakeWorldSounds
+										.MARSHMALLOW_PEAKS_BREEZE
 										.get(),
 								0.001D))
 				.build();

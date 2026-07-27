@@ -695,7 +695,7 @@ public final class DeepPantryGameTests {
 				"cakeworld:peppermint_rock", 7);
 		assertPaletteContract(helper, palettes, "cakeworld:overworld_land",
 				"cakeworld:marshmallow_peaks", "cakeworld:icing_layer",
-				"cakeworld:biscuit_stone", "cakeworld:biscuit_crumbs", 5);
+				"cakeworld:marshmallow", "cakeworld:biscuit_crumbs", 5);
 		assertPaletteContract(helper, palettes, "cakeworld:nether",
 				"cakeworld:fudge_wastes", "cakeworld:fudge_rock",
 				"cakeworld:fudge_rock", null, 5);
@@ -775,7 +775,7 @@ public final class DeepPantryGameTests {
 		surfaces.put("marshmallow_peaks", auditSurface(overworld,
 				locateBiome(helper, overworld, id("marshmallow_peaks")),
 				id("marshmallow_peaks"), CakeWorldBlocks.ICING_LAYER.get(),
-				CakeWorldBlocks.BISCUIT_STONE.get(), 2));
+				CakeWorldBlocks.MARSHMALLOW.get(), 2));
 		surfaces.put("fudge_wastes", auditSurface(nether,
 				new BlockPos(0, 64, 0), id("fudge_wastes"),
 				CakeWorldBlocks.FUDGE_ROCK.get(),

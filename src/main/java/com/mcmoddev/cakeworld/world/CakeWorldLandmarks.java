@@ -122,6 +122,20 @@ public final class CakeWorldLandmarks {
 							.TOP_LAYER_MODIFICATION)
 					.add(candyCaneHoodooGarden);
 		}
+		Holder<PlacedFeature> marshmallowCloudBridge =
+				MarshmallowCloudBridgeFeature
+						.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(
+						biome.getNamespace())
+				&& "marshmallow_peaks".equals(
+						biome.getPath())
+				&& marshmallowCloudBridge != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration
+							.TOP_LAYER_MODIFICATION)
+					.add(marshmallowCloudBridge);
+		}
 		Holder<PlacedFeature> manorRepair =
 				GrandGingerbreadManorRepairFeature
 						.placedFeature();

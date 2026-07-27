@@ -31,6 +31,8 @@ public final class CakeWorldFeatureRegistration {
 				SherbetFossilBowlFeature.FEATURE);
 		event.getRegistry().register(
 				CandyCaneHoodooGardenFeature.FEATURE);
+		event.getRegistry().register(
+				MarshmallowCloudBridgeFeature.FEATURE);
 		event.getRegistry().register(GingerbreadVillageFeature.FEATURE);
 		event.getRegistry().register(
 				BiscuitBanditLookoutFeature.FEATURE);
@@ -143,6 +145,8 @@ public final class CakeWorldFeatureRegistration {
 			SherbetFossilBowlFeature
 					.registerConfiguredFeature();
 			CandyCaneHoodooGardenFeature
+					.registerConfiguredFeature();
+			MarshmallowCloudBridgeFeature
 					.registerConfiguredFeature();
 			GingerbreadVillageFeature.registerWorldgen();
 			BiscuitBanditLookoutFeature.registerWorldgen();

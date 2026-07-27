@@ -207,6 +207,8 @@ public final class CakeWorldCreatureSpawns {
 		if ("marshmallow_peaks".equals(biome.getPath())) {
 			replace(event, MobCategory.CREATURE, EntityType.GOAT,
 					CakeWorldEntities.NOUGAT_GOAT, 5, 1, 3);
+			replace(event, MobCategory.CREATURE, EntityType.SHEEP,
+					CakeWorldEntities.CANDYFLOSS_SHEEP, 6, 2, 4);
 		}
 		if ("ice_cream_tundra".equals(biome.getPath())) {
 			replace(event, MobCategory.CREATURE,

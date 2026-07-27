@@ -70,5 +70,14 @@
         "type": "event"
       }
     ]
+  },
+  "marshmallow_peaks_breeze": {
+    "subtitle": "subtitles.cakeworld.marshmallow_peaks.breeze",
+    "sounds": [
+      {
+        "name": "minecraft:block.wool.step",
+        "type": "event"
+      }
+    ]
   }
 }

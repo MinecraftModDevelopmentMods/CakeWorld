@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "provider_modid": "cakeworld",
-  "provider_revision": 18,
+  "provider_revision": 19,
   "templates": {
     "cakeworld:edible_world": {
       "name_key": "template.cakeworld.edible_world",
@@ -851,7 +851,7 @@
                 "max_downfall": 1.0,
                 "surface": {
                   "top_block": "cakeworld:icing_layer",
-                  "filler_block": "cakeworld:biscuit_stone",
+                  "filler_block": "cakeworld:marshmallow",
                   "underwater_block": "cakeworld:biscuit_crumbs",
                   "filler_depth": 5
                 }
