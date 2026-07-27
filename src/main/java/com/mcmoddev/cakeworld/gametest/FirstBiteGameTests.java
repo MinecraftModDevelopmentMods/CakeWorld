@@ -171,6 +171,7 @@ import com.mcmoddev.cakeworld.world.CraterKitchenRepairFeature;
 import com.mcmoddev.cakeworld.world.RockCandyCrystalMineFeature;
 import com.mcmoddev.cakeworld.world.RockCandyCrystalMineRepairFeature;
 import com.mcmoddev.cakeworld.world.RockCandyCrystalMineStructureFeature;
+import com.mcmoddev.cakeworld.world.RoadsideCuriosityFeature;
 import com.mcmoddev.cakeworld.world.WaferWindmillFeature;
 import com.mcmoddev.cakeworld.world.WaferWindmillRepairFeature;
 import com.mcmoddev.cakeworld.world.GingerbreadVillageFeature;
@@ -479,6 +480,11 @@ import net.minecraft.world.level.levelgen.structure.pools.StructurePoolElement;
 import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
 import net.minecraft.world.level.levelgen.structure.placement.ConcentricRingsStructurePlacement;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
+import net.minecraft.world.level.levelgen.placement.BiomeFilter;
+import net.minecraft.world.level.levelgen.placement.HeightmapPlacement;
+import net.minecraft.world.level.levelgen.placement.InSquarePlacement;
+import net.minecraft.world.level.levelgen.placement.PlacementModifier;
+import net.minecraft.world.level.levelgen.placement.RarityFilter;
 import net.minecraft.world.level.portal.PortalShape;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 import net.minecraft.world.level.storage.loot.LootContext;
@@ -42433,6 +42439,474 @@ public final class FirstBiteGameTests {
 														"LootTable")),
 				"Rock-Candy Crystal Mine repair did not restore the visible headframe and functional field cache");
 		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, batch = "struct025",
+			timeoutTicks = 1200)
+	public static void roadsideCuriositiesStayRareSmallAndBiomeSpecific(
+			GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		Holder<PlacedFeature> placed =
+				RoadsideCuriosityFeature
+						.placedFeature();
+		require(helper, placed != null,
+				"Roadside Curiosity placed feature was not registered");
+		List<PlacementModifier> modifiers =
+				placed.value().placement();
+		int rarity = readPrivateInt(
+				RarityFilter.class,
+				modifiers.get(0), "chance");
+		require(helper,
+				placed.unwrapKey()
+						.map(key -> key.location()
+								.equals(
+										RoadsideCuriosityFeature
+												.ID))
+						.orElse(false)
+						&& placed.value().feature()
+								.value().feature()
+								== RoadsideCuriosityFeature
+										.FEATURE
+						&& modifiers.size() == 4
+						&& modifiers.get(0)
+								instanceof RarityFilter
+						&& rarity
+								== RoadsideCuriosityFeature
+										.AVERAGE_CHUNKS_PER_ATTEMPT
+						&& modifiers.get(1)
+								instanceof InSquarePlacement
+						&& modifiers.get(2)
+								instanceof HeightmapPlacement
+						&& modifiers.get(3)
+								instanceof BiomeFilter,
+				"Roadside Curiosity lost its registered one-in-48, spread, surface and biome-filtered placement chain: "
+						+ modifiers + ", rarity="
+						+ rarity);
+
+		for (ResourceLocation biome : List.of(
+				CakeWorldBiomes.CANDY_PLAINS.getId(),
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.MARSHMALLOW_PEAKS
+						.getId())) {
+			require(helper,
+					hasPlacedFeature(
+							level, biome,
+							GenerationStep.Decoration
+									.TOP_LAYER_MODIFICATION,
+							RoadsideCuriosityFeature
+									.ID),
+					"Roadside Curiosity was not installed as a late non-replaying feature in "
+							+ biome);
+		}
+		for (ResourceLocation biome : List.of(
+				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.FUDGE_WASTES.getId(),
+				CakeWorldBiomes.MERINGUE_ISLANDS
+						.getId())) {
+			require(helper,
+					!hasPlacedFeature(
+							level, biome,
+							GenerationStep.Decoration
+									.TOP_LAYER_MODIFICATION,
+							RoadsideCuriosityFeature
+									.ID)
+							&& RoadsideCuriosityFeature
+									.variantForBiome(
+											biome)
+									== null,
+					"Roadside Curiosity reused a land scene in its intentionally deferred biome "
+							+ biome);
+		}
+		require(helper,
+				RoadsideCuriosityFeature
+						.variantForBiome(
+								CakeWorldBiomes
+										.CANDY_PLAINS
+										.getId())
+						== RoadsideCuriosityFeature
+								.Variant
+								.SPILLED_SWEET_CART
+						&& RoadsideCuriosityFeature
+								.variantForBiome(
+										CakeWorldBiomes
+												.COOKIE_FOREST
+												.getId())
+								== RoadsideCuriosityFeature
+										.Variant
+										.WRONG_WAY_SIGNPOST
+						&& RoadsideCuriosityFeature
+								.variantForBiome(
+										CakeWorldBiomes
+												.MARSHMALLOW_PEAKS
+												.getId())
+								== RoadsideCuriosityFeature
+										.Variant
+										.MARSHMALLOW_RESCUE_SHELTER
+						&& RoadsideCuriosityFeature
+								.variantForBiome(
+										new ResourceLocation(
+												"example",
+												"unknown"))
+								== null,
+				"Roadside Curiosity variant ownership crossed a biome or third-party boundary");
+
+		Set<Rotation> deterministicRotations =
+				new java.util.HashSet<>();
+		for (int index = 0;
+				index < 128
+						&& deterministicRotations
+								.size() < 4;
+				index++) {
+			deterministicRotations.add(
+					RoadsideCuriosityFeature
+							.orientation(
+									level.getSeed(),
+									new BlockPos(
+											index * 47,
+											64,
+											index * -59)));
+		}
+		require(helper,
+				deterministicRotations.size() == 4,
+				"Roadside Curiosity deterministic orientation did not expose all four cardinal presentations: "
+						+ deterministicRotations);
+
+		BlockPos fixture = new BlockPos(
+				helper.absolutePos(
+						new BlockPos(4, 4, 4))
+						.getX(),
+				level.getMaxBuildHeight() - 16,
+				helper.absolutePos(
+						new BlockPos(4, 4, 4))
+						.getZ());
+		prepareRoadsideFixture(level, fixture);
+		level.setBlock(fixture.offset(3, 0, 3),
+				Blocks.WATER.defaultBlockState(), 2);
+		require(helper,
+				!RoadsideCuriosityFeature
+						.hasSafeFootprint(
+								level, fixture,
+								RoadsideCuriosityFeature
+										.Variant
+										.SPILLED_SWEET_CART),
+				"Roadside Curiosity accepted a flooded unsafe footprint");
+
+		for (RoadsideCuriosityFeature.Variant variant
+				: RoadsideCuriosityFeature.Variant
+						.values()) {
+			for (Rotation rotation
+					: Rotation.values()) {
+				prepareRoadsideFixture(
+						level, fixture);
+				int entitiesBefore =
+						level.getEntities(
+								(Entity) null,
+								new AABB(fixture)
+										.inflate(
+												6.0D))
+								.size();
+				require(helper,
+						RoadsideCuriosityFeature
+								.buildAt(
+										level,
+										new Random(
+												RoadsideCuriosityFeature
+														.PLACEMENT_SALT),
+										fixture,
+										variant,
+										rotation),
+						"Roadside Curiosity refused a safe "
+								+ variant
+								+ " fixture at "
+								+ rotation);
+				Map<Block, Integer> palette =
+						scanBlockPalette(
+								level, fixture,
+								4, 0, 5);
+				BlockPos cache =
+						RoadsideCuriosityFeature
+								.cachePosition(
+										fixture);
+				BlockEntity cacheEntity =
+						level.getBlockEntity(cache);
+				String cacheLoot =
+						cacheEntity == null
+								? ""
+								: cacheEntity
+										.saveWithoutMetadata()
+										.getString(
+												"LootTable");
+				require(helper,
+						palette.getOrDefault(
+								Blocks.CHEST, 0)
+								== 1
+								&& RoadsideCuriosityFeature
+										.LOOT_ID
+										.toString()
+										.equals(
+												cacheLoot)
+								&& level.getEntities(
+										(Entity) null,
+										new AABB(
+												fixture)
+												.inflate(
+														6.0D))
+										.size()
+										== entitiesBefore,
+						"Roadside Curiosity lost its single shared provisions cache or spawned an entity: "
+								+ variant + " "
+								+ rotation + " "
+								+ palette);
+				assertRoadsideVariant(
+						helper, level, fixture,
+						variant, rotation,
+						palette);
+			}
+		}
+
+		LootTable loot =
+				level.getServer().getLootTables()
+						.get(RoadsideCuriosityFeature
+								.LOOT_ID);
+		LootContext lootContext =
+				new LootContext.Builder(level)
+						.withParameter(
+								LootContextParams.ORIGIN,
+								Vec3.atCenterOf(
+										fixture))
+						.create(
+								LootContextParamSets.CHEST);
+		List<ItemStack> provisions =
+				loot.getRandomItems(lootContext);
+		require(helper,
+				provisions.stream()
+						.anyMatch(stack -> stack
+								.is(Items.COMPASS))
+						&& provisions.stream()
+								.filter(stack -> stack
+										.is(Items.TORCH))
+								.mapToInt(
+										ItemStack
+												::getCount)
+								.sum() == 4
+						&& provisions.stream()
+								.filter(stack -> stack
+										.is(CakeWorldBlocks
+												.MARSHMALLOW
+												.get()
+												.asItem()))
+								.mapToInt(
+										ItemStack
+												::getCount)
+								.sum() == 2
+						&& provisions.stream()
+								.filter(stack -> stack
+										.is(CakeWorldItems
+												.SIMPLE_BISCUIT
+												.get()))
+								.mapToInt(
+										ItemStack
+												::getCount)
+								.sum() == 2,
+				"Roadside Curiosity cache did not guarantee navigation, light, recovery and food: "
+						+ provisions);
+		helper.succeed();
+	}
+
+	private static void prepareRoadsideFixture(
+			ServerLevel level, BlockPos centre) {
+		for (int x = -5; x <= 5; x++) {
+			for (int y = -1; y <= 6; y++) {
+				for (int z = -5; z <= 5; z++) {
+					level.setBlock(
+							centre.offset(x, y, z),
+							y <= 0
+									? Blocks.STONE
+											.defaultBlockState()
+									: Blocks.AIR
+											.defaultBlockState(),
+							2);
+				}
+			}
+		}
+	}
+
+	private static void assertRoadsideVariant(
+			GameTestHelper helper, ServerLevel level,
+			BlockPos centre,
+			RoadsideCuriosityFeature.Variant variant,
+			Rotation rotation,
+			Map<Block, Integer> palette) {
+		BlockPos sentinel =
+				RoadsideCuriosityFeature
+						.sentinelPosition(
+								centre, variant,
+								rotation);
+		switch (variant) {
+		case SPILLED_SWEET_CART:
+			require(helper,
+					palette.getOrDefault(
+							CakeWorldBlocks
+									.BISCUIT_CRUMBS
+									.get(), 0) == 18
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.WAFER_BLOCK
+											.get(), 0)
+									== 8
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.CANDY_CANE_PILLAR
+											.get(), 0)
+									== 2
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.GUMMY_BLOCK
+											.get(), 0)
+									== 1
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.GRAPE_GUMMY_BLOCK
+											.get(), 0)
+									== 1
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.RASPBERRY_GUMMY_BLOCK
+											.get(), 0)
+									== 2
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.BLUEBERRY_GUMMY_BLOCK
+											.get(), 0)
+									== 2
+							&& level.getBlockState(
+									sentinel)
+									.is(CakeWorldBlocks
+											.WAFER_BLOCK
+											.get()),
+					"Spilled sweet cart lost its body, four flavour wheels, handle or edible spill: "
+							+ rotation + " "
+							+ palette);
+			Direction.Axis handleAxis =
+					rotation.rotate(
+							Direction.SOUTH)
+							.getAxis();
+			require(helper,
+					level.getBlockState(
+							centre.offset(
+									new BlockPos(
+											0, 1, 3)
+											.rotate(
+													rotation)))
+							.getValue(
+									RotatedPillarBlock
+											.AXIS)
+							== handleAxis,
+					"Spilled sweet cart handle did not rotate with its body");
+			break;
+		case WRONG_WAY_SIGNPOST:
+			require(helper,
+					palette.getOrDefault(
+							CakeWorldBlocks
+									.BISCUIT_CRUMBS
+									.get(), 0) == 12
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.WAFER_BLOCK
+											.get(), 0)
+									== 3
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.CANDY_CANE_PILLAR
+											.get(), 0)
+									== 8
+							&& palette.getOrDefault(
+									Blocks.LANTERN,
+									0) == 1
+							&& level.getBlockState(
+									sentinel)
+									.is(CakeWorldBlocks
+											.CANDY_CANE_PILLAR
+											.get()),
+					"Wrong-way signpost lost its crumb compass, opposing arrow or light: "
+							+ rotation + " "
+							+ palette);
+			Direction.Axis arrowAxis =
+					rotation.rotate(Direction.EAST)
+							.getAxis();
+			require(helper,
+					level.getBlockState(
+							centre.offset(
+									new BlockPos(
+											2, 4, -1)
+											.rotate(
+													rotation)))
+							.getValue(
+									RotatedPillarBlock
+											.AXIS)
+							== arrowAxis,
+					"Wrong-way sign arrow did not rotate with its crumb compass");
+			break;
+		case MARSHMALLOW_RESCUE_SHELTER:
+			require(helper,
+					palette.getOrDefault(
+							CakeWorldBlocks
+									.MARSHMALLOW
+									.get(), 0) == 25
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.WAFER_BLOCK
+											.get(), 0)
+									== 25
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.ICING_LAYER
+											.get(), 0)
+									== 25
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.CANDY_CANE_PILLAR
+											.get(), 0)
+									== 12
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.BISCUIT_CRUMBS
+											.get(), 0)
+									== 2
+							&& palette.getOrDefault(
+									Blocks.LANTERN,
+									0) == 1
+							&& level.getBlockState(
+									sentinel)
+									.is(CakeWorldBlocks
+											.WAFER_BLOCK
+											.get()),
+					"Marshmallow rescue shelter lost its soft floor, four-post roof, icing cap, light or approach: "
+							+ rotation + " "
+							+ palette);
+			break;
+		default:
+			throw new IllegalStateException(
+					"Unhandled roadside variant "
+							+ variant);
+		}
+	}
+
+	private static int readPrivateInt(
+			Class<?> owner, Object target,
+			String fieldName) {
+		try {
+			Field field =
+					owner.getDeclaredField(fieldName);
+			field.setAccessible(true);
+			return field.getInt(target);
+		} catch (ReflectiveOperationException exception) {
+			throw new AssertionError(
+					"Could not inspect "
+							+ owner.getSimpleName()
+							+ "." + fieldName,
+					exception);
+		}
 	}
 
 	private static Set<String>

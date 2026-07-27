@@ -17,6 +17,8 @@ public final class CakeWorldFeatureRegistration {
 	@SubscribeEvent
 	public static void registerFeatures(RegistryEvent.Register<Feature<?>> event) {
 		event.getRegistry().register(StarterPicnicFeature.FEATURE);
+		event.getRegistry().register(
+				RoadsideCuriosityFeature.FEATURE);
 		event.getRegistry().register(GingerbreadVillageFeature.FEATURE);
 		event.getRegistry().register(
 				BiscuitBanditLookoutFeature.FEATURE);
@@ -116,6 +118,8 @@ public final class CakeWorldFeatureRegistration {
 		event.enqueueWork(() -> {
 			CakeWorldFeaturePoolElement.registerType();
 			StarterPicnicFeature.registerConfiguredFeature();
+			RoadsideCuriosityFeature
+					.registerConfiguredFeature();
 			GingerbreadVillageFeature.registerWorldgen();
 			BiscuitBanditLookoutFeature.registerWorldgen();
 			WaferMineFeature.registerWorldgen();

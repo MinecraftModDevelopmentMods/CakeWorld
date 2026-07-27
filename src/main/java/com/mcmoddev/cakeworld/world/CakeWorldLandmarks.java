@@ -24,6 +24,20 @@ public final class CakeWorldLandmarks {
 			event.getGeneration().getFeatures(
 					GenerationStep.Decoration.SURFACE_STRUCTURES).add(picnic);
 		}
+		Holder<PlacedFeature> roadside =
+				RoadsideCuriosityFeature
+						.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(
+						biome.getNamespace())
+				&& isCurrentLandBiome(
+						biome.getPath())
+				&& roadside != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration
+							.TOP_LAYER_MODIFICATION)
+					.add(roadside);
+		}
 		Holder<PlacedFeature> manorRepair =
 				GrandGingerbreadManorRepairFeature
 						.placedFeature();
@@ -203,5 +217,12 @@ public final class CakeWorldLandmarks {
 				|| "cookie_forest".equals(path)
 				|| "marshmallow_peaks".equals(path)
 				|| "soda_ocean".equals(path);
+	}
+
+	private static boolean isCurrentLandBiome(
+			String path) {
+		return "candy_plains".equals(path)
+				|| "cookie_forest".equals(path)
+				|| "marshmallow_peaks".equals(path);
 	}
 }

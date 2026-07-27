@@ -52,6 +52,7 @@ import com.mcmoddev.cakeworld.world.CraterKitchenFeature;
 import com.mcmoddev.cakeworld.world.CraterKitchenStructureFeature;
 import com.mcmoddev.cakeworld.world.RockCandyCrystalMineFeature;
 import com.mcmoddev.cakeworld.world.RockCandyCrystalMineStructureFeature;
+import com.mcmoddev.cakeworld.world.RoadsideCuriosityFeature;
 import com.mcmoddev.cakeworld.world.GingerbreadVillageFeature;
 import com.mcmoddev.cakeworld.world.GrandGingerbreadManorFeature;
 import com.mcmoddev.cakeworld.world.GummyShrineFeature;
@@ -6639,6 +6640,147 @@ public final class DeepPantryGameTests {
 		});
 	}
 
+	@GameTest(template = EMPTY, batch = "struct025world",
+			timeoutTicks = 24000)
+	public static void focusedNaturalRoadsideCuriosityAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean(
+				"cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed natural Roadside Curiosity audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel()
+				.getServer().getLevel(Level.OVERWORLD);
+		require(helper, level != null,
+				"The fixed-seed server did not expose the Overworld");
+		LocatedRoadside cart =
+				locateNaturalRoadside(
+						helper, level,
+						RoadsideCuriosityFeature.Variant
+								.SPILLED_SWEET_CART,
+						new BlockPos(
+								280, 96, 440),
+						new BlockPos(
+								378, 69, 534),
+						12);
+		LocatedRoadside signpost =
+				locateNaturalRoadside(
+						helper, level,
+						RoadsideCuriosityFeature.Variant
+								.WRONG_WAY_SIGNPOST,
+						new BlockPos(
+								148, 96, 20),
+						new BlockPos(
+								56, 65, 36),
+						12);
+		LocatedRoadside shelter =
+				locateNaturalRoadside(
+						helper, level,
+						RoadsideCuriosityFeature.Variant
+								.MARSHMALLOW_RESCUE_SHELTER,
+						new BlockPos(
+								-3184, 192,
+								-1152),
+						new BlockPos(
+								-3049, 164,
+								-1066),
+						12);
+		List<LocatedRoadside> scenes =
+				List.of(cart, signpost, shelter);
+		scenes.forEach(scene ->
+				setRoadsideChunksForced(
+						level, scene, true));
+		helper.runAfterDelay(40, () -> {
+			List<RoadsideWorldAudit> audits =
+					scenes.stream()
+							.map(scene ->
+									auditNaturalRoadside(
+											level,
+											scene))
+							.toList();
+			long brickSentinels =
+					audits.stream()
+							.filter(
+									RoadsideWorldAudit
+											::brickSentinel)
+							.count();
+			require(helper,
+					brickSentinels == 0
+							|| brickSentinels
+									== audits.size(),
+					"Natural Roadside Curiosity world contained a partial fresh/reload sentinel set: "
+							+ audits);
+			boolean reloaded =
+					brickSentinels == audits.size();
+			for (int index = 0;
+					index < scenes.size(); index++) {
+				LocatedRoadside scene =
+						scenes.get(index);
+				RoadsideWorldAudit audit =
+						audits.get(index);
+				ResourceLocation expectedBiome =
+						switch (scene.variant()) {
+						case SPILLED_SWEET_CART ->
+							CakeWorldBiomes
+									.CANDY_PLAINS
+									.getId();
+						case WRONG_WAY_SIGNPOST ->
+							CakeWorldBiomes
+									.COOKIE_FOREST
+									.getId();
+						case MARSHMALLOW_RESCUE_SHELTER ->
+							CakeWorldBiomes
+									.MARSHMALLOW_PEAKS
+									.getId();
+						};
+				LOGGER.info("Focused natural Roadside Curiosity audit: variant={}, centre={}, cache={}, biome={}, rotation={}, palette={}, layout={}, sentinel={}, markerPhase={}, scannedChunks={}, cacheCandidates={}",
+						scene.variant(),
+						scene.centre(),
+						scene.cache(),
+						audit.biome(),
+						audit.rotation(),
+						audit.palette(),
+						audit.readableLayout(),
+						audit.sentinel(),
+						reloaded
+								? "reloaded"
+								: "seeded",
+						scene.scannedChunks(),
+						scene.cacheCandidates());
+				require(helper,
+						expectedBiome.equals(
+								audit.biome())
+								&& audit
+										.readableLayout()
+								&& RoadsideCuriosityFeature
+										.LOOT_ID
+										.toString()
+										.equals(
+												audit.cacheLoot()),
+						"Natural Roadside Curiosity lost its exact biome story, readable scene or shared provisions cache: "
+								+ audit);
+				if (!reloaded) {
+					level.setBlock(
+							audit.sentinel(),
+							Blocks.BRICKS
+									.defaultBlockState(),
+							2);
+					require(helper,
+							level.getBlockState(
+									audit.sentinel())
+									.is(Blocks.BRICKS),
+							"Could not seed the explicit player-placed Brick reload sentinel in "
+									+ scene.variant());
+				}
+			}
+			scenes.forEach(scene ->
+					setRoadsideChunksForced(
+							level, scene, false));
+			helper.succeed();
+		});
+	}
+
 	@GameTest(template = EMPTY, timeoutTicks = 1200)
 	public static void baseMetalsCounterpartsPreserveTagsRecipesAndGeneration(
 			GameTestHelper helper) {
@@ -10103,6 +10245,508 @@ public final class DeepPantryGameTests {
 				"Unreachable after GameTest failure");
 	}
 
+	private static LocatedRoadside locateNaturalRoadside(
+			GameTestHelper helper, ServerLevel level,
+			RoadsideCuriosityFeature.Variant expected,
+			BlockPos anchor,
+			BlockPos fixedSeedCentre,
+			int chunkRadius) {
+		level.getChunkAt(fixedSeedCentre);
+		LocatedRoadside fixedSeedScene =
+				new LocatedRoadside(
+						fixedSeedCentre,
+						RoadsideCuriosityFeature
+								.cachePosition(
+										fixedSeedCentre),
+						expected, 1, 1);
+		if (auditNaturalRoadside(
+				level, fixedSeedScene)
+						.readableLayout()) {
+			return fixedSeedScene;
+		}
+		ChunkPos anchorChunk = new ChunkPos(anchor);
+		int scannedChunks = 0;
+		int cacheCandidates = 0;
+		for (int radius = 0;
+				radius <= chunkRadius; radius++) {
+			for (int chunkX =
+					anchorChunk.x - radius;
+					chunkX <= anchorChunk.x
+							+ radius;
+					chunkX++) {
+				for (int chunkZ =
+						anchorChunk.z - radius;
+						chunkZ <= anchorChunk.z
+								+ radius;
+						chunkZ++) {
+					if (radius > 0
+							&& chunkX
+									!= anchorChunk.x
+											- radius
+							&& chunkX
+									!= anchorChunk.x
+											+ radius
+							&& chunkZ
+									!= anchorChunk.z
+											- radius
+							&& chunkZ
+									!= anchorChunk.z
+											+ radius) {
+						continue;
+					}
+					net.minecraft.world.level.chunk
+							.LevelChunk chunk =
+							level.getChunk(
+									chunkX,
+									chunkZ);
+					scannedChunks++;
+					for (BlockEntity blockEntity
+							: chunk
+									.getBlockEntities()
+									.values()) {
+						CompoundTag saved =
+								blockEntity
+										.saveWithoutMetadata();
+						if (!RoadsideCuriosityFeature
+								.LOOT_ID
+								.toString()
+								.equals(
+										saved.getString(
+												"LootTable"))) {
+							continue;
+						}
+						cacheCandidates++;
+						BlockPos cache =
+								blockEntity
+										.getBlockPos();
+						BlockPos centre =
+								cache.below();
+						ResourceLocation biome =
+								level.registryAccess()
+										.registryOrThrow(
+												Registry
+														.BIOME_REGISTRY)
+										.getKey(
+												level.getBiome(
+														centre)
+														.value());
+						if (RoadsideCuriosityFeature
+								.variantForBiome(
+										biome)
+								!= expected) {
+							continue;
+						}
+						LocatedRoadside scene =
+								new LocatedRoadside(
+										centre,
+										cache,
+										expected,
+										scannedChunks,
+										cacheCandidates);
+						if (auditNaturalRoadside(
+								level, scene)
+										.readableLayout()) {
+							return scene;
+						}
+					}
+				}
+			}
+		}
+		require(helper, false,
+				"The fixed-seed survey found no natural "
+						+ expected
+						+ " Roadside Curiosity after "
+						+ scannedChunks
+						+ " generated chunks and "
+						+ cacheCandidates
+						+ " dedicated cache candidates near "
+						+ anchor);
+		throw new IllegalStateException(
+				"Unreachable after GameTest failure");
+	}
+
+	private static RoadsideWorldAudit
+			auditNaturalRoadside(
+					ServerLevel level,
+					LocatedRoadside scene) {
+		BlockPos centre = scene.centre();
+		Rotation rotation =
+				RoadsideCuriosityFeature.orientation(
+						level.getSeed(), centre);
+		BlockPos sentinel =
+				RoadsideCuriosityFeature
+						.sentinelPosition(
+								centre,
+								scene.variant(),
+								rotation);
+		boolean brickSentinel =
+				level.getBlockState(sentinel)
+						.is(Blocks.BRICKS);
+		Map<Block, Integer> palette =
+				new LinkedHashMap<>();
+		for (int x = -4; x <= 4; x++) {
+			for (int y = 0; y <= 5; y++) {
+				for (int z = -4; z <= 4;
+						z++) {
+					palette.merge(
+							level.getBlockState(
+									centre.offset(
+											x, y, z))
+									.getBlock(),
+							1, Integer::sum);
+				}
+			}
+		}
+		BlockEntity cacheEntity =
+				level.getBlockEntity(scene.cache());
+		String cacheLoot =
+				cacheEntity == null
+						? ""
+						: cacheEntity
+								.saveWithoutMetadata()
+								.getString(
+										"LootTable");
+		ResourceLocation biome =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.getKey(level.getBiome(centre)
+								.value());
+		boolean readable =
+				level.getBlockState(scene.cache())
+								.is(Blocks.CHEST)
+						&& RoadsideCuriosityFeature
+								.LOOT_ID.toString()
+								.equals(cacheLoot)
+						&& matchesRoadsideLayout(
+								level, centre,
+								scene.variant(),
+								rotation,
+								sentinel);
+		return new RoadsideWorldAudit(
+				palette, biome, rotation,
+				cacheLoot, readable, sentinel,
+				brickSentinel);
+	}
+
+	private static boolean matchesRoadsideLayout(
+			ServerLevel level, BlockPos centre,
+			RoadsideCuriosityFeature.Variant variant,
+			Rotation rotation, BlockPos sentinel) {
+		switch (variant) {
+		case SPILLED_SWEET_CART:
+			for (int x = -2; x <= 2; x++) {
+				for (int z = -1; z <= 1;
+						z++) {
+					if (!level.getBlockState(
+							local(centre, rotation,
+									x, 0, z))
+							.is(CakeWorldBlocks
+									.BISCUIT_CRUMBS
+									.get())) {
+						return false;
+					}
+				}
+			}
+			for (int x = -1; x <= 1; x++) {
+				for (int z = -1; z <= 1;
+						z++) {
+					if ((x != 0 || z != 0)
+							&& !matchesOrBrick(
+									level,
+									local(centre,
+											rotation,
+											x, 1,
+											z),
+									CakeWorldBlocks
+											.WAFER_BLOCK
+											.get(),
+									sentinel)) {
+						return false;
+					}
+				}
+			}
+			for (int x : new int[] {-2, 2}) {
+				if (!level.getBlockState(
+						local(centre, rotation,
+								x, 1, -1))
+						.is(CakeWorldBlocks
+								.RASPBERRY_GUMMY_BLOCK
+								.get())
+						|| !level.getBlockState(
+								local(centre,
+										rotation,
+										x, 1,
+										1))
+								.is(CakeWorldBlocks
+										.BLUEBERRY_GUMMY_BLOCK
+										.get())) {
+					return false;
+				}
+			}
+			Direction.Axis handleAxis =
+					rotation.rotate(
+							Direction.SOUTH)
+							.getAxis();
+			for (int z = 2; z <= 3; z++) {
+				BlockState handle =
+						level.getBlockState(
+								local(centre,
+										rotation,
+										0, 1,
+										z));
+				if (!handle.is(CakeWorldBlocks
+						.CANDY_CANE_PILLAR.get())
+						|| handle.getValue(
+								RotatedPillarBlock
+										.AXIS)
+								!= handleAxis) {
+					return false;
+				}
+			}
+			return level.getBlockState(
+					local(centre, rotation,
+							-1, 0, 2))
+					.is(CakeWorldBlocks
+							.BISCUIT_CRUMBS.get())
+					&& level.getBlockState(
+							local(centre, rotation,
+									1, 0, 2))
+							.is(CakeWorldBlocks
+									.BISCUIT_CRUMBS
+									.get())
+					&& level.getBlockState(
+							local(centre, rotation,
+									2, 0, 3))
+							.is(CakeWorldBlocks
+									.BISCUIT_CRUMBS
+									.get())
+					&& level.getBlockState(
+							local(centre, rotation,
+									2, 1, 2))
+							.is(CakeWorldBlocks
+									.GUMMY_BLOCK.get())
+					&& level.getBlockState(
+							local(centre, rotation,
+									-1, 1, 3))
+							.is(CakeWorldBlocks
+									.GRAPE_GUMMY_BLOCK
+									.get());
+		case WRONG_WAY_SIGNPOST:
+			Set<BlockPos> waferBase = Set.of(
+					local(centre, rotation,
+							-1, 0, -1),
+					local(centre, rotation,
+							0, 0, -1),
+					local(centre, rotation,
+							1, 0, -1));
+			for (Direction direction
+					: Direction.Plane.HORIZONTAL) {
+				for (int distance = 0;
+						distance <= 3;
+						distance++) {
+					BlockPos point =
+							centre.relative(
+									direction,
+									distance);
+					Block expected =
+							waferBase
+									.contains(point)
+											? CakeWorldBlocks
+													.WAFER_BLOCK
+													.get()
+											: CakeWorldBlocks
+													.BISCUIT_CRUMBS
+													.get();
+					if (!level.getBlockState(
+							point).is(expected)) {
+						return false;
+					}
+				}
+			}
+			for (BlockPos base : waferBase) {
+				if (!level.getBlockState(base)
+						.is(CakeWorldBlocks
+								.WAFER_BLOCK.get())) {
+					return false;
+				}
+			}
+			for (int y = 1; y <= 3; y++) {
+				BlockState post =
+						level.getBlockState(
+								local(centre,
+										rotation,
+										0, y,
+										-1));
+				if (!post.is(CakeWorldBlocks
+						.CANDY_CANE_PILLAR.get())
+						|| post.getValue(
+								RotatedPillarBlock
+										.AXIS)
+								!= Direction.Axis.Y) {
+					return false;
+				}
+			}
+			Direction.Axis arrowAxis =
+					rotation.rotate(Direction.EAST)
+							.getAxis();
+			for (int x = -2; x <= 2; x++) {
+				BlockPos arrow = local(
+						centre, rotation,
+						x, 4, -1);
+				if (arrow.equals(sentinel)
+						&& level.getBlockState(
+								arrow)
+								.is(Blocks.BRICKS)) {
+					continue;
+				}
+				BlockState arrowState =
+						level.getBlockState(arrow);
+				if (!arrowState.is(
+						CakeWorldBlocks
+								.CANDY_CANE_PILLAR
+								.get())
+						|| arrowState.getValue(
+								RotatedPillarBlock
+										.AXIS)
+								!= arrowAxis) {
+					return false;
+				}
+			}
+			return level.getBlockState(
+					local(centre, rotation,
+							-3, 4, -1))
+					.is(CakeWorldBlocks
+							.BLUEBERRY_GUMMY_BLOCK
+							.get())
+					&& level.getBlockState(
+							local(centre, rotation,
+									3, 4, -1))
+							.is(CakeWorldBlocks
+									.RASPBERRY_GUMMY_BLOCK
+									.get())
+					&& level.getBlockState(
+							local(centre, rotation,
+									0, 5, -1))
+							.is(Blocks.LANTERN);
+		case MARSHMALLOW_RESCUE_SHELTER:
+			for (int x = -2; x <= 2; x++) {
+				for (int z = -2; z <= 2;
+						z++) {
+					if (!level.getBlockState(
+							local(centre,
+									rotation,
+									x, 0, z))
+							.is(CakeWorldBlocks
+									.MARSHMALLOW
+									.get())
+							|| !matchesOrBrick(
+									level,
+									local(centre,
+											rotation,
+											x, 4,
+											z),
+									CakeWorldBlocks
+											.WAFER_BLOCK
+											.get(),
+									sentinel)
+							|| !level.getBlockState(
+									local(centre,
+											rotation,
+											x, 5,
+											z))
+									.is(CakeWorldBlocks
+											.ICING_LAYER
+											.get())) {
+						return false;
+					}
+				}
+			}
+			for (int x : new int[] {-2, 2}) {
+				for (int z
+						: new int[] {-2, 2}) {
+					for (int y = 1; y <= 3;
+							y++) {
+						BlockState support =
+								level.getBlockState(
+										local(
+												centre,
+												rotation,
+												x, y,
+												z));
+						if (!support.is(
+								CakeWorldBlocks
+										.CANDY_CANE_PILLAR
+										.get())
+								|| support
+										.getValue(
+												RotatedPillarBlock
+														.AXIS)
+										!= Direction.Axis.Y) {
+							return false;
+						}
+					}
+				}
+			}
+			return level.getBlockState(
+					local(centre, rotation,
+							0, 3, 0))
+					.is(Blocks.LANTERN)
+					&& level.getBlockState(
+							local(centre, rotation,
+									0, 0, 3))
+							.is(CakeWorldBlocks
+									.BISCUIT_CRUMBS
+									.get())
+					&& level.getBlockState(
+							local(centre, rotation,
+									0, 0, 4))
+							.is(CakeWorldBlocks
+									.BISCUIT_CRUMBS
+									.get());
+		default:
+			throw new IllegalStateException(
+					"Unhandled roadside variant "
+							+ variant);
+		}
+	}
+
+	private static boolean matchesOrBrick(
+			ServerLevel level, BlockPos position,
+			Block expected, BlockPos sentinel) {
+		return level.getBlockState(position)
+						.is(expected)
+				|| position.equals(sentinel)
+						&& level.getBlockState(
+								position)
+								.is(Blocks.BRICKS);
+	}
+
+	private static void setRoadsideChunksForced(
+			ServerLevel level,
+			LocatedRoadside scene,
+			boolean forced) {
+		for (int chunkX = Math.floorDiv(
+				scene.centre().getX() - 5, 16);
+				chunkX <= Math.floorDiv(
+						scene.centre().getX() + 5,
+						16);
+				chunkX++) {
+			for (int chunkZ = Math.floorDiv(
+					scene.centre().getZ() - 5,
+					16);
+					chunkZ <= Math.floorDiv(
+							scene.centre().getZ()
+									+ 5,
+							16);
+					chunkZ++) {
+				level.setChunkForced(
+						chunkX, chunkZ,
+						forced);
+			}
+		}
+	}
+
 	private static void setCottageChunksForced(
 			ServerLevel level,
 			LocatedCottage cottage,
@@ -11499,6 +12143,23 @@ public final class DeepPantryGameTests {
 			boolean readableLayout,
 			int persistentCompanions,
 			boolean homeRestricted) {
+	}
+
+	private record LocatedRoadside(
+			BlockPos centre, BlockPos cache,
+			RoadsideCuriosityFeature.Variant variant,
+			int scannedChunks,
+			int cacheCandidates) {
+	}
+
+	private record RoadsideWorldAudit(
+			Map<Block, Integer> palette,
+			ResourceLocation biome,
+			Rotation rotation,
+			String cacheLoot,
+			boolean readableLayout,
+			BlockPos sentinel,
+			boolean brickSentinel) {
 	}
 
 	private record GeomePlacementSurvey(
