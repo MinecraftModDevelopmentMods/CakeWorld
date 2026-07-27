@@ -106,6 +106,7 @@ integrated-world, compatibility, and performance evidence remain separate.
 | SYS-010 | Core | 3/4/5/6 | Every major vanilla structure family eventually receives an edible replacement that preserves required progression and hooks. |
 | SYS-011 | Core | 1/6 | CakeWorld uses original storybook confectionery names, art, writing, creatures, and structures; it does not copy copyrighted characters, scenes, or distinctive designs. |
 | SYS-012 | Core | 6/7 | Unknown third-party mobs, structures, and resources remain untouched until an explicit compatibility contract exists. |
+| SYS-013 | Core | 6 | Every player-facing CakeWorld registry name, biome, interface message, accessibility cue, named role, template label, map label, container label, and sound subtitle has a complete translatable English source entry. Other languages may replace that catalogue through ordinary resource packs. |
 
 ## Realm Identity
 
@@ -587,6 +588,15 @@ as well as a colour change, earned stamps use a `+` glyph rather than colour
 alone, and narrator text reports the active category and progress. Discovery
 sounds use a dedicated subtitle. Human checks at multiple GUI scales, with
 Minecraft Narrator and subtitles enabled, remain an acceptance requirement.
+
+The `SYS-013` source-language gate enumerates the live CakeWorld block, item,
+entity, effect, biome, and sound registries and checks their packaged English
+names. It also covers dynamically assembled Cookbook tabs and hints, Narrator
+and control text, special named roles, template and exploration-map labels,
+container names, and all declared sound subtitles. This supplies a complete
+translation source without pretending that automated English checks are a
+substitute for native-speaker review of future community translations.
+
 - Food and creature names avoid implying that real toxic materials such as
   mercury are safe to eat. Metal-bearing compatibility ores are confectionery
   geology, not nibbleable food.
