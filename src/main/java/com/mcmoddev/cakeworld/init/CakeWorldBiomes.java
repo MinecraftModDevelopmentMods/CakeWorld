@@ -46,6 +46,8 @@ public final class CakeWorldBiomes {
 			iceCreamTundra();
 	public static final RegistryObject<Biome> WAFFLE_PLATEAUS =
 			wafflePlateaus();
+	public static final RegistryObject<Biome> CUPCAKE_GARDENS =
+			cupcakeGardens();
 	public static final RegistryObject<Biome> SODA_OCEAN = copy(
 			"soda_ocean", "ocean", 0.5F, 0.5F);
 	public static final RegistryObject<Biome> FUDGE_WASTES = copy(
@@ -125,6 +127,10 @@ public final class CakeWorldBiomes {
 					BiomeDictionary.Type.HOT,
 					BiomeDictionary.Type.DRY,
 					BiomeDictionary.Type.SAVANNA);
+			BiomeDictionary.addTypes(key(CUPCAKE_GARDENS),
+					BiomeDictionary.Type.OVERWORLD,
+					BiomeDictionary.Type.PLAINS,
+					BiomeDictionary.Type.LUSH);
 			BiomeDictionary.addTypes(key(SODA_OCEAN),
 					BiomeDictionary.Type.OVERWORLD,
 					BiomeDictionary.Type.OCEAN,
@@ -252,6 +258,19 @@ public final class CakeWorldBiomes {
 												.getSpecialEffects())));
 	}
 
+	private static RegistryObject<Biome> cupcakeGardens() {
+		return OreSpawnBiomes.copyAndRegister(BIOMES,
+				"cupcake_gardens",
+				() -> vanilla("sunflower_plains"),
+				builder -> builder
+						.temperature(0.75F)
+						.downfall(0.8F)
+						.specialEffects(
+								withCupcakeGardenEffects(
+										vanilla("sunflower_plains")
+												.getSpecialEffects())));
+	}
+
 	private static RegistryObject<Biome> copyWithAmbient(
 			String name, String vanilla,
 			float temperature, float downfall,
@@ -349,6 +368,20 @@ public final class CakeWorldBiomes {
 										.WAFFLE_PLATEAUS_BREEZE
 										.get(),
 								0.001D))
+				.build();
+	}
+
+	private static BiomeSpecialEffects withCupcakeGardenEffects(
+			BiomeSpecialEffects source) {
+		return effectsBuilder(source)
+				.ambientParticle(new AmbientParticleSettings(
+						ParticleTypes.FALLING_NECTAR, 0.0012F))
+				.ambientAdditionsSound(
+						new AmbientAdditionsSettings(
+								CakeWorldSounds
+										.CUPCAKE_GARDENS_HUM
+										.get(),
+								0.0012D))
 				.build();
 	}
 

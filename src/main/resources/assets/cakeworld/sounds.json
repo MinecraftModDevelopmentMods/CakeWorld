@@ -97,5 +97,14 @@
         "type": "event"
       }
     ]
+  },
+  "cupcake_gardens_hum": {
+    "subtitle": "subtitles.cakeworld.cupcake_gardens.hum",
+    "sounds": [
+      {
+        "name": "minecraft:entity.bee.pollinate",
+        "type": "event"
+      }
+    ]
   }
 }

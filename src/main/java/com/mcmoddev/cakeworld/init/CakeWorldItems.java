@@ -93,6 +93,16 @@ public final class CakeWorldItems {
 											CakeWorldEffects.SUGAR_RUSH.get(),
 											160), 1.0F)
 									.build())));
+	public static final RegistryObject<Item> HONEY_SPRINKLE_CUPCAKE =
+			ITEMS.register("honey_sprinkle_cupcake",
+					() -> new Item(new Item.Properties()
+							.tab(CreativeModeTab.TAB_FOOD)
+							.food(new FoodProperties.Builder()
+									.nutrition(7).saturationMod(0.8F)
+									.effect(() -> new MobEffectInstance(
+											CakeWorldEffects.SUGAR_RUSH.get(),
+											120), 1.0F)
+									.build())));
 	public static final RegistryObject<Item> FIZZY_POPPERS =
 			ITEMS.register("fizzy_poppers",
 					() -> new Item(new Item.Properties()

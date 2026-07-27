@@ -2229,7 +2229,8 @@ public final class FirstBiteGameTests {
 
 		for (ResourceLocation biomeId : new ResourceLocation[] {
 				CakeWorldBiomes.CANDY_PLAINS.getId(),
-				CakeWorldBiomes.COOKIE_FOREST.getId()}) {
+				CakeWorldBiomes.COOKIE_FOREST.getId(),
+				CakeWorldBiomes.CUPCAKE_GARDENS.getId()}) {
 			Biome loaded = helper.getLevel().registryAccess()
 					.registryOrThrow(Registry.BIOME_REGISTRY)
 					.get(biomeId);
@@ -8054,7 +8055,7 @@ public final class FirstBiteGameTests {
 								.stream().noneMatch(
 										spawn -> spawn.type
 												== EntityType.MOOSHROOM),
-				"Future Cupcake Gardens hook lost the exact Mushroom Fields 8/4-8 replacement profile");
+				"Cupcake Gardens hook lost the exact Mushroom Fields 8/4-8 replacement profile");
 
 		for (ResourceLocation biomeId : List.of(
 				CakeWorldBiomes.CANDY_PLAINS.getId(),
@@ -8085,7 +8086,7 @@ public final class FirstBiteGameTests {
 													== CakeWorldEntities
 															.CUPCAKE_COW
 															.get()),
-					"Current biome leaked Mooshroom/Cupcake Cow spawning before Cupcake Gardens exists: "
+					"Non-garden biome leaked Mooshroom/Cupcake Cow spawning: "
 							+ biomeId);
 		}
 

@@ -66,6 +66,11 @@ public final class CakeWorldSounds {
 					() -> new SoundEvent(new ResourceLocation(
 							CakeWorld.MODID,
 							"waffle_plateaus_breeze")));
+	public static final RegistryObject<SoundEvent> CUPCAKE_GARDENS_HUM =
+			SOUNDS.register("cupcake_gardens_hum",
+					() -> new SoundEvent(new ResourceLocation(
+							CakeWorld.MODID,
+							"cupcake_gardens_hum")));
 
 	private CakeWorldSounds() {
 	}
