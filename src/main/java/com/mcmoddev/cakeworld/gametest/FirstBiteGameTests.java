@@ -166,6 +166,8 @@ import com.mcmoddev.cakeworld.world.ConfectionersCottageFeature;
 import com.mcmoddev.cakeworld.world.ConfectionersCottageRepairFeature;
 import com.mcmoddev.cakeworld.world.CandyCaneBridgeFeature;
 import com.mcmoddev.cakeworld.world.CandyCaneBridgeRepairFeature;
+import com.mcmoddev.cakeworld.world.CraterKitchenFeature;
+import com.mcmoddev.cakeworld.world.CraterKitchenRepairFeature;
 import com.mcmoddev.cakeworld.world.WaferWindmillFeature;
 import com.mcmoddev.cakeworld.world.WaferWindmillRepairFeature;
 import com.mcmoddev.cakeworld.world.GingerbreadVillageFeature;
@@ -41503,6 +41505,494 @@ public final class FirstBiteGameTests {
 										.LEMONADE_BLOCK
 										.get()),
 				"Candy-Cane Bridge repair did not restore the rail, deck and safe crossing");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, batch = "struct022",
+			timeoutTicks = 1200)
+	public static void craterKitchenMakesASafeQuietRecipeRuin(
+			GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						CraterKitchenFeature
+								.STRUCTURE_ID);
+		Registry<net.minecraft.world.level.levelgen.structure.StructureSet>
+				structureSets =
+				level.registryAccess().registryOrThrow(
+						Registry.STRUCTURE_SET_REGISTRY);
+		net.minecraft.world.level.levelgen.structure.StructureSet
+				structureSet =
+				structureSets.get(
+						CraterKitchenFeature
+								.STRUCTURE_SET_ID);
+		boolean ownTag = structures.getTag(
+						CraterKitchenFeature
+								.STRUCTURE_TAG)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		Set<ResourceLocation> eligibleBiomes =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.getTag(
+								CraterKitchenFeature
+										.GENERATES_IN)
+						.map(tag -> tag.stream()
+								.map(holder -> holder
+										.unwrapKey()
+										.orElseThrow()
+										.location())
+								.collect(
+										java.util.stream
+												.Collectors
+												.toSet()))
+						.orElse(Set.of());
+		boolean repairInstalled =
+				hasPlacedFeature(
+						level,
+						CakeWorldBiomes
+								.MERINGUE_ISLANDS
+								.getId(),
+						GenerationStep.Decoration
+								.TOP_LAYER_MODIFICATION,
+						CraterKitchenRepairFeature.ID);
+		require(helper,
+				configured != null
+						&& configured.feature
+								== CraterKitchenFeature
+										.STRUCTURE_FEATURE
+						&& !configured.adaptNoise
+						&& configured.spawnOverrides
+								.isEmpty()
+						&& configured.feature.step()
+								== GenerationStep.Decoration
+										.SURFACE_STRUCTURES
+						&& structureSet != null
+						&& structureSet.structures().size()
+								== 1
+						&& structureSet.structures().get(0)
+								.structure().value()
+								== configured
+						&& ownTag
+						&& eligibleBiomes.equals(Set.of(
+								CakeWorldBiomes
+										.MERINGUE_ISLANDS
+										.getId()))
+						&& CraterKitchenRepairFeature
+								.placedFeature() != null
+						&& repairInstalled,
+				"Crater Kitchen lost its dedicated structure, Meringue-Islands prototype boundary, no-spawn contract or late repair: eligible="
+						+ eligibleBiomes
+						+ ", ownTag=" + ownTag
+						+ ", repair="
+						+ repairInstalled);
+
+		net.minecraft.world.level.levelgen.structure.placement
+				.RandomSpreadStructurePlacement placement =
+				(net.minecraft.world.level.levelgen.structure
+						.placement.RandomSpreadStructurePlacement)
+						structureSet.placement();
+		require(helper,
+				placement.spacing() == 72
+						&& placement.separation() == 24
+						&& placement.spreadType()
+								== net.minecraft.world.level
+										.levelgen.structure
+										.placement
+										.RandomSpreadType
+										.LINEAR
+						&& placement.salt()
+								== CraterKitchenFeature
+										.PLACEMENT_SALT,
+				"Crater Kitchen lost its sparse 72/24/1978022 linear placement");
+
+		StructurePoolElement element =
+				CraterKitchenFeature.pool().value()
+						.getRandomTemplate(
+								new Random(
+										CraterKitchenFeature
+												.PLACEMENT_SALT));
+		BoundingBox pieceBounds =
+				element.getBoundingBox(
+						level.getStructureManager(),
+						BlockPos.ZERO,
+						Rotation.NONE);
+		require(helper,
+				element
+						instanceof CakeWorldFeaturePoolElement
+						&& pieceBounds.getXSpan() == 33
+						&& pieceBounds.getYSpan() == 16
+						&& pieceBounds.getZSpan() == 33,
+				"Crater Kitchen lost its serializable 33x16x33 saved envelope");
+
+		Set<Rotation> rotations =
+				new java.util.HashSet<>();
+		for (int index = 0;
+				index < 128
+						&& rotations.size() < 4;
+				index++) {
+			rotations.add(
+					CraterKitchenFeature.orientation(
+							level.getSeed(),
+							new BlockPos(
+									index * 71,
+									80,
+									index * -79)));
+		}
+		require(helper, rotations.size() == 4,
+				"Crater Kitchen deterministic orientation did not expose all four cardinal entrances: "
+						+ rotations);
+		require(helper,
+				CraterKitchenFeature
+						.craterFloorOffset(0, 0)
+								== 0
+						&& CraterKitchenFeature
+								.craterFloorOffset(6, 0)
+								== 2
+						&& CraterKitchenFeature
+								.craterFloorOffset(12, 0)
+								== 5,
+				"Crater Kitchen lost its exact safe five-block stepped bowl profile");
+
+		BlockPos centre = new BlockPos(
+				helper.absolutePos(
+						new BlockPos(4, 4, 4))
+						.getX(),
+				level.getMaxBuildHeight() - 112,
+				helper.absolutePos(
+						new BlockPos(4, 4, 4))
+						.getZ());
+		for (int x = -16; x <= 16; x++) {
+			for (int y = -2; y <= 15; y++) {
+				for (int z = -16; z <= 16; z++) {
+					level.setBlock(
+							centre.offset(x, y, z),
+							y <= 10
+									? Blocks.END_STONE
+											.defaultBlockState()
+									: Blocks.AIR
+											.defaultBlockState(),
+							2);
+				}
+			}
+		}
+		require(helper,
+				CraterKitchenFeature.buildAt(
+						level,
+						new Random(
+								CraterKitchenFeature
+										.PLACEMENT_SALT),
+						centre),
+				"Crater Kitchen refused a forced End-island fixture");
+
+		Map<Block, Integer> palette =
+				scanBlockPalette(level, centre,
+						16, 0, 15);
+		require(helper,
+				palette.getOrDefault(
+						CakeWorldBlocks
+								.MERINGUE_BRICKS
+								.get(), 0) >= 900
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.MACARON_BRICKS
+										.get(), 0)
+								>= 90
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.MACARON_PILLAR
+										.get(), 0)
+								== 9
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.BISCUIT_CRUMBS
+										.get(), 0)
+								>= 15
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.WAFER_STAIRS
+										.get(), 0)
+								== 18
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.WAFER_BLOCK
+										.get(), 0)
+								== 9
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.WAFER_SLAB
+										.get(), 0)
+								== 1
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.MARSHMALLOW
+										.get(), 0)
+								== 8
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.ROCK_CANDY
+										.get(), 0)
+								== 7
+						&& palette.getOrDefault(
+								Blocks.END_ROD, 0) == 3
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.OVEN.get(), 0)
+								== 1
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.MIXING_BOWL
+										.get(), 0)
+								== 1
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.COOLING_RACK
+										.get(), 0)
+								== 1
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CANDY_COOKER
+										.get(), 0)
+								== 1
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.COOKBOOK_LIBRARY
+										.get(), 0)
+								== 1
+						&& palette.getOrDefault(
+								Blocks.CHEST, 0) == 1,
+				"Crater Kitchen lost its stepped bowl, ancient crumbs, safe entrance, lunar dial or ruined kitchen: "
+						+ palette);
+
+		Rotation orientation =
+				CraterKitchenFeature.orientation(
+						level.getSeed(), centre);
+		BlockPos floor =
+				CraterKitchenFeature
+						.craterFloorPosition(centre);
+		BlockPos midSlope =
+				centre.offset(new BlockPos(
+						6, 2, 0)
+								.rotate(orientation));
+		BlockPos rim =
+				CraterKitchenFeature
+						.reloadSentinelPosition(
+								level.getSeed(), centre);
+		BlockPos entrance =
+				CraterKitchenFeature.entrancePosition(
+						level.getSeed(), centre);
+		require(helper,
+				level.getBlockState(floor)
+								.is(CakeWorldBlocks
+										.MERINGUE_BRICKS
+										.get())
+						&& level.getBlockState(
+								floor.above())
+								.is(CakeWorldBlocks
+										.WAFER_SLAB
+										.get())
+						&& level.getBlockState(
+								midSlope)
+								.is(CakeWorldBlocks
+										.MERINGUE_BRICKS
+										.get())
+						&& level.getBlockState(
+								midSlope.above())
+								.isAir()
+						&& level.getBlockState(rim)
+								.is(CakeWorldBlocks
+										.MACARON_BRICKS
+										.get())
+						&& level.getBlockState(
+								rim.above()).isAir()
+						&& level.getBlockState(
+								entrance)
+								.is(CakeWorldBlocks
+										.WAFER_STAIRS
+										.get()),
+				"Crater Kitchen stopped being a five-block-deep open bowl with a readable entrance");
+
+		for (int index = 0; index < 6; index++) {
+			int z = -12 + index;
+			int y = 5 - index;
+			for (int x = -1; x <= 1; x++) {
+				BlockPos step = centre.offset(
+						new BlockPos(x, y, z)
+								.rotate(orientation));
+				require(helper,
+						level.getBlockState(step)
+										.is(CakeWorldBlocks
+												.WAFER_STAIRS
+												.get())
+								&& level.getBlockState(
+										step)
+										.getValue(
+												StairBlock
+														.FACING)
+										== orientation.rotate(
+												Direction.SOUTH),
+						"Crater Kitchen entrance lost a safe axis-correct Wafer stair at "
+								+ step);
+			}
+		}
+		for (int[] pad : new int[][] {
+				{7, 0}, {-7, 0}, {0, 7}, {0, -7},
+				{5, 5}, {5, -5}, {-5, 5}, {-5, -5}}) {
+			BlockPos position = centre.offset(
+					new BlockPos(
+							pad[0],
+							CraterKitchenFeature
+									.craterFloorOffset(
+											pad[0],
+											pad[1]),
+							pad[1]).rotate(orientation));
+			require(helper,
+					level.getBlockState(position)
+							.is(CakeWorldBlocks
+									.MARSHMALLOW.get()),
+					"Crater Kitchen lost a forgiving Marshmallow rescue point at "
+							+ position);
+		}
+
+		BlockPos cache =
+				CraterKitchenFeature.cachePosition(
+						level.getSeed(), centre);
+		BlockEntity cacheEntity =
+				level.getBlockEntity(cache);
+		CompoundTag cacheState =
+				cacheEntity == null
+						? new CompoundTag()
+						: cacheEntity
+								.saveWithoutMetadata();
+		require(helper,
+				CraterKitchenFeature.LOOT_ID
+						.toString().equals(
+								cacheState.getString(
+										"LootTable")),
+				"Crater Kitchen cache lost its dedicated recipe loot identity");
+		LootTable loot = level.getServer()
+				.getLootTables()
+				.get(CraterKitchenFeature.LOOT_ID);
+		LootContext lootContext =
+				new LootContext.Builder(level)
+						.withParameter(
+								LootContextParams.ORIGIN,
+								Vec3.atCenterOf(cache))
+						.create(
+								LootContextParamSets.CHEST);
+		List<ItemStack> cacheLoot =
+				loot.getRandomItems(lootContext);
+		ItemStack recipeBook = cacheLoot.stream()
+				.filter(stack -> stack
+						.is(Items.KNOWLEDGE_BOOK))
+				.findFirst().orElse(ItemStack.EMPTY);
+		int mooncakes = cacheLoot.stream()
+				.filter(stack -> stack
+						.is(CakeWorldItems
+								.MOONCAKE.get()))
+				.mapToInt(ItemStack::getCount)
+				.sum();
+		ListTag recipes = recipeBook
+				.getOrCreateTag()
+				.getList("Recipes",
+						net.minecraft.nbt.Tag.TAG_STRING);
+		require(helper,
+				!recipeBook.isEmpty()
+						&& "Ancient Mooncake Recipe"
+								.equals(recipeBook
+										.getHoverName()
+										.getString())
+						&& recipes.size() == 1
+						&& "cakeworld:mooncake"
+								.equals(recipes
+										.getString(0))
+						&& mooncakes == 2,
+				"Crater Kitchen did not guarantee its functional Knowledge Book and two tasting Mooncakes: "
+						+ cacheLoot);
+
+		ShapelessRecipe mooncakeRecipe =
+				(ShapelessRecipe) level
+						.getRecipeManager()
+						.byKey(new ResourceLocation(
+								CakeWorld.MODID,
+								"mooncake"))
+						.orElseThrow();
+		AbstractContainerMenu recipeMenu =
+				new AbstractContainerMenu(null, 0) {
+					@Override
+					public boolean stillValid(
+							Player player) {
+						return true;
+					}
+				};
+		CraftingContainer ingredients =
+				new CraftingContainer(
+						recipeMenu, 2, 2);
+		ingredients.setItem(0, new ItemStack(
+				CakeWorldItems.SIMPLE_BISCUIT.get()));
+		ingredients.setItem(1,
+				new ItemStack(
+						Items.POPPED_CHORUS_FRUIT));
+		ingredients.setItem(2,
+				new ItemStack(Items.SUGAR));
+		ingredients.setItem(3,
+				new ItemStack(Items.EGG));
+		ItemStack result =
+				mooncakeRecipe.assemble(ingredients);
+		FoodProperties mooncake =
+				CakeWorldItems.MOONCAKE.get()
+						.getFoodProperties();
+		require(helper,
+				mooncakeRecipe.matches(
+								ingredients, level)
+						&& result.is(CakeWorldItems
+								.MOONCAKE.get())
+						&& result.getCount() == 2
+						&& mooncake != null
+						&& mooncake.getNutrition() == 8
+						&& close(mooncake
+								.getSaturationModifier(),
+								0.8D),
+				"Ancient Mooncake recipe did not use an End-gated ingredient, make two worthwhile servings or remain data-driven");
+
+		level.setBlock(rim,
+				Blocks.AIR.defaultBlockState(), 2);
+		level.setBlock(cache,
+				Blocks.AIR.defaultBlockState(), 2);
+		require(helper,
+				CraterKitchenFeature.repairAt(
+						level,
+						new Random(
+								CraterKitchenFeature
+										.PLACEMENT_SALT),
+						centre),
+				"Crater Kitchen late repair refused its fixture");
+		BlockEntity repairedCache =
+				level.getBlockEntity(cache);
+		require(helper,
+				level.getBlockState(rim)
+								.is(CakeWorldBlocks
+										.MACARON_BRICKS
+										.get())
+						&& level.getBlockState(cache)
+								.is(Blocks.CHEST)
+						&& repairedCache != null
+						&& CraterKitchenFeature
+								.LOOT_ID.toString()
+								.equals(
+										repairedCache
+												.saveWithoutMetadata()
+												.getString(
+														"LootTable")),
+				"Crater Kitchen repair did not restore the quiet rim and functional recipe cache");
 		helper.succeed();
 	}
 

@@ -48,6 +48,8 @@ import com.mcmoddev.cakeworld.world.CandyCaneBridgeFeature;
 import com.mcmoddev.cakeworld.world.CandyCaneBridgeStructureFeature;
 import com.mcmoddev.cakeworld.world.CaramelCottageFeature;
 import com.mcmoddev.cakeworld.world.ConfectionersCottageFeature;
+import com.mcmoddev.cakeworld.world.CraterKitchenFeature;
+import com.mcmoddev.cakeworld.world.CraterKitchenStructureFeature;
 import com.mcmoddev.cakeworld.world.GingerbreadVillageFeature;
 import com.mcmoddev.cakeworld.world.GrandGingerbreadManorFeature;
 import com.mcmoddev.cakeworld.world.GummyShrineFeature;
@@ -6096,6 +6098,197 @@ public final class DeepPantryGameTests {
 		});
 	}
 
+	@GameTest(template = EMPTY, batch = "struct022world",
+			timeoutTicks = 12000)
+	public static void focusedCraterKitchenStructureAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean(
+				"cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed Crater Kitchen audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel()
+				.getServer().getLevel(Level.END);
+		require(helper, level != null,
+				"The fixed-seed server did not expose the End");
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry
+										.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						CraterKitchenFeature
+								.STRUCTURE_ID);
+		require(helper, configured != null,
+				"Crater Kitchen configured structure was absent from the live registry");
+		boolean locatedTag = structures.getTag(
+						CraterKitchenFeature
+								.STRUCTURE_TAG)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		require(helper, locatedTag,
+				"Crater Kitchen lost its public configured-structure locate tag");
+
+		LocatedCottage kitchen =
+				locateCraterKitchen(
+						helper, level, configured,
+						new BlockPos(1024, 96,
+								1024));
+		setCottageChunksForced(level, kitchen, true);
+		helper.runAfterDelay(200, () -> {
+			CraterKitchenWorldAudit audit =
+					auditCraterKitchen(
+							level, kitchen);
+			BlockPos sentinel =
+					CraterKitchenFeature
+							.reloadSentinelPosition(
+									level.getSeed(),
+									kitchen.centre());
+			boolean sentinelAlreadyNative =
+					level.getBlockState(sentinel)
+							.is(Blocks.BRICKS);
+			int nativeSentinels =
+					audit.palette()
+							.getOrDefault(
+									Blocks.BRICKS, 0);
+			LOGGER.info("Focused Crater Kitchen audit: locate={}, centre={}, bounds={}, biome={}, orientation={}, palette={}, floor={}, bowl={}, entrance={}, stairs={}, safetyPads={}, stations={}, cacheLoot={}, sentinel={}, markerPhase={}",
+					kitchen.located(),
+					kitchen.centre(),
+					kitchen.bounds(),
+					audit.biome(),
+					audit.orientation(),
+					audit.palette(),
+					audit.floor(),
+					audit.bowl(),
+					audit.entrance(),
+					audit.stairs(),
+					audit.safetyPads(),
+					audit.stations(),
+					audit.cacheLoot(),
+					sentinel,
+					sentinelAlreadyNative
+							? "reloaded"
+							: "seeded");
+			require(helper,
+					CakeWorldBiomes
+							.MERINGUE_ISLANDS
+							.getId().equals(
+									audit.biome()),
+					"Natural Crater Kitchen left its explicit Meringue-Islands proving ground: biome="
+							+ audit.biome());
+			require(helper,
+					kitchen.bounds().getXSpan()
+							== 33
+							&& kitchen.bounds()
+									.getYSpan()
+									== 16
+							&& kitchen.bounds()
+									.getZSpan()
+									== 33
+							&& kitchen.centre()
+									.getY() >= 40,
+					"Natural Crater Kitchen lost its exact saved envelope or supported End-island height: bounds="
+							+ kitchen.bounds()
+							+ ", centre="
+							+ kitchen.centre());
+			Map<Block, Integer> palette =
+					audit.palette();
+			require(helper,
+					palette.getOrDefault(
+							CakeWorldBlocks
+									.MERINGUE_BRICKS
+									.get(), 0)
+							>= 900
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.MACARON_BRICKS
+											.get(), 0)
+									>= (sentinelAlreadyNative
+											? 89 : 90)
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.MACARON_PILLAR
+											.get(), 0)
+									== 9
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.BISCUIT_CRUMBS
+											.get(), 0)
+									>= 19
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.WAFER_STAIRS
+											.get(), 0)
+									== 18
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.WAFER_BLOCK
+											.get(), 0)
+									== 9
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.WAFER_SLAB
+											.get(), 0)
+									== 1
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.MARSHMALLOW
+											.get(), 0)
+									== 8
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.ROCK_CANDY
+											.get(), 0)
+									== 7
+							&& palette.getOrDefault(
+									Blocks.END_ROD, 0)
+									== 3
+							&& palette.getOrDefault(
+									Blocks.CHEST, 0)
+									== 1
+							&& nativeSentinels
+									== (sentinelAlreadyNative
+											? 1 : 0),
+					"Natural Crater Kitchen lost its bowl, ancient crumbs, ruin, lunar dial, route, rescue pads or player-edit reload boundary: "
+							+ palette);
+			require(helper,
+					audit.floor()
+							&& audit.bowl()
+							&& audit.entrance()
+							&& audit.stairs()
+							&& audit.safetyPads()
+							&& audit.stations()
+							&& (sentinelAlreadyNative
+									|| audit
+											.nativeSentinel())
+							&& CraterKitchenFeature
+									.LOOT_ID.toString()
+									.equals(
+											audit.cacheLoot()),
+					"Natural Crater Kitchen stopped being a safe, readable and functional recipe ruin: "
+							+ audit);
+			if (!sentinelAlreadyNative) {
+				level.setBlock(sentinel,
+						Blocks.BRICKS
+								.defaultBlockState(),
+						2);
+				require(helper,
+						level.getBlockState(
+								sentinel)
+								.is(Blocks.BRICKS),
+						"Could not seed the explicit player-placed Brick reload sentinel in the Crater Kitchen rim");
+			}
+			setCottageChunksForced(
+					level, kitchen, false);
+			helper.succeed();
+		});
+	}
+
 	@GameTest(template = EMPTY, timeoutTicks = 1200)
 	public static void baseMetalsCounterpartsPreserveTagsRecipesAndGeneration(
 			GameTestHelper helper) {
@@ -9369,6 +9562,45 @@ public final class DeepPantryGameTests {
 				located, centre, bounds);
 	}
 
+	private static LocatedCottage locateCraterKitchen(
+			GameTestHelper helper, ServerLevel level,
+			ConfiguredStructureFeature<?, ?> configured,
+			BlockPos origin) {
+		BlockPos located =
+				level.findNearestMapFeature(
+						CraterKitchenFeature
+								.STRUCTURE_TAG,
+						origin, 512, false);
+		require(helper, located != null,
+				"The fixed-seed CakeWorld contained no locatable Crater Kitchen within 512 chunks of Meringue Islands");
+		ChunkPos startChunk = new ChunkPos(located);
+		net.minecraft.world.level.chunk.LevelChunk
+				startLevelChunk =
+				level.getChunk(startChunk.x,
+						startChunk.z);
+		StructureStart start =
+				startLevelChunk.getStartForFeature(
+						configured);
+		require(helper,
+				start != null && start.isValid()
+						&& start.getFeature()
+								== configured
+						&& start.getPieces()
+								.size() == 1,
+				"The located Crater Kitchen lost its saved one-piece structure start");
+		BoundingBox bounds = start.getBoundingBox();
+		BlockPos centre = new BlockPos(
+				bounds.minX()
+						+ CraterKitchenStructureFeature
+								.CENTRE_OFFSET,
+				bounds.minY(),
+				bounds.minZ()
+						+ CraterKitchenStructureFeature
+								.CENTRE_OFFSET);
+		return new LocatedCottage(
+				located, centre, bounds);
+	}
+
 	private static void setCottageChunksForced(
 			ServerLevel level,
 			LocatedCottage cottage,
@@ -9914,6 +10146,167 @@ public final class DeepPantryGameTests {
 				stairs, nativeSentinel);
 	}
 
+	private static CraterKitchenWorldAudit
+			auditCraterKitchen(
+					ServerLevel level,
+					LocatedCottage kitchen) {
+		Map<Block, Integer> palette =
+				new LinkedHashMap<>();
+		for (BlockPos position
+				: BlockPos.betweenClosed(
+						kitchen.bounds().minX(),
+						kitchen.bounds().minY(),
+						kitchen.bounds().minZ(),
+						kitchen.bounds().maxX(),
+						kitchen.bounds().maxY(),
+						kitchen.bounds().maxZ())) {
+			palette.merge(
+					level.getBlockState(position)
+							.getBlock(),
+					1, Integer::sum);
+		}
+		Rotation rotation =
+				CraterKitchenFeature.orientation(
+						level.getSeed(),
+						kitchen.centre());
+		BlockPos centre = kitchen.centre();
+		boolean floor =
+				level.getBlockState(
+						CraterKitchenFeature
+								.craterFloorPosition(
+										centre))
+								.is(CakeWorldBlocks
+										.MERINGUE_BRICKS
+										.get())
+						&& level.getBlockState(
+								centre.above())
+								.is(CakeWorldBlocks
+										.WAFER_SLAB
+										.get());
+		BlockPos bowlSample =
+				centre.offset(
+						new BlockPos(6, 2, 0)
+								.rotate(rotation));
+		boolean bowl =
+				level.getBlockState(bowlSample)
+								.is(CakeWorldBlocks
+										.MERINGUE_BRICKS
+										.get())
+						&& level.getBlockState(
+								bowlSample.above())
+								.isAir();
+		BlockPos entrance =
+				CraterKitchenFeature
+						.entrancePosition(
+								level.getSeed(),
+								centre);
+		boolean entranceContract =
+				level.getBlockState(entrance)
+								.is(CakeWorldBlocks
+										.WAFER_STAIRS
+										.get())
+						&& entrance.getY()
+								== centre.getY() + 5;
+		boolean stairs = true;
+		Direction stairFacing =
+				rotation.rotate(Direction.SOUTH);
+		for (int index = 0;
+				index < 6; index++) {
+			for (int x = -1; x <= 1; x++) {
+				BlockPos position =
+						centre.offset(
+								new BlockPos(
+										x,
+										5 - index,
+										-12 + index)
+												.rotate(
+														rotation));
+				BlockState state =
+						level.getBlockState(
+								position);
+				stairs &= state.is(
+								CakeWorldBlocks
+										.WAFER_STAIRS
+										.get())
+						&& state.getValue(
+								StairBlock.FACING)
+								== stairFacing;
+			}
+		}
+		boolean safetyPads = true;
+		for (int[] pad : new int[][] {
+				{7, 0}, {-7, 0}, {0, 7}, {0, -7},
+				{5, 5}, {5, -5}, {-5, 5}, {-5, -5}}) {
+			BlockPos position =
+					centre.offset(new BlockPos(
+							pad[0],
+							CraterKitchenFeature
+									.craterFloorOffset(
+											pad[0],
+											pad[1]),
+							pad[1]).rotate(rotation));
+			safetyPads &= level
+					.getBlockState(position)
+					.is(CakeWorldBlocks
+							.MARSHMALLOW.get());
+		}
+		int[][] stationOffsets = {
+				{-3, 1, 2}, {-1, 1, 2},
+				{1, 1, 2}, {3, 1, 2},
+				{-3, 1, -1}
+		};
+		Block[] stationBlocks = {
+				CakeWorldBlocks.OVEN.get(),
+				CakeWorldBlocks.MIXING_BOWL.get(),
+				CakeWorldBlocks.COOLING_RACK.get(),
+				CakeWorldBlocks.CANDY_COOKER.get(),
+				CakeWorldBlocks.COOKBOOK_LIBRARY.get()
+		};
+		boolean stations = true;
+		for (int index = 0;
+				index < stationOffsets.length; index++) {
+			int[] offset = stationOffsets[index];
+			BlockPos position =
+					centre.offset(new BlockPos(
+							offset[0], offset[1],
+							offset[2]).rotate(
+									rotation));
+			stations &= level.getBlockState(position)
+					.is(stationBlocks[index]);
+		}
+		BlockPos cache =
+				CraterKitchenFeature.cachePosition(
+						level.getSeed(), centre);
+		BlockEntity cacheEntity =
+				level.getBlockEntity(cache);
+		String cacheLoot =
+				cacheEntity == null ? ""
+						: cacheEntity
+								.saveWithoutMetadata()
+								.getString(
+										"LootTable");
+		BlockState sentinel =
+				level.getBlockState(
+						CraterKitchenFeature
+								.reloadSentinelPosition(
+										level.getSeed(),
+										centre));
+		boolean nativeSentinel =
+				sentinel.is(CakeWorldBlocks
+						.MACARON_BRICKS.get());
+		ResourceLocation biome =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.getKey(level.getBiome(centre)
+								.value());
+		return new CraterKitchenWorldAudit(
+				palette, biome, rotation,
+				floor, bowl, entranceContract,
+				stairs, safetyPads, stations,
+				nativeSentinel, cacheLoot);
+	}
+
 	private static List<ItemStack> drops(GameTestHelper helper, Block block,
 			ItemStack tool, BlockPos origin) {
 		ResourceLocation blockId = Registry.BLOCK.getKey(block);
@@ -10220,6 +10613,20 @@ public final class DeepPantryGameTests {
 			boolean approaches,
 			boolean stairs,
 			boolean nativeSentinel) {
+	}
+
+	private record CraterKitchenWorldAudit(
+			Map<Block, Integer> palette,
+			ResourceLocation biome,
+			Rotation orientation,
+			boolean floor,
+			boolean bowl,
+			boolean entrance,
+			boolean stairs,
+			boolean safetyPads,
+			boolean stations,
+			boolean nativeSentinel,
+			String cacheLoot) {
 	}
 
 	private record GeomePlacementSurvey(

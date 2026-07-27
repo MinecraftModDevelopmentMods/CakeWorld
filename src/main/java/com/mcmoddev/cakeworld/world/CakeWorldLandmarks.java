@@ -167,6 +167,20 @@ public final class CakeWorldLandmarks {
 							.TOP_LAYER_MODIFICATION)
 					.add(bridgeRepair);
 		}
+		Holder<PlacedFeature> craterKitchenRepair =
+				CraterKitchenRepairFeature
+						.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(
+						biome.getNamespace())
+				&& "meringue_islands".equals(
+						biome.getPath())
+				&& craterKitchenRepair != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration
+							.TOP_LAYER_MODIFICATION)
+					.add(craterKitchenRepair);
+		}
 	}
 
 	private static boolean isCurrentOverworldBiome(

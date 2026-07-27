@@ -125,6 +125,8 @@ public final class CakeWorldItems {
 							.tab(CreativeModeTab.TAB_MISC)));
 	public static final RegistryObject<Item> PIPED_CELEBRATION_CAKE =
 			food("piped_celebration_cake", 9, 0.9F);
+	public static final RegistryObject<Item> MOONCAKE =
+			food("mooncake", 8, 0.8F);
 	public static final RegistryObject<Item> EXPLORERS_COOKBOOK =
 			ITEMS.register("explorers_cookbook",
 					() -> new ExplorersCookbookItem(new Item.Properties()

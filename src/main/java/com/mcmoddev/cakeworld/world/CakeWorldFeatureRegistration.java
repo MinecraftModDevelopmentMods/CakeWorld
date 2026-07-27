@@ -62,6 +62,10 @@ public final class CakeWorldFeatureRegistration {
 				CandyCaneBridgeFeature.FEATURE);
 		event.getRegistry().register(
 				CandyCaneBridgeRepairFeature.FEATURE);
+		event.getRegistry().register(
+				CraterKitchenFeature.FEATURE);
+		event.getRegistry().register(
+				CraterKitchenRepairFeature.FEATURE);
 	}
 
 	@SubscribeEvent
@@ -94,6 +98,9 @@ public final class CakeWorldFeatureRegistration {
 				WaferWindmillFeature.STRUCTURE_FEATURE);
 		event.getRegistry().register(
 				CandyCaneBridgeFeature
+						.STRUCTURE_FEATURE);
+		event.getRegistry().register(
+				CraterKitchenFeature
 						.STRUCTURE_FEATURE);
 	}
 
@@ -134,6 +141,9 @@ public final class CakeWorldFeatureRegistration {
 					.registerConfiguredFeature();
 			CandyCaneBridgeFeature.registerWorldgen();
 			CandyCaneBridgeRepairFeature
+					.registerConfiguredFeature();
+			CraterKitchenFeature.registerWorldgen();
+			CraterKitchenRepairFeature
 					.registerConfiguredFeature();
 		});
 	}
