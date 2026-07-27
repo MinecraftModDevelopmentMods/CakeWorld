@@ -182,6 +182,8 @@ import com.mcmoddev.cakeworld.world.MacaronCitadelFeature;
 import com.mcmoddev.cakeworld.world.MacaronCitadelPalette;
 import com.mcmoddev.cakeworld.world.BuriedSweetTinFeature;
 import com.mcmoddev.cakeworld.world.BuriedSweetTinRepair;
+import com.mcmoddev.cakeworld.world.RockCandyFossilFeature;
+import com.mcmoddev.cakeworld.world.RockCandyFossilPalette;
 import com.mcmoddev.cakeworld.world.WaferMineFeature;
 import com.mcmoddev.cakeworld.world.WaferMineStructureFeature;
 import com.mcmoddev.cakeworld.world.WaferWreckFeature;
@@ -438,10 +440,13 @@ import net.minecraft.world.level.levelgen.feature.StructureFeature;
 import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 import net.minecraft.world.level.levelgen.feature.configurations.OceanRuinConfiguration;
 import net.minecraft.world.level.levelgen.feature.configurations.ProbabilityFeatureConfiguration;
+import net.minecraft.world.level.levelgen.feature.configurations.RangeConfiguration;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.BuriedTreasurePieces;
 import net.minecraft.world.level.levelgen.structure.EndCityPieces;
 import net.minecraft.world.level.levelgen.structure.NetherBridgePieces;
+import net.minecraft.world.level.levelgen.structure.NetherFossilFeature;
+import net.minecraft.world.level.levelgen.structure.NetherFossilPieces;
 import net.minecraft.world.level.levelgen.structure.OceanMonumentPieces;
 import net.minecraft.world.level.levelgen.structure.OceanRuinFeature;
 import net.minecraft.world.level.levelgen.structure.OceanRuinPieces;
@@ -39264,6 +39269,296 @@ public final class FirstBiteGameTests {
 							+ settledPalette);
 			helper.succeed();
 		});
+	}
+
+	@GameTest(template = EMPTY, batch = "struct017",
+			timeoutTicks = 2400)
+	public static void rockCandyFossilKeepsNativeTemplatesPlacementAndBoneMealRole(
+			GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						RockCandyFossilFeature
+								.STRUCTURE_ID);
+		Registry<net.minecraft.world.level.levelgen.structure.StructureSet>
+				structureSets =
+				level.registryAccess().registryOrThrow(
+						Registry.STRUCTURE_SET_REGISTRY);
+		net.minecraft.world.level.levelgen.structure.StructureSet
+				structureSet =
+				structureSets.get(
+						RockCandyFossilFeature
+								.STRUCTURE_SET_ID);
+		boolean ownStructureTag =
+				structures.getTag(
+						RockCandyFossilFeature
+								.STRUCTURE_TAG)
+						.map(tag -> tag.stream()
+								.anyMatch(holder ->
+										holder.value()
+												== configured))
+						.orElse(false);
+		Registry<Biome> biomes =
+				level.registryAccess().registryOrThrow(
+						Registry.BIOME_REGISTRY);
+		Holder<Biome> fudgeWastes =
+				biomes.getHolderOrThrow(
+						ResourceKey.create(
+								Registry.BIOME_REGISTRY,
+								CakeWorldBiomes
+										.FUDGE_WASTES
+										.getId()));
+		require(helper,
+				configured != null
+						&& configured.feature
+								== StructureFeature
+										.NETHER_FOSSIL
+						&& configured.feature
+								instanceof NetherFossilFeature
+						&& configured.config
+								instanceof RangeConfiguration
+						&& "[32 absolute-2 below top]"
+								.equals(
+										((RangeConfiguration)
+												configured.config)
+														.height
+														.toString())
+						&& configured.adaptNoise
+						&& configured.spawnOverrides
+								.isEmpty()
+						&& configured.feature.step()
+								== GenerationStep
+										.Decoration
+										.UNDERGROUND_DECORATION
+						&& ownStructureTag
+						&& fudgeWastes.is(
+								RockCandyFossilFeature
+										.GENERATES_IN)
+						&& fudgeWastes.is(
+								BiomeTags
+										.HAS_NETHER_FOSSIL),
+				"Rock-Candy Fossil lost native height/search identity or Fudge-Wastes eligibility: structureTag="
+						+ ownStructureTag
+						+ ", height="
+						+ (configured == null
+								|| !(configured.config
+										instanceof RangeConfiguration)
+												? "missing"
+												: ((RangeConfiguration)
+														configured.config)
+																.height));
+
+		require(helper,
+				structureSet != null
+						&& structureSet.structures()
+								.size() == 1
+						&& structureSet.structures()
+								.get(0).weight() == 1
+						&& structureSet.structures()
+								.get(0).structure()
+								.value() == configured
+						&& structureSet.placement()
+								instanceof net.minecraft.world.level
+										.levelgen.structure.placement
+										.RandomSpreadStructurePlacement,
+				"Rock-Candy Fossil lost the one-entry native Nether-Fossils set");
+		net.minecraft.world.level.levelgen.structure.placement
+				.RandomSpreadStructurePlacement placement =
+				(net.minecraft.world.level.levelgen.structure
+						.placement.RandomSpreadStructurePlacement)
+						structureSet.placement();
+		require(helper,
+				placement.spacing() == 2
+						&& placement.separation() == 1
+						&& placement.spreadType()
+								== net.minecraft.world.level
+										.levelgen.structure
+										.placement
+										.RandomSpreadType
+										.LINEAR
+						&& placement.salt() == 14357921,
+				"Rock-Candy Fossil lost native 2/1/14357921 linear placement");
+
+		try {
+			Field fossils = NetherFossilPieces.class
+					.getDeclaredField("FOSSILS");
+			fossils.setAccessible(true);
+			ResourceLocation[] templates =
+					(ResourceLocation[]) fossils.get(null);
+			require(helper, templates.length == 14,
+					"Rock-Candy Fossil lost native fourteen-template variety");
+			for (int index = 0;
+					index < templates.length; index++) {
+				require(helper,
+						templates[index].equals(
+								new ResourceLocation(
+										"minecraft",
+										"nether_fossils/fossil_"
+												+ (index + 1)))
+								&& level
+										.getStructureManager()
+										.get(templates[index])
+										.isPresent(),
+						"Rock-Candy Fossil lost native template "
+								+ (index + 1) + ": "
+								+ templates[index]);
+			}
+		} catch (ReflectiveOperationException exception) {
+			throw new AssertionError(
+					"Could not inspect native Nether-Fossil template catalogue",
+					exception);
+		}
+
+		BlockPos local = helper.absolutePos(
+				new BlockPos(4, 4, 4));
+		BlockPos anchor = new BlockPos(local.getX(),
+				level.getMaxBuildHeight() - 80,
+				local.getZ());
+		NetherFossilPieces.NetherFossilPiece piece =
+				new NetherFossilPieces.NetherFossilPiece(
+						level.getStructureManager(),
+						new ResourceLocation(
+								"minecraft",
+								"nether_fossils/fossil_14"),
+						anchor, Rotation.CLOCKWISE_90);
+		BoundingBox bounds = piece.getBoundingBox();
+		piece.postProcess(level,
+				level.structureFeatureManager(),
+				level.getChunkSource().getGenerator(),
+				new Random(14357921L), bounds,
+				new ChunkPos(bounds.getCenter()),
+				bounds.getCenter());
+		Map<BlockPos, Direction.Axis> nativeAxes =
+				new java.util.LinkedHashMap<>();
+		for (BlockPos position
+				: BlockPos.betweenClosed(
+						bounds.minX(), bounds.minY(),
+						bounds.minZ(), bounds.maxX(),
+						bounds.maxY(), bounds.maxZ())) {
+			BlockState state =
+					level.getBlockState(position);
+			if (state.is(Blocks.BONE_BLOCK)) {
+				nativeAxes.put(position.immutable(),
+						state.getValue(
+								RotatedPillarBlock.AXIS));
+			}
+		}
+		require(helper,
+				nativeAxes.size() == 26
+						&& bounds.getXSpan() == 6
+						&& bounds.getYSpan() == 7
+						&& bounds.getZSpan() == 7,
+				"Native fossil_14 lost its 26 Bone Blocks or rotated 6x7x7 envelope: bones="
+						+ nativeAxes.size()
+						+ ", bounds=" + bounds);
+		RockCandyFossilPalette.applyEdiblePalette(
+				level, bounds,
+				new PiecesContainer(List.of(piece)));
+		Map<Block, Integer> firstPalette =
+				scanBoundingBoxPalette(level, bounds);
+		for (Map.Entry<BlockPos, Direction.Axis> entry
+				: nativeAxes.entrySet()) {
+			BlockState themed =
+					level.getBlockState(entry.getKey());
+			require(helper,
+					themed.is(CakeWorldBlocks
+							.ROCK_CANDY_FOSSIL
+							.get())
+							&& themed.getValue(
+									RotatedPillarBlock
+											.AXIS)
+									== entry.getValue(),
+					"Rock-Candy Fossil did not preserve native pillar axis at "
+							+ entry.getKey() + ": "
+							+ themed);
+		}
+		RockCandyFossilPalette.applyEdiblePalette(
+				level, bounds,
+				new PiecesContainer(List.of(piece)));
+		require(helper,
+				firstPalette.equals(
+						scanBoundingBoxPalette(
+								level, bounds))
+						&& firstPalette
+								.getOrDefault(
+										CakeWorldBlocks
+												.ROCK_CANDY_FOSSIL
+												.get(),
+										0) == 26
+						&& firstPalette
+								.getOrDefault(
+										Blocks.BONE_BLOCK,
+										0) == 0,
+				"Rock-Candy Fossil palette was incomplete or non-idempotent: "
+						+ firstPalette);
+
+		TagKey<Block> boneStorageBlocks =
+				TagKey.create(Registry.BLOCK_REGISTRY,
+						new ResourceLocation("forge",
+								"storage_blocks/bone"));
+		TagKey<Item> boneStorageItems =
+				TagKey.create(Registry.ITEM_REGISTRY,
+						new ResourceLocation("forge",
+								"storage_blocks/bone"));
+		BlockState themedState =
+				CakeWorldBlocks.ROCK_CANDY_FOSSIL
+						.get().defaultBlockState();
+		require(helper,
+				CakeWorldBlocks.ROCK_CANDY_FOSSIL
+						.get()
+						instanceof RotatedPillarBlock
+						&& themedState.is(
+								boneStorageBlocks)
+						&& CakeWorldBlocks
+								.ROCK_CANDY_FOSSIL
+								.get().asItem()
+								.builtInRegistryHolder()
+								.is(boneStorageItems)
+						&& themedState.is(
+								BlockTags
+										.MINEABLE_WITH_PICKAXE)
+						&& level.getServer()
+								.getLootTables()
+								.get(CakeWorldBlocks
+										.ROCK_CANDY_FOSSIL
+										.get()
+										.getLootTable())
+								!= LootTable.EMPTY,
+				"Rock-Candy Fossil lost pillar, bone-storage, mining or self-loot compatibility");
+
+		ShapelessRecipe recipe =
+				(ShapelessRecipe) level
+						.getRecipeManager().byKey(
+								new ResourceLocation(
+										CakeWorld.MODID,
+										"bone_meal_from_rock_candy_fossil"))
+						.orElseThrow();
+		AbstractContainerMenu recipeMenu =
+				new AbstractContainerMenu(null, 0) {
+					@Override
+					public boolean stillValid(
+							Player player) {
+						return true;
+					}
+				};
+		CraftingContainer ingredients =
+				new CraftingContainer(recipeMenu, 1, 1);
+		ingredients.setItem(0,
+				new ItemStack(CakeWorldBlocks
+						.ROCK_CANDY_FOSSIL.get()));
+		ItemStack result = recipe.assemble(ingredients);
+		require(helper,
+				recipe.matches(ingredients, level)
+						&& result.is(Items.BONE_MEAL)
+						&& result.getCount() == 9,
+				"Rock-Candy Fossil did not preserve native one-block-to-nine-Bone-Meal resource value: "
+						+ result);
+		helper.succeed();
 	}
 
 	private static Set<String>

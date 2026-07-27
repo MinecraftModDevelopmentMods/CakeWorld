@@ -49,6 +49,7 @@ import com.mcmoddev.cakeworld.world.SunkenSweetshopFeature;
 import com.mcmoddev.cakeworld.world.LiquoriceFortressFeature;
 import com.mcmoddev.cakeworld.world.MacaronCitadelFeature;
 import com.mcmoddev.cakeworld.world.MacaronCitadelPalette;
+import com.mcmoddev.cakeworld.world.RockCandyFossilFeature;
 import com.mcmoddev.cakeworld.world.WaferMineFeature;
 import com.mcmoddev.cakeworld.world.WaferWreckFeature;
 import com.mcmoddev.orespawn.api.CompiledOrePattern;
@@ -107,6 +108,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.EndPortalFrameBlock;
 import net.minecraft.world.level.block.RedStoneOreBlock;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BrewingStandBlockEntity;
 import net.minecraft.world.level.block.entity.DispenserBlockEntity;
@@ -124,6 +126,7 @@ import net.minecraft.world.level.levelgen.structure.OceanMonumentPieces;
 import net.minecraft.world.level.levelgen.structure.OceanRuinFeature;
 import net.minecraft.world.level.levelgen.structure.OceanRuinPieces;
 import net.minecraft.world.level.levelgen.structure.NetherBridgePieces;
+import net.minecraft.world.level.levelgen.structure.NetherFossilPieces;
 import net.minecraft.world.level.levelgen.structure.StrongholdPieces;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
@@ -4879,6 +4882,281 @@ public final class DeepPantryGameTests {
 			level.setChunkForced(
 					tin.startChunk().x,
 					tin.startChunk().z, false);
+			helper.succeed();
+		});
+	}
+
+	@GameTest(template = EMPTY, batch = "struct017world",
+			timeoutTicks = 7200)
+	public static void focusedRockCandyFossilStructureAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean(
+				"cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed Rock-Candy Fossil audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel()
+				.getServer().getLevel(Level.NETHER);
+		require(helper, level != null,
+				"The fixed-seed server did not expose the Nether");
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						RockCandyFossilFeature
+								.STRUCTURE_ID);
+		require(helper, configured != null,
+				"Rock-Candy Fossil native configured structure was absent from the live registry");
+		BlockPos located = level.findNearestMapFeature(
+				RockCandyFossilFeature.STRUCTURE_TAG,
+				new BlockPos(0, 64, 0), 128,
+				false);
+		require(helper, located != null,
+				"The fixed-seed CakeWorld contained no locatable Rock-Candy Fossil within 128 chunks of the Nether origin");
+		ChunkPos startChunk = new ChunkPos(located);
+		net.minecraft.world.level.chunk.LevelChunk
+				startLevelChunk =
+				level.getChunk(startChunk.x,
+						startChunk.z);
+		StructureStart start =
+				startLevelChunk.getStartForFeature(
+						configured);
+		if (start == null || !start.isValid()) {
+			start = level.structureFeatureManager()
+					.startsForFeature(
+							net.minecraft.core.SectionPos
+									.of(located),
+							configured)
+					.stream()
+					.filter(StructureStart::isValid)
+					.findFirst().orElse(null);
+		}
+		require(helper,
+				start != null && start.isValid()
+						&& start.getFeature()
+								== configured
+						&& start.getPieces()
+								.size() == 1
+						&& start.getPieces()
+								.get(0)
+								instanceof NetherFossilPieces
+										.NetherFossilPiece,
+				"The located Rock-Candy Fossil lost its one saved native fossil piece");
+		StructureStart fossilStart = start;
+		BoundingBox startBounds =
+				start.getBoundingBox();
+		BoundingBox bounds = start.getPieces()
+				.get(0).getBoundingBox();
+		int minimumChunkX =
+				Math.floorDiv(bounds.minX(), 16);
+		int maximumChunkX =
+				Math.floorDiv(bounds.maxX(), 16);
+		int minimumChunkZ =
+				Math.floorDiv(bounds.minZ(), 16);
+		int maximumChunkZ =
+				Math.floorDiv(bounds.maxZ(), 16);
+		for (int chunkX = minimumChunkX;
+				chunkX <= maximumChunkX; chunkX++) {
+			for (int chunkZ = minimumChunkZ;
+					chunkZ <= maximumChunkZ;
+					chunkZ++) {
+				level.setChunkForced(
+						chunkX, chunkZ, true);
+				level.getChunk(chunkX, chunkZ);
+			}
+		}
+		helper.runAfterDelay(160, () -> {
+			String template;
+			try {
+				Field templateName =
+						TemplateStructurePiece.class
+								.getDeclaredField(
+										"templateName");
+				templateName.setAccessible(true);
+				template = templateName.get(
+						fossilStart.getPieces()
+								.get(0))
+						.toString();
+			} catch (ReflectiveOperationException
+					exception) {
+				throw new AssertionError(
+						"Could not inspect saved Nether-Fossil template identity",
+						exception);
+			}
+			int templateNumber;
+			try {
+				templateNumber = Integer.parseInt(
+						template.substring(
+								template
+										.lastIndexOf(
+												'_')
+										+ 1));
+			} catch (RuntimeException exception) {
+				throw new AssertionError(
+						"Natural Rock-Candy Fossil used an unknown native template: "
+								+ template,
+						exception);
+			}
+			int[] nativeBoneCounts = {
+				10, 10, 6, 6, 5, 21, 18,
+				6, 15, 8, 24, 11, 17, 26
+			};
+			require(helper,
+					templateNumber >= 1
+							&& templateNumber
+									<= nativeBoneCounts.length,
+					"Natural Rock-Candy Fossil escaped the native fourteen-template catalogue: "
+							+ template);
+			int expectedBones =
+					nativeBoneCounts[
+							templateNumber - 1];
+			Map<Direction.Axis, Integer> axes =
+					new LinkedHashMap<>();
+			int themedBones = 0;
+			int nativeBones = 0;
+			BlockPos sentinel = null;
+			for (BlockPos position
+					: BlockPos.betweenClosed(
+							bounds.minX(),
+							bounds.minY(),
+							bounds.minZ(),
+							bounds.maxX(),
+							bounds.maxY(),
+							bounds.maxZ())) {
+				BlockState state =
+						level.getBlockState(
+								position);
+				if (state.is(CakeWorldBlocks
+						.ROCK_CANDY_FOSSIL.get())) {
+					themedBones++;
+					axes.merge(state.getValue(
+							RotatedPillarBlock
+									.AXIS),
+							1, Integer::sum);
+					if (sentinel == null) {
+						sentinel =
+								position.immutable();
+					}
+				} else if (state.is(
+						Blocks.BONE_BLOCK)) {
+					nativeBones++;
+					axes.merge(state.getValue(
+							RotatedPillarBlock
+									.AXIS),
+							1, Integer::sum);
+					if (sentinel == null) {
+						sentinel =
+								position.immutable();
+					}
+				}
+			}
+			require(helper, sentinel != null,
+					"Natural Rock-Candy Fossil exposed no stable reload sentinel");
+			boolean sentinelAlreadyNative =
+					level.getBlockState(sentinel)
+							.is(Blocks.BONE_BLOCK);
+			BlockPos centre = bounds.getCenter();
+			ResourceLocation biome =
+					level.getBiome(centre)
+							.unwrapKey()
+							.map(key -> key
+									.location())
+							.orElse(null);
+			boolean eligible =
+					level.getBiome(centre).is(
+							RockCandyFossilFeature
+									.GENERATES_IN)
+							&& level.getBiome(centre)
+									.is(BiomeTags
+											.HAS_NETHER_FOSSIL);
+			LOGGER.info("Focused Rock-Candy Fossil audit: locate={}, startChunk={}, startBounds={}, pieceBounds={}, biome={}, template={}, expectedBones={}, themedBones={}, nativeBones={}, axes={}, sentinel={}, markerPhase={}",
+					located, fossilStart.getChunkPos(),
+					startBounds, bounds, biome, template,
+					expectedBones, themedBones,
+					nativeBones, axes, sentinel,
+					sentinelAlreadyNative
+							? "reloaded"
+							: "seeded");
+			require(helper,
+					CakeWorldBiomes.FUDGE_WASTES
+							.getId().equals(biome)
+							&& eligible,
+					"Natural Rock-Candy Fossil left Fudge Wastes or lost native/CakeWorld biome eligibility: biome="
+							+ biome + ", eligible="
+							+ eligible);
+			require(helper,
+					bounds.getXSpan() <= 7
+							&& bounds.getYSpan()
+									<= 7
+							&& bounds.getZSpan()
+									<= 7
+							&& bounds.minY()
+									> level
+											.getChunkSource()
+											.getGenerator()
+											.getSeaLevel()
+							&& bounds.maxY()
+									< level
+											.getMaxBuildHeight(),
+					"Natural Rock-Candy Fossil lost its compact native envelope or above-sea-level air-pocket placement: "
+							+ bounds);
+			require(helper,
+					themedBones + nativeBones
+								== expectedBones
+							&& nativeBones
+									== (sentinelAlreadyNative
+											? 1 : 0)
+							&& themedBones
+									== expectedBones
+											- nativeBones
+							&& axes.values()
+									.stream()
+									.mapToInt(
+											Integer::intValue)
+									.sum()
+									== expectedBones,
+					"Natural Rock-Candy Fossil lost its complete axis-aware palette or rewrote more than the explicit reload sentinel: expected="
+							+ expectedBones
+							+ ", themed="
+							+ themedBones
+							+ ", native="
+							+ nativeBones
+							+ ", axes=" + axes);
+			if (!sentinelAlreadyNative) {
+				level.setBlock(sentinel,
+						Blocks.BONE_BLOCK
+								.defaultBlockState()
+								.setValue(
+										RotatedPillarBlock
+												.AXIS,
+										level.getBlockState(
+												sentinel)
+												.getValue(
+														RotatedPillarBlock
+																.AXIS)),
+						2);
+				require(helper,
+						level.getBlockState(
+								sentinel)
+								.is(Blocks
+										.BONE_BLOCK),
+						"Could not seed the explicit player-placed Bone-Block reload sentinel");
+			}
+			for (int chunkX = minimumChunkX;
+					chunkX <= maximumChunkX;
+					chunkX++) {
+				for (int chunkZ = minimumChunkZ;
+						chunkZ <= maximumChunkZ;
+						chunkZ++) {
+					level.setChunkForced(
+							chunkX, chunkZ,
+							false);
+				}
+			}
 			helper.succeed();
 		});
 	}

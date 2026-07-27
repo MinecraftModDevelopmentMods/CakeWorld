@@ -181,6 +181,11 @@ public final class CakeWorldBlocks {
 	public static final RegistryObject<Block> PEPPERMINT_ROCK =
 			stone("peppermint_rock", 1.8F);
 	public static final RegistryObject<Block> ROCK_CANDY = stone("rock_candy", 2.2F);
+	public static final RegistryObject<Block> ROCK_CANDY_FOSSIL =
+			block("rock_candy_fossil",
+					() -> new RotatedPillarBlock(
+							BlockBehaviour.Properties.copy(
+									Blocks.BONE_BLOCK)));
 	public static final RegistryObject<Block> CANDY_GLASS = block("candy_glass",
 			() -> new GlassBlock(BlockBehaviour.Properties.of(Material.GLASS)
 					.requiresCorrectToolForDrops().strength(1.2F, 6.0F)
