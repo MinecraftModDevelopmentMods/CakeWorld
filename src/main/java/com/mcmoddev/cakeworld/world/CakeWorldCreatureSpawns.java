@@ -27,6 +27,7 @@ public final class CakeWorldCreatureSpawns {
 			"candy_cane_badlands",
 			"marshmallow_peaks",
 			"ice_cream_tundra",
+			"waffle_plateaus",
 			"soda_ocean");
 
 	private CakeWorldCreatureSpawns() {
@@ -223,6 +224,27 @@ public final class CakeWorldCreatureSpawns {
 			addIfAbsent(event, MobCategory.MONSTER,
 					CakeWorldEntities.FROSTED_ARCHER,
 					80, 4, 4);
+		}
+		if ("waffle_plateaus".equals(biome.getPath())) {
+			replaceExisting(event, MobCategory.CREATURE,
+					EntityType.COW,
+					CakeWorldEntities.COCOA_COW);
+			replaceExisting(event, MobCategory.CREATURE,
+					EntityType.PIG,
+					CakeWorldEntities.TRUFFLE_PIG);
+			replaceExisting(event, MobCategory.CREATURE,
+					EntityType.CHICKEN,
+					CakeWorldEntities.MALLOW_CHICK);
+			replaceExisting(event, MobCategory.CREATURE,
+					EntityType.HORSE,
+					CakeWorldEntities.GINGERBREAD_PONY);
+			replaceExisting(event, MobCategory.CREATURE,
+					EntityType.DONKEY,
+					CakeWorldEntities.DOUGH_DONKEY);
+			replace(event, MobCategory.CREATURE,
+					EntityType.LLAMA,
+					CakeWorldEntities.MERINGUE_LLAMA,
+					8, 4, 4);
 		}
 		if ("custard_coast".equals(biome.getPath())) {
 			replace(event, MobCategory.CREATURE,

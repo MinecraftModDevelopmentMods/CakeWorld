@@ -88,5 +88,14 @@
         "type": "event"
       }
     ]
+  },
+  "waffle_plateaus_breeze": {
+    "subtitle": "subtitles.cakeworld.waffle_plateaus.breeze",
+    "sounds": [
+      {
+        "name": "minecraft:block.wood.step",
+        "type": "event"
+      }
+    ]
   }
 }

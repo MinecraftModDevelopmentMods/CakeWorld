@@ -44,6 +44,8 @@ public final class CakeWorldBiomes {
 			marshmallowPeaks();
 	public static final RegistryObject<Biome> ICE_CREAM_TUNDRA =
 			iceCreamTundra();
+	public static final RegistryObject<Biome> WAFFLE_PLATEAUS =
+			wafflePlateaus();
 	public static final RegistryObject<Biome> SODA_OCEAN = copy(
 			"soda_ocean", "ocean", 0.5F, 0.5F);
 	public static final RegistryObject<Biome> FUDGE_WASTES = copy(
@@ -117,6 +119,12 @@ public final class CakeWorldBiomes {
 					BiomeDictionary.Type.COLD,
 					BiomeDictionary.Type.SNOWY,
 					BiomeDictionary.Type.WASTELAND);
+			BiomeDictionary.addTypes(key(WAFFLE_PLATEAUS),
+					BiomeDictionary.Type.OVERWORLD,
+					BiomeDictionary.Type.MOUNTAIN,
+					BiomeDictionary.Type.HOT,
+					BiomeDictionary.Type.DRY,
+					BiomeDictionary.Type.SAVANNA);
 			BiomeDictionary.addTypes(key(SODA_OCEAN),
 					BiomeDictionary.Type.OVERWORLD,
 					BiomeDictionary.Type.OCEAN,
@@ -231,6 +239,19 @@ public final class CakeWorldBiomes {
 												.getSpecialEffects())));
 	}
 
+	private static RegistryObject<Biome> wafflePlateaus() {
+		return OreSpawnBiomes.copyAndRegister(BIOMES,
+				"waffle_plateaus",
+				() -> vanilla("savanna_plateau"),
+				builder -> builder
+						.temperature(0.9F)
+						.downfall(0.1F)
+						.specialEffects(
+								withWafflePlateauEffects(
+										vanilla("savanna_plateau")
+												.getSpecialEffects())));
+	}
+
 	private static RegistryObject<Biome> copyWithAmbient(
 			String name, String vanilla,
 			float temperature, float downfall,
@@ -312,6 +333,20 @@ public final class CakeWorldBiomes {
 						new AmbientAdditionsSettings(
 								CakeWorldSounds
 										.ICE_CREAM_TUNDRA_CHILL
+										.get(),
+								0.001D))
+				.build();
+	}
+
+	private static BiomeSpecialEffects withWafflePlateauEffects(
+			BiomeSpecialEffects source) {
+		return effectsBuilder(source)
+				.ambientParticle(new AmbientParticleSettings(
+						ParticleTypes.FALLING_HONEY, 0.0008F))
+				.ambientAdditionsSound(
+						new AmbientAdditionsSettings(
+								CakeWorldSounds
+										.WAFFLE_PLATEAUS_BREEZE
 										.get(),
 								0.001D))
 				.build();

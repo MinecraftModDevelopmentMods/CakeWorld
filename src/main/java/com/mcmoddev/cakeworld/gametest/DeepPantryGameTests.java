@@ -1469,6 +1469,9 @@ public final class DeepPantryGameTests {
 									.getId(),
 							CakeWorldBiomes
 									.GINGERBREAD_HEARTHLANDS
+									.getId(),
+							CakeWorldBiomes
+									.WAFFLE_PLATEAUS
 									.getId())
 							.contains(biomeId)
 							&& level.getBiome(centre).is(

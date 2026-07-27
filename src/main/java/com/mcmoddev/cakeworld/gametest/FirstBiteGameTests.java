@@ -7211,6 +7211,30 @@ public final class FirstBiteGameTests {
 				"candyfloss_cloudbanks");
 		require(helper, biomes.get(cloudbanks) == null,
 				"Candyfloss Cloudbanks unexpectedly exists; MOB-030's staged spawn gate must be revisited");
+		Biome wafflePlateaus = biomes.get(
+				CakeWorldBiomes.WAFFLE_PLATEAUS.getId());
+		require(helper, wafflePlateaus != null,
+				"Could not inspect Waffle Plateaus for MOB-030");
+		MobSpawnSettings.SpawnerData meringueLlamas =
+				wafflePlateaus.getMobSettings()
+						.getMobs(MobCategory.CREATURE)
+						.unwrap().stream()
+						.filter(spawn -> spawn.type
+								== CakeWorldEntities
+										.MERINGUE_LLAMA.get())
+						.findFirst().orElse(null);
+		require(helper,
+				meringueLlamas != null
+						&& meringueLlamas.getWeight()
+								.asInt() == 8
+						&& meringueLlamas.minCount == 4
+						&& meringueLlamas.maxCount == 4
+						&& wafflePlateaus.getMobSettings()
+								.getMobs(MobCategory.CREATURE)
+								.unwrap().stream()
+								.noneMatch(spawn -> spawn.type
+										== EntityType.LLAMA),
+				"Meringue Llama lost its exact Waffle-Plateaus herd or leaked a literal Llama");
 		for (ResourceLocation biomeId :
 				new ResourceLocation[] {
 						CakeWorldBiomes.CANDY_PLAINS.getId(),
@@ -40987,6 +41011,14 @@ public final class FirstBiteGameTests {
 								.getId(),
 						GenerationStep.Decoration
 								.TOP_LAYER_MODIFICATION,
+						WaferWindmillRepairFeature.ID)
+				&& hasPlacedFeature(
+						level,
+						CakeWorldBiomes
+								.WAFFLE_PLATEAUS
+								.getId(),
+						GenerationStep.Decoration
+								.TOP_LAYER_MODIFICATION,
 						WaferWindmillRepairFeature.ID);
 		require(helper,
 				configured != null
@@ -41012,6 +41044,9 @@ public final class FirstBiteGameTests {
 										.getId(),
 								CakeWorldBiomes
 										.GINGERBREAD_HEARTHLANDS
+										.getId(),
+								CakeWorldBiomes
+										.WAFFLE_PLATEAUS
 										.getId()))
 						&& WaferWindmillRepairFeature
 								.placedFeature() != null
