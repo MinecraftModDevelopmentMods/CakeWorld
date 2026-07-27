@@ -18,6 +18,7 @@ import com.mcmoddev.cakeworld.block.GummyVineBlock;
 import com.mcmoddev.cakeworld.block.IcingLayerBlock;
 import com.mcmoddev.cakeworld.block.MarshmallowBlock;
 import com.mcmoddev.cakeworld.block.MixingBowlBlock;
+import com.mcmoddev.cakeworld.block.SherbetPowderBlock;
 import com.mcmoddev.cakeworld.block.SodaFountainBlock;
 import com.mcmoddev.cakeworld.block.TreacleReedBlock;
 import com.mcmoddev.cakeworld.block.WaferWindmillBlock;
@@ -116,6 +117,14 @@ public final class CakeWorldBlocks {
 									.noCollission()
 									.instabreak()
 									.sound(SoundType.CROP)));
+	public static final RegistryObject<Block> RASPBERRY_SHERBET_POWDER =
+			sherbetPowder("raspberry_sherbet_powder");
+	public static final RegistryObject<Block> ORANGE_SHERBET_POWDER =
+			sherbetPowder("orange_sherbet_powder");
+	public static final RegistryObject<Block> LEMON_SHERBET_POWDER =
+			sherbetPowder("lemon_sherbet_powder");
+	public static final RegistryObject<Block> LIME_SHERBET_POWDER =
+			sherbetPowder("lime_sherbet_powder");
 	public static final RegistryObject<Block> WAFER_BLOCK = block("wafer_block",
 			BlockBehaviour.Properties.of(Material.WOOD)
 					.strength(0.2F, 0.2F)
@@ -417,6 +426,14 @@ public final class CakeWorldBlocks {
 				() -> new GummyBlock(BlockBehaviour.Properties.of(Material.CLAY)
 						.strength(0.5F).sound(SoundType.SLIME_BLOCK)
 						.noOcclusion()));
+	}
+
+	private static RegistryObject<Block> sherbetPowder(String name) {
+		return block(name,
+				() -> new SherbetPowderBlock(
+						BlockBehaviour.Properties.of(Material.SAND)
+								.strength(0.45F)
+								.sound(SoundType.SAND)));
 	}
 
 	private static RegistryObject<Block> ore(String name) {

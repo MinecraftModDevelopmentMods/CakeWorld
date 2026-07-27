@@ -52,5 +52,14 @@
         "type": "event"
       }
     ]
+  },
+  "sherbet_dunes_fizz": {
+    "subtitle": "subtitles.cakeworld.sherbet_dunes.fizz",
+    "sounds": [
+      {
+        "name": "minecraft:block.sand.step",
+        "type": "event"
+      }
+    ]
   }
 }

@@ -6,9 +6,11 @@ import com.mcmoddev.cakeworld.CakeWorld;
 import com.mcmoddev.orespawn.api.OreSpawnBiomes;
 
 import net.minecraft.core.Registry;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.biome.AmbientAdditionsSettings;
+import net.minecraft.world.level.biome.AmbientParticleSettings;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeSpecialEffects;
 import net.minecraftforge.common.BiomeDictionary;
@@ -34,6 +36,8 @@ public final class CakeWorldBiomes {
 			gummyJungle();
 	public static final RegistryObject<Biome> CARAMEL_BOGS =
 			caramelBogs();
+	public static final RegistryObject<Biome> SHERBET_DUNES =
+			sherbetDunes();
 	public static final RegistryObject<Biome> MARSHMALLOW_PEAKS = copy(
 			"marshmallow_peaks", "jagged_peaks", -0.3F, 0.5F);
 	public static final RegistryObject<Biome> SODA_OCEAN = copy(
@@ -83,6 +87,12 @@ public final class CakeWorldBiomes {
 					BiomeDictionary.Type.OVERWORLD,
 					BiomeDictionary.Type.SWAMP,
 					BiomeDictionary.Type.WET);
+			BiomeDictionary.addTypes(key(SHERBET_DUNES),
+					BiomeDictionary.Type.OVERWORLD,
+					BiomeDictionary.Type.HOT,
+					BiomeDictionary.Type.DRY,
+					BiomeDictionary.Type.SANDY,
+					BiomeDictionary.Type.WASTELAND);
 			BiomeDictionary.addTypes(key(MARSHMALLOW_PEAKS),
 					BiomeDictionary.Type.OVERWORLD,
 					BiomeDictionary.Type.MOUNTAIN,
@@ -151,6 +161,19 @@ public final class CakeWorldBiomes {
 				0.0012D);
 	}
 
+	private static RegistryObject<Biome> sherbetDunes() {
+		return OreSpawnBiomes.copyAndRegister(BIOMES,
+				"sherbet_dunes",
+				() -> vanilla("desert"),
+				builder -> builder
+						.temperature(2.0F)
+						.downfall(0.0F)
+						.specialEffects(
+								withSherbetEffects(
+										vanilla("desert")
+												.getSpecialEffects())));
+	}
+
 	private static RegistryObject<Biome> copyWithAmbient(
 			String name, String vanilla,
 			float temperature, float downfall,
@@ -174,6 +197,29 @@ public final class CakeWorldBiomes {
 			BiomeSpecialEffects source,
 			net.minecraft.sounds.SoundEvent sound,
 			double chance) {
+		return effectsBuilder(source)
+				.ambientAdditionsSound(
+						new AmbientAdditionsSettings(
+								sound, chance))
+				.build();
+	}
+
+	private static BiomeSpecialEffects withSherbetEffects(
+			BiomeSpecialEffects source) {
+		return effectsBuilder(source)
+				.ambientParticle(new AmbientParticleSettings(
+						ParticleTypes.END_ROD, 0.0015F))
+				.ambientAdditionsSound(
+						new AmbientAdditionsSettings(
+								CakeWorldSounds
+										.SHERBET_DUNES_FIZZ
+										.get(),
+								0.0012D))
+				.build();
+	}
+
+	private static BiomeSpecialEffects.Builder effectsBuilder(
+			BiomeSpecialEffects source) {
 		BiomeSpecialEffects.Builder builder =
 				new BiomeSpecialEffects.Builder()
 						.fogColor(source.getFogColor())
@@ -197,10 +243,7 @@ public final class CakeWorldBiomes {
 				.ifPresent(builder::ambientAdditionsSound);
 		source.getBackgroundMusic()
 				.ifPresent(builder::backgroundMusic);
-		return builder.ambientAdditionsSound(
-				new AmbientAdditionsSettings(
-						sound, chance))
-				.build();
+		return builder;
 	}
 
 	private static Biome vanilla(String name) {

@@ -94,6 +94,20 @@ public final class CakeWorldLandmarks {
 							.TOP_LAYER_MODIFICATION)
 					.add(caramelMangrove);
 		}
+		Holder<PlacedFeature> sherbetFossilBowl =
+				SherbetFossilBowlFeature
+						.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(
+						biome.getNamespace())
+				&& "sherbet_dunes".equals(
+						biome.getPath())
+				&& sherbetFossilBowl != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration
+							.TOP_LAYER_MODIFICATION)
+					.add(sherbetFossilBowl);
+		}
 		Holder<PlacedFeature> manorRepair =
 				GrandGingerbreadManorRepairFeature
 						.placedFeature();
@@ -274,6 +288,7 @@ public final class CakeWorldLandmarks {
 				|| "cookie_forest".equals(path)
 				|| "peppermint_pinewoods".equals(path)
 				|| "gummy_jungle".equals(path)
+				|| "sherbet_dunes".equals(path)
 				|| "marshmallow_peaks".equals(path)
 				|| "soda_ocean".equals(path);
 	}

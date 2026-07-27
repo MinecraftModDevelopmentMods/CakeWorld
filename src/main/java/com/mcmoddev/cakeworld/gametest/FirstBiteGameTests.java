@@ -5963,10 +5963,29 @@ public final class FirstBiteGameTests {
 		Registry<Biome> biomes = helper.getLevel()
 				.registryAccess()
 				.registryOrThrow(Registry.BIOME_REGISTRY);
-		ResourceLocation sherbetDunes = new ResourceLocation(
-				CakeWorld.MODID, "sherbet_dunes");
-		require(helper, biomes.get(sherbetDunes) == null,
-				"Sherbet Dunes unexpectedly exists; MOB-027's staged spawn gate must be revisited");
+		Biome sherbetDunes =
+				biomes.get(CakeWorldBiomes.SHERBET_DUNES.getId());
+		MobSpawnSettings.SpawnerData liveSpawn =
+				sherbetDunes == null ? null
+						: sherbetDunes.getMobSettings()
+								.getMobs(MobCategory.MONSTER)
+								.unwrap().stream()
+								.filter(spawn -> spawn.type
+										== CakeWorldEntities
+												.DRIED_CRUMBLER
+												.get())
+								.findFirst().orElse(null);
+		require(helper,
+				liveSpawn != null
+						&& liveSpawn.getWeight().asInt() == 80
+						&& liveSpawn.minCount == 4
+						&& liveSpawn.maxCount == 4
+						&& sherbetDunes.getMobSettings()
+								.getMobs(MobCategory.MONSTER)
+								.unwrap().stream().noneMatch(
+										spawn -> spawn.type
+												== EntityType.HUSK),
+				"Sherbet Dunes lost MOB-027's exact 80/4-4 Dried Crumbler replacement role");
 		for (ResourceLocation biomeId : new ResourceLocation[] {
 				CakeWorldBiomes.CANDY_PLAINS.getId(),
 				CakeWorldBiomes.COOKIE_FOREST.getId(),
@@ -34551,16 +34570,16 @@ public final class FirstBiteGameTests {
 												.Collectors
 												.toSet()))
 						.orElse(Set.of());
-		Biome candyPlains =
+		Biome sherbetDunes =
 				level.registryAccess()
 						.registryOrThrow(
 								Registry.BIOME_REGISTRY)
 						.get(CakeWorldBiomes
-								.CANDY_PLAINS.getId());
+								.SHERBET_DUNES.getId());
 		boolean repairInstalled = false;
-		if (candyPlains != null) {
+		if (sherbetDunes != null) {
 			for (Holder<PlacedFeature> feature
-					: candyPlains.getGenerationSettings()
+					: sherbetDunes.getGenerationSettings()
 							.features().get(
 									GenerationStep.Decoration
 											.TOP_LAYER_MODIFICATION
@@ -34598,9 +34617,9 @@ public final class FirstBiteGameTests {
 						&& repairInstalled
 						&& eligibleBiomes.equals(Set.of(
 								CakeWorldBiomes
-										.CANDY_PLAINS
+										.SHERBET_DUNES
 										.getId())),
-				"Sherbet Pyramid lost its configured structure, buried surface projection, locate tag, installed late repair or temporary Candy Plains contract: eligible="
+				"Sherbet Pyramid lost its configured structure, buried surface projection, locate tag, installed late repair or Sherbet Dunes contract: eligible="
 						+ eligibleBiomes
 						+ ", repairInstalled="
 						+ repairInstalled);

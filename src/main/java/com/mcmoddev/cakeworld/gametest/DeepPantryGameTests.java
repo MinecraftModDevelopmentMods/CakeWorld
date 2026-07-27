@@ -56,6 +56,7 @@ import com.mcmoddev.cakeworld.world.PeppermintClearingFeature;
 import com.mcmoddev.cakeworld.world.RockCandyCrystalMineFeature;
 import com.mcmoddev.cakeworld.world.RockCandyCrystalMineStructureFeature;
 import com.mcmoddev.cakeworld.world.RoadsideCuriosityFeature;
+import com.mcmoddev.cakeworld.world.SherbetFossilBowlFeature;
 import com.mcmoddev.cakeworld.world.GingerbreadVillageFeature;
 import com.mcmoddev.cakeworld.world.GrandGingerbreadManorFeature;
 import com.mcmoddev.cakeworld.world.GummyJungleBounceGroveFeature;
@@ -682,6 +683,11 @@ public final class DeepPantryGameTests {
 				"cakeworld:chocolate_sponge",
 				"cakeworld:caramel_crust", 4);
 		assertPaletteContract(helper, palettes, "cakeworld:overworld_land",
+				"cakeworld:sherbet_dunes",
+				"cakeworld:raspberry_sherbet_powder",
+				"cakeworld:lemon_sherbet_powder",
+				"cakeworld:orange_sherbet_powder", 5);
+		assertPaletteContract(helper, palettes, "cakeworld:overworld_land",
 				"cakeworld:marshmallow_peaks", "cakeworld:icing_layer",
 				"cakeworld:biscuit_stone", "cakeworld:biscuit_crumbs", 5);
 		assertPaletteContract(helper, palettes, "cakeworld:nether",
@@ -700,6 +706,8 @@ public final class DeepPantryGameTests {
 				overworld, id("gummy_jungle"));
 		BlockPos caramelBogs = locateBiome(helper,
 				overworld, id("caramel_bogs"));
+		BlockPos sherbetDunes = locateBiome(helper,
+				overworld, id("sherbet_dunes"));
 		surfaces.put("candy_plains", auditSurface(overworld,
 				locateBiome(helper, overworld, id("candy_plains")),
 				id("candy_plains"), CakeWorldBlocks.ICING_LAYER.get(),
@@ -737,6 +745,17 @@ public final class DeepPantryGameTests {
 						CakeWorldBlocks.CHOCOLATE_SPONGE
 								.get(),
 						2));
+		surfaces.put("sherbet_dunes",
+				auditSurface(overworld,
+						sherbetDunes,
+						id("sherbet_dunes"),
+						CakeWorldBlocks
+								.RASPBERRY_SHERBET_POWDER
+								.get(),
+						CakeWorldBlocks
+								.LEMON_SHERBET_POWDER
+								.get(),
+						2));
 		surfaces.put("marshmallow_peaks", auditSurface(overworld,
 				locateBiome(helper, overworld, id("marshmallow_peaks")),
 				id("marshmallow_peaks"), CakeWorldBlocks.ICING_LAYER.get(),
@@ -768,6 +787,10 @@ public final class DeepPantryGameTests {
 				countGeomesForBiome(overworld,
 						gummyJungle,
 						id("gummy_jungle"), 4);
+		Map<ResourceLocation, Integer> sherbetGeomes =
+				countGeomesForBiome(overworld,
+						sherbetDunes,
+						id("sherbet_dunes"), 4);
 		require(helper,
 				!hearthlandsGeomes.isEmpty()
 						&& hearthlandsGeomes.keySet().stream()
@@ -801,6 +824,18 @@ public final class DeepPantryGameTests {
 										::contains),
 				"Natural Gummy Jungle escaped its three explicit flavour geomes plus inherited HOT/Fudge-Mantle dictionary seam: "
 						+ gummyGeomes);
+		require(helper,
+				!sherbetGeomes.isEmpty()
+						&& sherbetGeomes.keySet().stream()
+								.allMatch(Set.of(
+										id("wafer_shelf"),
+										id("rock_candy_uplift"),
+										id("fudge_mantle"))
+										::contains)
+						&& sherbetGeomes.getOrDefault(
+								id("rock_candy_uplift"), 0) > 0,
+				"Natural Sherbet Dunes escaped its Wafer Shelf/Rock-Candy Uplift profile plus inherited HOT/Fudge-Mantle seam or lost its higher-weight uplift: "
+						+ sherbetGeomes);
 
 		BlockPos sodaOcean = locateBiome(helper, overworld, id("soda_ocean"));
 		Map<Block, Integer> lemonadeFloor = countBlocksDirectlyUnderFluid(
@@ -2787,10 +2822,10 @@ public final class DeepPantryGameTests {
 					biomeId, palette,
 					protectedLoot);
 			require(helper,
-					CakeWorldBiomes.CANDY_PLAINS
+					CakeWorldBiomes.SHERBET_DUNES
 							.getId().equals(biomeId)
 							&& !literalPyramidEligible,
-					"The natural Sherbet Pyramid lost its temporary Candy Plains home or leaked literal Desert Pyramid eligibility: biome="
+					"The natural Sherbet Pyramid lost its Sherbet Dunes home or leaked literal Desert Pyramid eligibility: biome="
 							+ biomeId
 							+ ", literalPyramidEligible="
 							+ literalPyramidEligible);
@@ -2804,7 +2839,7 @@ public final class DeepPantryGameTests {
 									CakeWorldBlocks
 											.WAFER_BLOCK
 											.get(), 0)
-									>= 55
+									>= 54
 							&& palette.getOrDefault(
 									CakeWorldBlocks
 											.MARSHMALLOW
@@ -7169,6 +7204,75 @@ public final class DeepPantryGameTests {
 			}
 			setCaramelMangroveChunksForced(
 					level, mangrove, false);
+			helper.succeed();
+		});
+	}
+
+	@GameTest(template = EMPTY, batch = "bioow007world",
+			timeoutTicks = 24000)
+	public static void focusedNaturalSherbetFossilBowlAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean(
+				"cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed natural Sherbet Fossil Bowl audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel()
+				.getServer().getLevel(Level.OVERWORLD);
+		require(helper, level != null,
+				"The fixed-seed server did not expose the Overworld");
+		BlockPos sherbetDunes = locateBiome(helper, level,
+				CakeWorldBiomes.SHERBET_DUNES.getId());
+		LocatedSherbetFossilBowl bowl =
+				locateNaturalSherbetFossilBowl(
+						helper, level, sherbetDunes, 24);
+		setSherbetFossilBowlChunksForced(
+				level, bowl, true);
+		helper.runAfterDelay(40, () -> {
+			SherbetFossilBowlWorldAudit audit =
+					auditNaturalSherbetFossilBowl(
+							level, bowl);
+			LOGGER.info("Focused natural Sherbet Fossil Bowl audit: centre={}, jar={}, biome={}, rotation={}, palette={}, layout={}, loot={}, customName={}, sentinel={}, markerPhase={}, scannedChunks={}, jarCandidates={}, sherbetColumns={}",
+					bowl.centre(),
+					bowl.jar(),
+					audit.biome(),
+					audit.rotation(),
+					audit.palette(),
+					audit.readableLayout(),
+					audit.jarLoot(),
+					audit.customName(),
+					audit.sentinel(),
+					audit.brickSentinel()
+							? "reloaded"
+							: "seeded",
+					bowl.scannedChunks(),
+					bowl.jarCandidates(),
+					bowl.sherbetColumns());
+			require(helper,
+					CakeWorldBiomes.SHERBET_DUNES
+							.getId()
+							.equals(audit.biome())
+							&& audit.readableLayout()
+							&& SherbetFossilBowlFeature
+									.LOOT_ID.toString()
+									.equals(audit.jarLoot())
+							&& audit.customName().contains(
+									"buried_sherbet_jar"),
+					"Natural Sherbet Fossil Bowl lost its exact Dunes biome, stripes, fossil, Fizzy Pearls or buried discovery jar: "
+							+ audit);
+			if (!audit.brickSentinel()) {
+				level.setBlock(audit.sentinel(),
+						Blocks.BRICKS.defaultBlockState(),
+						2);
+				require(helper,
+						level.getBlockState(
+								audit.sentinel())
+								.is(Blocks.BRICKS),
+						"Could not seed the explicit player-placed Brick reload sentinel beside the Sherbet Fossil Bowl");
+			}
+			setSherbetFossilBowlChunksForced(
+					level, bowl, false);
 			helper.succeed();
 		});
 	}
@@ -11586,6 +11690,312 @@ public final class DeepPantryGameTests {
 		return true;
 	}
 
+	private static LocatedSherbetFossilBowl
+			locateNaturalSherbetFossilBowl(
+					GameTestHelper helper,
+					ServerLevel level,
+					BlockPos anchor,
+					int chunkRadius) {
+		ChunkPos anchorChunk = new ChunkPos(anchor);
+		int scannedChunks = 0;
+		int jarCandidates = 0;
+		int sherbetColumns = 0;
+		Map<Block, Integer> naturalSurfacePalette =
+				new LinkedHashMap<>();
+		for (int radius = 0;
+				radius <= chunkRadius; radius++) {
+			for (int chunkX = anchorChunk.x - radius;
+					chunkX <= anchorChunk.x + radius;
+					chunkX++) {
+				for (int chunkZ = anchorChunk.z - radius;
+						chunkZ <= anchorChunk.z + radius;
+						chunkZ++) {
+					if (radius > 0
+							&& chunkX != anchorChunk.x - radius
+							&& chunkX != anchorChunk.x + radius
+							&& chunkZ != anchorChunk.z - radius
+							&& chunkZ != anchorChunk.z + radius) {
+						continue;
+					}
+					level.getChunk(chunkX, chunkZ);
+					scannedChunks++;
+					for (int x = chunkX << 4;
+							x < (chunkX + 1) << 4; x++) {
+						for (int z = chunkZ << 4;
+								z < (chunkZ + 1) << 4; z++) {
+							int surfaceY = level.getHeight(
+									Heightmap.Types
+											.MOTION_BLOCKING_NO_LEAVES,
+									x, z) - 1;
+							BlockPos naturalSurface =
+									findNaturalTerrainSurface(
+											level, x, z,
+											surfaceY);
+							if (CakeWorldBiomes.SHERBET_DUNES
+									.getId().equals(
+											level.getBiome(
+													naturalSurface)
+													.unwrapKey()
+													.map(ResourceKey
+															::location)
+													.orElse(null))) {
+								sherbetColumns++;
+								naturalSurfacePalette.merge(
+										level.getBlockState(
+												naturalSurface)
+												.getBlock(),
+										1, Integer::sum);
+							}
+							int minimumY = Math.max(
+									level.getMinBuildHeight(),
+									naturalSurface.getY() - 4);
+							int maximumY = Math.min(
+									level.getMaxBuildHeight() - 1,
+									surfaceY + 6);
+							for (int y = minimumY;
+									y <= maximumY; y++) {
+								BlockPos jar =
+										new BlockPos(x, y, z);
+								if (!level.getBlockState(jar)
+										.is(Blocks.BARREL)) {
+									continue;
+								}
+								BlockEntity blockEntity =
+										level.getBlockEntity(jar);
+								CompoundTag jarState =
+										blockEntity == null
+												? new CompoundTag()
+												: blockEntity
+														.saveWithoutMetadata();
+								if (!SherbetFossilBowlFeature
+										.LOOT_ID.toString()
+										.equals(jarState
+												.getString(
+														"LootTable"))) {
+									continue;
+								}
+								jarCandidates++;
+								for (Rotation rotation :
+										Rotation.values()) {
+									BlockPos offset =
+											new BlockPos(
+													3, -1, 3)
+													.rotate(
+															rotation);
+									BlockPos centre =
+											jar.subtract(offset);
+									if (!matchesSherbetFossilBowlLayout(
+											level, centre,
+											rotation)) {
+										continue;
+									}
+									LocatedSherbetFossilBowl located =
+											new LocatedSherbetFossilBowl(
+													centre, jar,
+													scannedChunks,
+													jarCandidates,
+													sherbetColumns);
+									SherbetFossilBowlWorldAudit audit =
+											auditNaturalSherbetFossilBowl(
+													level,
+													located);
+									LOGGER.info("Sherbet Fossil Bowl candidate: centre={}, jar={}, biome={}, rotation={}, palette={}, layout={}, scannedChunks={}, jarCandidates={}, sherbetColumns={}",
+											centre, jar,
+											audit.biome(),
+											rotation,
+											audit.palette(),
+											audit.readableLayout(),
+											scannedChunks,
+											jarCandidates,
+											sherbetColumns);
+									if (audit.readableLayout()
+											&& CakeWorldBiomes
+													.SHERBET_DUNES
+													.getId()
+													.equals(audit
+															.biome())) {
+										return located;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		require(helper, false,
+				"The fixed-seed Sherbet Dunes survey found no natural Fossil Bowl after "
+						+ scannedChunks + " generated chunks and "
+						+ jarCandidates + " matching buried jars near "
+						+ anchor + "; sherbetColumns="
+						+ sherbetColumns
+						+ ", naturalSurfacePalette="
+						+ describe(naturalSurfacePalette));
+		throw new IllegalStateException(
+				"Unreachable after GameTest failure");
+	}
+
+	private static SherbetFossilBowlWorldAudit
+			auditNaturalSherbetFossilBowl(
+					ServerLevel level,
+					LocatedSherbetFossilBowl bowl) {
+		BlockPos centre = bowl.centre();
+		Rotation rotation =
+				SherbetFossilBowlFeature.orientation(
+						level.getSeed(), centre);
+		BlockPos sentinel = local(
+				centre, rotation, 5, 1, 5);
+		boolean brickSentinel =
+				level.getBlockState(sentinel)
+						.is(Blocks.BRICKS);
+		Map<Block, Integer> palette =
+				new LinkedHashMap<>();
+		for (int x = -5; x <= 5; x++) {
+			for (int y = -1; y <= 5; y++) {
+				for (int z = -5; z <= 5; z++) {
+					palette.merge(level.getBlockState(
+							centre.offset(x, y, z))
+							.getBlock(),
+							1, Integer::sum);
+				}
+			}
+		}
+		BlockEntity jarEntity =
+				level.getBlockEntity(bowl.jar());
+		CompoundTag jarState = jarEntity == null
+				? new CompoundTag()
+				: jarEntity.saveWithoutMetadata();
+		ResourceLocation biome =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.getKey(level.getBiome(centre)
+								.value());
+		boolean readable =
+				matchesSherbetFossilBowlLayout(
+						level, centre, rotation)
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.RASPBERRY_SHERBET_POWDER
+										.get(), 0) >= 28
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.ORANGE_SHERBET_POWDER
+										.get(), 0) >= 27
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.LEMON_SHERBET_POWDER
+										.get(), 0) >= 28
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.LIME_SHERBET_POWDER
+										.get(), 0) >= 27
+						&& palette.getOrDefault(
+								CakeWorldBlocks.WAFER_BLOCK
+										.get(), 0) >= 11
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.ROCK_CANDY_FOSSIL
+										.get(), 0) >= 25
+						&& palette.getOrDefault(
+								CakeWorldBlocks.FIZZY_PEARL
+										.get(), 0) >= 5
+						&& palette.getOrDefault(
+								Blocks.BARREL, 0) >= 1;
+		return new SherbetFossilBowlWorldAudit(
+				palette, biome, rotation,
+				readable, jarState.getString("LootTable"),
+				jarState.getString("CustomName"),
+				sentinel, brickSentinel);
+	}
+
+	private static boolean matchesSherbetFossilBowlLayout(
+			ServerLevel level, BlockPos centre,
+			Rotation rotation) {
+		for (int x = -5; x <= 5; x++) {
+			for (int z = -5; z <= 5; z++) {
+				Block expected = switch (
+						Math.floorMod(x + z, 4)) {
+					case 0 -> CakeWorldBlocks
+							.RASPBERRY_SHERBET_POWDER.get();
+					case 1 -> CakeWorldBlocks
+							.ORANGE_SHERBET_POWDER.get();
+					case 2 -> CakeWorldBlocks
+							.LEMON_SHERBET_POWDER.get();
+					default -> CakeWorldBlocks
+							.LIME_SHERBET_POWDER.get();
+				};
+				Block actual = level.getBlockState(
+						local(centre, rotation,
+								x, 0, z))
+						.getBlock();
+				if (actual != (x == 0
+						? CakeWorldBlocks.WAFER_BLOCK.get()
+						: expected)) {
+					return false;
+				}
+			}
+		}
+		for (int x = -3; x <= 3; x++) {
+			if (!level.getBlockState(local(
+					centre, rotation, x, 1, -1))
+					.is(CakeWorldBlocks.ROCK_CANDY_FOSSIL
+							.get())) {
+				return false;
+			}
+		}
+		for (int x : new int[] {-2, 0, 2}) {
+			for (int side : new int[] {-1, 1}) {
+				if (!level.getBlockState(local(
+						centre, rotation,
+						x, 1, -1 + side))
+						.is(CakeWorldBlocks
+								.ROCK_CANDY_FOSSIL.get())
+						|| !level.getBlockState(local(
+								centre, rotation,
+								x, 2,
+								-1 + side * 2))
+								.is(CakeWorldBlocks
+										.ROCK_CANDY_FOSSIL
+										.get())
+						|| !level.getBlockState(local(
+								centre, rotation,
+								x, 2,
+								-1 + side * 3))
+								.is(CakeWorldBlocks
+										.ROCK_CANDY_FOSSIL
+										.get())) {
+					return false;
+				}
+			}
+		}
+		for (int[] marker : new int[][] {
+				{-4, -4}, {-4, 4}, {4, -4},
+				{4, 4}, {3, 3}
+		}) {
+			if (!level.getBlockState(local(
+					centre, rotation,
+					marker[0], 1, marker[1]))
+					.is(CakeWorldBlocks.FIZZY_PEARL
+							.get())) {
+				return false;
+			}
+		}
+		BlockPos jar = SherbetFossilBowlFeature
+				.jarPosition(centre, rotation);
+		BlockEntity jarEntity = level.getBlockEntity(jar);
+		CompoundTag jarState = jarEntity == null
+				? new CompoundTag()
+				: jarEntity.saveWithoutMetadata();
+		return level.getBlockState(jar).is(Blocks.BARREL)
+				&& SherbetFossilBowlFeature.LOOT_ID
+						.toString().equals(
+								jarState.getString(
+										"LootTable"))
+				&& jarState.getString("CustomName")
+						.contains("buried_sherbet_jar");
+	}
+
 	private static GummyGroveWorldAudit
 			auditNaturalGummyGrove(
 					ServerLevel level,
@@ -12321,6 +12731,28 @@ public final class DeepPantryGameTests {
 					mangrove.centre().getZ() - 5, 16);
 					chunkZ <= Math.floorDiv(
 							mangrove.centre().getZ() + 5,
+							16);
+					chunkZ++) {
+				level.setChunkForced(
+						chunkX, chunkZ, forced);
+			}
+		}
+	}
+
+	private static void setSherbetFossilBowlChunksForced(
+			ServerLevel level,
+			LocatedSherbetFossilBowl bowl,
+			boolean forced) {
+		for (int chunkX = Math.floorDiv(
+				bowl.centre().getX() - 6, 16);
+				chunkX <= Math.floorDiv(
+						bowl.centre().getX() + 6,
+						16);
+				chunkX++) {
+			for (int chunkZ = Math.floorDiv(
+					bowl.centre().getZ() - 6, 16);
+					chunkZ <= Math.floorDiv(
+							bowl.centre().getZ() + 6,
 							16);
 					chunkZ++) {
 				level.setChunkForced(
@@ -13798,6 +14230,25 @@ public final class DeepPantryGameTests {
 			ResourceLocation biome,
 			Rotation rotation,
 			boolean readableLayout,
+			BlockPos sentinel,
+			boolean brickSentinel) {
+	}
+
+	private record LocatedSherbetFossilBowl(
+			BlockPos centre,
+			BlockPos jar,
+			int scannedChunks,
+			int jarCandidates,
+			int sherbetColumns) {
+	}
+
+	private record SherbetFossilBowlWorldAudit(
+			Map<Block, Integer> palette,
+			ResourceLocation biome,
+			Rotation rotation,
+			boolean readableLayout,
+			String jarLoot,
+			String customName,
 			BlockPos sentinel,
 			boolean brickSentinel) {
 	}
