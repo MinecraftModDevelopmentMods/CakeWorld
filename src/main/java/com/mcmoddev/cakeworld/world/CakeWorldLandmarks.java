@@ -125,6 +125,20 @@ public final class CakeWorldLandmarks {
 							.TOP_LAYER_MODIFICATION)
 					.add(cottageRepair);
 		}
+		Holder<PlacedFeature> confectionersCottageRepair =
+				ConfectionersCottageRepairFeature
+						.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(
+						biome.getNamespace())
+				&& "candy_plains".equals(
+						biome.getPath())
+				&& confectionersCottageRepair != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration
+							.TOP_LAYER_MODIFICATION)
+					.add(confectionersCottageRepair);
+		}
 	}
 
 	private static boolean isCurrentOverworldBiome(

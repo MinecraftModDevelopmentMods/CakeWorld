@@ -162,6 +162,8 @@ import com.mcmoddev.cakeworld.world.AncientCakeVaultPalette;
 import com.mcmoddev.cakeworld.world.CakeWorldFeaturePoolElement;
 import com.mcmoddev.cakeworld.world.CaramelCottageFeature;
 import com.mcmoddev.cakeworld.world.CaramelCottageRepairFeature;
+import com.mcmoddev.cakeworld.world.ConfectionersCottageFeature;
+import com.mcmoddev.cakeworld.world.ConfectionersCottageRepairFeature;
 import com.mcmoddev.cakeworld.world.GingerbreadVillageFeature;
 import com.mcmoddev.cakeworld.world.GrandGingerbreadManorFeature;
 import com.mcmoddev.cakeworld.world.GrandGingerbreadManorRepairFeature;
@@ -40157,6 +40159,522 @@ public final class FirstBiteGameTests {
 								stack -> stack.is(
 										Items.LODESTONE)),
 				"Burnt-Toffee Foundry lost guaranteed native Bastion-Bridge Lodestone progression");
+		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, batch = "struct019",
+			timeoutTicks = 1200)
+	public static void confectionersCottageProvidesAStableStarterShop(
+			GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess().registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						ConfectionersCottageFeature
+								.STRUCTURE_ID);
+		Registry<net.minecraft.world.level.levelgen.structure.StructureSet>
+				structureSets =
+				level.registryAccess().registryOrThrow(
+						Registry.STRUCTURE_SET_REGISTRY);
+		net.minecraft.world.level.levelgen.structure.StructureSet
+				structureSet =
+				structureSets.get(
+						ConfectionersCottageFeature
+								.STRUCTURE_SET_ID);
+		boolean ownTag = structures.getTag(
+						ConfectionersCottageFeature
+								.STRUCTURE_TAG)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		Set<ResourceLocation> eligibleBiomes =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.getTag(
+								ConfectionersCottageFeature
+										.GENERATES_IN)
+						.map(tag -> tag.stream()
+								.map(holder -> holder
+										.unwrapKey()
+										.orElseThrow()
+										.location())
+								.collect(
+										java.util.stream
+												.Collectors
+												.toSet()))
+						.orElse(Set.of());
+		boolean repairInstalled =
+				hasPlacedFeature(
+						level,
+						CakeWorldBiomes.CANDY_PLAINS
+								.getId(),
+						GenerationStep.Decoration
+								.TOP_LAYER_MODIFICATION,
+						ConfectionersCottageRepairFeature
+								.ID);
+		require(helper,
+				configured != null
+						&& configured.feature
+								== ConfectionersCottageFeature
+										.STRUCTURE_FEATURE
+						&& !configured.adaptNoise
+						&& configured.spawnOverrides
+								.isEmpty()
+						&& configured.feature.step()
+								== GenerationStep.Decoration
+										.SURFACE_STRUCTURES
+						&& structureSet != null
+						&& structureSet.structures().size()
+								== 1
+						&& structureSet.structures().get(0)
+								.structure().value()
+								== configured
+						&& ownTag
+						&& eligibleBiomes.equals(Set.of(
+								CakeWorldBiomes
+										.CANDY_PLAINS
+										.getId()))
+						&& ConfectionersCottageRepairFeature
+								.placedFeature() != null
+						&& repairInstalled,
+				"Confectioner's Cottage lost its dedicated structure, Candy-Plains prototype boundary, no-spawn-override contract or late repair: eligible="
+						+ eligibleBiomes
+						+ ", ownTag=" + ownTag
+						+ ", repair="
+						+ repairInstalled);
+
+		net.minecraft.world.level.levelgen.structure.placement
+				.RandomSpreadStructurePlacement placement =
+				(net.minecraft.world.level.levelgen.structure
+						.placement.RandomSpreadStructurePlacement)
+						structureSet.placement();
+		require(helper,
+				placement.spacing() == 48
+						&& placement.separation() == 16
+						&& placement.spreadType()
+								== net.minecraft.world.level
+										.levelgen.structure
+										.placement
+										.RandomSpreadType
+										.LINEAR
+						&& placement.salt()
+								== ConfectionersCottageFeature
+										.PLACEMENT_SALT,
+				"Confectioner's Cottage lost its sparse 48/16/1978019 linear placement");
+
+		net.minecraft.world.level.levelgen.structure.pools
+				.StructurePoolElement element =
+				ConfectionersCottageFeature.pool().value()
+						.getRandomTemplate(
+								new Random(
+										ConfectionersCottageFeature
+												.PLACEMENT_SALT));
+		BoundingBox pieceBounds =
+				element.getBoundingBox(
+						level.getStructureManager(),
+						BlockPos.ZERO,
+						Rotation.NONE);
+		require(helper,
+				element
+						instanceof CakeWorldFeaturePoolElement
+						&& pieceBounds.getXSpan() == 17
+						&& pieceBounds.getYSpan() == 13
+						&& pieceBounds.getZSpan() == 17,
+				"Confectioner's Cottage lost its serializable 17x13x17 saved envelope");
+
+		Set<Rotation> rotations =
+				new java.util.HashSet<>();
+		for (int index = 0;
+				index < 128
+						&& rotations.size() < 4;
+				index++) {
+			rotations.add(
+					ConfectionersCottageFeature
+							.orientation(
+									level.getSeed(),
+									new BlockPos(
+											index * 43,
+											80,
+											index * -53)));
+		}
+		require(helper, rotations.size() == 4,
+				"Confectioner's Cottage deterministic orientation did not expose all four cardinal directions: "
+						+ rotations);
+
+		BlockPos centre = new BlockPos(
+				helper.absolutePos(
+						new BlockPos(4, 4, 4))
+						.getX(),
+				level.getMaxBuildHeight() - 80,
+				helper.absolutePos(
+						new BlockPos(4, 4, 4))
+						.getZ());
+		for (int x = -8; x <= 8; x++) {
+			for (int y = -4; y <= 12; y++) {
+				for (int z = -8; z <= 8; z++) {
+					level.setBlock(
+							centre.offset(x, y, z),
+							y == -4
+									? CakeWorldBlocks
+											.BISCUIT_STONE
+											.get()
+											.defaultBlockState()
+									: Blocks.AIR
+											.defaultBlockState(),
+							2);
+				}
+			}
+		}
+		require(helper,
+				ConfectionersCottageFeature.buildAt(
+						level,
+						new Random(
+								ConfectionersCottageFeature
+										.PLACEMENT_SALT),
+						centre),
+				"Confectioner's Cottage refused a forced starter-shop fixture");
+
+		Map<Block, Integer> palette =
+				scanBlockPalette(level, centre,
+						8, 4, 12);
+		int gummySign = palette.getOrDefault(
+				CakeWorldBlocks
+						.RASPBERRY_GUMMY_BLOCK.get(),
+				0)
+				+ palette.getOrDefault(
+						CakeWorldBlocks
+								.BLUEBERRY_GUMMY_BLOCK
+								.get(),
+						0);
+		require(helper,
+				palette.getOrDefault(
+						CakeWorldBlocks
+								.GINGERBREAD_BRICKS
+								.get(), 0) >= 150
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.WAFER_BLOCK
+										.get(), 0)
+								>= 260
+						&& palette.getOrDefault(
+								CakeWorldBlocks.ICING
+										.get(), 0)
+								>= 110
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CANDY_CANE_PILLAR
+										.get(), 0)
+								>= 30
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CANDY_GLASS
+										.get(), 0)
+								== 9
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CANDY_SPROUT
+										.get(), 0)
+								== 3
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CHOCOLATE_SPONGE
+										.get(), 0)
+								== 3
+						&& gummySign >= 9
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.MIXING_BOWL
+										.get(), 0)
+								== 1
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.COOLING_RACK
+										.get(), 0)
+								== 1
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CANDY_COOKER
+										.get(), 0)
+								== 1
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.SODA_FOUNTAIN
+										.get(), 0)
+								== 1
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.COOKBOOK_KIOSK
+										.get(), 0)
+								== 1
+						&& palette.getOrDefault(
+								Blocks.CHEST, 0) == 1,
+				"Confectioner's Cottage lost its bright shell, lollipop, three-plant ingredient garden, shop counter or working gadgets: "
+						+ palette);
+
+		Rotation orientation =
+				ConfectionersCottageFeature.orientation(
+						level.getSeed(), centre);
+		for (int x : new int[] {-5, 5}) {
+			for (int z : new int[] {-4, 4}) {
+				BlockPos offset =
+						new BlockPos(x, 0, z)
+								.rotate(orientation);
+				for (int y = -3; y <= -1; y++) {
+					require(helper,
+							level.getBlockState(
+									centre.offset(
+											offset.getX(),
+											y,
+											offset.getZ()))
+									.is(CakeWorldBlocks
+											.CANDY_CANE_PILLAR
+											.get()),
+							"Confectioner's Cottage lost a terrain-reaching support at local "
+									+ x + "," + y
+									+ "," + z);
+				}
+			}
+		}
+
+		BlockPos stockPosition =
+				ConfectionersCottageFeature
+						.stockChestPosition(
+								level.getSeed(), centre);
+		BlockEntity stockEntity =
+				level.getBlockEntity(stockPosition);
+		CompoundTag stockState =
+				stockEntity == null
+						? new CompoundTag()
+						: stockEntity
+								.saveWithoutMetadata();
+		require(helper,
+				stockState.getString("LootTable")
+						.equals(
+								ConfectionersCottageFeature
+										.LOOT_ID
+										.toString()),
+				"Confectioner's Cottage stock chest lost its dedicated loot table: "
+						+ stockState);
+		List<ItemStack> stock =
+				level.getServer().getLootTables()
+						.get(ConfectionersCottageFeature
+								.LOOT_ID)
+						.getRandomItems(
+								new LootContext.Builder(
+										level)
+												.withParameter(
+														LootContextParams
+																.ORIGIN,
+														Vec3.atCenterOf(
+																stockPosition))
+												.create(
+														LootContextParamSets
+																.CHEST));
+		require(helper,
+				!stock.isEmpty()
+						&& stock.stream().allMatch(
+								stack -> stack.is(
+										CakeWorldItems
+												.CHOCOLATE_SPONGE_SLICE
+												.get())
+										|| stack.is(
+												CakeWorldItems
+														.SIMPLE_BISCUIT
+														.get())
+										|| stack.is(
+												CakeWorldItems
+														.BOILED_SWEET
+														.get())
+										|| stack.is(
+												CakeWorldItems
+														.LEMONADE_BOTTLE
+														.get())
+										|| stack.is(
+												CakeWorldItems
+														.SPRINKLE_SEEDS
+														.get())
+										|| stack.is(
+												Items.EMERALD)),
+				"Confectioner's Cottage stock was empty or contained non-starter loot: "
+						+ stock);
+
+		BlockPos residentPosition =
+				ConfectionersCottageFeature
+						.residentPosition(
+								level.getSeed(), centre);
+		AABB residentArea =
+				new AABB(residentPosition)
+						.inflate(1.0D);
+		List<TravellingConfectioner> residents =
+				level.getEntitiesOfClass(
+						TravellingConfectioner.class,
+						residentArea);
+		require(helper, residents.size() == 1,
+				"Confectioner's Cottage did not create exactly one resident shopkeeper: "
+						+ residents.size());
+		TravellingConfectioner resident =
+				residents.get(0);
+		MerchantOffers offers = resident.getOffers();
+		MerchantOffer spongePurchase =
+				offers.size() > 0 ? offers.get(0) : null;
+		MerchantOffer biscuits =
+				offers.size() > 1 ? offers.get(1) : null;
+		MerchantOffer sweets =
+				offers.size() > 2 ? offers.get(2) : null;
+		MerchantOffer lemonade =
+				offers.size() > 3 ? offers.get(3) : null;
+		MerchantOffer seeds =
+				offers.size() > 4 ? offers.get(4) : null;
+		require(helper,
+				resident.isPersistenceRequired()
+						&& resident.getDespawnDelay() == 0
+						&& resident.getCustomName()
+								instanceof TranslatableComponent
+						&& ((TranslatableComponent)
+								resident.getCustomName())
+										.getKey().equals(
+												"entity.cakeworld.cottage_confectioner")
+						&& offers.size() == 5
+						&& spongePurchase != null
+						&& spongePurchase.getBaseCostA()
+								.is(CakeWorldItems
+										.CHOCOLATE_SPONGE_SLICE
+										.get())
+						&& spongePurchase.getBaseCostA()
+								.getCount() == 10
+						&& spongePurchase.getResult()
+								.is(Items.EMERALD)
+						&& spongePurchase.getMaxUses()
+								== 16
+						&& biscuits != null
+						&& biscuits.getBaseCostA()
+								.is(Items.EMERALD)
+						&& biscuits.getBaseCostA()
+								.getCount() == 1
+						&& biscuits.getResult().is(
+								CakeWorldItems
+										.SIMPLE_BISCUIT
+										.get())
+						&& biscuits.getResult()
+								.getCount() == 6
+						&& sweets != null
+						&& sweets.getResult().is(
+								CakeWorldItems
+										.BOILED_SWEET
+										.get())
+						&& sweets.getResult()
+								.getCount() == 3
+						&& lemonade != null
+						&& lemonade.getBaseCostA()
+								.getCount() == 2
+						&& lemonade.getResult().is(
+								CakeWorldItems
+										.LEMONADE_BOTTLE
+										.get())
+						&& lemonade.getResult()
+								.getCount() == 2
+						&& seeds != null
+						&& seeds.getBaseCostA()
+								.getCount() == 2
+						&& seeds.getResult().is(
+								CakeWorldItems
+										.SPRINKLE_SEEDS
+										.get())
+						&& seeds.getResult()
+								.getCount() == 2
+						&& level.getBlockState(
+								ConfectionersCottageFeature
+										.residentMarker(
+												centre,
+												orientation))
+								.is(CakeWorldBlocks
+										.GINGERBREAD_BRICKS
+										.get()),
+				"Confectioner's Cottage lost its permanent named resident, earn-first fixed trade ladder or consumed marker: offers="
+						+ offers);
+
+		CompoundTag residentState =
+				resident.saveWithoutId(
+						new CompoundTag());
+		require(helper,
+				residentState.contains("WanderTarget")
+						&& NbtUtils.readBlockPos(
+								residentState.getCompound(
+										"WanderTarget"))
+								.equals(centre),
+				"Confectioner's Cottage resident lost its home wander target: "
+						+ residentState);
+
+		UUID residentId = resident.getUUID();
+		require(helper, seeds != null,
+				"Confectioner's Cottage seed trade fixture was missing");
+		seeds.increaseUses();
+		BlockPos damagedRoof =
+				new BlockPos(0, 9, 0)
+						.rotate(orientation);
+		damagedRoof = centre.offset(damagedRoof);
+		level.setBlock(damagedRoof,
+				Blocks.AIR.defaultBlockState(), 2);
+		require(helper,
+				ConfectionersCottageFeature.repairAt(
+						level,
+						new Random(
+								ConfectionersCottageFeature
+										.PLACEMENT_SALT),
+						centre),
+				"Confectioner's Cottage late repair refused its fixture");
+		List<TravellingConfectioner> repairedResidents =
+				level.getEntitiesOfClass(
+						TravellingConfectioner.class,
+						residentArea);
+		require(helper,
+				level.getBlockState(damagedRoof)
+						.is(CakeWorldBlocks.ICING.get())
+						&& repairedResidents.size() == 1
+						&& repairedResidents.get(0)
+								.getUUID()
+								.equals(residentId)
+						&& repairedResidents.get(0)
+								.getOffers().get(4)
+								.getUses() == 1
+						&& level.getBlockState(
+								ConfectionersCottageFeature
+										.residentMarker(
+												centre,
+												orientation))
+								.is(CakeWorldBlocks
+										.GINGERBREAD_BRICKS
+										.get()),
+				"Confectioner's Cottage repair failed to restore its roof without replacing its resident, trades or durable marker");
+
+		CompoundTag savedResident =
+				resident.saveWithoutId(
+						new CompoundTag());
+		TravellingConfectioner restored =
+				CakeWorldEntities
+						.TRAVELLING_CONFECTIONER.get()
+						.create(level);
+		require(helper, restored != null,
+				"Could not create Confectioner's Cottage reload fixture");
+		restored.load(savedResident);
+		require(helper,
+				restored.getDespawnDelay() == 0
+						&& restored
+								.isPersistenceRequired()
+						&& restored.getOffers().size()
+								== 5
+						&& restored.getOffers().get(4)
+								.getUses() == 1,
+				"Confectioner's Cottage resident reload lost permanence or fixed offer state");
+
+		resident.discard();
+		restored.discard();
 		helper.succeed();
 	}
 

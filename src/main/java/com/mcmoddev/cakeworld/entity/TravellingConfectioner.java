@@ -85,6 +85,51 @@ public class TravellingConfectioner extends WanderingTrader {
 		}
 	}
 
+	/**
+	 * Replaces the roaming assortment with the small, predictable starter
+	 * selection used by a Confectioner's Cottage resident.
+	 */
+	public void installCottageOffers() {
+		MerchantOffers offers = getOffers();
+		offers.clear();
+		offers.add(new MerchantOffer(
+				new ItemStack(
+						CakeWorldItems
+								.CHOCOLATE_SPONGE_SLICE
+								.get(),
+						10),
+				new ItemStack(Items.EMERALD),
+				16, 2, PRICE_MULTIPLIER));
+		offers.add(new MerchantOffer(
+				new ItemStack(Items.EMERALD),
+				new ItemStack(
+						CakeWorldItems
+								.SIMPLE_BISCUIT.get(),
+						6),
+				12, 1, PRICE_MULTIPLIER));
+		offers.add(new MerchantOffer(
+				new ItemStack(Items.EMERALD),
+				new ItemStack(
+						CakeWorldItems
+								.BOILED_SWEET.get(),
+						3),
+				12, 1, PRICE_MULTIPLIER));
+		offers.add(new MerchantOffer(
+				new ItemStack(Items.EMERALD, 2),
+				new ItemStack(
+						CakeWorldItems
+								.LEMONADE_BOTTLE.get(),
+						2),
+				8, 1, PRICE_MULTIPLIER));
+		offers.add(new MerchantOffer(
+				new ItemStack(Items.EMERALD, 2),
+				new ItemStack(
+						CakeWorldItems
+								.SPRINKLE_SEEDS.get(),
+						2),
+				6, 1, PRICE_MULTIPLIER));
+	}
+
 	private static boolean isCakeWorldSnack(
 			ItemStack stack) {
 		return stack.is(CakeWorldItems
