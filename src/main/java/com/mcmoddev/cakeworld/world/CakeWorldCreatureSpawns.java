@@ -154,6 +154,10 @@ public final class CakeWorldCreatureSpawns {
 		if ("cookie_forest".equals(biome.getPath())) {
 			replace(event, MobCategory.CREATURE, EntityType.BEE,
 					CakeWorldEntities.SUGAR_BEE, 6, 1, 2);
+			replace(event, MobCategory.CREATURE, EntityType.COW,
+					CakeWorldEntities.COCOA_COW, 8, 2, 4);
+			replace(event, MobCategory.CREATURE, EntityType.PIG,
+					CakeWorldEntities.TRUFFLE_PIG, 8, 2, 4);
 			replace(event, MobCategory.CREATURE, EntityType.CHICKEN,
 					CakeWorldEntities.MALLOW_CHICK, 10, 2, 4);
 		}

@@ -48,6 +48,7 @@ import com.mcmoddev.cakeworld.world.CandyCaneBridgeFeature;
 import com.mcmoddev.cakeworld.world.CandyCaneBridgeStructureFeature;
 import com.mcmoddev.cakeworld.world.CaramelCottageFeature;
 import com.mcmoddev.cakeworld.world.ConfectionersCottageFeature;
+import com.mcmoddev.cakeworld.world.CookieCrumbGroveFeature;
 import com.mcmoddev.cakeworld.world.CraterKitchenFeature;
 import com.mcmoddev.cakeworld.world.CraterKitchenStructureFeature;
 import com.mcmoddev.cakeworld.world.RockCandyCrystalMineFeature;
@@ -6838,6 +6839,70 @@ public final class DeepPantryGameTests {
 		});
 	}
 
+	@GameTest(template = EMPTY, batch = "bioow003world",
+			timeoutTicks = 24000)
+	public static void focusedNaturalCookieCrumbGroveAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean(
+				"cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed natural Cookie Crumb Grove audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel()
+				.getServer().getLevel(Level.OVERWORLD);
+		require(helper, level != null,
+				"The fixed-seed server did not expose the Overworld");
+		BlockPos cookieForest = locateBiome(helper, level,
+				CakeWorldBiomes.COOKIE_FOREST.getId());
+		LocatedCookieGrove grove = locateNaturalCookieGrove(
+				helper, level, cookieForest, 20);
+		setCookieGroveChunksForced(level, grove, true);
+		helper.runAfterDelay(40, () -> {
+			CookieGroveWorldAudit audit =
+					auditNaturalCookieGrove(
+							level, grove);
+			LOGGER.info("Focused natural Cookie Crumb Grove audit: centre={}, cache={}, biome={}, rotation={}, palette={}, layout={}, sentinel={}, markerPhase={}, scannedChunks={}, cacheCandidates={}",
+					grove.centre(),
+					grove.cache(),
+					audit.biome(),
+					audit.rotation(),
+					audit.palette(),
+					audit.readableLayout(),
+					audit.sentinel(),
+					audit.brickSentinel()
+							? "reloaded"
+							: "seeded",
+					grove.scannedChunks(),
+					grove.cacheCandidates());
+			require(helper,
+					CakeWorldBiomes.COOKIE_FOREST.getId()
+							.equals(audit.biome())
+							&& audit.readableLayout()
+							&& CookieCrumbGroveFeature
+									.LOOT_ID
+									.toString()
+									.equals(
+											audit.cacheLoot()),
+					"Natural Cookie Crumb Grove lost its exact biome, four-tree scene, accessible burrow or biscuit cache: "
+							+ audit);
+			if (!audit.brickSentinel()) {
+				level.setBlock(audit.sentinel(),
+						Blocks.BRICKS
+								.defaultBlockState(),
+						2);
+				require(helper,
+						level.getBlockState(
+								audit.sentinel())
+								.is(Blocks.BRICKS),
+						"Could not seed the explicit player-placed Brick reload sentinel beside the Cookie Crumb Grove");
+			}
+			setCookieGroveChunksForced(
+					level, grove, false);
+			helper.succeed();
+		});
+	}
+
 	@GameTest(template = EMPTY, timeoutTicks = 1200)
 	public static void baseMetalsCounterpartsPreserveTagsRecipesAndGeneration(
 			GameTestHelper helper) {
@@ -10422,6 +10487,219 @@ public final class DeepPantryGameTests {
 				"Unreachable after GameTest failure");
 	}
 
+	private static LocatedCookieGrove locateNaturalCookieGrove(
+			GameTestHelper helper, ServerLevel level,
+			BlockPos anchor, int chunkRadius) {
+		ChunkPos anchorChunk = new ChunkPos(anchor);
+		int scannedChunks = 0;
+		int cacheCandidates = 0;
+		for (int radius = 0;
+				radius <= chunkRadius; radius++) {
+			for (int chunkX =
+					anchorChunk.x - radius;
+					chunkX <= anchorChunk.x
+							+ radius;
+					chunkX++) {
+				for (int chunkZ =
+						anchorChunk.z - radius;
+						chunkZ <= anchorChunk.z
+								+ radius;
+						chunkZ++) {
+					if (radius > 0
+							&& chunkX
+									!= anchorChunk.x
+											- radius
+							&& chunkX
+									!= anchorChunk.x
+											+ radius
+							&& chunkZ
+									!= anchorChunk.z
+											- radius
+							&& chunkZ
+									!= anchorChunk.z
+											+ radius) {
+						continue;
+					}
+					net.minecraft.world.level.chunk
+							.LevelChunk chunk =
+							level.getChunk(
+									chunkX,
+									chunkZ);
+					scannedChunks++;
+					for (BlockEntity blockEntity
+							: chunk
+									.getBlockEntities()
+									.values()) {
+						CompoundTag saved =
+								blockEntity
+										.saveWithoutMetadata();
+						if (!CookieCrumbGroveFeature
+								.LOOT_ID
+								.toString()
+								.equals(
+										saved.getString(
+												"LootTable"))) {
+							continue;
+						}
+						cacheCandidates++;
+						BlockPos cache =
+								blockEntity
+										.getBlockPos();
+						LocatedCookieGrove grove =
+								new LocatedCookieGrove(
+										cache.above(2),
+										cache,
+										scannedChunks,
+										cacheCandidates);
+						CookieGroveWorldAudit audit =
+								auditNaturalCookieGrove(
+										level, grove);
+						LOGGER.info("Cookie Crumb Grove cache candidate: centre={}, cache={}, biome={}, rotation={}, palette={}, layout={}, scannedChunks={}, cacheCandidates={}",
+								grove.centre(),
+								grove.cache(),
+								audit.biome(),
+								audit.rotation(),
+								audit.palette(),
+								audit.readableLayout(),
+								scannedChunks,
+								cacheCandidates);
+						if (audit.readableLayout()) {
+							return grove;
+						}
+					}
+				}
+			}
+		}
+		require(helper, false,
+				"The fixed-seed Cookie-Forest survey found no natural Cookie Crumb Grove after "
+						+ scannedChunks
+						+ " generated chunks and "
+						+ cacheCandidates
+						+ " dedicated cache candidates near "
+						+ anchor);
+		throw new IllegalStateException(
+				"Unreachable after GameTest failure");
+	}
+
+	private static CookieGroveWorldAudit
+			auditNaturalCookieGrove(
+					ServerLevel level,
+					LocatedCookieGrove grove) {
+		BlockPos centre = grove.centre();
+		Rotation rotation =
+				CookieCrumbGroveFeature.orientation(
+						level.getSeed(), centre);
+		BlockPos sentinel = local(centre, rotation,
+				5, 3, 10);
+		boolean brickSentinel =
+				level.getBlockState(sentinel)
+						.is(Blocks.BRICKS);
+		Map<Block, Integer> palette =
+				new LinkedHashMap<>();
+		for (int x = -11; x <= 11; x++) {
+			for (int y = -3; y <= 9; y++) {
+				for (int z = -11; z <= 11;
+						z++) {
+					palette.merge(
+							level.getBlockState(
+									centre.offset(
+											x, y, z))
+									.getBlock(),
+							1, Integer::sum);
+				}
+			}
+		}
+		BlockEntity cacheEntity =
+				level.getBlockEntity(grove.cache());
+		String cacheLoot =
+				cacheEntity == null
+						? ""
+						: cacheEntity
+								.saveWithoutMetadata()
+								.getString(
+										"LootTable");
+		ResourceLocation biome =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.getKey(level.getBiome(centre)
+								.value());
+		boolean readable =
+				level.getBlockState(grove.cache())
+								.is(Blocks.CHEST)
+						&& CookieCrumbGroveFeature
+								.LOOT_ID.toString()
+								.equals(cacheLoot)
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.WAFER_BLOCK
+										.get(),
+								0) >= 60
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.BISCUIT_STONE
+										.get(),
+								0) >= 220
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CHOCOLATE_SPONGE
+										.get(),
+								0) >= 40
+						&& matchesCookieGroveLayout(
+								level, centre,
+								rotation);
+		return new CookieGroveWorldAudit(
+				palette, biome, rotation,
+				cacheLoot, readable, sentinel,
+				brickSentinel);
+	}
+
+	private static boolean matchesCookieGroveLayout(
+			ServerLevel level, BlockPos centre,
+			Rotation rotation) {
+		for (int x = -1; x <= 1; x++) {
+			for (int z = 6; z <= 10; z++) {
+				if (!level.getBlockState(local(
+						centre, rotation,
+						x, 0, z))
+						.is(CakeWorldBlocks
+								.BISCUIT_CRUMBS
+								.get())) {
+					return false;
+				}
+			}
+		}
+		if (!level.getBlockState(local(centre,
+				rotation, 0, 1, 6)).isAir()
+				|| !level.getBlockState(local(
+						centre, rotation,
+						0, 2, 6)).isAir()) {
+			return false;
+		}
+		int[][] trees = {
+				{-3, -2, 5},
+				{3, -2, 6},
+				{-3, 3, 6},
+				{3, 3, 5}
+		};
+		for (int[] tree : trees) {
+			BlockPos base = local(centre, rotation,
+					tree[0], 0, tree[1]);
+			if (!level.getBlockState(base)
+					.is(CakeWorldBlocks
+							.WAFER_BLOCK.get())
+					|| !level.getBlockState(
+							base.above(
+									tree[2] - 2))
+							.is(CakeWorldBlocks
+									.WAFER_BLOCK
+									.get())) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 	private static RoadsideWorldAudit
 			auditNaturalRoadside(
 					ServerLevel level,
@@ -10795,6 +11073,31 @@ public final class DeepPantryGameTests {
 					chunkZ <= Math.floorDiv(
 							scene.centre().getZ()
 									+ 5,
+							16);
+					chunkZ++) {
+				level.setChunkForced(
+						chunkX, chunkZ,
+						forced);
+			}
+		}
+	}
+
+	private static void setCookieGroveChunksForced(
+			ServerLevel level,
+			LocatedCookieGrove grove,
+			boolean forced) {
+		for (int chunkX = Math.floorDiv(
+				grove.centre().getX() - 11, 16);
+				chunkX <= Math.floorDiv(
+						grove.centre().getX() + 11,
+						16);
+				chunkX++) {
+			for (int chunkZ = Math.floorDiv(
+					grove.centre().getZ() - 11,
+					16);
+					chunkZ <= Math.floorDiv(
+							grove.centre().getZ()
+									+ 11,
 							16);
 					chunkZ++) {
 				level.setChunkForced(
@@ -12210,6 +12513,22 @@ public final class DeepPantryGameTests {
 	}
 
 	private record RoadsideWorldAudit(
+			Map<Block, Integer> palette,
+			ResourceLocation biome,
+			Rotation rotation,
+			String cacheLoot,
+			boolean readableLayout,
+			BlockPos sentinel,
+			boolean brickSentinel) {
+	}
+
+	private record LocatedCookieGrove(
+			BlockPos centre, BlockPos cache,
+			int scannedChunks,
+			int cacheCandidates) {
+	}
+
+	private record CookieGroveWorldAudit(
 			Map<Block, Integer> palette,
 			ResourceLocation biome,
 			Rotation rotation,

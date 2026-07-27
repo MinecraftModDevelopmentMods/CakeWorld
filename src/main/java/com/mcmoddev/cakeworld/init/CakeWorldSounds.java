@@ -22,6 +22,10 @@ public final class CakeWorldSounds {
 			SOUNDS.register("hearthlands_chime",
 					() -> new SoundEvent(new ResourceLocation(
 							CakeWorld.MODID, "hearthlands_chime")));
+	public static final RegistryObject<SoundEvent> COOKIE_FOREST_RUSTLE =
+			SOUNDS.register("cookie_forest_rustle",
+					() -> new SoundEvent(new ResourceLocation(
+							CakeWorld.MODID, "cookie_forest_rustle")));
 
 	private CakeWorldSounds() {
 	}

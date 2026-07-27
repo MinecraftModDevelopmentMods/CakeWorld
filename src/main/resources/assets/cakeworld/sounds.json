@@ -16,5 +16,14 @@
         "type": "event"
       }
     ]
+  },
+  "cookie_forest_rustle": {
+    "subtitle": "subtitles.cakeworld.cookie_forest.rustle",
+    "sounds": [
+      {
+        "name": "minecraft:block.grass.step",
+        "type": "event"
+      }
+    ]
   }
 }

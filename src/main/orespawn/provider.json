@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "provider_modid": "cakeworld",
-  "provider_revision": 12,
+  "provider_revision": 13,
   "templates": {
     "cakeworld:edible_world": {
       "name_key": "template.cakeworld.edible_world",
@@ -699,7 +699,11 @@
               "cakeworld:cookie_forest": {
                 "enabled": true,
                 "weight": 2.0,
-                "similar_biomes": [],
+                "similar_biomes": [
+                  "minecraft:forest",
+                  "minecraft:flower_forest",
+                  "minecraft:birch_forest"
+                ],
                 "required_similar_biomes": [],
                 "min_temperature": 0.15,
                 "max_temperature": 1.5,

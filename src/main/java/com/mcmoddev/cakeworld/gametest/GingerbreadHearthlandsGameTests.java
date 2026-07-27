@@ -195,8 +195,8 @@ public final class GingerbreadHearthlandsGameTests {
 			GameTestHelper helper) {
 		JsonObject provider = readObject(PROVIDER);
 		require(helper,
-				provider.get("provider_revision").getAsInt() == 12,
-				"Gingerbread Hearthlands requires OreSpawn provider revision 12");
+				provider.get("provider_revision").getAsInt() >= 12,
+				"Gingerbread Hearthlands requires OreSpawn provider revision 12 or later");
 
 		JsonObject templates = provider.getAsJsonObject("templates");
 		for (String templateId : TEMPLATES) {

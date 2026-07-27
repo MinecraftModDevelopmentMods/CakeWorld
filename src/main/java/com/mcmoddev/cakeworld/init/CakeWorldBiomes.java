@@ -26,8 +26,8 @@ public final class CakeWorldBiomes {
 			"candy_plains", "plains", 0.8F, 0.4F);
 	public static final RegistryObject<Biome> GINGERBREAD_HEARTHLANDS =
 			hearthlands();
-	public static final RegistryObject<Biome> COOKIE_FOREST = copy(
-			"cookie_forest", "forest", 0.7F, 0.8F);
+	public static final RegistryObject<Biome> COOKIE_FOREST =
+			cookieForest();
 	public static final RegistryObject<Biome> MARSHMALLOW_PEAKS = copy(
 			"marshmallow_peaks", "jagged_peaks", -0.3F, 0.5F);
 	public static final RegistryObject<Biome> SODA_OCEAN = copy(
@@ -92,20 +92,42 @@ public final class CakeWorldBiomes {
 	}
 
 	private static RegistryObject<Biome> hearthlands() {
-		return OreSpawnBiomes.copyAndRegister(BIOMES,
-				"gingerbread_hearthlands",
-				() -> vanilla("plains"),
-				builder -> builder
-						.temperature(0.85F)
-						.downfall(0.55F)
-						.specialEffects(
-								hearthlandsEffects(
-										vanilla("plains")
-												.getSpecialEffects())));
+		return copyWithAmbient("gingerbread_hearthlands",
+				"plains", 0.85F, 0.55F,
+				CakeWorldSounds.HEARTHLANDS_CHIME,
+				0.001D);
 	}
 
-	private static BiomeSpecialEffects hearthlandsEffects(
-			BiomeSpecialEffects source) {
+	private static RegistryObject<Biome> cookieForest() {
+		return copyWithAmbient("cookie_forest",
+				"forest", 0.7F, 0.8F,
+				CakeWorldSounds.COOKIE_FOREST_RUSTLE,
+				0.0012D);
+	}
+
+	private static RegistryObject<Biome> copyWithAmbient(
+			String name, String vanilla,
+			float temperature, float downfall,
+			RegistryObject<net.minecraft.sounds.SoundEvent> sound,
+			double chance) {
+		return OreSpawnBiomes.copyAndRegister(BIOMES,
+				name,
+				() -> vanilla(vanilla),
+				builder -> builder
+						.temperature(temperature)
+						.downfall(downfall)
+						.specialEffects(
+								withAmbientAdditions(
+										vanilla(vanilla)
+												.getSpecialEffects(),
+										sound.get(),
+										chance)));
+	}
+
+	private static BiomeSpecialEffects withAmbientAdditions(
+			BiomeSpecialEffects source,
+			net.minecraft.sounds.SoundEvent sound,
+			double chance) {
 		BiomeSpecialEffects.Builder builder =
 				new BiomeSpecialEffects.Builder()
 						.fogColor(source.getFogColor())
@@ -131,8 +153,7 @@ public final class CakeWorldBiomes {
 				.ifPresent(builder::backgroundMusic);
 		return builder.ambientAdditionsSound(
 				new AmbientAdditionsSettings(
-						CakeWorldSounds.HEARTHLANDS_CHIME.get(),
-						0.001D))
+						sound, chance))
 				.build();
 	}
 
