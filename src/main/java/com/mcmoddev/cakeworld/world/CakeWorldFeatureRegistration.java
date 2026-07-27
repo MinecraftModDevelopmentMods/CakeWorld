@@ -54,6 +54,10 @@ public final class CakeWorldFeatureRegistration {
 				ConfectionersCottageFeature.FEATURE);
 		event.getRegistry().register(
 				ConfectionersCottageRepairFeature.FEATURE);
+		event.getRegistry().register(
+				WaferWindmillFeature.FEATURE);
+		event.getRegistry().register(
+				WaferWindmillRepairFeature.FEATURE);
 	}
 
 	@SubscribeEvent
@@ -82,6 +86,8 @@ public final class CakeWorldFeatureRegistration {
 		event.getRegistry().register(
 				ConfectionersCottageFeature
 						.STRUCTURE_FEATURE);
+		event.getRegistry().register(
+				WaferWindmillFeature.STRUCTURE_FEATURE);
 	}
 
 	@SubscribeEvent
@@ -115,6 +121,9 @@ public final class CakeWorldFeatureRegistration {
 					.registerConfiguredFeature();
 			ConfectionersCottageFeature.registerWorldgen();
 			ConfectionersCottageRepairFeature
+					.registerConfiguredFeature();
+			WaferWindmillFeature.registerWorldgen();
+			WaferWindmillRepairFeature
 					.registerConfiguredFeature();
 		});
 	}

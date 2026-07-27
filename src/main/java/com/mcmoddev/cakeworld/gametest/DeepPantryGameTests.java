@@ -16,6 +16,7 @@ import com.google.gson.JsonObject;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.authlib.GameProfile;
 import com.mcmoddev.cakeworld.CakeWorld;
+import com.mcmoddev.cakeworld.block.WaferWindmillBlock;
 import com.mcmoddev.cakeworld.compat.VanillaResourceAdvancements;
 import com.mcmoddev.cakeworld.entity.BiscuitBandit;
 import com.mcmoddev.cakeworld.entity.BitterBaker;
@@ -58,6 +59,7 @@ import com.mcmoddev.cakeworld.world.MacaronCitadelFeature;
 import com.mcmoddev.cakeworld.world.MacaronCitadelPalette;
 import com.mcmoddev.cakeworld.world.RockCandyFossilFeature;
 import com.mcmoddev.cakeworld.world.WaferMineFeature;
+import com.mcmoddev.cakeworld.world.WaferWindmillFeature;
 import com.mcmoddev.cakeworld.world.WaferWreckFeature;
 import com.mcmoddev.orespawn.api.CompiledOrePattern;
 import com.mcmoddev.orespawn.api.GeologyColumn;
@@ -5680,6 +5682,234 @@ public final class DeepPantryGameTests {
 		});
 	}
 
+	@GameTest(template = EMPTY, batch = "struct020world",
+			timeoutTicks = 7200)
+	public static void focusedWaferWindmillStructureAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean(
+				"cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed Wafer Windmill audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel();
+		Registry<ConfiguredStructureFeature<?, ?>>
+				structures =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry
+										.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
+		ConfiguredStructureFeature<?, ?> configured =
+				structures.get(
+						WaferWindmillFeature
+								.STRUCTURE_ID);
+		require(helper, configured != null,
+				"Wafer Windmill configured structure was absent from the live registry");
+		boolean locatedTag = structures.getTag(
+						WaferWindmillFeature
+								.STRUCTURE_TAG)
+				.map(tag -> tag.stream().anyMatch(
+						holder -> holder.value()
+								== configured))
+				.orElse(false);
+		require(helper, locatedTag,
+				"Wafer Windmill lost its public configured-structure locate tag");
+
+		LocatedCottage windmill =
+				locateWaferWindmill(
+						helper, level, configured,
+						new BlockPos(96, 64, 128));
+		setCottageChunksForced(level, windmill, true);
+		helper.runAfterDelay(160, () -> {
+			WindmillWorldAudit audit =
+					auditWaferWindmill(
+							level, windmill);
+			BlockPos sentinel =
+					WaferWindmillFeature
+							.reloadSentinelPosition(
+									level.getSeed(),
+									windmill.centre());
+			boolean sentinelAlreadyNative =
+					level.getBlockState(sentinel)
+							.is(Blocks.BRICKS);
+			int nativeSentinels =
+					audit.palette()
+							.getOrDefault(
+									Blocks.BRICKS, 0);
+			LOGGER.info("Focused Wafer Windmill audit: locate={}, centre={}, bounds={}, biome={}, orientation={}, palette={}, hub={}, powered={}, neighborSignal={}, pantryLoot={}, sentinel={}, markerPhase={}",
+					windmill.located(),
+					windmill.centre(),
+					windmill.bounds(),
+					audit.biome(),
+					audit.orientation(),
+					audit.palette(),
+					audit.hub(),
+					audit.powered(),
+					audit.neighborSignal(),
+					audit.pantryLoot(),
+					sentinel,
+					sentinelAlreadyNative
+							? "reloaded"
+							: "seeded");
+			require(helper,
+					CakeWorldBiomes.CANDY_PLAINS
+							.getId().equals(
+									audit.biome()),
+					"Natural Wafer Windmill left its explicit Candy-Plains prototype home: biome="
+							+ audit.biome());
+			require(helper,
+					windmill.bounds().getXSpan()
+							== 21
+							&& windmill.bounds()
+									.getYSpan()
+									== 20
+							&& windmill.bounds()
+									.getZSpan()
+									== 21
+							&& windmill.centre()
+									.getY()
+									>= level
+											.getSeaLevel()
+											- 4,
+					"Natural Wafer Windmill lost its exact saved envelope or surface alignment: bounds="
+							+ windmill.bounds()
+							+ ", centre="
+							+ windmill.centre()
+							+ ", seaLevel="
+							+ level.getSeaLevel());
+			Map<Block, Integer> palette =
+					audit.palette();
+			int gummyTips =
+					palette.getOrDefault(
+							CakeWorldBlocks
+									.RASPBERRY_GUMMY_BLOCK
+									.get(), 0)
+							+ palette.getOrDefault(
+									CakeWorldBlocks
+											.BLUEBERRY_GUMMY_BLOCK
+											.get(), 0);
+			require(helper,
+					palette.getOrDefault(
+							CakeWorldBlocks
+									.GINGERBREAD_BRICKS
+									.get(), 0)
+							>= 300
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.WAFER_BLOCK
+											.get(), 0)
+									>= 300
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.ICING.get(),
+									0) >= (sentinelAlreadyNative
+											? 99 : 100)
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.CANDY_CANE_PILLAR
+											.get(), 0)
+									>= 70
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.CANDY_GLASS
+											.get(), 0)
+									== 16
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.SYRUP_PIPE
+											.get(), 0)
+									>= 18
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.WAFER_WINDMILL
+											.get(), 0)
+									== 1
+							&& palette.getOrDefault(
+									Blocks.REDSTONE_BLOCK,
+									0) == 1
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.OVEN.get(),
+									0) == 1
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.MIXING_BOWL
+											.get(), 0)
+									== 1
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.CANDY_COOKER
+											.get(), 0)
+									== 1
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.COOLING_RACK
+											.get(), 0)
+									== 1
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.SODA_FOUNTAIN
+											.get(), 0)
+									== 1
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.COOKBOOK_KIOSK
+											.get(), 0)
+									== 1
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.MARSHMALLOW
+											.get(), 0)
+									== 15
+							&& palette.getOrDefault(
+									CakeWorldBlocks
+											.CANDY_SPROUT
+											.get(), 0)
+									== 14
+							&& palette.getOrDefault(
+									Blocks.CHEST, 0)
+									== 1
+							&& gummyTips == 4
+							&& nativeSentinels
+									== (sentinelAlreadyNative
+											? 1 : 0),
+					"Natural Wafer Windmill lost its tower, giant sails, drive line, workshop, landing, crop plot or player-edit reload boundary: "
+							+ palette);
+			require(helper,
+					audit.hub()
+							&& audit.powered()
+							&& audit.neighborSignal()
+							&& audit.facing()
+									== audit
+											.orientation()
+											.rotate(
+													Direction.SOUTH)
+							&& !audit.signalSource()
+							&& audit.signal() == 0,
+					"Natural Wafer Windmill lost its live visible hub or gained an automation-output contract: "
+							+ audit);
+			require(helper,
+					WaferWindmillFeature.LOOT_ID
+							.toString().equals(
+									audit.pantryLoot()),
+					"Natural Wafer Windmill pantry lost its dedicated loot: "
+							+ audit.pantryLoot());
+			if (!sentinelAlreadyNative) {
+				level.setBlock(sentinel,
+						Blocks.BRICKS
+								.defaultBlockState(),
+						2);
+				require(helper,
+						level.getBlockState(sentinel)
+								.is(Blocks.BRICKS),
+						"Could not seed the explicit player-placed Brick reload sentinel in the Wafer Windmill roof");
+			}
+			setCottageChunksForced(
+					level, windmill, false);
+			helper.succeed();
+		});
+	}
+
 	@GameTest(template = EMPTY, timeoutTicks = 1200)
 	public static void baseMetalsCounterpartsPreserveTagsRecipesAndGeneration(
 			GameTestHelper helper) {
@@ -8873,6 +9103,45 @@ public final class DeepPantryGameTests {
 				located, centre, bounds);
 	}
 
+	private static LocatedCottage locateWaferWindmill(
+			GameTestHelper helper, ServerLevel level,
+			ConfiguredStructureFeature<?, ?> configured,
+			BlockPos origin) {
+		BlockPos located =
+				level.findNearestMapFeature(
+						WaferWindmillFeature
+								.STRUCTURE_TAG,
+						origin, 512, false);
+		require(helper, located != null,
+				"The fixed-seed CakeWorld contained no locatable Wafer Windmill within 512 chunks of Candy Plains");
+		ChunkPos startChunk =
+				new ChunkPos(located);
+		net.minecraft.world.level.chunk.LevelChunk
+				startLevelChunk =
+				level.getChunk(startChunk.x,
+						startChunk.z);
+		StructureStart start =
+				startLevelChunk.getStartForFeature(
+						configured);
+		require(helper,
+				start != null && start.isValid()
+						&& start.getFeature()
+								== configured
+						&& start.getPieces()
+								.size() == 1,
+				"The located Wafer Windmill lost its saved one-piece structure start");
+		BoundingBox bounds =
+				start.getBoundingBox();
+		BlockPos centre = new BlockPos(
+				bounds.minX()
+						+ 10,
+				bounds.minY(),
+				bounds.minZ()
+						+ 10);
+		return new LocatedCottage(
+				located, centre, bounds);
+	}
+
 	private static void setCottageChunksForced(
 			ServerLevel level,
 			LocatedCottage cottage,
@@ -9167,6 +9436,78 @@ public final class DeepPantryGameTests {
 				stockLoot);
 	}
 
+	private static WindmillWorldAudit auditWaferWindmill(
+			ServerLevel level,
+			LocatedCottage windmill) {
+		Map<Block, Integer> palette =
+				new LinkedHashMap<>();
+		for (BlockPos position
+				: BlockPos.betweenClosed(
+						windmill.bounds().minX(),
+						windmill.centre().getY() - 12,
+						windmill.bounds().minZ(),
+						windmill.bounds().maxX(),
+						windmill.bounds().maxY(),
+						windmill.bounds().maxZ())) {
+			palette.merge(
+					level.getBlockState(position)
+							.getBlock(),
+					1, Integer::sum);
+		}
+		Rotation rotation =
+				WaferWindmillFeature.orientation(
+						level.getSeed(),
+						windmill.centre());
+		BlockPos hubPosition =
+				WaferWindmillFeature
+						.poweredHubPosition(
+								level.getSeed(),
+								windmill.centre());
+		BlockState hub =
+				level.getBlockState(hubPosition);
+		boolean isHub =
+				hub.is(CakeWorldBlocks
+						.WAFER_WINDMILL.get());
+		WaferWindmillBlock hubBlock =
+				(WaferWindmillBlock)
+						CakeWorldBlocks
+								.WAFER_WINDMILL.get();
+		BlockEntity pantry =
+				level.getBlockEntity(
+						WaferWindmillFeature
+								.pantryPosition(
+										level.getSeed(),
+										windmill.centre()));
+		String pantryLoot =
+				pantry == null ? ""
+						: pantry.saveWithoutMetadata()
+								.getString(
+										"LootTable");
+		ResourceLocation biome =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.getKey(level.getBiome(
+								windmill.centre())
+								.value());
+		return new WindmillWorldAudit(
+				palette, biome, rotation,
+				isHub,
+				isHub && hub.getValue(
+						WaferWindmillBlock.POWERED),
+				isHub ? hub.getValue(
+						WaferWindmillBlock.FACING)
+						: Direction.NORTH,
+				level.hasNeighborSignal(
+						hubPosition),
+				isHub && hubBlock
+						.isSignalSource(hub),
+				isHub ? hubBlock.getSignal(
+						hub, level, hubPosition,
+						Direction.UP) : -1,
+				pantryLoot);
+	}
+
 	private static List<ItemStack> drops(GameTestHelper helper, Block block,
 			ItemStack tool, BlockPos origin) {
 		ResourceLocation blockId = Registry.BLOCK.getKey(block);
@@ -9447,6 +9788,19 @@ public final class DeepPantryGameTests {
 			boolean starterSaleOffers,
 			boolean markerConsumed,
 			String stockLoot) {
+	}
+
+	private record WindmillWorldAudit(
+			Map<Block, Integer> palette,
+			ResourceLocation biome,
+			Rotation orientation,
+			boolean hub,
+			boolean powered,
+			Direction facing,
+			boolean neighborSignal,
+			boolean signalSource,
+			int signal,
+			String pantryLoot) {
 	}
 
 	private record GeomePlacementSurvey(

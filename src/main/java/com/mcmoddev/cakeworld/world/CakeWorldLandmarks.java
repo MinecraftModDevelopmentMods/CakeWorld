@@ -139,6 +139,20 @@ public final class CakeWorldLandmarks {
 							.TOP_LAYER_MODIFICATION)
 					.add(confectionersCottageRepair);
 		}
+		Holder<PlacedFeature> windmillRepair =
+				WaferWindmillRepairFeature
+						.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(
+						biome.getNamespace())
+				&& "candy_plains".equals(
+						biome.getPath())
+				&& windmillRepair != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration
+							.TOP_LAYER_MODIFICATION)
+					.add(windmillRepair);
+		}
 	}
 
 	private static boolean isCurrentOverworldBiome(
