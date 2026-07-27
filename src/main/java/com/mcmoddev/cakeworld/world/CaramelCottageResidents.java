@@ -37,6 +37,8 @@ import net.minecraftforge.server.ServerLifecycleHooks;
 public final class CaramelCottageResidents {
 	private static final Logger LOGGER =
 			LogManager.getLogger();
+	private static final int MAX_WORLDGEN_MARKER_WAIT_TICKS = 1200;
+	private static final int MAX_SPAWN_RETRY_TICKS = 100;
 	private static final Queue<PendingCottage> PENDING =
 			new ConcurrentLinkedQueue<>();
 
@@ -139,7 +141,7 @@ public final class CaramelCottageResidents {
 				continue;
 			}
 			if (!CaramelCottageFeature
-					.spawnResidentPair(
+					.finalizeFreshWorldgen(
 							level,
 							pending.centre(),
 							pending.bounds())) {
@@ -161,7 +163,10 @@ public final class CaramelCottageResidents {
 
 	private static void retry(
 			PendingCottage pending) {
-		if (pending.attempt() < 100) {
+		int maximumAttempts = pending.waitForMarker()
+				? MAX_WORLDGEN_MARKER_WAIT_TICKS
+				: MAX_SPAWN_RETRY_TICKS;
+		if (pending.attempt() < maximumAttempts) {
 			PENDING.add(new PendingCottage(
 					pending.dimension(),
 					pending.centre(),
@@ -172,7 +177,7 @@ public final class CaramelCottageResidents {
 			LOGGER.warn("Caramel Cottage residents at {} in {} were still unavailable after {} server ticks",
 					pending.centre(),
 					pending.dimension().location(),
-					pending.attempt());
+					maximumAttempts);
 		}
 	}
 

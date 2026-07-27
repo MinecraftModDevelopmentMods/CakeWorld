@@ -7,6 +7,7 @@ import com.mcmoddev.cakeworld.block.BiscuitCrumbsBlock;
 import com.mcmoddev.cakeworld.block.CakeOvenBlock;
 import com.mcmoddev.cakeworld.block.CandyCookerBlock;
 import com.mcmoddev.cakeworld.block.CandySproutBlock;
+import com.mcmoddev.cakeworld.block.CaramelCrustBlock;
 import com.mcmoddev.cakeworld.block.ChocolateSpongeBlock;
 import com.mcmoddev.cakeworld.block.CinnamonWartBlock;
 import com.mcmoddev.cakeworld.block.CookbookKioskBlock;
@@ -18,6 +19,7 @@ import com.mcmoddev.cakeworld.block.IcingLayerBlock;
 import com.mcmoddev.cakeworld.block.MarshmallowBlock;
 import com.mcmoddev.cakeworld.block.MixingBowlBlock;
 import com.mcmoddev.cakeworld.block.SodaFountainBlock;
+import com.mcmoddev.cakeworld.block.TreacleReedBlock;
 import com.mcmoddev.cakeworld.block.WaferWindmillBlock;
 import com.mcmoddev.cakeworld.item.ReusableBlockItem;
 
@@ -99,6 +101,21 @@ public final class CakeWorldBlocks {
 									.instabreak()
 									.sound(SoundType
 											.SLIME_BLOCK)));
+	public static final RegistryObject<Block> CARAMEL_CRUST =
+			block("caramel_crust",
+					() -> new CaramelCrustBlock(
+							BlockBehaviour.Properties
+									.of(Material.CLAY)
+									.strength(0.5F)
+									.sound(SoundType.HONEY_BLOCK)));
+	public static final RegistryObject<Block> TREACLE_REED =
+			block("treacle_reed",
+					() -> new TreacleReedBlock(
+							BlockBehaviour.Properties
+									.of(Material.PLANT)
+									.noCollission()
+									.instabreak()
+									.sound(SoundType.CROP)));
 	public static final RegistryObject<Block> WAFER_BLOCK = block("wafer_block",
 			BlockBehaviour.Properties.of(Material.WOOD)
 					.strength(0.2F, 0.2F)

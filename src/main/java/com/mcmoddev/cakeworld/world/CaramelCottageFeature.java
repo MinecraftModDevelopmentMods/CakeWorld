@@ -30,7 +30,6 @@ import net.minecraft.world.entity.animal.Cat;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.biome.MobSpawnSettings;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
@@ -55,8 +54,8 @@ import net.minecraft.world.phys.AABB;
  * First edible Swamp Hut counterpart.
  *
  * <p>The cottage preserves the tiny isolated home, working-room furnishings,
- * downward supports, one-time residents and piece-bounded ongoing spawns. Its
- * wet Cookie Forest home is temporary until Caramel Bogs is registered.</p>
+ * downward supports, one-time residents and piece-bounded ongoing spawns in
+ * its Caramel Bogs home.</p>
  */
 public final class CaramelCottageFeature
 		extends Feature<NoneFeatureConfiguration>
@@ -250,6 +249,27 @@ public final class CaramelCottageFeature
 		return buildAt(world, random, centre,
 				fullGenerationBounds(world, centre),
 				false);
+	}
+
+	/**
+	 * Performs the Cottage's one-time live-level handoff after every chunk
+	 * decoration pass has finished, then consumes the resident marker by
+	 * activating the Baker and Cat.
+	 *
+	 * <p>The structure marker is the durable boundary: this method is only
+	 * called while it is still present, so a later chunk reload never repairs
+	 * over player changes.</p>
+	 */
+	public static boolean finalizeFreshWorldgen(
+			WorldGenLevel world, BlockPos centre,
+			BoundingBox bounds) {
+		repairAt(world,
+				new Random(world.getSeed()
+						^ centre.asLong()
+						^ 14357620L),
+				centre);
+		return spawnResidentPair(
+				world, centre, bounds);
 	}
 
 	public static Rotation orientation(
@@ -449,24 +469,27 @@ public final class CaramelCottageFeature
 		BlockState border =
 				CakeWorldBlocks.GINGERBREAD_BRICKS.get()
 						.defaultBlockState();
-		BlockState sponge =
-				CakeWorldBlocks.CHOCOLATE_SPONGE.get()
+		BlockState bogSoil =
+				CakeWorldBlocks.CARAMEL_CRUST.get()
 						.defaultBlockState();
-		BlockState matureSprout =
-				CakeWorldBlocks.CANDY_SPROUT.get()
-						.defaultBlockState()
-						.setValue(CropBlock.AGE, 7);
+		BlockState treacleReed =
+				CakeWorldBlocks.TREACLE_REED.get()
+						.defaultBlockState();
 		for (int x = -6; x <= -2; x++) {
 			for (int z = 4; z <= 7; z++) {
 				boolean edge = x == -6 || x == -2
 						|| z == 4 || z == 7;
 				set(world, bounds, centre, rotation,
 						x, 0, z,
-						edge ? border : sponge);
-				if (!edge && z == 6) {
+						edge ? border : bogSoil);
+				if (edge) {
 					set(world, bounds, centre,
 							rotation, x, 1, z,
-							matureSprout);
+							border);
+				} else if (z == 6) {
+					set(world, bounds, centre,
+							rotation, x, 1, z,
+							treacleReed);
 				}
 			}
 		}

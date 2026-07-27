@@ -35987,10 +35987,18 @@ public final class FirstBiteGameTests {
 												.get())
 								.findFirst()
 								.orElse(null);
-		boolean repairInstalled =
+		boolean cookieRepairInstalled =
 				hasPlacedFeature(
 						level,
 						CakeWorldBiomes.COOKIE_FOREST
+								.getId(),
+						GenerationStep.Decoration
+								.TOP_LAYER_MODIFICATION,
+						CaramelCottageRepairFeature.ID);
+		boolean bogRepairInstalled =
+				hasPlacedFeature(
+						level,
+						CakeWorldBiomes.CARAMEL_BOGS
 								.getId(),
 						GenerationStep.Decoration
 								.TOP_LAYER_MODIFICATION,
@@ -36015,11 +36023,12 @@ public final class FirstBiteGameTests {
 						&& ownTag
 						&& eligibleBiomes.equals(Set.of(
 								CakeWorldBiomes
-										.COOKIE_FOREST
+										.CARAMEL_BOGS
 										.getId()))
 						&& CaramelCottageRepairFeature
 								.placedFeature() != null
-						&& repairInstalled
+						&& !cookieRepairInstalled
+						&& bogRepairInstalled
 						&& bakerOverride != null
 						&& bakerOverride.boundingBox()
 								== StructureSpawnOverride
@@ -36042,11 +36051,12 @@ public final class FirstBiteGameTests {
 								.asInt() == 1
 						&& catSpawn.minCount == 1
 						&& catSpawn.maxCount == 1,
-				"Caramel Cottage lost its configured structure, Cookie-Forest repair/tag or exact PIECE-bounded 1/1-1 Baker/Cat overrides: eligible="
+				"Caramel Cottage lost its configured structure, Caramel-Bogs-only migrated repair/tag or exact PIECE-bounded 1/1-1 Baker/Cat overrides: eligible="
 						+ eligibleBiomes
 						+ ", ownTag=" + ownTag
 						+ ", repair="
-						+ repairInstalled
+						+ cookieRepairInstalled + "/"
+						+ bogRepairInstalled
 						+ ", baker="
 						+ bakerSpawn
 						+ ", cat=" + catSpawn);
@@ -36115,6 +36125,15 @@ public final class FirstBiteGameTests {
 				helper.absolutePos(
 						new BlockPos(4, 4, 4))
 						.getZ());
+		AABB cottage = new AABB(
+				centre.offset(-7, 0, -7),
+				centre.offset(8, 12, 8));
+		level.getEntitiesOfClass(
+				BitterBaker.class, cottage)
+				.forEach(BitterBaker::discard);
+		level.getEntitiesOfClass(
+				CustardCat.class, cottage)
+				.forEach(CustardCat::discard);
 		for (int x = -7; x <= 7; x++) {
 			for (int y = -4; y <= 12; y++) {
 				for (int z = -7; z <= 7; z++) {
@@ -36136,7 +36155,10 @@ public final class FirstBiteGameTests {
 						level,
 						new Random(14357620L),
 						centre),
-				"Caramel Cottage refused a forced Cookie-Forest fixture");
+				"Caramel Cottage refused a forced construction fixture");
+		Rotation orientation =
+				CaramelCottageFeature.orientation(
+						level.getSeed(), centre);
 
 		Map<Block, Integer> palette =
 				scanBlockPalette(level, centre,
@@ -36167,12 +36189,12 @@ public final class FirstBiteGameTests {
 								== 8
 						&& palette.getOrDefault(
 								CakeWorldBlocks
-										.CANDY_SPROUT
+										.TREACLE_REED
 										.get(), 0)
 								== 3
 						&& palette.getOrDefault(
 								CakeWorldBlocks
-										.CHOCOLATE_SPONGE
+										.CARAMEL_CRUST
 										.get(), 0)
 								== 6
 						&& palette.getOrDefault(
@@ -36209,6 +36231,32 @@ public final class FirstBiteGameTests {
 								Blocks.CHEST, 0) == 0,
 				"Caramel Cottage lost its edible shell, kitchen, syrup garden, caramel basin or no-invented-loot contract: "
 						+ palette);
+		for (int x = -6; x <= -2; x++) {
+			for (int z = 4; z <= 7; z++) {
+				boolean edge = x == -6 || x == -2
+						|| z == 4 || z == 7;
+				if (!edge) {
+					continue;
+				}
+				BlockPos offset =
+						new BlockPos(x, 1, z)
+								.rotate(orientation);
+				Block expected =
+						x == -6 && z == 5
+								? CakeWorldBlocks
+										.SYRUP_PIPE
+										.get()
+								: CakeWorldBlocks
+										.GINGERBREAD_BRICKS
+										.get();
+				require(helper,
+						level.getBlockState(
+								centre.offset(offset))
+								.is(expected),
+						"Caramel Cottage lost its fluid-sealed raised garden rim at local "
+								+ x + ",1," + z);
+			}
+		}
 		List<BlockPos> storage =
 				CaramelCottageFeature
 						.fluidStoragePositions(
@@ -36275,9 +36323,6 @@ public final class FirstBiteGameTests {
 						+ ", caramel="
 						+ caramelBuckets);
 
-		Rotation orientation =
-				CaramelCottageFeature.orientation(
-						level.getSeed(), centre);
 		for (int x : new int[] {-4, 4}) {
 			for (int z : new int[] {-4, 2}) {
 				BlockPos offset =
@@ -36300,9 +36345,6 @@ public final class FirstBiteGameTests {
 			}
 		}
 
-		AABB cottage = new AABB(
-				centre.offset(-7, 0, -7),
-				centre.offset(8, 12, 8));
 		List<BitterBaker> bakers =
 				level.getEntitiesOfClass(
 						BitterBaker.class,
@@ -36375,6 +36417,92 @@ public final class FirstBiteGameTests {
 
 		bakers.forEach(BitterBaker::discard);
 		cats.forEach(CustardCat::discard);
+		for (int x = -6; x <= 6; x++) {
+			for (int y = 0; y <= 1; y++) {
+				for (int z = 4; z <= 7; z++) {
+					BlockPos offset =
+							new BlockPos(x, y, z)
+									.rotate(orientation);
+					level.setBlock(
+							centre.offset(offset),
+							Blocks.AIR
+									.defaultBlockState(),
+							2);
+				}
+			}
+		}
+		BlockPos residentMarker =
+				CaramelCottageFeature.residentMarker(
+						centre, orientation);
+		level.setBlock(residentMarker,
+				Blocks.STRUCTURE_VOID.defaultBlockState(),
+				2);
+		require(helper,
+				CaramelCottageFeature
+						.finalizeFreshWorldgen(
+								level, centre,
+								new BoundingBox(
+										centre.getX()
+												- 7,
+										centre.getY(),
+										centre.getZ()
+												- 7,
+										centre.getX()
+												+ 7,
+										centre.getY()
+												+ 11,
+										centre.getZ()
+												+ 7)),
+				"Caramel Cottage live worldgen handoff did not restore and activate its final plan");
+		Map<Block, Integer> finalizedPalette =
+				scanBlockPalette(level, centre,
+						7, 4, 12);
+		List<BitterBaker> finalizedBakers =
+				level.getEntitiesOfClass(
+						BitterBaker.class, cottage);
+		List<CustardCat> finalizedCats =
+				level.getEntitiesOfClass(
+						CustardCat.class, cottage);
+		require(helper,
+				finalizedPalette.getOrDefault(
+						CakeWorldBlocks
+								.TREACLE_REED.get(),
+						0) == 3
+						&& finalizedPalette
+								.getOrDefault(
+										CakeWorldBlocks
+												.CARAMEL_CRUST
+												.get(),
+										0) == 6
+						&& finalizedPalette
+								.getOrDefault(
+										CakeWorldBlocks
+												.BISCUIT_STONE
+												.get(),
+										0) >= 12
+						&& finalizedPalette
+								.getOrDefault(
+										CakeWorldBlocks
+												.BISCUIT_CRUMBS
+												.get(),
+										0) == 3
+						&& finalizedBakers.size() == 1
+						&& finalizedCats.size() == 1
+						&& level.getBlockState(
+								residentMarker)
+								.is(CakeWorldBlocks
+										.GINGERBREAD_BRICKS
+										.get()),
+				"Caramel Cottage live handoff lost its final bog garden, basin, path, residents or consumed marker: palette="
+						+ finalizedPalette
+						+ ", bakers="
+						+ finalizedBakers.size()
+						+ ", cats="
+						+ finalizedCats.size());
+		finalizedBakers.forEach(
+				BitterBaker::discard);
+		finalizedCats.forEach(
+				CustardCat::discard);
 		helper.succeed();
 	}
 

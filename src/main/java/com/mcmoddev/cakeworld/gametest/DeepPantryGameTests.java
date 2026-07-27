@@ -46,6 +46,7 @@ import com.mcmoddev.cakeworld.world.BuriedSweetTinFeature;
 import com.mcmoddev.cakeworld.world.BuriedSweetTinRepair;
 import com.mcmoddev.cakeworld.world.CandyCaneBridgeFeature;
 import com.mcmoddev.cakeworld.world.CandyCaneBridgeStructureFeature;
+import com.mcmoddev.cakeworld.world.CaramelBogMangroveFeature;
 import com.mcmoddev.cakeworld.world.CaramelCottageFeature;
 import com.mcmoddev.cakeworld.world.ConfectionersCottageFeature;
 import com.mcmoddev.cakeworld.world.CookieCrumbGroveFeature;
@@ -676,6 +677,11 @@ public final class DeepPantryGameTests {
 				"cakeworld:chocolate_sponge",
 				"cakeworld:blueberry_gummy_block", 4);
 		assertPaletteContract(helper, palettes, "cakeworld:overworld_land",
+				"cakeworld:caramel_bogs",
+				"cakeworld:caramel_crust",
+				"cakeworld:chocolate_sponge",
+				"cakeworld:caramel_crust", 4);
+		assertPaletteContract(helper, palettes, "cakeworld:overworld_land",
 				"cakeworld:marshmallow_peaks", "cakeworld:icing_layer",
 				"cakeworld:biscuit_stone", "cakeworld:biscuit_crumbs", 5);
 		assertPaletteContract(helper, palettes, "cakeworld:nether",
@@ -692,6 +698,8 @@ public final class DeepPantryGameTests {
 				overworld, id("peppermint_pinewoods"));
 		BlockPos gummyJungle = locateBiome(helper,
 				overworld, id("gummy_jungle"));
+		BlockPos caramelBogs = locateBiome(helper,
+				overworld, id("caramel_bogs"));
 		surfaces.put("candy_plains", auditSurface(overworld,
 				locateBiome(helper, overworld, id("candy_plains")),
 				id("candy_plains"), CakeWorldBlocks.ICING_LAYER.get(),
@@ -718,6 +726,14 @@ public final class DeepPantryGameTests {
 						gummyJungle,
 						id("gummy_jungle"),
 						CakeWorldBlocks.GUMMY_BLOCK.get(),
+						CakeWorldBlocks.CHOCOLATE_SPONGE
+								.get(),
+						2));
+		surfaces.put("caramel_bogs",
+				auditSurface(overworld,
+						caramelBogs,
+						id("caramel_bogs"),
+						CakeWorldBlocks.CARAMEL_CRUST.get(),
 						CakeWorldBlocks.CHOCOLATE_SPONGE
 								.get(),
 						2));
@@ -3538,30 +3554,26 @@ public final class DeepPantryGameTests {
 						helper, level, configured,
 						new BlockPos(96, 64, 128));
 		setCottageChunksForced(level, cottage, true);
+		// A forced ticket is asynchronous. Touch the saved piece first so
+		// its durable resident marker can be consumed on a normal server
+		// tick before the evidence callback inspects the inhabitants.
+		helper.runAfterDelay(80, () ->
+				level.getChunkAt(cottage.centre()));
 		helper.runAfterDelay(100, () -> {
+			auditCaramelCottage(level, cottage);
+		});
+		helper.runAfterDelay(102, () -> {
+			helper.succeedWhen(() -> {
 			CottageWorldAudit audit =
 					auditCaramelCottage(
 							level, cottage);
-			setCottageChunksForced(level, cottage,
-					false);
-			LOGGER.info("Focused Caramel Cottage audit: locate={}, centre={}, bounds={}, biome={}, orientation={}, palette={}, persistentBakers={}, persistentCats={}, markerConsumed={}, literalEligible={}",
-					cottage.located(),
-					cottage.centre(),
-					cottage.bounds(),
-					audit.biome(),
-					audit.orientation(),
-					audit.palette(),
-					audit.persistentBakers(),
-					audit.persistentCats(),
-					audit.markerConsumed(),
-					audit.literalEligible());
 			require(helper,
-					CakeWorldBiomes.COOKIE_FOREST
+					CakeWorldBiomes.CARAMEL_BOGS
 							.getId().equals(
 									audit.biome())
 							&& !audit
 									.literalEligible(),
-					"Natural Caramel Cottage left its temporary wet Cookie-Forest host or leaked literal vanilla Swamp-Hut biome eligibility: biome="
+					"Natural Caramel Cottage did not migrate to Caramel Bogs or leaked literal vanilla Swamp-Hut biome eligibility: biome="
 							+ audit.biome()
 							+ ", literal="
 							+ audit.literalEligible());
@@ -3614,14 +3626,14 @@ public final class DeepPantryGameTests {
 									0) == 8
 							&& palette.getOrDefault(
 									CakeWorldBlocks
-											.CANDY_SPROUT
+											.TREACLE_REED
 											.get(),
 									0) == 3
 							&& palette.getOrDefault(
 									CakeWorldBlocks
-											.CHOCOLATE_SPONGE
+											.CARAMEL_CRUST
 											.get(),
-									0) >= 5
+									0) >= 6
 							&& palette.getOrDefault(
 									CakeWorldBlocks
 											.SYRUP_PIPE
@@ -3683,9 +3695,22 @@ public final class DeepPantryGameTests {
 									.allBlackCat()
 							&& audit
 									.markerConsumed(),
-					"Natural Caramel Cottage did not retain exactly one persistent raid-capable Bitter Baker, one persistent all-black Custard Cat and a consumed durable marker: "
+					"Natural Caramel Cottage is still waiting for exactly one persistent raid-capable Bitter Baker, one persistent all-black Custard Cat and its consumed durable marker: "
 							+ audit);
-			helper.succeed();
+			setCottageChunksForced(
+					level, cottage, false);
+			LOGGER.info("Focused Caramel Cottage settled: locate={}, centre={}, bounds={}, biome={}, orientation={}, palette={}, persistentBakers={}, persistentCats={}, markerConsumed={}, literalEligible={}",
+					cottage.located(),
+					cottage.centre(),
+					cottage.bounds(),
+					audit.biome(),
+					audit.orientation(),
+					audit.palette(),
+					audit.persistentBakers(),
+					audit.persistentCats(),
+					audit.markerConsumed(),
+					audit.literalEligible());
+			});
 		});
 	}
 
@@ -7084,6 +7109,66 @@ public final class DeepPantryGameTests {
 			}
 			setGummyGroveChunksForced(
 					level, grove, false);
+			helper.succeed();
+		});
+	}
+
+	@GameTest(template = EMPTY, batch = "bioow006world",
+			timeoutTicks = 24000)
+	public static void focusedNaturalCaramelBogMangroveAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean(
+				"cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed natural Caramel Bog Mangrove audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel()
+				.getServer().getLevel(Level.OVERWORLD);
+		require(helper, level != null,
+				"The fixed-seed server did not expose the Overworld");
+		BlockPos caramelBogs = locateBiome(helper, level,
+				CakeWorldBiomes.CARAMEL_BOGS.getId());
+		LocatedCaramelMangrove mangrove =
+				locateNaturalCaramelMangrove(
+						helper, level, caramelBogs, 20);
+		setCaramelMangroveChunksForced(
+				level, mangrove, true);
+		helper.runAfterDelay(40, () -> {
+			CaramelMangroveWorldAudit audit =
+					auditNaturalCaramelMangrove(
+							level, mangrove);
+			LOGGER.info("Focused natural Caramel Bog Mangrove audit: centre={}, biome={}, rotation={}, palette={}, layout={}, sentinel={}, markerPhase={}, scannedChunks={}, candidateCentres={}",
+					mangrove.centre(),
+					audit.biome(),
+					audit.rotation(),
+					audit.palette(),
+					audit.readableLayout(),
+					audit.sentinel(),
+					audit.brickSentinel()
+							? "reloaded"
+							: "seeded",
+					mangrove.scannedChunks(),
+					mangrove.candidateCentres());
+			require(helper,
+					CakeWorldBiomes.CARAMEL_BOGS
+							.getId()
+							.equals(audit.biome())
+							&& audit.readableLayout(),
+					"Natural Caramel Bog Mangrove lost its exact biome, three rooted trees, contained pool, reeds or Wafer recovery route: "
+							+ audit);
+			if (!audit.brickSentinel()) {
+				level.setBlock(audit.sentinel(),
+						Blocks.BRICKS.defaultBlockState(),
+						2);
+				require(helper,
+						level.getBlockState(
+								audit.sentinel())
+								.is(Blocks.BRICKS),
+						"Could not seed the explicit player-placed Brick reload sentinel beside the Caramel Bog Mangrove");
+			}
+			setCaramelMangroveChunksForced(
+					level, mangrove, false);
 			helper.succeed();
 		});
 	}
@@ -11268,6 +11353,239 @@ public final class DeepPantryGameTests {
 		return cursor.immutable();
 	}
 
+	private static LocatedCaramelMangrove
+			locateNaturalCaramelMangrove(
+					GameTestHelper helper,
+					ServerLevel level,
+					BlockPos anchor,
+					int chunkRadius) {
+		ChunkPos anchorChunk = new ChunkPos(anchor);
+		int scannedChunks = 0;
+		int candidateCentres = 0;
+		int caramelColumns = 0;
+		Map<Block, Integer> naturalSurfacePalette =
+				new LinkedHashMap<>();
+		for (int radius = 0;
+				radius <= chunkRadius; radius++) {
+			for (int chunkX = anchorChunk.x - radius;
+					chunkX <= anchorChunk.x + radius;
+					chunkX++) {
+				for (int chunkZ = anchorChunk.z - radius;
+						chunkZ <= anchorChunk.z + radius;
+						chunkZ++) {
+					if (radius > 0
+							&& chunkX != anchorChunk.x - radius
+							&& chunkX != anchorChunk.x + radius
+							&& chunkZ != anchorChunk.z - radius
+							&& chunkZ != anchorChunk.z + radius) {
+						continue;
+					}
+					level.getChunk(chunkX, chunkZ);
+					scannedChunks++;
+					for (int x = chunkX << 4;
+							x < (chunkX + 1) << 4; x++) {
+						for (int z = chunkZ << 4;
+								z < (chunkZ + 1) << 4; z++) {
+							int surfaceY = level.getHeight(
+									Heightmap.Types
+											.MOTION_BLOCKING_NO_LEAVES,
+									x, z) - 1;
+							BlockPos naturalSurface =
+									findNaturalTerrainSurface(
+											level, x, z,
+											surfaceY);
+							if (CakeWorldBiomes.CARAMEL_BOGS
+									.getId().equals(
+											level.getBiome(
+													naturalSurface)
+													.unwrapKey()
+													.map(ResourceKey
+															::location)
+													.orElse(null))) {
+								caramelColumns++;
+								naturalSurfacePalette.merge(
+										level.getBlockState(
+												naturalSurface)
+												.getBlock(),
+										1, Integer::sum);
+							}
+							int minimumY = Math.max(
+									level.getMinBuildHeight(),
+									surfaceY - 10);
+							for (int y = minimumY;
+									y <= surfaceY; y++) {
+								BlockPos centre =
+										new BlockPos(x, y, z);
+								Rotation rotation =
+										CaramelBogMangroveFeature
+												.orientation(
+														level.getSeed(),
+														centre);
+								if (!matchesCaramelMangroveLayout(
+										level, centre,
+										rotation)) {
+									continue;
+								}
+								candidateCentres++;
+								LocatedCaramelMangrove located =
+										new LocatedCaramelMangrove(
+												centre,
+												scannedChunks,
+												candidateCentres);
+								CaramelMangroveWorldAudit audit =
+										auditNaturalCaramelMangrove(
+												level, located);
+								LOGGER.info("Caramel Bog Mangrove candidate: centre={}, biome={}, rotation={}, palette={}, layout={}, scannedChunks={}, candidateCentres={}",
+										centre, audit.biome(),
+										rotation, audit.palette(),
+										audit.readableLayout(),
+										scannedChunks,
+										candidateCentres);
+								if (audit.readableLayout()
+										&& CakeWorldBiomes.CARAMEL_BOGS
+												.getId().equals(
+														audit.biome())) {
+									return located;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		require(helper, false,
+				"The fixed-seed Caramel Bogs survey found no natural Mangrove after "
+						+ scannedChunks + " generated chunks and "
+						+ candidateCentres + " exact candidates near "
+						+ anchor + "; caramelColumns="
+						+ caramelColumns
+						+ ", naturalSurfacePalette="
+						+ describe(naturalSurfacePalette));
+		throw new IllegalStateException(
+				"Unreachable after GameTest failure");
+	}
+
+	private static CaramelMangroveWorldAudit
+			auditNaturalCaramelMangrove(
+					ServerLevel level,
+					LocatedCaramelMangrove mangrove) {
+		BlockPos centre = mangrove.centre();
+		Rotation rotation =
+				CaramelBogMangroveFeature.orientation(
+						level.getSeed(), centre);
+		BlockPos sentinel = local(
+				centre, rotation, 4, 1, 4);
+		boolean brickSentinel =
+				level.getBlockState(sentinel)
+						.is(Blocks.BRICKS);
+		Map<Block, Integer> palette =
+				new LinkedHashMap<>();
+		for (int x = -4; x <= 4; x++) {
+			for (int y = 0; y <= 9; y++) {
+				for (int z = -4; z <= 4; z++) {
+					palette.merge(level.getBlockState(
+							centre.offset(x, y, z))
+							.getBlock(),
+							1, Integer::sum);
+				}
+			}
+		}
+		ResourceLocation biome =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.getKey(level.getBiome(centre)
+								.value());
+		boolean readable =
+				matchesCaramelMangroveLayout(
+						level, centre, rotation)
+						// The natural scan starts at the
+						// surface, so the nine crust supports
+						// beneath the contained pool are
+						// deliberately outside this palette.
+						&& palette.getOrDefault(
+								CakeWorldBlocks.CARAMEL_CRUST
+										.get(), 0) == 141
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.GINGERBREAD_BRICKS
+										.get(), 0) == 25
+						&& palette.getOrDefault(
+								CakeWorldBlocks.TREACLE_REED
+										.get(), 0) == 14
+						&& palette.getOrDefault(
+								CakeWorldBlocks.WAFER_BLOCK
+										.get(), 0) == 9
+						&& palette.getOrDefault(
+								CakeWorldFluids.CARAMEL_BLOCK
+										.get(), 0) == 9;
+		return new CaramelMangroveWorldAudit(
+				palette, biome, rotation,
+				readable, sentinel, brickSentinel);
+	}
+
+	private static boolean matchesCaramelMangroveLayout(
+			ServerLevel level, BlockPos centre,
+			Rotation rotation) {
+		for (int x = -4; x <= 4; x++) {
+			if (!level.getBlockState(local(
+					centre, rotation, x, 0, 2))
+					.is(CakeWorldBlocks.WAFER_BLOCK.get())) {
+				return false;
+			}
+		}
+		for (int x = -3; x <= -1; x++) {
+			for (int z = -2; z <= 0; z++) {
+				if (!level.getBlockState(local(
+						centre, rotation, x, 0, z))
+						.is(CakeWorldFluids.CARAMEL_BLOCK
+								.get())) {
+					return false;
+				}
+			}
+		}
+		int[][] trees = {
+				{-3, 3, 5},
+				{3, 2, 6},
+				{2, -3, 5}
+		};
+		for (int[] tree : trees) {
+			BlockPos root = local(centre, rotation,
+					tree[0], 0, tree[1]);
+			if (!level.getBlockState(root.above())
+					.is(CakeWorldBlocks
+							.GINGERBREAD_BRICKS.get())
+					|| !level.getBlockState(
+							root.above(tree[2] - 1))
+							.is(CakeWorldBlocks
+									.GINGERBREAD_BRICKS
+									.get())
+					|| !level.getBlockState(
+							root.above(tree[2]))
+							.is(CakeWorldBlocks
+									.CARAMEL_CRUST.get())) {
+				return false;
+			}
+		}
+		int[][] reeds = {
+				{-4, -2, 2}, {-4, 0, 3},
+				{0, -2, 2}, {0, 0, 3},
+				{-3, 1, 2}, {-1, 1, 2}
+		};
+		for (int[] reed : reeds) {
+			BlockPos base = local(centre, rotation,
+					reed[0], 1, reed[1]);
+			for (int y = 0; y < reed[2]; y++) {
+				if (!level.getBlockState(base.above(y))
+						.is(CakeWorldBlocks
+								.TREACLE_REED.get())) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
 	private static GummyGroveWorldAudit
 			auditNaturalGummyGrove(
 					ServerLevel level,
@@ -11985,6 +12303,28 @@ public final class DeepPantryGameTests {
 				level.setChunkForced(
 						chunkX, chunkZ,
 						forced);
+			}
+		}
+	}
+
+	private static void setCaramelMangroveChunksForced(
+			ServerLevel level,
+			LocatedCaramelMangrove mangrove,
+			boolean forced) {
+		for (int chunkX = Math.floorDiv(
+				mangrove.centre().getX() - 5, 16);
+				chunkX <= Math.floorDiv(
+						mangrove.centre().getX() + 5,
+						16);
+				chunkX++) {
+			for (int chunkZ = Math.floorDiv(
+					mangrove.centre().getZ() - 5, 16);
+					chunkZ <= Math.floorDiv(
+							mangrove.centre().getZ() + 5,
+							16);
+					chunkZ++) {
+				level.setChunkForced(
+						chunkX, chunkZ, forced);
 			}
 		}
 	}
@@ -13440,6 +13780,20 @@ public final class DeepPantryGameTests {
 	}
 
 	private record GummyGroveWorldAudit(
+			Map<Block, Integer> palette,
+			ResourceLocation biome,
+			Rotation rotation,
+			boolean readableLayout,
+			BlockPos sentinel,
+			boolean brickSentinel) {
+	}
+
+	private record LocatedCaramelMangrove(
+			BlockPos centre, int scannedChunks,
+			int candidateCentres) {
+	}
+
+	private record CaramelMangroveWorldAudit(
 			Map<Block, Integer> palette,
 			ResourceLocation biome,
 			Rotation rotation,

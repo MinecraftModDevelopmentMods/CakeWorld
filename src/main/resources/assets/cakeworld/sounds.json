@@ -43,5 +43,14 @@
         "type": "event"
       }
     ]
+  },
+  "caramel_bogs_bubble": {
+    "subtitle": "subtitles.cakeworld.caramel_bogs.bubble",
+    "sounds": [
+      {
+        "name": "minecraft:block.bubble_column.upwards_ambient",
+        "type": "event"
+      }
+    ]
   }
 }

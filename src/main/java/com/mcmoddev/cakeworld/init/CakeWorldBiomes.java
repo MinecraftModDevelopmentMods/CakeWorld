@@ -32,6 +32,8 @@ public final class CakeWorldBiomes {
 			peppermintPinewoods();
 	public static final RegistryObject<Biome> GUMMY_JUNGLE =
 			gummyJungle();
+	public static final RegistryObject<Biome> CARAMEL_BOGS =
+			caramelBogs();
 	public static final RegistryObject<Biome> MARSHMALLOW_PEAKS = copy(
 			"marshmallow_peaks", "jagged_peaks", -0.3F, 0.5F);
 	public static final RegistryObject<Biome> SODA_OCEAN = copy(
@@ -77,6 +79,10 @@ public final class CakeWorldBiomes {
 					BiomeDictionary.Type.HOT,
 					BiomeDictionary.Type.JUNGLE,
 					BiomeDictionary.Type.LUSH);
+			BiomeDictionary.addTypes(key(CARAMEL_BOGS),
+					BiomeDictionary.Type.OVERWORLD,
+					BiomeDictionary.Type.SWAMP,
+					BiomeDictionary.Type.WET);
 			BiomeDictionary.addTypes(key(MARSHMALLOW_PEAKS),
 					BiomeDictionary.Type.OVERWORLD,
 					BiomeDictionary.Type.MOUNTAIN,
@@ -136,6 +142,13 @@ public final class CakeWorldBiomes {
 				"bamboo_jungle", 0.95F, 0.95F,
 				CakeWorldSounds.GUMMY_JUNGLE_WOBBLE,
 				0.0014D);
+	}
+
+	private static RegistryObject<Biome> caramelBogs() {
+		return copyWithAmbient("caramel_bogs",
+				"swamp", 0.8F, 0.9F,
+				CakeWorldSounds.CARAMEL_BOGS_BUBBLE,
+				0.0012D);
 	}
 
 	private static RegistryObject<Biome> copyWithAmbient(

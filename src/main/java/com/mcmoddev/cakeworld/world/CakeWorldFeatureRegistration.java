@@ -25,6 +25,8 @@ public final class CakeWorldFeatureRegistration {
 				PeppermintClearingFeature.FEATURE);
 		event.getRegistry().register(
 				GummyJungleBounceGroveFeature.FEATURE);
+		event.getRegistry().register(
+				CaramelBogMangroveFeature.FEATURE);
 		event.getRegistry().register(GingerbreadVillageFeature.FEATURE);
 		event.getRegistry().register(
 				BiscuitBanditLookoutFeature.FEATURE);
@@ -131,6 +133,8 @@ public final class CakeWorldFeatureRegistration {
 			PeppermintClearingFeature
 					.registerConfiguredFeature();
 			GummyJungleBounceGroveFeature
+					.registerConfiguredFeature();
+			CaramelBogMangroveFeature
 					.registerConfiguredFeature();
 			GingerbreadVillageFeature.registerWorldgen();
 			BiscuitBanditLookoutFeature.registerWorldgen();

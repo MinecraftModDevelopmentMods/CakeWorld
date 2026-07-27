@@ -80,6 +80,20 @@ public final class CakeWorldLandmarks {
 							.TOP_LAYER_MODIFICATION)
 					.add(gummyBounceGrove);
 		}
+		Holder<PlacedFeature> caramelMangrove =
+				CaramelBogMangroveFeature
+						.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(
+						biome.getNamespace())
+				&& "caramel_bogs".equals(
+						biome.getPath())
+				&& caramelMangrove != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration
+							.TOP_LAYER_MODIFICATION)
+					.add(caramelMangrove);
+		}
 		Holder<PlacedFeature> manorRepair =
 				GrandGingerbreadManorRepairFeature
 						.placedFeature();
@@ -173,7 +187,7 @@ public final class CakeWorldLandmarks {
 		if (biome != null
 				&& CakeWorld.MODID.equals(
 						biome.getNamespace())
-				&& "cookie_forest".equals(
+				&& "caramel_bogs".equals(
 						biome.getPath())
 				&& cottageRepair != null) {
 			event.getGeneration().getFeatures(
