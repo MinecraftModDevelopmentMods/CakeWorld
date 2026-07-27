@@ -108,6 +108,20 @@ public final class CakeWorldLandmarks {
 							.TOP_LAYER_MODIFICATION)
 					.add(sherbetFossilBowl);
 		}
+		Holder<PlacedFeature> candyCaneHoodooGarden =
+				CandyCaneHoodooGardenFeature
+						.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(
+						biome.getNamespace())
+				&& "candy_cane_badlands".equals(
+						biome.getPath())
+				&& candyCaneHoodooGarden != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration
+							.TOP_LAYER_MODIFICATION)
+					.add(candyCaneHoodooGarden);
+		}
 		Holder<PlacedFeature> manorRepair =
 				GrandGingerbreadManorRepairFeature
 						.placedFeature();
@@ -271,7 +285,7 @@ public final class CakeWorldLandmarks {
 		if (biome != null
 				&& CakeWorld.MODID.equals(
 						biome.getNamespace())
-				&& "marshmallow_peaks".equals(
+				&& "candy_cane_badlands".equals(
 						biome.getPath())
 				&& crystalMineRepair != null) {
 			event.getGeneration().getFeatures(
@@ -289,6 +303,7 @@ public final class CakeWorldLandmarks {
 				|| "peppermint_pinewoods".equals(path)
 				|| "gummy_jungle".equals(path)
 				|| "sherbet_dunes".equals(path)
+				|| "candy_cane_badlands".equals(path)
 				|| "marshmallow_peaks".equals(path)
 				|| "soda_ocean".equals(path);
 	}

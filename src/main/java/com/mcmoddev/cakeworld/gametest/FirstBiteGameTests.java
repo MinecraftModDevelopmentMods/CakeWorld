@@ -42311,7 +42311,7 @@ public final class FirstBiteGameTests {
 				hasPlacedFeature(
 						level,
 						CakeWorldBiomes
-								.MARSHMALLOW_PEAKS
+								.CANDY_CANE_BADLANDS
 								.getId(),
 						GenerationStep.Decoration
 								.TOP_LAYER_MODIFICATION,
@@ -42337,12 +42337,12 @@ public final class FirstBiteGameTests {
 						&& ownTag
 						&& eligibleBiomes.equals(Set.of(
 								CakeWorldBiomes
-										.MARSHMALLOW_PEAKS
+										.CANDY_CANE_BADLANDS
 										.getId()))
 						&& RockCandyCrystalMineRepairFeature
 								.placedFeature() != null
 						&& repairInstalled,
-				"Rock-Candy Crystal Mine lost its dedicated no-spawn structure, Marshmallow-Peaks prototype boundary or late repair: eligible="
+				"Rock-Candy Crystal Mine lost its dedicated no-spawn structure, Candy-Cane-Badlands boundary or late repair: eligible="
 						+ eligibleBiomes
 						+ ", ownTag=" + ownTag
 						+ ", repair="

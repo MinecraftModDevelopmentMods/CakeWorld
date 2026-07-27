@@ -3,7 +3,7 @@ package com.mcmoddev.cakeworld.init;
 import java.util.Objects;
 
 import com.mcmoddev.cakeworld.CakeWorld;
-import com.mcmoddev.orespawn.api.OreSpawnBiomes;
+import zone.moddev.mc.orespawn.api.OreSpawnBiomes;
 
 import net.minecraft.core.Registry;
 import net.minecraft.core.particles.ParticleTypes;
@@ -38,6 +38,8 @@ public final class CakeWorldBiomes {
 			caramelBogs();
 	public static final RegistryObject<Biome> SHERBET_DUNES =
 			sherbetDunes();
+	public static final RegistryObject<Biome> CANDY_CANE_BADLANDS =
+			candyCaneBadlands();
 	public static final RegistryObject<Biome> MARSHMALLOW_PEAKS = copy(
 			"marshmallow_peaks", "jagged_peaks", -0.3F, 0.5F);
 	public static final RegistryObject<Biome> SODA_OCEAN = copy(
@@ -92,6 +94,14 @@ public final class CakeWorldBiomes {
 					BiomeDictionary.Type.HOT,
 					BiomeDictionary.Type.DRY,
 					BiomeDictionary.Type.SANDY,
+					BiomeDictionary.Type.WASTELAND);
+			BiomeDictionary.addTypes(
+					key(CANDY_CANE_BADLANDS),
+					BiomeDictionary.Type.OVERWORLD,
+					BiomeDictionary.Type.HOT,
+					BiomeDictionary.Type.DRY,
+					BiomeDictionary.Type.SANDY,
+					BiomeDictionary.Type.MESA,
 					BiomeDictionary.Type.WASTELAND);
 			BiomeDictionary.addTypes(key(MARSHMALLOW_PEAKS),
 					BiomeDictionary.Type.OVERWORLD,
@@ -174,6 +184,19 @@ public final class CakeWorldBiomes {
 												.getSpecialEffects())));
 	}
 
+	private static RegistryObject<Biome> candyCaneBadlands() {
+		return OreSpawnBiomes.copyAndRegister(BIOMES,
+				"candy_cane_badlands",
+				() -> vanilla("badlands"),
+				builder -> builder
+						.temperature(2.0F)
+						.downfall(0.0F)
+						.specialEffects(
+								withCandyCaneBadlandsEffects(
+										vanilla("badlands")
+												.getSpecialEffects())));
+	}
+
 	private static RegistryObject<Biome> copyWithAmbient(
 			String name, String vanilla,
 			float temperature, float downfall,
@@ -215,6 +238,20 @@ public final class CakeWorldBiomes {
 										.SHERBET_DUNES_FIZZ
 										.get(),
 								0.0012D))
+				.build();
+	}
+
+	private static BiomeSpecialEffects withCandyCaneBadlandsEffects(
+			BiomeSpecialEffects source) {
+		return effectsBuilder(source)
+				.ambientParticle(new AmbientParticleSettings(
+						ParticleTypes.CRIT, 0.0008F))
+				.ambientAdditionsSound(
+						new AmbientAdditionsSettings(
+								CakeWorldSounds
+										.CANDY_CANE_BADLANDS_CHIME
+										.get(),
+								0.001D))
 				.build();
 	}
 

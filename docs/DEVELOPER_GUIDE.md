@@ -20,7 +20,7 @@ referenced registry IDs, merges provider-owned entries, and snapshots the
 selected template into each new world's server configuration. Generation does
 not call back into CakeWorld.
 
-Only `com.mcmoddev.orespawn.api` is a supported Java API. Other OreSpawn
+Only `zone.moddev.mc.orespawn.api` is a supported Java API. Other OreSpawn
 packages are internal.
 
 ## Biomes

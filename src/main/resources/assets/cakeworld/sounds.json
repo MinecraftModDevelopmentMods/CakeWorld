@@ -61,5 +61,14 @@
         "type": "event"
       }
     ]
+  },
+  "candy_cane_badlands_chime": {
+    "subtitle": "subtitles.cakeworld.candy_cane_badlands.chime",
+    "sounds": [
+      {
+        "name": "minecraft:block.amethyst_block.chime",
+        "type": "event"
+      }
+    ]
   }
 }

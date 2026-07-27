@@ -46,6 +46,7 @@ import com.mcmoddev.cakeworld.world.BuriedSweetTinFeature;
 import com.mcmoddev.cakeworld.world.BuriedSweetTinRepair;
 import com.mcmoddev.cakeworld.world.CandyCaneBridgeFeature;
 import com.mcmoddev.cakeworld.world.CandyCaneBridgeStructureFeature;
+import com.mcmoddev.cakeworld.world.CandyCaneHoodooGardenFeature;
 import com.mcmoddev.cakeworld.world.CaramelBogMangroveFeature;
 import com.mcmoddev.cakeworld.world.CaramelCottageFeature;
 import com.mcmoddev.cakeworld.world.ConfectionersCottageFeature;
@@ -73,14 +74,14 @@ import com.mcmoddev.cakeworld.world.RockCandyFossilFeature;
 import com.mcmoddev.cakeworld.world.WaferMineFeature;
 import com.mcmoddev.cakeworld.world.WaferWindmillFeature;
 import com.mcmoddev.cakeworld.world.WaferWreckFeature;
-import com.mcmoddev.orespawn.api.CompiledOrePattern;
-import com.mcmoddev.orespawn.api.GeologyColumn;
-import com.mcmoddev.orespawn.api.GeologyProfileView;
-import com.mcmoddev.orespawn.api.GeologySampler;
-import com.mcmoddev.orespawn.api.OrePatternType;
-import com.mcmoddev.orespawn.api.OrePlacementContext;
-import com.mcmoddev.orespawn.api.OreSpawnApi;
-import com.mcmoddev.orespawn.api.OreSpawnPatternRegistry;
+import zone.moddev.mc.orespawn.api.CompiledOrePattern;
+import zone.moddev.mc.orespawn.api.GeologyColumn;
+import zone.moddev.mc.orespawn.api.GeologyProfileView;
+import zone.moddev.mc.orespawn.api.GeologySampler;
+import zone.moddev.mc.orespawn.api.OrePatternType;
+import zone.moddev.mc.orespawn.api.OrePlacementContext;
+import zone.moddev.mc.orespawn.api.OreSpawnApi;
+import zone.moddev.mc.orespawn.api.OreSpawnPatternRegistry;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -688,6 +689,11 @@ public final class DeepPantryGameTests {
 				"cakeworld:lemon_sherbet_powder",
 				"cakeworld:orange_sherbet_powder", 5);
 		assertPaletteContract(helper, palettes, "cakeworld:overworld_land",
+				"cakeworld:candy_cane_badlands",
+				"cakeworld:wafer_rock",
+				"cakeworld:candy_cane_pillar",
+				"cakeworld:peppermint_rock", 7);
+		assertPaletteContract(helper, palettes, "cakeworld:overworld_land",
 				"cakeworld:marshmallow_peaks", "cakeworld:icing_layer",
 				"cakeworld:biscuit_stone", "cakeworld:biscuit_crumbs", 5);
 		assertPaletteContract(helper, palettes, "cakeworld:nether",
@@ -708,6 +714,8 @@ public final class DeepPantryGameTests {
 				overworld, id("caramel_bogs"));
 		BlockPos sherbetDunes = locateBiome(helper,
 				overworld, id("sherbet_dunes"));
+		BlockPos candyCaneBadlands = locateBiome(helper,
+				overworld, id("candy_cane_badlands"));
 		surfaces.put("candy_plains", auditSurface(overworld,
 				locateBiome(helper, overworld, id("candy_plains")),
 				id("candy_plains"), CakeWorldBlocks.ICING_LAYER.get(),
@@ -756,6 +764,14 @@ public final class DeepPantryGameTests {
 								.LEMON_SHERBET_POWDER
 								.get(),
 						2));
+		surfaces.put("candy_cane_badlands",
+				auditSurface(overworld,
+						candyCaneBadlands,
+						id("candy_cane_badlands"),
+						CakeWorldBlocks.WAFER_ROCK.get(),
+						CakeWorldBlocks.CANDY_CANE_PILLAR
+								.get(),
+						2));
 		surfaces.put("marshmallow_peaks", auditSurface(overworld,
 				locateBiome(helper, overworld, id("marshmallow_peaks")),
 				id("marshmallow_peaks"), CakeWorldBlocks.ICING_LAYER.get(),
@@ -791,6 +807,10 @@ public final class DeepPantryGameTests {
 				countGeomesForBiome(overworld,
 						sherbetDunes,
 						id("sherbet_dunes"), 4);
+		Map<ResourceLocation, Integer> candyCaneBadlandsGeomes =
+				countGeomesForBiome(overworld,
+						candyCaneBadlands,
+						id("candy_cane_badlands"), 6);
 		require(helper,
 				!hearthlandsGeomes.isEmpty()
 						&& hearthlandsGeomes.keySet().stream()
@@ -836,6 +856,19 @@ public final class DeepPantryGameTests {
 								id("rock_candy_uplift"), 0) > 0,
 				"Natural Sherbet Dunes escaped its Wafer Shelf/Rock-Candy Uplift profile plus inherited HOT/Fudge-Mantle seam or lost its higher-weight uplift: "
 						+ sherbetGeomes);
+		require(helper,
+				!candyCaneBadlandsGeomes.isEmpty()
+						&& candyCaneBadlandsGeomes.keySet().stream()
+								.allMatch(Set.of(
+										id("wafer_shelf"),
+										id("peppermint_fold"),
+										id("rock_candy_uplift"),
+										id("fudge_mantle"))
+										::contains)
+						&& candyCaneBadlandsGeomes.getOrDefault(
+								id("rock_candy_uplift"), 0) > 0,
+				"Natural Candy-Cane Badlands escaped its three explicit flavour geomes plus inherited HOT/Fudge-Mantle seam or lost its higher-weight Rock-Candy Uplift: "
+						+ candyCaneBadlandsGeomes);
 
 		BlockPos sodaOcean = locateBiome(helper, overworld, id("soda_ocean"));
 		Map<Block, Integer> lemonadeFloor = countBlocksDirectlyUnderFluid(
@@ -845,9 +878,10 @@ public final class DeepPantryGameTests {
 		require(helper, lemonadeFloor.getOrDefault(
 						CakeWorldBlocks.BISCUIT_CRUMBS.get(), 0) > 0,
 				"Soda Ocean exposed no Biscuit Crumbs underwater surface");
-		LOGGER.info("Focused biome surface/palette audit: surfaces={}, hearthlands_geomes={}, peppermint_geomes={}, gummy_geomes={}, soda_floor={}",
+		LOGGER.info("Focused biome surface/palette audit: surfaces={}, hearthlands_geomes={}, peppermint_geomes={}, gummy_geomes={}, sherbet_geomes={}, candy_cane_badlands_geomes={}, soda_floor={}",
 				surfaces, hearthlandsGeomes,
 				peppermintGeomes, gummyGeomes,
+				sherbetGeomes, candyCaneBadlandsGeomes,
 				describe(lemonadeFloor));
 		helper.succeed();
 	}
@@ -6552,10 +6586,10 @@ public final class DeepPantryGameTests {
 							: "seeded");
 			require(helper,
 					CakeWorldBiomes
-							.MARSHMALLOW_PEAKS
+							.CANDY_CANE_BADLANDS
 							.getId().equals(
 									audit.biome()),
-					"Natural Rock-Candy Crystal Mine left its explicit Marshmallow-Peaks proving ground: biome="
+					"Natural Rock-Candy Crystal Mine left its Candy-Cane-Badlands home: biome="
 							+ audit.biome());
 			require(helper,
 					mine.bounds().getXSpan()
@@ -7273,6 +7307,90 @@ public final class DeepPantryGameTests {
 			}
 			setSherbetFossilBowlChunksForced(
 					level, bowl, false);
+			helper.succeed();
+		});
+	}
+
+	@GameTest(template = EMPTY, batch = "bioow008world",
+			timeoutTicks = 24000)
+	public static void focusedNaturalCandyCaneHoodooGardenAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean(
+				"cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed natural Candy-Cane Hoodoo Garden audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel()
+				.getServer().getLevel(Level.OVERWORLD);
+		require(helper, level != null,
+				"The fixed-seed server did not expose the Overworld");
+		BlockPos badlands = locateBiome(helper, level,
+				CakeWorldBiomes.CANDY_CANE_BADLANDS.getId());
+		CandyCaneBadlandsGeologySurvey geology =
+				surveyCandyCaneBadlandsGeology(
+						level, badlands, 8);
+		Set<ResourceLocation> allowedGeomes = Set.of(
+				id("wafer_shelf"),
+				id("peppermint_fold"),
+				id("rock_candy_uplift"),
+				id("fudge_mantle"));
+		require(helper,
+				geology.biomeChunks() > 0
+						&& !geology.geomes().isEmpty()
+						&& geology.geomes().keySet().stream()
+								.allMatch(allowedGeomes::contains)
+						&& geology.geomes().getOrDefault(
+								id("rock_candy_uplift"), 0) > 0
+						&& geology.naturalRocks().size() >= 2,
+				"Natural Candy-Cane Badlands did not stay within its allowed geomes while exposing multiple real subsurface rock families: "
+						+ geology);
+		LocatedCandyCaneHoodooGarden garden =
+				locateNaturalCandyCaneHoodooGarden(
+						helper, level, badlands, 24);
+		setCandyCaneHoodooGardenChunksForced(
+				level, garden, true);
+		helper.runAfterDelay(40, () -> {
+			CandyCaneHoodooGardenWorldAudit audit =
+					auditNaturalCandyCaneHoodooGarden(
+							level, garden);
+			LOGGER.info("Focused natural Candy-Cane Hoodoo Garden audit: centre={}, biome={}, rotation={}, palette={}, layout={}, blockEntities={}, sentinel={}, markerPhase={}, scannedChunks={}, markerCandidates={}, badlandsColumns={}, geomes={}, naturalRocks={}, sampledRockCells={}",
+					garden.centre(),
+					audit.biome(),
+					audit.rotation(),
+					describe(audit.palette()),
+					audit.readableLayout(),
+					audit.blockEntities(),
+					audit.sentinel(),
+					audit.brickSentinel()
+							? "reloaded"
+							: "seeded",
+					garden.scannedChunks(),
+					garden.markerCandidates(),
+					garden.badlandsColumns(),
+					geology.geomes(),
+					describe(geology.naturalRocks()),
+					geology.sampledRockCells());
+			require(helper,
+					CakeWorldBiomes.CANDY_CANE_BADLANDS
+							.getId()
+							.equals(audit.biome())
+							&& audit.readableLayout()
+							&& audit.blockEntities() == 0,
+					"Natural Candy-Cane Hoodoo Garden lost its exact Badlands biome, four striped hoodoos, geology court, recovery pads or entity-free contract: "
+							+ audit);
+			if (!audit.brickSentinel()) {
+				level.setBlock(audit.sentinel(),
+						Blocks.BRICKS.defaultBlockState(),
+						2);
+				require(helper,
+						level.getBlockState(
+								audit.sentinel())
+								.is(Blocks.BRICKS),
+						"Could not seed the explicit player-placed Brick reload sentinel beside the Candy-Cane Hoodoo Garden");
+			}
+			setCandyCaneHoodooGardenChunksForced(
+					level, garden, false);
 			helper.succeed();
 		});
 	}
@@ -10602,7 +10720,7 @@ public final class DeepPantryGameTests {
 								.STRUCTURE_TAG,
 						origin, 512, false);
 		require(helper, located != null,
-				"The fixed-seed CakeWorld contained no locatable Rock-Candy Crystal Mine within 512 chunks of Marshmallow Peaks");
+				"The fixed-seed CakeWorld contained no locatable Rock-Candy Crystal Mine within 512 chunks of Candy-Cane Badlands");
 		ChunkPos startChunk = new ChunkPos(located);
 		net.minecraft.world.level.chunk.LevelChunk
 				startLevelChunk =
@@ -11996,6 +12114,384 @@ public final class DeepPantryGameTests {
 						.contains("buried_sherbet_jar");
 	}
 
+	private static CandyCaneBadlandsGeologySurvey
+			surveyCandyCaneBadlandsGeology(
+					ServerLevel level,
+					BlockPos anchor,
+					int chunkRadius) {
+		GeologySampler sampler = OreSpawnApi.createSampler(level)
+				.orElseThrow();
+		Map<ResourceLocation, Integer> geomes =
+				new LinkedHashMap<>();
+		Map<Block, Integer> naturalRocks =
+				new LinkedHashMap<>();
+		Set<Block> rockBlocks = Set.of(
+				CakeWorldBlocks.CHOCOLATE_SPONGE.get(),
+				CakeWorldBlocks.BISCUIT_STONE.get(),
+				CakeWorldBlocks.WAFER_ROCK.get(),
+				CakeWorldBlocks.NOUGAT_ROCK.get(),
+				CakeWorldBlocks.PEPPERMINT_ROCK.get(),
+				CakeWorldBlocks.ROCK_CANDY.get(),
+				CakeWorldBlocks.CANDY_GLASS.get());
+		ChunkPos anchorChunk = new ChunkPos(anchor);
+		int biomeChunks = 0;
+		int sampledRockCells = 0;
+		for (int chunkX = anchorChunk.x - chunkRadius;
+				chunkX <= anchorChunk.x + chunkRadius;
+				chunkX++) {
+			for (int chunkZ = anchorChunk.z - chunkRadius;
+					chunkZ <= anchorChunk.z + chunkRadius;
+					chunkZ++) {
+				level.getChunk(chunkX, chunkZ);
+				int x = (chunkX << 4) + 8;
+				int z = (chunkZ << 4) + 8;
+				int surfaceY = level.getHeight(
+						Heightmap.Types.WORLD_SURFACE,
+						x, z) - 1;
+				GeologyColumn column = sampler.sampleColumn(
+						x, z, surfaceY);
+				if (!CakeWorldBiomes.CANDY_CANE_BADLANDS
+						.getId().equals(column.biome())) {
+					continue;
+				}
+				biomeChunks++;
+				geomes.merge(column.geome(), 1,
+						Integer::sum);
+				int maximumY = Math.min(128,
+						surfaceY - 8);
+				for (int y = level.getMinBuildHeight() + 4;
+						y <= maximumY; y += 4) {
+					sampledRockCells++;
+					Block block = level.getBlockState(
+							new BlockPos(x, y, z))
+							.getBlock();
+					if (rockBlocks.contains(block)) {
+						naturalRocks.merge(block, 1,
+								Integer::sum);
+					}
+				}
+			}
+		}
+		return new CandyCaneBadlandsGeologySurvey(
+				geomes, naturalRocks,
+				biomeChunks, sampledRockCells);
+	}
+
+	private static LocatedCandyCaneHoodooGarden
+			locateNaturalCandyCaneHoodooGarden(
+					GameTestHelper helper,
+					ServerLevel level,
+					BlockPos anchor,
+					int chunkRadius) {
+		ChunkPos anchorChunk = new ChunkPos(anchor);
+		int scannedChunks = 0;
+		int markerCandidates = 0;
+		int badlandsColumns = 0;
+		Map<Block, Integer> naturalSurfacePalette =
+				new LinkedHashMap<>();
+		for (int radius = 0;
+				radius <= chunkRadius; radius++) {
+			for (int chunkX = anchorChunk.x - radius;
+					chunkX <= anchorChunk.x + radius;
+					chunkX++) {
+				for (int chunkZ = anchorChunk.z - radius;
+						chunkZ <= anchorChunk.z + radius;
+						chunkZ++) {
+					if (radius > 0
+							&& chunkX != anchorChunk.x - radius
+							&& chunkX != anchorChunk.x + radius
+							&& chunkZ != anchorChunk.z - radius
+							&& chunkZ != anchorChunk.z + radius) {
+						continue;
+					}
+					level.getChunk(chunkX, chunkZ);
+					scannedChunks++;
+					for (int x = chunkX << 4;
+							x < (chunkX + 1) << 4; x++) {
+						for (int z = chunkZ << 4;
+								z < (chunkZ + 1) << 4; z++) {
+							int surfaceY = level.getHeight(
+									Heightmap.Types
+											.MOTION_BLOCKING_NO_LEAVES,
+									x, z) - 1;
+							BlockPos naturalSurface =
+									findNaturalTerrainSurface(
+											level, x, z,
+											surfaceY);
+							if (CakeWorldBiomes.CANDY_CANE_BADLANDS
+									.getId().equals(
+											level.getBiome(
+													naturalSurface)
+													.unwrapKey()
+													.map(ResourceKey
+															::location)
+													.orElse(null))) {
+								badlandsColumns++;
+								naturalSurfacePalette.merge(
+										level.getBlockState(
+												naturalSurface)
+												.getBlock(),
+										1, Integer::sum);
+							}
+							int minimumY = Math.max(
+									level.getMinBuildHeight(),
+									surfaceY - 16);
+							for (int y = minimumY;
+									y <= surfaceY; y++) {
+								BlockPos marker =
+										new BlockPos(x, y, z);
+								Block markerBlock =
+										level.getBlockState(
+												marker)
+												.getBlock();
+								if (markerBlock
+										!= CakeWorldBlocks
+												.ROCK_CANDY_DEPOSIT
+												.get()
+										&& markerBlock
+												!= CakeWorldBlocks
+														.MINT_CRYSTAL
+														.get()) {
+									continue;
+								}
+								markerCandidates++;
+								for (int[] hoodoo :
+										CandyCaneHoodooGardenFeature
+												.hoodoos()) {
+									Block expected =
+											hoodoo[3] == 0
+													? CakeWorldBlocks
+															.ROCK_CANDY_DEPOSIT
+															.get()
+													: CakeWorldBlocks
+															.MINT_CRYSTAL
+															.get();
+									if (markerBlock != expected) {
+										continue;
+									}
+									for (Rotation rotation :
+											Rotation.values()) {
+										BlockPos offset =
+												new BlockPos(
+														hoodoo[0],
+														hoodoo[2] + 2,
+														hoodoo[1])
+														.rotate(
+																rotation);
+										BlockPos centre =
+												marker.subtract(
+														offset);
+										if (CandyCaneHoodooGardenFeature
+												.orientation(
+														level.getSeed(),
+														centre)
+												!= rotation
+												|| !matchesCandyCaneHoodooGardenLayout(
+														level,
+														centre,
+														rotation)) {
+											continue;
+										}
+										LocatedCandyCaneHoodooGarden
+												located =
+														new LocatedCandyCaneHoodooGarden(
+																centre,
+																scannedChunks,
+																markerCandidates,
+																badlandsColumns);
+										CandyCaneHoodooGardenWorldAudit
+												audit =
+														auditNaturalCandyCaneHoodooGarden(
+																level,
+																located);
+										LOGGER.info("Candy-Cane Hoodoo Garden marker candidate: centre={}, biome={}, rotation={}, palette={}, layout={}, scannedChunks={}, markerCandidates={}, badlandsColumns={}",
+												centre,
+												audit.biome(),
+												rotation,
+												describe(audit
+														.palette()),
+												audit.readableLayout(),
+												scannedChunks,
+												markerCandidates,
+												badlandsColumns);
+										if (audit.readableLayout()
+												&& CakeWorldBiomes
+														.CANDY_CANE_BADLANDS
+														.getId()
+														.equals(audit
+																.biome())) {
+											return located;
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		require(helper, false,
+				"The fixed-seed Candy-Cane Badlands survey found no natural Hoodoo Garden after "
+						+ scannedChunks + " generated chunks and "
+						+ markerCandidates + " crystal-marker candidates near "
+						+ anchor + "; badlandsColumns="
+						+ badlandsColumns
+						+ ", naturalSurfacePalette="
+						+ describe(naturalSurfacePalette));
+		throw new IllegalStateException(
+				"Unreachable after GameTest failure");
+	}
+
+	private static CandyCaneHoodooGardenWorldAudit
+			auditNaturalCandyCaneHoodooGarden(
+					ServerLevel level,
+					LocatedCandyCaneHoodooGarden garden) {
+		BlockPos centre = garden.centre();
+		Rotation rotation =
+				CandyCaneHoodooGardenFeature.orientation(
+						level.getSeed(), centre);
+		BlockPos sentinel = local(
+				centre, rotation, 5, 1, 5);
+		boolean brickSentinel =
+				level.getBlockState(sentinel)
+						.is(Blocks.BRICKS);
+		Map<Block, Integer> palette =
+				new LinkedHashMap<>();
+		int blockEntities = 0;
+		for (int x = -5; x <= 5; x++) {
+			for (int y = 0; y <= 9; y++) {
+				for (int z = -5; z <= 5; z++) {
+					BlockPos position =
+							centre.offset(x, y, z);
+					palette.merge(level.getBlockState(
+							position).getBlock(),
+							1, Integer::sum);
+					if (level.getBlockEntity(position) != null) {
+						blockEntities++;
+					}
+				}
+			}
+		}
+		ResourceLocation biome =
+				level.registryAccess()
+						.registryOrThrow(
+								Registry.BIOME_REGISTRY)
+						.getKey(level.getBiome(centre)
+								.value());
+		boolean readable =
+				matchesCandyCaneHoodooGardenLayout(
+						level, centre, rotation)
+						&& palette.getOrDefault(
+								CakeWorldBlocks.WAFER_BLOCK
+										.get(), 0) == 11
+						&& palette.getOrDefault(
+								CakeWorldBlocks.MARSHMALLOW
+										.get(), 0) == 2
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.ROCK_CANDY_DEPOSIT
+										.get(), 0) == 2
+						&& palette.getOrDefault(
+								CakeWorldBlocks.MINT_CRYSTAL
+										.get(), 0) == 2
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.CANDY_CANE_PILLAR
+										.get(), 0) >= 22
+						&& palette.getOrDefault(
+								CakeWorldBlocks.WAFER_ROCK
+										.get(), 0) >= 36
+						&& palette.getOrDefault(
+								CakeWorldBlocks
+										.PEPPERMINT_ROCK
+										.get(), 0) > 0
+						&& palette.getOrDefault(
+								CakeWorldBlocks.ROCK_CANDY
+										.get(), 0) > 0;
+		return new CandyCaneHoodooGardenWorldAudit(
+				palette, biome, rotation,
+				readable, blockEntities,
+				sentinel, brickSentinel);
+	}
+
+	private static boolean
+			matchesCandyCaneHoodooGardenLayout(
+					ServerLevel level,
+					BlockPos centre,
+					Rotation rotation) {
+		for (int x = -4; x <= 4; x++) {
+			for (int z = -4; z <= 4; z++) {
+				Block expected;
+				if (x == 0) {
+					expected = CakeWorldBlocks.WAFER_BLOCK.get();
+				} else if (z == 0 && Math.abs(x) == 1) {
+					expected = CakeWorldBlocks.MARSHMALLOW.get();
+				} else {
+					expected = CandyCaneHoodooGardenFeature
+							.courtState(x, z).getBlock();
+				}
+				if (!level.getBlockState(
+						CandyCaneHoodooGardenFeature.local(
+								centre, rotation,
+								x, 0, z))
+						.is(expected)) {
+					return false;
+				}
+			}
+		}
+		for (int z : new int[] {-5, 5}) {
+			if (!level.getBlockState(
+					CandyCaneHoodooGardenFeature.local(
+							centre, rotation,
+							0, 0, z))
+					.is(CakeWorldBlocks.WAFER_BLOCK.get())) {
+				return false;
+			}
+		}
+		for (int[] hoodoo :
+				CandyCaneHoodooGardenFeature.hoodoos()) {
+			int x = hoodoo[0];
+			int z = hoodoo[1];
+			int height = hoodoo[2];
+			for (int y = 1; y <= height; y++) {
+				if (!level.getBlockState(
+						CandyCaneHoodooGardenFeature.local(
+								centre, rotation,
+								x, y, z))
+						.is(CakeWorldBlocks
+								.CANDY_CANE_PILLAR.get())) {
+					return false;
+				}
+			}
+			for (int capX = -1; capX <= 1; capX++) {
+				for (int capZ = -1; capZ <= 1; capZ++) {
+					if (!level.getBlockState(
+							CandyCaneHoodooGardenFeature
+									.local(centre,
+											rotation,
+											x + capX,
+											height + 1,
+											z + capZ))
+							.is(CakeWorldBlocks.WAFER_ROCK
+									.get())) {
+						return false;
+					}
+				}
+			}
+			Block marker = hoodoo[3] == 0
+					? CakeWorldBlocks.ROCK_CANDY_DEPOSIT.get()
+					: CakeWorldBlocks.MINT_CRYSTAL.get();
+			if (!level.getBlockState(
+					CandyCaneHoodooGardenFeature.local(
+							centre, rotation, x,
+							height + 2, z))
+					.is(marker)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 	private static GummyGroveWorldAudit
 			auditNaturalGummyGrove(
 					ServerLevel level,
@@ -12068,12 +12564,7 @@ public final class DeepPantryGameTests {
 						&& palette.getOrDefault(
 								CakeWorldBlocks
 										.GUMMY_BLOCK.get(),
-								0) >= 38
-						&& palette.getOrDefault(
-								CakeWorldBlocks
-										.CHOCOLATE_SPONGE
-										.get(),
-								0) >= 49;
+								0) >= 38;
 		return new GummyGroveWorldAudit(
 				palette, biome, rotation,
 				readable, sentinel,
@@ -12099,11 +12590,9 @@ public final class DeepPantryGameTests {
 						centre, rotation, 4, 0, 0))
 						.is(CakeWorldBlocks
 								.GUMMY_BLOCK.get())
-				|| !level.getBlockState(local(
-						centre, rotation, 4, -1, 0))
-						.is(CakeWorldBlocks
-								.CHOCOLATE_SPONGE
-								.get())) {
+				|| !hasSafeNaturalSupport(level,
+						local(centre, rotation,
+								4, -1, 0))) {
 			return false;
 		}
 		if (!matchesGummyTree(level, centre,
@@ -12169,6 +12658,14 @@ public final class DeepPantryGameTests {
 			}
 		}
 		return true;
+	}
+
+	private static boolean hasSafeNaturalSupport(
+			ServerLevel level, BlockPos position) {
+		BlockState state = level.getBlockState(position);
+		return state.isFaceSturdy(
+				level, position, Direction.UP)
+				&& level.getFluidState(position).isEmpty();
 	}
 
 	private static boolean matchesGummyTree(
@@ -12754,6 +13251,26 @@ public final class DeepPantryGameTests {
 					chunkZ <= Math.floorDiv(
 							bowl.centre().getZ() + 6,
 							16);
+					chunkZ++) {
+				level.setChunkForced(
+						chunkX, chunkZ, forced);
+			}
+		}
+	}
+
+	private static void setCandyCaneHoodooGardenChunksForced(
+			ServerLevel level,
+			LocatedCandyCaneHoodooGarden garden,
+			boolean forced) {
+		for (int chunkX = Math.floorDiv(
+				garden.centre().getX() - 5, 16);
+				chunkX <= Math.floorDiv(
+						garden.centre().getX() + 5, 16);
+				chunkX++) {
+			for (int chunkZ = Math.floorDiv(
+					garden.centre().getZ() - 5, 16);
+					chunkZ <= Math.floorDiv(
+							garden.centre().getZ() + 5, 16);
 					chunkZ++) {
 				level.setChunkForced(
 						chunkX, chunkZ, forced);
@@ -14251,6 +14768,30 @@ public final class DeepPantryGameTests {
 			String customName,
 			BlockPos sentinel,
 			boolean brickSentinel) {
+	}
+
+	private record LocatedCandyCaneHoodooGarden(
+			BlockPos centre,
+			int scannedChunks,
+			int markerCandidates,
+			int badlandsColumns) {
+	}
+
+	private record CandyCaneHoodooGardenWorldAudit(
+			Map<Block, Integer> palette,
+			ResourceLocation biome,
+			Rotation rotation,
+			boolean readableLayout,
+			int blockEntities,
+			BlockPos sentinel,
+			boolean brickSentinel) {
+	}
+
+	private record CandyCaneBadlandsGeologySurvey(
+			Map<ResourceLocation, Integer> geomes,
+			Map<Block, Integer> naturalRocks,
+			int biomeChunks,
+			int sampledRockCells) {
 	}
 
 	private record GeomePlacementSurvey(

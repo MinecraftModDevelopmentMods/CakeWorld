@@ -24,6 +24,7 @@ public final class CakeWorldCreatureSpawns {
 			"cookie_forest", "peppermint_pinewoods",
 			"gummy_jungle", "caramel_bogs",
 			"sherbet_dunes",
+			"candy_cane_badlands",
 			"marshmallow_peaks",
 			"soda_ocean");
 

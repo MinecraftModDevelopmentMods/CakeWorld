@@ -46,6 +46,11 @@ public final class CakeWorldSounds {
 					() -> new SoundEvent(new ResourceLocation(
 							CakeWorld.MODID,
 							"sherbet_dunes_fizz")));
+	public static final RegistryObject<SoundEvent> CANDY_CANE_BADLANDS_CHIME =
+			SOUNDS.register("candy_cane_badlands_chime",
+					() -> new SoundEvent(new ResourceLocation(
+							CakeWorld.MODID,
+							"candy_cane_badlands_chime")));
 
 	private CakeWorldSounds() {
 	}
