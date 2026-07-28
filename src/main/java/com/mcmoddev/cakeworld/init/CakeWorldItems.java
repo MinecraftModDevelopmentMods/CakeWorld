@@ -124,6 +124,28 @@ public final class CakeWorldItems {
 											CakeWorldEffects.SUGAR_RUSH.get(),
 											180), 1.0F)
 									.build())));
+	public static final RegistryObject<Item> POPCORN_KERNEL =
+			ITEMS.register("popcorn_kernel",
+					() -> new ItemNameBlockItem(
+							CakeWorldBlocks
+									.POPPING_KERNEL_STALK.get(),
+							new Item.Properties()
+									.tab(CreativeModeTab.TAB_FOOD)
+									.food(new FoodProperties.Builder()
+											.nutrition(1)
+											.saturationMod(0.1F)
+											.build())));
+	public static final RegistryObject<Item> CARAMEL_POPCORN =
+			ITEMS.register("caramel_popcorn",
+					() -> new Item(new Item.Properties()
+							.tab(CreativeModeTab.TAB_FOOD)
+							.food(new FoodProperties.Builder()
+									.nutrition(6)
+									.saturationMod(0.65F)
+									.effect(() -> new MobEffectInstance(
+											CakeWorldEffects.FIZZY_FEET.get(),
+											160), 1.0F)
+									.build())));
 	public static final RegistryObject<Item> FIZZY_POPPERS =
 			ITEMS.register("fizzy_poppers",
 					() -> new Item(new Item.Properties()

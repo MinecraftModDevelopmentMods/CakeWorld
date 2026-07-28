@@ -43,6 +43,8 @@ public final class CakeWorldFeatureRegistration {
 				LiquoriceRootMazeFeature.FEATURE);
 		event.getRegistry().register(
 				LollipopTastingGroveFeature.FEATURE);
+		event.getRegistry().register(
+				PrairiePoppingPatchFeature.FEATURE);
 		event.getRegistry().register(GingerbreadVillageFeature.FEATURE);
 		event.getRegistry().register(
 				BiscuitBanditLookoutFeature.FEATURE);
@@ -167,6 +169,8 @@ public final class CakeWorldFeatureRegistration {
 			LiquoriceRootMazeFeature
 					.registerConfiguredFeature();
 			LollipopTastingGroveFeature
+					.registerConfiguredFeature();
+			PrairiePoppingPatchFeature
 					.registerConfiguredFeature();
 			GingerbreadVillageFeature.registerWorldgen();
 			BiscuitBanditLookoutFeature.registerWorldgen();

@@ -124,5 +124,14 @@
         "type": "event"
       }
     ]
+  },
+  "popcorn_prairie_rustle": {
+    "subtitle": "subtitles.cakeworld.popcorn_prairie.rustle",
+    "sounds": [
+      {
+        "name": "minecraft:block.crop.break",
+        "type": "event"
+      }
+    ]
   }
 }

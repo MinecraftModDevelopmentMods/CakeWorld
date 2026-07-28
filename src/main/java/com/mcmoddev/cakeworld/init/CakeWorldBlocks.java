@@ -19,6 +19,7 @@ import com.mcmoddev.cakeworld.block.IcingLayerBlock;
 import com.mcmoddev.cakeworld.block.LollipopFruitBlock;
 import com.mcmoddev.cakeworld.block.MarshmallowBlock;
 import com.mcmoddev.cakeworld.block.MixingBowlBlock;
+import com.mcmoddev.cakeworld.block.PoppingKernelStalkBlock;
 import com.mcmoddev.cakeworld.block.SherbetPowderBlock;
 import com.mcmoddev.cakeworld.block.SodaFountainBlock;
 import com.mcmoddev.cakeworld.block.TreacleReedBlock;
@@ -167,6 +168,25 @@ public final class CakeWorldBlocks {
 									.strength(0.3F)
 									.sound(SoundType
 											.SLIME_BLOCK)));
+	public static final RegistryObject<Block> POPPED_CORN_TURF =
+			block("popped_corn_turf",
+					BlockBehaviour.Properties.of(Material.DIRT)
+							.strength(0.45F)
+							.sound(SoundType.GRASS));
+	public static final RegistryObject<Block> POPCORN_BLOCK =
+			block("popcorn_block",
+					BlockBehaviour.Properties.of(Material.WOOL)
+							.strength(0.2F, 0.2F)
+							.sound(SoundType.WOOL));
+	public static final RegistryObject<Block> POPPING_KERNEL_STALK =
+			BLOCKS.register("popping_kernel_stalk",
+					() -> new PoppingKernelStalkBlock(
+							BlockBehaviour.Properties
+									.of(Material.PLANT)
+									.noCollission()
+									.randomTicks()
+									.instabreak()
+									.sound(SoundType.CROP)));
 	public static final RegistryObject<Block> LIQUORICE_ROOT =
 			block("liquorice_root",
 					() -> new RotatedPillarBlock(

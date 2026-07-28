@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "cakeworld:popcorn_kernel"
+    },
+    {
+      "item": "cakeworld:popcorn_kernel"
+    },
+    {
+      "item": "cakeworld:popcorn_kernel"
+    },
+    {
+      "item": "cakeworld:popcorn_kernel"
+    },
+    {
+      "item": "cakeworld:caramel_chew"
+    }
+  ],
+  "result": {
+    "item": "cakeworld:caramel_popcorn",
+    "count": 2
+  }
+}

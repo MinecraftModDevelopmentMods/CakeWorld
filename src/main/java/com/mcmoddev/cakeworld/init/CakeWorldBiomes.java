@@ -52,6 +52,8 @@ public final class CakeWorldBiomes {
 			liquoriceDarkwood();
 	public static final RegistryObject<Biome> LOLLIPOP_ORCHARDS =
 			lollipopOrchards();
+	public static final RegistryObject<Biome> POPCORN_PRAIRIE =
+			popcornPrairie();
 	public static final RegistryObject<Biome> SODA_OCEAN = copy(
 			"soda_ocean", "ocean", 0.5F, 0.5F);
 	public static final RegistryObject<Biome> FUDGE_WASTES = copy(
@@ -144,6 +146,10 @@ public final class CakeWorldBiomes {
 					BiomeDictionary.Type.OVERWORLD,
 					BiomeDictionary.Type.FOREST,
 					BiomeDictionary.Type.LUSH);
+			BiomeDictionary.addTypes(key(POPCORN_PRAIRIE),
+					BiomeDictionary.Type.OVERWORLD,
+					BiomeDictionary.Type.PLAINS,
+					BiomeDictionary.Type.DRY);
 			BiomeDictionary.addTypes(key(SODA_OCEAN),
 					BiomeDictionary.Type.OVERWORLD,
 					BiomeDictionary.Type.OCEAN,
@@ -302,6 +308,13 @@ public final class CakeWorldBiomes {
 				"birch_forest", 0.7F, 0.7F,
 				CakeWorldSounds.LOLLIPOP_ORCHARDS_CHIME,
 				0.0011D);
+	}
+
+	private static RegistryObject<Biome> popcornPrairie() {
+		return copyWithAmbient("popcorn_prairie",
+				"plains", 0.8F, 0.35F,
+				CakeWorldSounds.POPCORN_PRAIRIE_RUSTLE,
+				0.0014D);
 	}
 
 	private static RegistryObject<Biome> copyWithAmbient(
