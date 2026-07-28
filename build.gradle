@@ -204,9 +204,12 @@ repositories {
     // Put repositories for dependencies here
     // ForgeGradle automatically adds the Forge maven and Maven Central for you
 
-    // If you have mod jar dependencies in ./libs, you can declare them as a repository like so:
-    flatDir {
-        dir file('../../../MinecraftMineralogy/OS118/OreSpawn/build/libs')
+    maven {
+        name = 'CurseMaven'
+        url = 'https://cursemaven.com'
+        content {
+            includeGroup 'curse.maven'
+        }
     }
     flatDir {
         dir file('../../../BaseMetals/BaseMetals 118/BaseMetals/build/libs')
@@ -220,7 +223,8 @@ dependencies {
     // If the group id is "net.minecraft" and the artifact id is one of ["client", "server", "joined"],
     // then special handling is done to allow a setup of a vanilla dependency without the use of an external repository.
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
-    implementation fg.deobf("blank:OreSpawn-${minecraft_version}:${orespawn_version}")
+    implementation fg.deobf(
+            "curse.maven:mmd-orespawn-${orespawn_curseforge_project_id}:${orespawn_curseforge_file_id}")
     if (baseMetalsIntegration) {
         def baseMetalsJar = rootProject.file(
                 '../../../BaseMetals/BaseMetals 118/BaseMetals/build/libs/BaseMetals-1.18.2-3.0.0.jar')

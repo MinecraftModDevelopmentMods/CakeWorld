@@ -41,11 +41,13 @@ shelved without losing the overall direction.
 - Minecraft 1.18.2
 - Forge 40.3.0 or compatible Forge 40 build
 - Java 17
-- OreSpawn 4.x
+- MMD OreSpawn 4.0.1 for Minecraft 1.18.2
 
 ## Build
 
-Build OreSpawn first, then:
+CakeWorld pins the published MMD OreSpawn beta through CurseMaven using
+CurseForge project `245586`, file `8525123`. A sibling OreSpawn checkout or
+locally built JAR is not required.
 
 ```powershell
 ./gradlew build
