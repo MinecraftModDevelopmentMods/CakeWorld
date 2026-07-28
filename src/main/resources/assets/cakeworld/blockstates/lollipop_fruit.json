@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "flavour=raspberry,ripe=false": {
+      "model": "cakeworld:block/lollipop_fruit_raspberry_unripe"
+    },
+    "flavour=raspberry,ripe=true": {
+      "model": "cakeworld:block/lollipop_fruit_raspberry_ripe"
+    },
+    "flavour=lemon,ripe=false": {
+      "model": "cakeworld:block/lollipop_fruit_lemon_unripe"
+    },
+    "flavour=lemon,ripe=true": {
+      "model": "cakeworld:block/lollipop_fruit_lemon_ripe"
+    },
+    "flavour=lime,ripe=false": {
+      "model": "cakeworld:block/lollipop_fruit_lime_unripe"
+    },
+    "flavour=lime,ripe=true": {
+      "model": "cakeworld:block/lollipop_fruit_lime_ripe"
+    },
+    "flavour=blueberry,ripe=false": {
+      "model": "cakeworld:block/lollipop_fruit_blueberry_unripe"
+    },
+    "flavour=blueberry,ripe=true": {
+      "model": "cakeworld:block/lollipop_fruit_blueberry_ripe"
+    }
+  }
+}

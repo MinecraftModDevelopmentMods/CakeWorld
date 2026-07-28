@@ -115,5 +115,14 @@
         "type": "event"
       }
     ]
+  },
+  "lollipop_orchards_chime": {
+    "subtitle": "subtitles.cakeworld.lollipop_orchards.chime",
+    "sounds": [
+      {
+        "name": "minecraft:block.amethyst_block.chime",
+        "type": "event"
+      }
+    ]
   }
 }

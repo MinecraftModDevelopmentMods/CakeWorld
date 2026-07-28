@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "provider_modid": "cakeworld",
-  "provider_revision": 23,
+  "provider_revision": 24,
   "templates": {
     "cakeworld:edible_world": {
       "name_key": "template.cakeworld.edible_world",
@@ -265,6 +265,10 @@
           "cakeworld:liquorice_darkwood": {
             "cakeworld:cocoa_basin": 10.0,
             "cakeworld:wafer_shelf": 4.0
+          },
+          "cakeworld:lollipop_orchards": {
+            "cakeworld:cocoa_basin": 8.0,
+            "cakeworld:wafer_shelf": 10.0
           },
           "cakeworld:soda_ocean": {
             "cakeworld:wafer_shelf": 12.0,
@@ -948,6 +952,26 @@
                   "filler_block": "cakeworld:chocolate_sponge",
                   "underwater_block": "cakeworld:liquorice_root",
                   "filler_depth": 5
+                }
+              },
+              "cakeworld:lollipop_orchards": {
+                "enabled": true,
+                "weight": 1.0,
+                "similar_biomes": [
+                  "minecraft:birch_forest",
+                  "minecraft:old_growth_birch_forest",
+                  "minecraft:flower_forest"
+                ],
+                "required_similar_biomes": [],
+                "min_temperature": 0.3,
+                "max_temperature": 1.0,
+                "min_downfall": 0.4,
+                "max_downfall": 0.9,
+                "surface": {
+                  "top_block": "cakeworld:candied_soil",
+                  "filler_block": "cakeworld:chocolate_sponge",
+                  "underwater_block": "cakeworld:raspberry_gummy_block",
+                  "filler_depth": 4
                 }
               }
             }

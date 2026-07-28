@@ -30,6 +30,7 @@ public final class CakeWorldCreatureSpawns {
 			"waffle_plateaus",
 			"cupcake_gardens",
 			"liquorice_darkwood",
+			"lollipop_orchards",
 			"soda_ocean");
 
 	private CakeWorldCreatureSpawns() {
@@ -200,6 +201,23 @@ public final class CakeWorldCreatureSpawns {
 					CakeWorldEntities.MALLOW_CHICK);
 		}
 		if ("lollipop_orchards".equals(biome.getPath())) {
+			replaceExisting(event, MobCategory.CREATURE,
+					EntityType.COW,
+					CakeWorldEntities.COCOA_COW);
+			replaceExisting(event, MobCategory.CREATURE,
+					EntityType.PIG,
+					CakeWorldEntities.TRUFFLE_PIG);
+			replaceExisting(event, MobCategory.CREATURE,
+					EntityType.CHICKEN,
+					CakeWorldEntities.MALLOW_CHICK);
+			replace(event, MobCategory.CREATURE,
+					EntityType.BEE,
+					CakeWorldEntities.SUGAR_BEE,
+					8, 1, 3);
+			replace(event, MobCategory.CREATURE,
+					EntityType.RABBIT,
+					CakeWorldEntities.GUMMY_BUNNY,
+					4, 2, 3);
 			replace(event, MobCategory.CREATURE,
 					EntityType.PARROT,
 					CakeWorldEntities.LOLLIPOP_LORIKEET,

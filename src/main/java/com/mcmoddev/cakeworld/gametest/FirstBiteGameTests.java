@@ -9638,7 +9638,7 @@ public final class FirstBiteGameTests {
 							CakeWorld.MODID,
 							futureBiome);
 			Biome liveBiome = biomes.get(biomeId);
-			if ("gummy_jungle".equals(futureBiome)) {
+			if (liveBiome != null) {
 				MobSpawnSettings.SpawnerData liveSpawn =
 						liveBiome == null
 								? null
@@ -9670,11 +9670,12 @@ public final class FirstBiteGameTests {
 												spawn.type
 														== EntityType
 																.PARROT),
-						"Live Gummy Jungle lost the exact Jungle 40/1-2 Lollipop Lorikeet replacement");
+						"Live " + futureBiome
+								+ " lost the exact 40/1-2 Lollipop Lorikeet role");
 			} else {
-				require(helper, liveBiome == null,
+				require(helper, false,
 						futureBiome
-								+ " unexpectedly exists; MOB-036's staged spawn gate must be revisited");
+								+ " is missing; MOB-036's live spawn contract must be revisited");
 			}
 			MobSpawnSettingsBuilder futureSpawns =
 					new MobSpawnSettingsBuilder(
@@ -40536,6 +40537,9 @@ public final class FirstBiteGameTests {
 										.getId(),
 								CakeWorldBiomes
 										.GINGERBREAD_HEARTHLANDS
+										.getId(),
+								CakeWorldBiomes
+										.LOLLIPOP_ORCHARDS
 										.getId()))
 						&& ConfectionersCottageRepairFeature
 								.placedFeature() != null

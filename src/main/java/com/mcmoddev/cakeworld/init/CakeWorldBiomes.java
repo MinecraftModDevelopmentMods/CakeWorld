@@ -50,6 +50,8 @@ public final class CakeWorldBiomes {
 			cupcakeGardens();
 	public static final RegistryObject<Biome> LIQUORICE_DARKWOOD =
 			liquoriceDarkwood();
+	public static final RegistryObject<Biome> LOLLIPOP_ORCHARDS =
+			lollipopOrchards();
 	public static final RegistryObject<Biome> SODA_OCEAN = copy(
 			"soda_ocean", "ocean", 0.5F, 0.5F);
 	public static final RegistryObject<Biome> FUDGE_WASTES = copy(
@@ -138,6 +140,10 @@ public final class CakeWorldBiomes {
 					BiomeDictionary.Type.FOREST,
 					BiomeDictionary.Type.DENSE,
 					BiomeDictionary.Type.SPOOKY);
+			BiomeDictionary.addTypes(key(LOLLIPOP_ORCHARDS),
+					BiomeDictionary.Type.OVERWORLD,
+					BiomeDictionary.Type.FOREST,
+					BiomeDictionary.Type.LUSH);
 			BiomeDictionary.addTypes(key(SODA_OCEAN),
 					BiomeDictionary.Type.OVERWORLD,
 					BiomeDictionary.Type.OCEAN,
@@ -289,6 +295,13 @@ public final class CakeWorldBiomes {
 								withLiquoriceDarkwoodEffects(
 										vanilla("dark_forest")
 												.getSpecialEffects())));
+	}
+
+	private static RegistryObject<Biome> lollipopOrchards() {
+		return copyWithAmbient("lollipop_orchards",
+				"birch_forest", 0.7F, 0.7F,
+				CakeWorldSounds.LOLLIPOP_ORCHARDS_CHIME,
+				0.0011D);
 	}
 
 	private static RegistryObject<Biome> copyWithAmbient(

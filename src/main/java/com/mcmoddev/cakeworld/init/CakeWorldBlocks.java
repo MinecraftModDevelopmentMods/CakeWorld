@@ -16,6 +16,7 @@ import com.mcmoddev.cakeworld.block.CoolingRackBlock;
 import com.mcmoddev.cakeworld.block.GummyBlock;
 import com.mcmoddev.cakeworld.block.GummyVineBlock;
 import com.mcmoddev.cakeworld.block.IcingLayerBlock;
+import com.mcmoddev.cakeworld.block.LollipopFruitBlock;
 import com.mcmoddev.cakeworld.block.MarshmallowBlock;
 import com.mcmoddev.cakeworld.block.MixingBowlBlock;
 import com.mcmoddev.cakeworld.block.SherbetPowderBlock;
@@ -152,6 +153,20 @@ public final class CakeWorldBlocks {
 					BlockBehaviour.Properties.of(Material.DIRT)
 							.strength(0.6F)
 							.sound(SoundType.ROOTED_DIRT));
+	public static final RegistryObject<Block> CANDIED_SOIL =
+			block("candied_soil",
+					BlockBehaviour.Properties.of(Material.DIRT)
+							.strength(0.6F)
+							.sound(SoundType.ROOTED_DIRT));
+	public static final RegistryObject<Block> LOLLIPOP_FRUIT =
+			block("lollipop_fruit",
+					() -> new LollipopFruitBlock(
+							BlockBehaviour.Properties
+									.of(Material.LEAVES)
+									.randomTicks()
+									.strength(0.3F)
+									.sound(SoundType
+											.SLIME_BLOCK)));
 	public static final RegistryObject<Block> LIQUORICE_ROOT =
 			block("liquorice_root",
 					() -> new RotatedPillarBlock(

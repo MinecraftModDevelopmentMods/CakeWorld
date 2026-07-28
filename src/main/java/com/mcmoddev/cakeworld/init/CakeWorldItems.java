@@ -114,6 +114,16 @@ public final class CakeWorldItems {
 											MobEffects.NIGHT_VISION,
 											240), 1.0F)
 									.build())));
+	public static final RegistryObject<Item> RAINBOW_ORCHARD_LOLLIPOP =
+			ITEMS.register("rainbow_orchard_lollipop",
+					() -> new Item(new Item.Properties()
+							.tab(CreativeModeTab.TAB_FOOD)
+							.food(new FoodProperties.Builder()
+									.nutrition(6).saturationMod(0.7F)
+									.effect(() -> new MobEffectInstance(
+											CakeWorldEffects.SUGAR_RUSH.get(),
+											180), 1.0F)
+									.build())));
 	public static final RegistryObject<Item> FIZZY_POPPERS =
 			ITEMS.register("fizzy_poppers",
 					() -> new Item(new Item.Properties()
