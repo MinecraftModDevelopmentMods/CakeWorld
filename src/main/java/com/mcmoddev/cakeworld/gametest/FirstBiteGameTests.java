@@ -33938,8 +33938,11 @@ public final class FirstBiteGameTests {
 										.getId(),
 								CakeWorldBiomes
 										.SODA_OCEAN
+										.getId(),
+								CakeWorldBiomes
+										.CUSTARD_COAST
 										.getId())),
-				"Wafer Mine lost its configured structure, underground step, locate tag or four-biome Overworld contract: "
+				"Wafer Mine lost its configured structure, underground step, locate tag or six-biome Overworld contract: "
 						+ eligibleBiomes);
 
 		net.minecraft.world.level.levelgen.structure.placement
@@ -35357,6 +35360,7 @@ public final class FirstBiteGameTests {
 				CakeWorldBiomes.COOKIE_FOREST.getId(),
 				CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
 				CakeWorldBiomes.SODA_OCEAN.getId(),
+				CakeWorldBiomes.CUSTARD_COAST.getId(),
 				CakeWorldBiomes.FUDGE_WASTES.getId());
 		boolean overworldRepairInstalled =
 				hasPlacedFeature(
@@ -35398,7 +35402,7 @@ public final class FirstBiteGameTests {
 						&& netherRepairInstalled
 						&& eligibleBiomes
 								.equals(expectedBiomes),
-				"Burnt-Sugar Arch lost its configured structure, locate tag, five-biome contract or Overworld/Nether repair: eligible="
+				"Burnt-Sugar Arch lost its configured structure, locate tag, seven-biome contract or Overworld/Nether repair: eligible="
 						+ eligibleBiomes
 						+ ", overworldRepair="
 						+ overworldRepairInstalled

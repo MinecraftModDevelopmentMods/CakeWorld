@@ -47,6 +47,8 @@ public final class CakeWorldFeatureRegistration {
 				PrairiePoppingPatchFeature.FEATURE);
 		event.getRegistry().register(
 				WaferReefNurseryFeature.FEATURE);
+		event.getRegistry().register(
+				CustardCoastKitchenFeature.FEATURE);
 		event.getRegistry().register(GingerbreadVillageFeature.FEATURE);
 		event.getRegistry().register(
 				BiscuitBanditLookoutFeature.FEATURE);
@@ -175,6 +177,8 @@ public final class CakeWorldFeatureRegistration {
 			PrairiePoppingPatchFeature
 					.registerConfiguredFeature();
 			WaferReefNurseryFeature
+					.registerConfiguredFeature();
+			CustardCoastKitchenFeature
 					.registerConfiguredFeature();
 			GingerbreadVillageFeature.registerWorldgen();
 			BiscuitBanditLookoutFeature.registerWorldgen();

@@ -3972,20 +3972,17 @@ public final class DeepPantryGameTests {
 									== vault.eyeLocated()
 											.getZ()
 							&& !literalEligible
-							&& Set.of(
-									CakeWorldBiomes
-											.CANDY_PLAINS
-											.getId(),
-									CakeWorldBiomes
-											.GINGERBREAD_HEARTHLANDS
-											.getId(),
-									CakeWorldBiomes
-											.COOKIE_FOREST
-											.getId(),
-									CakeWorldBiomes
-											.MARSHMALLOW_PEAKS
-											.getId())
-									.contains(biome),
+							&& biome != null
+							&& CakeWorld.MODID.equals(
+									biome.getNamespace())
+							&& BiomeDictionary.hasType(
+									biomeKey(biome),
+									BiomeDictionary.Type
+											.OVERWORLD)
+							&& !BiomeDictionary.hasType(
+									biomeKey(biome),
+									BiomeDictionary.Type
+											.OCEAN),
 					"Natural Ancient Cake Vault did not share the Eye locate result or remain confined to a CakeWorld land biome outside literal vanilla Stronghold eligibility: own="
 							+ vault.located()
 							+ ", eye="

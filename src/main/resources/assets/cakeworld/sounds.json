@@ -142,5 +142,14 @@
         "type": "event"
       }
     ]
+  },
+  "custard_coast_lap": {
+    "subtitle": "subtitles.cakeworld.custard_coast.lap",
+    "sounds": [
+      {
+        "name": "minecraft:block.honey_block.slide",
+        "type": "event"
+      }
+    ]
   }
 }

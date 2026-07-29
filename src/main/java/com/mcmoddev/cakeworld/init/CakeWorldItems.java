@@ -172,6 +172,17 @@ public final class CakeWorldItems {
 															.get(),
 													160), 1.0F)
 											.build())));
+	public static final RegistryObject<Item> CUSTARD_TART =
+			ITEMS.register("custard_tart",
+					() -> new Item(new Item.Properties()
+							.tab(CreativeModeTab.TAB_FOOD)
+							.food(new FoodProperties.Builder()
+									.nutrition(7)
+									.saturationMod(0.75F)
+									.effect(() -> new MobEffectInstance(
+											MobEffects.ABSORPTION,
+											200), 1.0F)
+									.build())));
 	public static final RegistryObject<Item> FIZZY_POPPERS =
 			ITEMS.register("fizzy_poppers",
 					() -> new Item(new Item.Properties()

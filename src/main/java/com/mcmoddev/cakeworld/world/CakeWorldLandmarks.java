@@ -232,6 +232,20 @@ public final class CakeWorldLandmarks {
 							.TOP_LAYER_MODIFICATION)
 					.add(waferReefNursery);
 		}
+		Holder<PlacedFeature> custardCoastKitchen =
+				CustardCoastKitchenFeature
+						.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(
+						biome.getNamespace())
+				&& "custard_coast".equals(
+						biome.getPath())
+				&& custardCoastKitchen != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration
+							.TOP_LAYER_MODIFICATION)
+					.add(custardCoastKitchen);
+		}
 		Holder<PlacedFeature> manorRepair =
 				GrandGingerbreadManorRepairFeature
 						.placedFeature();
@@ -423,7 +437,8 @@ public final class CakeWorldLandmarks {
 				|| "liquorice_darkwood".equals(path)
 				|| "lollipop_orchards".equals(path)
 				|| "popcorn_prairie".equals(path)
-				|| "soda_ocean".equals(path);
+				|| "soda_ocean".equals(path)
+				|| "custard_coast".equals(path);
 	}
 
 	private static boolean isCurrentLandBiome(
@@ -438,7 +453,8 @@ public final class CakeWorldLandmarks {
 				|| "cupcake_gardens".equals(path)
 				|| "liquorice_darkwood".equals(path)
 				|| "lollipop_orchards".equals(path)
-				|| "popcorn_prairie".equals(path);
+				|| "popcorn_prairie".equals(path)
+				|| "custard_coast".equals(path);
 	}
 
 	private static boolean isSettlementBiome(String path) {

@@ -56,6 +56,8 @@ public final class CakeWorldBiomes {
 			popcornPrairie();
 	public static final RegistryObject<Biome> SODA_OCEAN =
 			sodaOcean();
+	public static final RegistryObject<Biome> CUSTARD_COAST =
+			custardCoast();
 	public static final RegistryObject<Biome> FUDGE_WASTES = copy(
 			"fudge_wastes", "nether_wastes", 2.0F, 0.0F);
 	public static final RegistryObject<Biome> MERINGUE_ISLANDS = copy(
@@ -154,6 +156,9 @@ public final class CakeWorldBiomes {
 					BiomeDictionary.Type.OVERWORLD,
 					BiomeDictionary.Type.OCEAN,
 					BiomeDictionary.Type.WATER);
+			BiomeDictionary.addTypes(key(CUSTARD_COAST),
+					BiomeDictionary.Type.OVERWORLD,
+					BiomeDictionary.Type.BEACH);
 			BiomeDictionary.addTypes(key(FUDGE_WASTES),
 					BiomeDictionary.Type.NETHER,
 					BiomeDictionary.Type.HOT,
@@ -322,6 +327,13 @@ public final class CakeWorldBiomes {
 				"ocean", 0.5F, 0.5F,
 				CakeWorldSounds.SODA_OCEAN_FIZZ,
 				0.0015D);
+	}
+
+	private static RegistryObject<Biome> custardCoast() {
+		return copyWithAmbient("custard_coast",
+				"beach", 0.8F, 0.4F,
+				CakeWorldSounds.CUSTARD_COAST_LAP,
+				0.0013D);
 	}
 
 	private static RegistryObject<Biome> copyWithAmbient(
