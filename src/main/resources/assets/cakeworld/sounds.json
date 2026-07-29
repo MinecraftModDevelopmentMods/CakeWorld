@@ -160,5 +160,14 @@
         "type": "event"
       }
     ]
+  },
+  "rock_candy_caverns_chime": {
+    "subtitle": "subtitles.cakeworld.rock_candy_caverns.chime",
+    "sounds": [
+      {
+        "name": "minecraft:block.amethyst_cluster.hit",
+        "type": "event"
+      }
+    ]
   }
 }

@@ -1,0 +1,33 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "cakeworld:rock_candy_deposit"
+    },
+    {
+      "item": "cakeworld:rock_candy_deposit"
+    },
+    {
+      "item": "cakeworld:rock_candy_deposit"
+    },
+    {
+      "item": "cakeworld:rock_candy_deposit"
+    },
+    {
+      "item": "cakeworld:mint_crystal"
+    },
+    {
+      "item": "cakeworld:mint_crystal"
+    },
+    {
+      "item": "cakeworld:mint_crystal"
+    },
+    {
+      "item": "cakeworld:mint_crystal"
+    }
+  ],
+  "result": {
+    "item": "cakeworld:prismatic_rock_candy",
+    "count": 4
+  }
+}

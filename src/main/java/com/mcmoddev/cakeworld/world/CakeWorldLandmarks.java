@@ -260,6 +260,20 @@ public final class CakeWorldLandmarks {
 							.TOP_LAYER_MODIFICATION)
 					.add(jellybeanCompassPicnic);
 		}
+		Holder<PlacedFeature> rockCandyGeodeBridge =
+				RockCandyGeodeBridgeFeature
+						.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(
+						biome.getNamespace())
+				&& "rock_candy_caverns".equals(
+						biome.getPath())
+				&& rockCandyGeodeBridge != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration
+							.TOP_LAYER_MODIFICATION)
+					.add(rockCandyGeodeBridge);
+		}
 		Holder<PlacedFeature> manorRepair =
 				GrandGingerbreadManorRepairFeature
 						.placedFeature();

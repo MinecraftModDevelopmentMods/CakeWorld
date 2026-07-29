@@ -201,6 +201,20 @@ public final class CakeWorldItems {
 															.get(),
 													160), 1.0F)
 											.build())));
+	public static final RegistryObject<Item> PRISMATIC_ROCK_CANDY =
+			ITEMS.register("prismatic_rock_candy",
+					() -> new Item(new Item.Properties()
+							.tab(CreativeModeTab.TAB_FOOD)
+							.food(new FoodProperties.Builder()
+									.nutrition(4)
+									.saturationMod(0.4F)
+									.effect(() -> new MobEffectInstance(
+											MobEffects.NIGHT_VISION,
+											300), 1.0F)
+									.effect(() -> new MobEffectInstance(
+											CakeWorldEffects.MINTY_FRESH.get(),
+											160), 1.0F)
+									.build())));
 	public static final RegistryObject<Item> FIZZY_POPPERS =
 			ITEMS.register("fizzy_poppers",
 					() -> new Item(new Item.Properties()

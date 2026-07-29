@@ -51,6 +51,8 @@ public final class CakeWorldFeatureRegistration {
 				CustardCoastKitchenFeature.FEATURE);
 		event.getRegistry().register(
 				JellybeanCompassPicnicFeature.FEATURE);
+		event.getRegistry().register(
+				RockCandyGeodeBridgeFeature.FEATURE);
 		event.getRegistry().register(GingerbreadVillageFeature.FEATURE);
 		event.getRegistry().register(
 				BiscuitBanditLookoutFeature.FEATURE);
@@ -183,6 +185,8 @@ public final class CakeWorldFeatureRegistration {
 			CustardCoastKitchenFeature
 					.registerConfiguredFeature();
 			JellybeanCompassPicnicFeature
+					.registerConfiguredFeature();
+			RockCandyGeodeBridgeFeature
 					.registerConfiguredFeature();
 			GingerbreadVillageFeature.registerWorldgen();
 			BiscuitBanditLookoutFeature.registerWorldgen();

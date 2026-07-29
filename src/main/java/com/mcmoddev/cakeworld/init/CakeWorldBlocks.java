@@ -286,6 +286,12 @@ public final class CakeWorldBlocks {
 	public static final RegistryObject<Block> PEPPERMINT_ROCK =
 			stone("peppermint_rock", 1.8F);
 	public static final RegistryObject<Block> ROCK_CANDY = stone("rock_candy", 2.2F);
+	public static final RegistryObject<Block> CUT_ROCK_CANDY =
+			block("cut_rock_candy",
+					BlockBehaviour.Properties.of(Material.STONE)
+							.requiresCorrectToolForDrops()
+							.strength(2.2F, 6.0F)
+							.sound(SoundType.AMETHYST));
 	public static final RegistryObject<Block> ROCK_CANDY_FOSSIL =
 			block("rock_candy_fossil",
 					() -> new RotatedPillarBlock(
@@ -344,7 +350,12 @@ public final class CakeWorldBlocks {
 	public static final RegistryObject<Block> COCOA_CLOUD =
 			stone("cocoa_cloud", 1.5F);
 	public static final RegistryObject<Block> MINT_CRYSTAL =
-			stone("mint_crystal", 2.5F);
+			block("mint_crystal",
+					BlockBehaviour.Properties.of(Material.STONE)
+							.requiresCorrectToolForDrops()
+							.strength(2.5F, 6.0F)
+							.sound(SoundType.AMETHYST)
+							.lightLevel(state -> 7));
 	public static final RegistryObject<Block> SPRINKLE_CLUSTER =
 			stone("sprinkle_cluster", 1.8F);
 	public static final RegistryObject<Block> RICH_SPRINKLE_CLUSTER =

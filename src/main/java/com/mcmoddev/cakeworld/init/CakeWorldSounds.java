@@ -104,6 +104,14 @@ public final class CakeWorldSounds {
 									new ResourceLocation(
 											CakeWorld.MODID,
 											"jellybean_archipelago_chimes")));
+	public static final RegistryObject<SoundEvent>
+			ROCK_CANDY_CAVERNS_CHIME =
+					SOUNDS.register(
+							"rock_candy_caverns_chime",
+							() -> new SoundEvent(
+									new ResourceLocation(
+											CakeWorld.MODID,
+											"rock_candy_caverns_chime")));
 
 	private CakeWorldSounds() {
 	}

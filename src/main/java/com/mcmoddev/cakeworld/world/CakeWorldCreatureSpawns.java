@@ -33,7 +33,8 @@ public final class CakeWorldCreatureSpawns {
 			"lollipop_orchards",
 			"popcorn_prairie",
 			"soda_ocean",
-			"custard_coast");
+			"custard_coast",
+			"rock_candy_caverns");
 
 	private CakeWorldCreatureSpawns() {
 	}
@@ -343,6 +344,13 @@ public final class CakeWorldCreatureSpawns {
 					EntityType.DOLPHIN,
 					CakeWorldEntities.SODA_DOLPHIN,
 					1, 1, 2);
+		}
+		if ("rock_candy_caverns".equals(
+				biome.getPath())) {
+			replace(event, MobCategory.MONSTER,
+					EntityType.SILVERFISH,
+					CakeWorldEntities.CRUMB_MITE,
+					8, 2, 4);
 		}
 		if ("candyfloss_cloudbanks".equals(
 				biome.getPath())) {

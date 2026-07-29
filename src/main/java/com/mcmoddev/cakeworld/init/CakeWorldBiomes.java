@@ -60,6 +60,8 @@ public final class CakeWorldBiomes {
 			custardCoast();
 	public static final RegistryObject<Biome> JELLYBEAN_ARCHIPELAGO =
 			jellybeanArchipelago();
+	public static final RegistryObject<Biome> ROCK_CANDY_CAVERNS =
+			rockCandyCaverns();
 	public static final RegistryObject<Biome> FUDGE_WASTES = copy(
 			"fudge_wastes", "nether_wastes", 2.0F, 0.0F);
 	public static final RegistryObject<Biome> MERINGUE_ISLANDS = copy(
@@ -167,6 +169,12 @@ public final class CakeWorldBiomes {
 					BiomeDictionary.Type.MAGICAL,
 					BiomeDictionary.Type.RARE,
 					BiomeDictionary.Type.LUSH);
+			BiomeDictionary.addTypes(
+					key(ROCK_CANDY_CAVERNS),
+					BiomeDictionary.Type.OVERWORLD,
+					BiomeDictionary.Type.UNDERGROUND,
+					BiomeDictionary.Type.MAGICAL,
+					BiomeDictionary.Type.SPARSE);
 			BiomeDictionary.addTypes(key(FUDGE_WASTES),
 					BiomeDictionary.Type.NETHER,
 					BiomeDictionary.Type.HOT,
@@ -350,6 +358,30 @@ public final class CakeWorldBiomes {
 				CakeWorldSounds
 						.JELLYBEAN_ARCHIPELAGO_CHIMES,
 				0.0014D);
+	}
+
+	private static RegistryObject<Biome> rockCandyCaverns() {
+		return OreSpawnBiomes.copyAndRegister(BIOMES,
+				"rock_candy_caverns",
+				() -> vanilla("dripstone_caves"),
+				builder -> builder
+						.temperature(0.8F)
+						.downfall(0.4F)
+						.specialEffects(
+								effectsBuilder(
+										vanilla("dripstone_caves")
+												.getSpecialEffects())
+										.ambientParticle(
+												new AmbientParticleSettings(
+														ParticleTypes.END_ROD,
+														0.0012F))
+										.ambientAdditionsSound(
+												new AmbientAdditionsSettings(
+														CakeWorldSounds
+																.ROCK_CANDY_CAVERNS_CHIME
+																.get(),
+														0.0012D))
+										.build()));
 	}
 
 	private static RegistryObject<Biome> copyWithAmbient(
