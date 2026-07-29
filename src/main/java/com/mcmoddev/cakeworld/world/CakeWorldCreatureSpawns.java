@@ -32,7 +32,8 @@ public final class CakeWorldCreatureSpawns {
 			"liquorice_darkwood",
 			"lollipop_orchards",
 			"popcorn_prairie",
-			"soda_ocean");
+			"soda_ocean",
+			"custard_coast");
 
 	private CakeWorldCreatureSpawns() {
 	}

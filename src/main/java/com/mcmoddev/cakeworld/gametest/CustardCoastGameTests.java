@@ -122,6 +122,21 @@ public final class CustardCoastGameTests {
 						&& findSpawn(coast,
 								EntityType.TURTLE) == null,
 				"Custard Coast lost its exact Wafer Turtle replacement");
+		assertSpawnReplacement(helper, coast,
+				MobCategory.MONSTER,
+				EntityType.ZOMBIE,
+				CakeWorldEntities.STALE_CRUMBLER.get(),
+				95, 4, 4);
+		assertSpawnReplacement(helper, coast,
+				MobCategory.MONSTER,
+				EntityType.CREEPER,
+				CakeWorldEntities.POP_ROCK_POPPER.get(),
+				100, 4, 4);
+		assertSpawnReplacement(helper, coast,
+				MobCategory.AMBIENT,
+				EntityType.BAT,
+				CakeWorldEntities.BONBON_BAT.get(),
+				10, 8, 8);
 		require(helper,
 				CakeWorldBlocks.CUSTARD_PUDDING.get()
 						.defaultBlockState().is(BlockTags.SAND)
@@ -799,6 +814,27 @@ public final class CustardCoastGameTests {
 			}
 		}
 		return null;
+	}
+
+	private static void assertSpawnReplacement(
+			GameTestHelper helper, Biome biome,
+			MobCategory category, EntityType<?> vanilla,
+			EntityType<?> replacement, int weight,
+			int minimum, int maximum) {
+		MobSpawnSettings.SpawnerData spawn =
+				findSpawn(biome, replacement);
+		require(helper, spawn != null
+						&& biome.getMobSettings()
+								.getMobs(category)
+								.unwrap().contains(spawn)
+						&& spawn.getWeight().asInt() == weight
+						&& spawn.minCount == minimum
+						&& spawn.maxCount == maximum
+						&& findSpawn(biome, vanilla) == null,
+				"Custard Coast lost its "
+						+ replacement.getRegistryName()
+						+ " replacement for "
+						+ vanilla.getRegistryName());
 	}
 
 	private static boolean hasPlacedFeature(Biome biome,
