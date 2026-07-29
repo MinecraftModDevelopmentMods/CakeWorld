@@ -274,6 +274,20 @@ public final class CakeWorldLandmarks {
 							.TOP_LAYER_MODIFICATION)
 					.add(rockCandyGeodeBridge);
 		}
+		Holder<PlacedFeature> jamLanternWalk =
+				JamLanternWalkFeature
+						.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(
+						biome.getNamespace())
+				&& "jam_grottoes".equals(
+						biome.getPath())
+				&& jamLanternWalk != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration
+							.TOP_LAYER_MODIFICATION)
+					.add(jamLanternWalk);
+		}
 		Holder<PlacedFeature> manorRepair =
 				GrandGingerbreadManorRepairFeature
 						.placedFeature();

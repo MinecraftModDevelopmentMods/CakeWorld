@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "age=0": {
+      "model": "minecraft:block/cave_vines_plant"
+    },
+    "age=1": {
+      "model": "minecraft:block/cave_vines_plant"
+    },
+    "age=2": {
+      "model": "minecraft:block/cave_vines_plant_lit"
+    },
+    "age=3": {
+      "model": "minecraft:block/cave_vines_plant_lit"
+    }
+  }
+}

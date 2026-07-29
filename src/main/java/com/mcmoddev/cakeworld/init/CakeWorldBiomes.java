@@ -62,6 +62,8 @@ public final class CakeWorldBiomes {
 			jellybeanArchipelago();
 	public static final RegistryObject<Biome> ROCK_CANDY_CAVERNS =
 			rockCandyCaverns();
+	public static final RegistryObject<Biome> JAM_GROTTOES =
+			jamGrottoes();
 	public static final RegistryObject<Biome> FUDGE_WASTES = copy(
 			"fudge_wastes", "nether_wastes", 2.0F, 0.0F);
 	public static final RegistryObject<Biome> MERINGUE_ISLANDS = copy(
@@ -175,6 +177,13 @@ public final class CakeWorldBiomes {
 					BiomeDictionary.Type.UNDERGROUND,
 					BiomeDictionary.Type.MAGICAL,
 					BiomeDictionary.Type.SPARSE);
+			BiomeDictionary.addTypes(
+					key(JAM_GROTTOES),
+					BiomeDictionary.Type.OVERWORLD,
+					BiomeDictionary.Type.UNDERGROUND,
+					BiomeDictionary.Type.LUSH,
+					BiomeDictionary.Type.WET,
+					BiomeDictionary.Type.MAGICAL);
 			BiomeDictionary.addTypes(key(FUDGE_WASTES),
 					BiomeDictionary.Type.NETHER,
 					BiomeDictionary.Type.HOT,
@@ -381,6 +390,31 @@ public final class CakeWorldBiomes {
 																.ROCK_CANDY_CAVERNS_CHIME
 																.get(),
 														0.0012D))
+										.build()));
+	}
+
+	private static RegistryObject<Biome> jamGrottoes() {
+		return OreSpawnBiomes.copyAndRegister(BIOMES,
+				"jam_grottoes",
+				() -> vanilla("lush_caves"),
+				builder -> builder
+						.temperature(0.7F)
+						.downfall(0.9F)
+						.specialEffects(
+								effectsBuilder(
+										vanilla("lush_caves")
+												.getSpecialEffects())
+										.ambientParticle(
+												new AmbientParticleSettings(
+														ParticleTypes
+																.SPORE_BLOSSOM_AIR,
+														0.0015F))
+										.ambientAdditionsSound(
+												new AmbientAdditionsSettings(
+														CakeWorldSounds
+																.JAM_GROTTOES_DRIP
+																.get(),
+														0.0014D))
 										.build()));
 	}
 

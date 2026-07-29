@@ -387,6 +387,7 @@
   "biome.cakeworld.custard_coast": "Custard Coast",
   "biome.cakeworld.jellybean_archipelago": "Jellybean Archipelago",
   "biome.cakeworld.rock_candy_caverns": "Rock-Candy Caverns",
+  "biome.cakeworld.jam_grottoes": "Jam Grottoes",
   "biome.cakeworld.fudge_wastes": "Fudge Wastes",
   "biome.cakeworld.meringue_islands": "Meringue Islands",
   "template.cakeworld.edible_world": "Cake World",
@@ -396,5 +397,9 @@
   "filled_map.cakeworld.wafer_wreck": "Lost Cargo Map",
   "filled_map.cakeworld.buried_sweet_tin": "Buried Sweet Tin Map",
   "container.cakeworld.buried_sweet_tin": "Buried Sweet Tin",
-  "subtitles.cakeworld.rock_candy_caverns.chime": "Rock candy twinkles"
+  "subtitles.cakeworld.rock_candy_caverns.chime": "Rock candy twinkles",
+  "subtitles.cakeworld.jam_grottoes.drip": "Jam plops softly",
+  "block.cakeworld.jam_glow_vine": "Jam Glow Vine",
+  "item.cakeworld.glowing_jam_berry": "Glowing Jam Berry",
+  "item.cakeworld.grotto_jam_toast": "Grotto Jam Toast"
 }

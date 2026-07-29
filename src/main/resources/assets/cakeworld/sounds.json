@@ -169,5 +169,14 @@
         "type": "event"
       }
     ]
+  },
+  "jam_grottoes_drip": {
+    "subtitle": "subtitles.cakeworld.jam_grottoes.drip",
+    "sounds": [
+      {
+        "name": "minecraft:block.pointed_dripstone.drip_water",
+        "type": "event"
+      }
+    ]
   }
 }

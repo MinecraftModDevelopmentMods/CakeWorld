@@ -215,6 +215,30 @@ public final class CakeWorldItems {
 											CakeWorldEffects.MINTY_FRESH.get(),
 											160), 1.0F)
 									.build())));
+	public static final RegistryObject<Item> GLOWING_JAM_BERRY =
+			ITEMS.register("glowing_jam_berry",
+					() -> new ItemNameBlockItem(
+							CakeWorldBlocks.JAM_GLOW_VINE.get(),
+							new Item.Properties()
+									.tab(CreativeModeTab.TAB_FOOD)
+									.food(new FoodProperties.Builder()
+											.nutrition(2)
+											.saturationMod(0.2F)
+											.build())));
+	public static final RegistryObject<Item> GROTTO_JAM_TOAST =
+			ITEMS.register("grotto_jam_toast",
+					() -> new Item(new Item.Properties()
+							.tab(CreativeModeTab.TAB_FOOD)
+							.food(new FoodProperties.Builder()
+									.nutrition(6)
+									.saturationMod(0.6F)
+									.effect(() -> new MobEffectInstance(
+											MobEffects.NIGHT_VISION,
+											240), 1.0F)
+									.effect(() -> new MobEffectInstance(
+											MobEffects.ABSORPTION,
+											160), 1.0F)
+									.build())));
 	public static final RegistryObject<Item> FIZZY_POPPERS =
 			ITEMS.register("fizzy_poppers",
 					() -> new Item(new Item.Properties()

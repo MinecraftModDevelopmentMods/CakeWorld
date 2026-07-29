@@ -159,7 +159,7 @@ public final class CakeWorldFluids {
 					() -> new ForgeFlowingFluid.Flowing(JAM_PROPERTIES));
 	public static final RegistryObject<LiquidBlock> JAM_BLOCK = BLOCKS.register("jam",
 			() -> new CakeLiquidBlock(CakeWorldFluids::jamFlowing,
-					edibleFluidProperties()));
+					edibleFluidProperties(), 0.4D, 0.7D));
 	public static final RegistryObject<Item> JAM_BUCKET = ITEMS.register("jam_bucket",
 			() -> new CakeBucketItem(CakeWorldFluids::jam, bucketProperties()));
 

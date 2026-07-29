@@ -34,7 +34,8 @@ public final class CakeWorldCreatureSpawns {
 			"popcorn_prairie",
 			"soda_ocean",
 			"custard_coast",
-			"rock_candy_caverns");
+			"rock_candy_caverns",
+			"jam_grottoes");
 
 	private CakeWorldCreatureSpawns() {
 	}
@@ -351,6 +352,19 @@ public final class CakeWorldCreatureSpawns {
 					EntityType.SILVERFISH,
 					CakeWorldEntities.CRUMB_MITE,
 					8, 2, 4);
+		}
+		if ("jam_grottoes".equals(
+				biome.getPath())) {
+			replaceExisting(event, MobCategory.AXOLOTLS,
+					EntityType.AXOLOTL,
+					CakeWorldEntities.JELLYLOTL);
+			replaceExisting(event, MobCategory.WATER_AMBIENT,
+					EntityType.TROPICAL_FISH,
+					CakeWorldEntities.JELLYBEAN_FISH);
+			replaceExisting(event,
+					MobCategory.UNDERGROUND_WATER_CREATURE,
+					EntityType.GLOW_SQUID,
+					CakeWorldEntities.GLOW_JELLY);
 		}
 		if ("candyfloss_cloudbanks".equals(
 				biome.getPath())) {

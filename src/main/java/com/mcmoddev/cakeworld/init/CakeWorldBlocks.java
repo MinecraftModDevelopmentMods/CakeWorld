@@ -18,6 +18,7 @@ import com.mcmoddev.cakeworld.block.FizzyKelpBlock;
 import com.mcmoddev.cakeworld.block.GummyBlock;
 import com.mcmoddev.cakeworld.block.GummyVineBlock;
 import com.mcmoddev.cakeworld.block.IcingLayerBlock;
+import com.mcmoddev.cakeworld.block.JamGlowVineBlock;
 import com.mcmoddev.cakeworld.block.LollipopFruitBlock;
 import com.mcmoddev.cakeworld.block.MarshmallowBlock;
 import com.mcmoddev.cakeworld.block.MixingBowlBlock;
@@ -198,6 +199,20 @@ public final class CakeWorldBlocks {
 									.randomTicks()
 									.instabreak()
 									.sound(SoundType.WET_GRASS)));
+	public static final RegistryObject<Block> JAM_GLOW_VINE =
+			BLOCKS.register("jam_glow_vine",
+					() -> new JamGlowVineBlock(
+							BlockBehaviour.Properties
+									.of(Material
+											.REPLACEABLE_PLANT)
+									.noCollission()
+									.randomTicks()
+									.instabreak()
+									.lightLevel(state ->
+											state.getValue(
+													JamGlowVineBlock.AGE)
+													>= 2 ? 8 : 2)
+									.sound(SoundType.CAVE_VINES)));
 	public static final RegistryObject<Block> CUSTARD_PUDDING =
 			block("custard_pudding",
 					() -> new CustardPuddingBlock(

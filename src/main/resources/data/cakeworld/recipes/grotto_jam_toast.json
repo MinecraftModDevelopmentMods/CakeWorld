@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "cakeworld:simple_biscuit"
+    },
+    {
+      "item": "cakeworld:simple_biscuit"
+    },
+    {
+      "item": "cakeworld:glowing_jam_berry"
+    },
+    {
+      "item": "cakeworld:glowing_jam_berry"
+    },
+    {
+      "item": "cakeworld:jam_bucket"
+    }
+  ],
+  "result": {
+    "item": "cakeworld:grotto_jam_toast",
+    "count": 2
+  }
+}
