@@ -297,7 +297,17 @@ public final class CakeWorldBlocks {
 			BlockBehaviour.Properties.of(Material.STONE).requiresCorrectToolForDrops()
 					.strength(2.0F, 6.0F).sound(SoundType.NETHERRACK));
 	public static final RegistryObject<Block> WAFER_ROCK = stone("wafer_rock", 1.0F);
-	public static final RegistryObject<Block> NOUGAT_ROCK = stone("nougat_rock", 2.5F);
+	public static final RegistryObject<Block> NOUGAT_ROCK =
+			block("nougat_rock",
+					BlockBehaviour.Properties.of(Material.STONE)
+							.requiresCorrectToolForDrops()
+							.strength(2.5F, 6.0F)
+							.sound(SoundType.STONE)
+							.speedFactor(0.88F));
+	public static final RegistryObject<Block> TOASTED_NOUGAT_TILES =
+			block("toasted_nougat_tiles",
+					BlockBehaviour.Properties.copy(
+							Blocks.POLISHED_DEEPSLATE));
 	public static final RegistryObject<Block> PEPPERMINT_ROCK =
 			stone("peppermint_rock", 1.8F);
 	public static final RegistryObject<Block> ROCK_CANDY = stone("rock_candy", 2.2F);

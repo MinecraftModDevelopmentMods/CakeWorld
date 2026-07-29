@@ -64,6 +64,8 @@ public final class CakeWorldBiomes {
 			rockCandyCaverns();
 	public static final RegistryObject<Biome> JAM_GROTTOES =
 			jamGrottoes();
+	public static final RegistryObject<Biome> NOUGAT_DEPTHS =
+			nougatDepths();
 	public static final RegistryObject<Biome> FUDGE_WASTES = copy(
 			"fudge_wastes", "nether_wastes", 2.0F, 0.0F);
 	public static final RegistryObject<Biome> MERINGUE_ISLANDS = copy(
@@ -183,6 +185,12 @@ public final class CakeWorldBiomes {
 					BiomeDictionary.Type.UNDERGROUND,
 					BiomeDictionary.Type.LUSH,
 					BiomeDictionary.Type.WET,
+					BiomeDictionary.Type.MAGICAL);
+			BiomeDictionary.addTypes(
+					key(NOUGAT_DEPTHS),
+					BiomeDictionary.Type.OVERWORLD,
+					BiomeDictionary.Type.UNDERGROUND,
+					BiomeDictionary.Type.DENSE,
 					BiomeDictionary.Type.MAGICAL);
 			BiomeDictionary.addTypes(key(FUDGE_WASTES),
 					BiomeDictionary.Type.NETHER,
@@ -415,6 +423,31 @@ public final class CakeWorldBiomes {
 																.JAM_GROTTOES_DRIP
 																.get(),
 														0.0014D))
+										.build()));
+	}
+
+	private static RegistryObject<Biome> nougatDepths() {
+		return OreSpawnBiomes.copyAndRegister(BIOMES,
+				"nougat_depths",
+				() -> vanilla("dripstone_caves"),
+				builder -> builder
+						.temperature(0.6F)
+						.downfall(0.5F)
+						.specialEffects(
+								effectsBuilder(
+										vanilla("dripstone_caves")
+												.getSpecialEffects())
+										.ambientParticle(
+												new AmbientParticleSettings(
+														ParticleTypes
+																.WHITE_ASH,
+														0.0009F))
+										.ambientAdditionsSound(
+												new AmbientAdditionsSettings(
+														CakeWorldSounds
+																.NOUGAT_DEPTHS_SETTLE
+																.get(),
+														0.0011D))
 										.build()));
 	}
 

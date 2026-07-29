@@ -288,6 +288,20 @@ public final class CakeWorldLandmarks {
 							.TOP_LAYER_MODIFICATION)
 					.add(jamLanternWalk);
 		}
+		Holder<PlacedFeature> ancientNougatKitchen =
+				AncientNougatKitchenFeature
+						.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(
+						biome.getNamespace())
+				&& "nougat_depths".equals(
+						biome.getPath())
+				&& ancientNougatKitchen != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration
+							.TOP_LAYER_MODIFICATION)
+					.add(ancientNougatKitchen);
+		}
 		Holder<PlacedFeature> manorRepair =
 				GrandGingerbreadManorRepairFeature
 						.placedFeature();

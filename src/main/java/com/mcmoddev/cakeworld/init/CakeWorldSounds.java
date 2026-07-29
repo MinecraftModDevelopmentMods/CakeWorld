@@ -120,6 +120,14 @@ public final class CakeWorldSounds {
 									new ResourceLocation(
 											CakeWorld.MODID,
 											"jam_grottoes_drip")));
+	public static final RegistryObject<SoundEvent>
+			NOUGAT_DEPTHS_SETTLE =
+					SOUNDS.register(
+							"nougat_depths_settle",
+							() -> new SoundEvent(
+									new ResourceLocation(
+											CakeWorld.MODID,
+											"nougat_depths_settle")));
 
 	private CakeWorldSounds() {
 	}

@@ -178,5 +178,14 @@
         "type": "event"
       }
     ]
+  },
+  "nougat_depths_settle": {
+    "subtitle": "subtitles.cakeworld.nougat_depths.settle",
+    "sounds": [
+      {
+        "name": "minecraft:block.honey_block.place",
+        "type": "event"
+      }
+    ]
   }
 }

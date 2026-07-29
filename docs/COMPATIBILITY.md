@@ -122,12 +122,17 @@ update deliberately and test both behaviors.
 
 ### Current implementation
 
-Provider revision 5 builds both adventure templates from
+Provider revision 31 builds both adventure templates from
 `src/main/orespawn/provider.json` and the small
 `src/main/orespawn/basemetals-overlay.json`. The compatibility overlay keeps
 the ten currently enabled BaseMetals resources enabled, keeps Copper,
 Antimony, and Bismuth non-generating, and replaces the Nether and End host
-lists with CakeWorld edible geology.
+lists with CakeWorld edible geology. The canonical Nougat-Depths biome,
+landmark and deep-output profile is byte-for-byte identical between the normal
+and BaseMetals adventures; the compatibility template differs only by the
+thirteen deliberate BaseMetals ore entries. Structural Toasted Nougat Tiles
+are not an edible ore host, so compatibility placement cannot consume the
+Ancient Nougat Kitchen floor.
 
 The automated integration scenario verifies:
 

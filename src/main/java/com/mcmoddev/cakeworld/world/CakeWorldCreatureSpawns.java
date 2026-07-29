@@ -35,7 +35,8 @@ public final class CakeWorldCreatureSpawns {
 			"soda_ocean",
 			"custard_coast",
 			"rock_candy_caverns",
-			"jam_grottoes");
+			"jam_grottoes",
+			"nougat_depths");
 
 	private CakeWorldCreatureSpawns() {
 	}
@@ -365,6 +366,17 @@ public final class CakeWorldCreatureSpawns {
 					MobCategory.UNDERGROUND_WATER_CREATURE,
 					EntityType.GLOW_SQUID,
 					CakeWorldEntities.GLOW_JELLY);
+		}
+		if ("nougat_depths".equals(
+				biome.getPath())) {
+			replace(event, MobCategory.MONSTER,
+					EntityType.CAVE_SPIDER,
+					CakeWorldEntities.DEEP_LIQUORICE_WEAVER,
+					6, 1, 2);
+			replace(event, MobCategory.MONSTER,
+					EntityType.SILVERFISH,
+					CakeWorldEntities.CRUMB_MITE,
+					8, 2, 4);
 		}
 		if ("candyfloss_cloudbanks".equals(
 				biome.getPath())) {

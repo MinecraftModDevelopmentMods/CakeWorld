@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "cakeworld:rolling_pin"
+    },
+    {
+      "item": "cakeworld:nougat_rock"
+    },
+    {
+      "item": "cakeworld:nougat_rock"
+    },
+    {
+      "item": "cakeworld:cocoa_truffle"
+    },
+    {
+      "item": "minecraft:sugar"
+    }
+  ],
+  "result": {
+    "item": "cakeworld:miners_nougat",
+    "count": 3
+  }
+}

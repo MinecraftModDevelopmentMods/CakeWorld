@@ -47,6 +47,7 @@
   "block.cakeworld.fudge_rock": "Fudge Rock",
   "block.cakeworld.wafer_rock": "Wafer Rock",
   "block.cakeworld.nougat_rock": "Nougat Rock",
+  "block.cakeworld.toasted_nougat_tiles": "Toasted Nougat Tiles",
   "block.cakeworld.peppermint_rock": "Peppermint Rock",
   "block.cakeworld.rock_candy": "Rock Candy",
   "block.cakeworld.cut_rock_candy": "Cut Rock Candy",
@@ -388,6 +389,7 @@
   "biome.cakeworld.jellybean_archipelago": "Jellybean Archipelago",
   "biome.cakeworld.rock_candy_caverns": "Rock-Candy Caverns",
   "biome.cakeworld.jam_grottoes": "Jam Grottoes",
+  "biome.cakeworld.nougat_depths": "Nougat Depths",
   "biome.cakeworld.fudge_wastes": "Fudge Wastes",
   "biome.cakeworld.meringue_islands": "Meringue Islands",
   "template.cakeworld.edible_world": "Cake World",
@@ -399,7 +401,9 @@
   "container.cakeworld.buried_sweet_tin": "Buried Sweet Tin",
   "subtitles.cakeworld.rock_candy_caverns.chime": "Rock candy twinkles",
   "subtitles.cakeworld.jam_grottoes.drip": "Jam plops softly",
+  "subtitles.cakeworld.nougat_depths.settle": "Nougat settles in the deep",
   "block.cakeworld.jam_glow_vine": "Jam Glow Vine",
   "item.cakeworld.glowing_jam_berry": "Glowing Jam Berry",
-  "item.cakeworld.grotto_jam_toast": "Grotto Jam Toast"
+  "item.cakeworld.grotto_jam_toast": "Grotto Jam Toast",
+  "item.cakeworld.miners_nougat": "Miner's Nougat"
 }

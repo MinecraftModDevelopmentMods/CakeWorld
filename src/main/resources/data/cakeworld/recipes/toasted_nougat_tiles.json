@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:stonecutting",
+  "ingredient": {
+    "item": "cakeworld:nougat_rock"
+  },
+  "result": "cakeworld:toasted_nougat_tiles",
+  "count": 1
+}

@@ -239,6 +239,21 @@ public final class CakeWorldItems {
 											MobEffects.ABSORPTION,
 											160), 1.0F)
 									.build())));
+	public static final RegistryObject<Item> MINERS_NOUGAT =
+			ITEMS.register("miners_nougat",
+					() -> new Item(new Item.Properties()
+							.tab(CreativeModeTab.TAB_FOOD)
+							.food(new FoodProperties.Builder()
+									.nutrition(7)
+									.saturationMod(0.8F)
+									.effect(() -> new MobEffectInstance(
+											CakeWorldEffects
+													.COCOA_COMFORT.get(),
+											240), 1.0F)
+									.effect(() -> new MobEffectInstance(
+											MobEffects.DIG_SPEED,
+											200), 1.0F)
+									.build())));
 	public static final RegistryObject<Item> FIZZY_POPPERS =
 			ITEMS.register("fizzy_poppers",
 					() -> new Item(new Item.Properties()
