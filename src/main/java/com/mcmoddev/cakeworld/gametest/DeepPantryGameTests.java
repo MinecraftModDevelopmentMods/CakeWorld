@@ -431,6 +431,55 @@ public final class DeepPantryGameTests {
 		helper.succeed();
 	}
 
+	@GameTest(template = EMPTY, batch = "os085world",
+			timeoutTicks = 2400)
+	public static void focusedFizzyPearlAttributionAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean(
+				"cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed Fizzy Pearl attribution audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel();
+		BlockPos sodaOcean = locateBiome(helper, level,
+				id("soda_ocean"));
+		int sodaChunkX = Math.floorDiv(
+				sodaOcean.getX(), 16);
+		int sodaChunkZ = Math.floorDiv(
+				sodaOcean.getZ(), 16);
+		Map<Block, Integer> sodaRegion = scanDimension(level,
+				Set.of(
+						CakeWorldBlocks.FIZZY_PEARL.get(),
+						CakeWorldFluids.LEMONADE_BLOCK.get()),
+				sodaChunkX, sodaChunkZ, 4, -64, 96);
+		PearlAttribution pearlAttribution =
+				countFizzyPearlAttribution(level,
+						sodaChunkX, sodaChunkZ, 4,
+						-64, 96);
+		int fizzyPearls = sodaRegion.getOrDefault(
+				CakeWorldBlocks.FIZZY_PEARL.get(), 0);
+		require(helper,
+				pearlAttribution.total() == fizzyPearls,
+				"Fizzy Pearl attribution scan disagreed with the focused Soda Ocean block scan");
+		if (pearlAttribution.unattributed() > 0) {
+			require(helper,
+					pearlAttribution
+							.unattributedUnderLemonade() > 0,
+					"Unattributed Fizzy Pearls appeared without an observed under-Lemonade origin");
+			LOGGER.warn("OS-085 remains unverified: the fixed-seed Soda Ocean contained {} under-Lemonade Fizzy Pearl candidates outside complete Wafer Reef Nurseries, but block observation alone cannot attribute them to OreSpawn",
+					pearlAttribution
+							.unattributedUnderLemonade());
+		} else {
+			LOGGER.warn("Known OS-085 integrated-world gap: fixed-seed Soda Ocean contained Lemonade and compatible floor hosts but generated no unattributed Fizzy Pearls after excluding {} authored Wafer Reef Nursery treasures; the public pattern compiler is tested separately",
+					pearlAttribution.waferReefTreasures());
+		}
+		LOGGER.info("Focused Fizzy Pearl attribution audit: soda_ocean={}, fizzy_region={}, pearl_attribution={}",
+				sodaOcean, describe(sodaRegion),
+				pearlAttribution);
+		helper.succeed();
+	}
+
 	@GameTest(template = EMPTY, timeoutTicks = 2400)
 	public static void focusedBiomeWorldgenAuditsRareOutputs(
 			GameTestHelper helper) {
@@ -540,22 +589,30 @@ public final class DeepPantryGameTests {
 				sodaOcean, describe(sodaRegion), sodaSurfaceBiomes,
 				sodaOreFilterBiomes, sodaSurfaceGeomes, sodaOreFilterGeomes,
 				describe(lemonadeFloor));
-		int pearlsDirectlyUnderLemonade = countTargetUnderFluid(level,
-				CakeWorldBlocks.FIZZY_PEARL.get(),
-				CakeWorldFluids.LEMONADE.get(),
+		PearlAttribution pearlAttribution =
+				countFizzyPearlAttribution(level,
 				sodaChunkX, sodaChunkZ, 4, -64, 96);
 		int fizzyPearls = sodaRegion.getOrDefault(
 				CakeWorldBlocks.FIZZY_PEARL.get(), 0);
-		if (fizzyPearls > 0) {
-			require(helper, pearlsDirectlyUnderLemonade > 0,
-					"Fizzy Pearls generated without an observed under-lemonade origin");
+		require(helper,
+				pearlAttribution.total() == fizzyPearls,
+				"Fizzy Pearl attribution scan disagreed with the focused Soda Ocean block scan");
+		if (pearlAttribution.unattributed() > 0) {
+			require(helper,
+					pearlAttribution
+							.unattributedUnderLemonade() > 0,
+					"Unattributed Fizzy Pearls appeared without an observed under-Lemonade origin");
+			LOGGER.warn("OS-085 remains unverified: the fixed-seed Soda Ocean contained {} under-Lemonade Fizzy Pearl candidates outside complete Wafer Reef Nurseries, but block observation alone cannot attribute them to OreSpawn",
+					pearlAttribution
+							.unattributedUnderLemonade());
 		} else {
-			LOGGER.warn("Known OS-085 integrated-world gap: fixed-seed Soda Ocean contained Lemonade and compatible floor hosts but generated no Fizzy Pearls; the public pattern compiler is tested separately");
+			LOGGER.warn("Known OS-085 integrated-world gap: fixed-seed Soda Ocean contained Lemonade and compatible floor hosts but generated no unattributed Fizzy Pearls after excluding {} authored Wafer Reef Nursery treasures; the public pattern compiler is tested separately",
+					pearlAttribution.waferReefTreasures());
 		}
 
-		LOGGER.info("Focused Deep Pantry audit: marshmallow_peaks={} mint_region={}, soda_ocean={} fizzy_region={}, pearls_under_lemonade={}",
+		LOGGER.info("Focused Deep Pantry audit: marshmallow_peaks={} mint_region={}, soda_ocean={} fizzy_region={}, pearl_attribution={}",
 				marshmallowPeaks, describe(mintRegion), sodaOcean,
-				describe(sodaRegion), pearlsDirectlyUnderLemonade);
+				describe(sodaRegion), pearlAttribution);
 		helper.succeed();
 	}
 
@@ -8423,6 +8480,80 @@ public final class DeepPantryGameTests {
 		return count;
 	}
 
+	private static PearlAttribution countFizzyPearlAttribution(
+			ServerLevel level, int centerChunkX, int centerChunkZ,
+			int radius, int requestedMinY, int requestedMaxY) {
+		int total = 0;
+		int underLemonade = 0;
+		int waferReefTreasures = 0;
+		int waferReefTreasuresUnderLemonade = 0;
+		int minY = Math.max(level.getMinBuildHeight(),
+				requestedMinY);
+		int maxY = Math.min(level.getMaxBuildHeight() - 2,
+				requestedMaxY);
+		for (int chunkX = centerChunkX - radius;
+				chunkX <= centerChunkX + radius; chunkX++) {
+			for (int chunkZ = centerChunkZ - radius;
+					chunkZ <= centerChunkZ + radius; chunkZ++) {
+				for (int x = chunkX << 4;
+						x < (chunkX + 1) << 4; x++) {
+					for (int z = chunkZ << 4;
+							z < (chunkZ + 1) << 4; z++) {
+						for (int y = minY; y <= maxY; y++) {
+							BlockPos position =
+									new BlockPos(x, y, z);
+							if (!level.getBlockState(position).is(
+									CakeWorldBlocks
+											.FIZZY_PEARL.get())) {
+								continue;
+							}
+							total++;
+							boolean submerged = level
+									.getFluidState(
+											position.above())
+									.is(CakeWorldFluids
+											.LEMONADE.get());
+							if (submerged) {
+								underLemonade++;
+							}
+							if (isWaferReefTreasure(
+									level, position)) {
+								waferReefTreasures++;
+								if (submerged) {
+									waferReefTreasuresUnderLemonade++;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		return new PearlAttribution(total, underLemonade,
+				waferReefTreasures,
+				waferReefTreasuresUnderLemonade);
+	}
+
+	private static boolean isWaferReefTreasure(
+			ServerLevel level, BlockPos pearl) {
+		if (!level.getBlockState(pearl.below())
+				.is(CakeWorldBlocks.WAFER_BLOCK.get())) {
+			return false;
+		}
+		for (Direction direction :
+				Direction.Plane.HORIZONTAL) {
+			if (!level.getBlockState(pearl.relative(
+					direction, 2)).is(
+							CakeWorldBlocks.CANDY_GLASS.get())
+					|| !level.getBlockState(pearl.below()
+							.relative(direction))
+							.is(CakeWorldBlocks
+									.WAFER_BLOCK.get())) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 	@GameTest(template = EMPTY)
 	public static void themedVanillaResourcesPreserveMiningAndProcessingRoles(
 			GameTestHelper helper) {
@@ -14826,6 +14957,21 @@ public final class DeepPantryGameTests {
 
 	private record SurfaceAudit(int biomeColumns, int topMatches,
 			int fillerMatches) {
+	}
+
+	private record PearlAttribution(
+			int total,
+			int underLemonade,
+			int waferReefTreasures,
+			int waferReefTreasuresUnderLemonade) {
+		int unattributed() {
+			return total - waferReefTreasures;
+		}
+
+		int unattributedUnderLemonade() {
+			return underLemonade
+					- waferReefTreasuresUnderLemonade;
+		}
 	}
 
 	private static final class GeologySurvey {

@@ -36,6 +36,9 @@ public final class CakeWorldClient {
 			ItemBlockRenderTypes.setRenderLayer(
 					CakeWorldBlocks.TREACLE_REED.get(),
 					RenderType.cutout());
+			ItemBlockRenderTypes.setRenderLayer(
+					CakeWorldBlocks.FIZZY_KELP.get(),
+					RenderType.cutout());
 			ItemBlockRenderTypes.setRenderLayer(CakeWorldBlocks.CANDY_GLASS.get(),
 					RenderType.translucent());
 			ItemBlockRenderTypes.setRenderLayer(CakeWorldFluids.LEMONADE.get(),

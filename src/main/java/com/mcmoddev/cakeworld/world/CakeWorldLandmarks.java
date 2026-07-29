@@ -220,6 +220,18 @@ public final class CakeWorldLandmarks {
 							.TOP_LAYER_MODIFICATION)
 					.add(prairiePoppingPatch);
 		}
+		Holder<PlacedFeature> waferReefNursery =
+				WaferReefNurseryFeature.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(
+						biome.getNamespace())
+				&& "soda_ocean".equals(biome.getPath())
+				&& waferReefNursery != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration
+							.TOP_LAYER_MODIFICATION)
+					.add(waferReefNursery);
+		}
 		Holder<PlacedFeature> manorRepair =
 				GrandGingerbreadManorRepairFeature
 						.placedFeature();

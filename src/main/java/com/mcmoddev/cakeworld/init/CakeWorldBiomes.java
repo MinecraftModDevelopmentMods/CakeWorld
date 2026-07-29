@@ -54,8 +54,8 @@ public final class CakeWorldBiomes {
 			lollipopOrchards();
 	public static final RegistryObject<Biome> POPCORN_PRAIRIE =
 			popcornPrairie();
-	public static final RegistryObject<Biome> SODA_OCEAN = copy(
-			"soda_ocean", "ocean", 0.5F, 0.5F);
+	public static final RegistryObject<Biome> SODA_OCEAN =
+			sodaOcean();
 	public static final RegistryObject<Biome> FUDGE_WASTES = copy(
 			"fudge_wastes", "nether_wastes", 2.0F, 0.0F);
 	public static final RegistryObject<Biome> MERINGUE_ISLANDS = copy(
@@ -315,6 +315,13 @@ public final class CakeWorldBiomes {
 				"plains", 0.8F, 0.35F,
 				CakeWorldSounds.POPCORN_PRAIRIE_RUSTLE,
 				0.0014D);
+	}
+
+	private static RegistryObject<Biome> sodaOcean() {
+		return copyWithAmbient("soda_ocean",
+				"ocean", 0.5F, 0.5F,
+				CakeWorldSounds.SODA_OCEAN_FIZZ,
+				0.0015D);
 	}
 
 	private static RegistryObject<Biome> copyWithAmbient(

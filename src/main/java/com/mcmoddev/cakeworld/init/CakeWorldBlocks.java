@@ -13,6 +13,7 @@ import com.mcmoddev.cakeworld.block.CinnamonWartBlock;
 import com.mcmoddev.cakeworld.block.CookbookKioskBlock;
 import com.mcmoddev.cakeworld.block.CookbookLibraryBlock;
 import com.mcmoddev.cakeworld.block.CoolingRackBlock;
+import com.mcmoddev.cakeworld.block.FizzyKelpBlock;
 import com.mcmoddev.cakeworld.block.GummyBlock;
 import com.mcmoddev.cakeworld.block.GummyVineBlock;
 import com.mcmoddev.cakeworld.block.IcingLayerBlock;
@@ -187,6 +188,15 @@ public final class CakeWorldBlocks {
 									.randomTicks()
 									.instabreak()
 									.sound(SoundType.CROP)));
+	public static final RegistryObject<Block> FIZZY_KELP =
+			BLOCKS.register("fizzy_kelp",
+					() -> new FizzyKelpBlock(
+							BlockBehaviour.Properties
+									.of(Material.WATER_PLANT)
+									.noCollission()
+									.randomTicks()
+									.instabreak()
+									.sound(SoundType.WET_GRASS)));
 	public static final RegistryObject<Block> LIQUORICE_ROOT =
 			block("liquorice_root",
 					() -> new RotatedPillarBlock(

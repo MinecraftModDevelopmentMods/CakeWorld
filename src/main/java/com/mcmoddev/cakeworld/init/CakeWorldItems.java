@@ -146,6 +146,32 @@ public final class CakeWorldItems {
 											CakeWorldEffects.FIZZY_FEET.get(),
 											160), 1.0F)
 									.build())));
+	public static final RegistryObject<Item> FIZZY_KELP_FROND =
+			ITEMS.register("fizzy_kelp_frond",
+					() -> new ItemNameBlockItem(
+							CakeWorldBlocks.FIZZY_KELP.get(),
+							new Item.Properties()
+									.tab(CreativeModeTab.TAB_FOOD)
+									.food(new FoodProperties.Builder()
+											.nutrition(1)
+											.saturationMod(0.1F)
+											.build())));
+	public static final RegistryObject<Item> BUBBLE_REEF_FIZZ =
+			ITEMS.register("bubble_reef_fizz",
+					() -> new LemonadeBottleItem(
+							new Item.Properties()
+									.tab(CreativeModeTab.TAB_FOOD)
+									.food(new FoodProperties.Builder()
+											.nutrition(4)
+											.saturationMod(0.4F)
+											.effect(() -> new MobEffectInstance(
+													MobEffects.WATER_BREATHING,
+													300), 1.0F)
+											.effect(() -> new MobEffectInstance(
+													CakeWorldEffects.FIZZY_FEET
+															.get(),
+													160), 1.0F)
+											.build())));
 	public static final RegistryObject<Item> FIZZY_POPPERS =
 			ITEMS.register("fizzy_poppers",
 					() -> new Item(new Item.Properties()

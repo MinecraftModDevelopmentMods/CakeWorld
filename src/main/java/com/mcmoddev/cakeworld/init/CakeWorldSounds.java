@@ -86,6 +86,11 @@ public final class CakeWorldSounds {
 					() -> new SoundEvent(new ResourceLocation(
 							CakeWorld.MODID,
 							"popcorn_prairie_rustle")));
+	public static final RegistryObject<SoundEvent> SODA_OCEAN_FIZZ =
+			SOUNDS.register("soda_ocean_fizz",
+					() -> new SoundEvent(new ResourceLocation(
+							CakeWorld.MODID,
+							"soda_ocean_fizz")));
 
 	private CakeWorldSounds() {
 	}

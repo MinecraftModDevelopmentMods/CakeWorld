@@ -133,5 +133,14 @@
         "type": "event"
       }
     ]
+  },
+  "soda_ocean_fizz": {
+    "subtitle": "subtitles.cakeworld.soda_ocean.fizz",
+    "sounds": [
+      {
+        "name": "minecraft:block.bubble_column.bubble_pop",
+        "type": "event"
+      }
+    ]
   }
 }
