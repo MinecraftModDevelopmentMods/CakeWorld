@@ -321,6 +321,29 @@ public final class CakeWorldCreatureSpawns {
 					CakeWorldEntities.WAFER_TURTLE,
 					5, 2, 5);
 		}
+		if ("jellybean_archipelago".equals(
+				biome.getPath())) {
+			replaceExisting(event, MobCategory.CREATURE,
+					EntityType.MOOSHROOM,
+					CakeWorldEntities.CUPCAKE_COW);
+			replaceExisting(event, MobCategory.MONSTER,
+					EntityType.ZOMBIE,
+					CakeWorldEntities.STALE_CRUMBLER);
+			replaceExisting(event, MobCategory.MONSTER,
+					EntityType.CREEPER,
+					CakeWorldEntities.POP_ROCK_POPPER);
+			replaceExisting(event, MobCategory.AMBIENT,
+					EntityType.BAT,
+					CakeWorldEntities.BONBON_BAT);
+			replace(event, MobCategory.WATER_AMBIENT,
+					EntityType.TROPICAL_FISH,
+					CakeWorldEntities.JELLYBEAN_FISH,
+					25, 8, 8);
+			replace(event, MobCategory.WATER_CREATURE,
+					EntityType.DOLPHIN,
+					CakeWorldEntities.SODA_DOLPHIN,
+					1, 1, 2);
+		}
 		if ("candyfloss_cloudbanks".equals(
 				biome.getPath())) {
 			replace(event, MobCategory.CREATURE,

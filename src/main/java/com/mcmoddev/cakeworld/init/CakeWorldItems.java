@@ -183,6 +183,24 @@ public final class CakeWorldItems {
 											MobEffects.ABSORPTION,
 											200), 1.0F)
 									.build())));
+	public static final RegistryObject<Item> ISLAND_HOP_FIZZ =
+			ITEMS.register("island_hop_fizz",
+					() -> new LemonadeBottleItem(
+							new Item.Properties()
+									.tab(CreativeModeTab.TAB_FOOD)
+									.craftRemainder(
+											Items.GLASS_BOTTLE)
+									.food(new FoodProperties.Builder()
+											.nutrition(6)
+											.saturationMod(0.6F)
+											.effect(() -> new MobEffectInstance(
+													MobEffects.DOLPHINS_GRACE,
+													240), 1.0F)
+											.effect(() -> new MobEffectInstance(
+													CakeWorldEffects.SUGAR_RUSH
+															.get(),
+													160), 1.0F)
+											.build())));
 	public static final RegistryObject<Item> FIZZY_POPPERS =
 			ITEMS.register("fizzy_poppers",
 					() -> new Item(new Item.Properties()

@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "provider_modid": "cakeworld",
-  "provider_revision": 27,
+  "provider_revision": 28,
   "templates": {
     "cakeworld:edible_world": {
       "name_key": "template.cakeworld.edible_world",
@@ -281,6 +281,10 @@
           "cakeworld:custard_coast": {
             "cakeworld:wafer_shelf": 14.0,
             "cakeworld:cocoa_basin": 4.0
+          },
+          "cakeworld:jellybean_archipelago": {
+            "cakeworld:wafer_shelf": 10.0,
+            "cakeworld:rock_candy_uplift": 8.0
           },
           "cakeworld:fudge_wastes": {
             "cakeworld:fudge_mantle": 12.0
@@ -1019,6 +1023,24 @@
                   "top_block": "cakeworld:custard_pudding",
                   "filler_block": "cakeworld:custard_pudding",
                   "underwater_block": "cakeworld:custard_pudding",
+                  "filler_depth": 4
+                }
+              },
+              "cakeworld:jellybean_archipelago": {
+                "enabled": true,
+                "weight": 1.0,
+                "similar_biomes": [
+                  "minecraft:mushroom_fields"
+                ],
+                "required_similar_biomes": [],
+                "min_temperature": 0.5,
+                "max_temperature": 1.2,
+                "min_downfall": 0.8,
+                "max_downfall": 1.0,
+                "surface": {
+                  "top_block": "cakeworld:raspberry_gummy_block",
+                  "filler_block": "cakeworld:chocolate_sponge",
+                  "underwater_block": "cakeworld:blueberry_gummy_block",
                   "filler_depth": 4
                 }
               }

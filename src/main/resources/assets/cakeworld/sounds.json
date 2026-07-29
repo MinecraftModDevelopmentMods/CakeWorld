@@ -151,5 +151,14 @@
         "type": "event"
       }
     ]
+  },
+  "jellybean_archipelago_chimes": {
+    "subtitle": "subtitles.cakeworld.jellybean_archipelago.chimes",
+    "sounds": [
+      {
+        "name": "minecraft:block.amethyst_block.chime",
+        "type": "event"
+      }
+    ]
   }
 }

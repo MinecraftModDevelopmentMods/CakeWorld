@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "cakeworld:boiled_sweet"
+    },
+    {
+      "item": "cakeworld:boiled_sweet"
+    },
+    {
+      "item": "cakeworld:boiled_sweet"
+    },
+    {
+      "item": "cakeworld:boiled_sweet"
+    },
+    {
+      "item": "cakeworld:lemonade_bottle"
+    }
+  ],
+  "result": {
+    "item": "cakeworld:island_hop_fizz",
+    "count": 2
+  }
+}

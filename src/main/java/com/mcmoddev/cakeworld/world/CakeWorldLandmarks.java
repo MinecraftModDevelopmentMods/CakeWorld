@@ -246,6 +246,20 @@ public final class CakeWorldLandmarks {
 							.TOP_LAYER_MODIFICATION)
 					.add(custardCoastKitchen);
 		}
+		Holder<PlacedFeature> jellybeanCompassPicnic =
+				JellybeanCompassPicnicFeature
+						.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(
+						biome.getNamespace())
+				&& "jellybean_archipelago".equals(
+						biome.getPath())
+				&& jellybeanCompassPicnic != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration
+							.TOP_LAYER_MODIFICATION)
+					.add(jellybeanCompassPicnic);
+		}
 		Holder<PlacedFeature> manorRepair =
 				GrandGingerbreadManorRepairFeature
 						.placedFeature();
@@ -438,7 +452,8 @@ public final class CakeWorldLandmarks {
 				|| "lollipop_orchards".equals(path)
 				|| "popcorn_prairie".equals(path)
 				|| "soda_ocean".equals(path)
-				|| "custard_coast".equals(path);
+				|| "custard_coast".equals(path)
+				|| "jellybean_archipelago".equals(path);
 	}
 
 	private static boolean isCurrentLandBiome(

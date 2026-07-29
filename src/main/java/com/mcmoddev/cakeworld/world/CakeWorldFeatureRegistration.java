@@ -49,6 +49,8 @@ public final class CakeWorldFeatureRegistration {
 				WaferReefNurseryFeature.FEATURE);
 		event.getRegistry().register(
 				CustardCoastKitchenFeature.FEATURE);
+		event.getRegistry().register(
+				JellybeanCompassPicnicFeature.FEATURE);
 		event.getRegistry().register(GingerbreadVillageFeature.FEATURE);
 		event.getRegistry().register(
 				BiscuitBanditLookoutFeature.FEATURE);
@@ -179,6 +181,8 @@ public final class CakeWorldFeatureRegistration {
 			WaferReefNurseryFeature
 					.registerConfiguredFeature();
 			CustardCoastKitchenFeature
+					.registerConfiguredFeature();
+			JellybeanCompassPicnicFeature
 					.registerConfiguredFeature();
 			GingerbreadVillageFeature.registerWorldgen();
 			BiscuitBanditLookoutFeature.registerWorldgen();

@@ -96,6 +96,14 @@ public final class CakeWorldSounds {
 					() -> new SoundEvent(new ResourceLocation(
 							CakeWorld.MODID,
 							"custard_coast_lap")));
+	public static final RegistryObject<SoundEvent>
+			JELLYBEAN_ARCHIPELAGO_CHIMES =
+					SOUNDS.register(
+							"jellybean_archipelago_chimes",
+							() -> new SoundEvent(
+									new ResourceLocation(
+											CakeWorld.MODID,
+											"jellybean_archipelago_chimes")));
 
 	private CakeWorldSounds() {
 	}
