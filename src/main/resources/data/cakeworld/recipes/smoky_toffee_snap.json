@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:smelting",
+  "ingredient": {
+    "item": "cakeworld:caramel_chew"
+  },
+  "result": "cakeworld:smoky_toffee_snap",
+  "experience": 0.2,
+  "cookingtime": 100
+}

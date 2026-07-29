@@ -13,6 +13,7 @@ import com.mcmoddev.cakeworld.block.CinnamonWartBlock;
 import com.mcmoddev.cakeworld.block.CookbookKioskBlock;
 import com.mcmoddev.cakeworld.block.CookbookLibraryBlock;
 import com.mcmoddev.cakeworld.block.CoolingRackBlock;
+import com.mcmoddev.cakeworld.block.CrunchyToffeeAshBlock;
 import com.mcmoddev.cakeworld.block.CustardPuddingBlock;
 import com.mcmoddev.cakeworld.block.FizzyKelpBlock;
 import com.mcmoddev.cakeworld.block.GummyBlock;
@@ -328,6 +329,13 @@ public final class CakeWorldBlocks {
 					.sound(SoundType.GLASS).noOcclusion()));
 	public static final RegistryObject<Block> BURNT_SUGAR_ROCK =
 			stone("burnt_sugar_rock", 2.8F);
+	public static final RegistryObject<Block> CRUNCHY_TOFFEE_ASH =
+			block("crunchy_toffee_ash",
+					() -> new CrunchyToffeeAshBlock(
+							BlockBehaviour.Properties
+									.of(Material.SAND)
+									.strength(0.6F)
+									.sound(SoundType.BASALT)));
 	public static final RegistryObject<Block> BURNT_TOFFEE_BRICKS =
 			block("burnt_toffee_bricks",
 					BlockBehaviour.Properties.copy(

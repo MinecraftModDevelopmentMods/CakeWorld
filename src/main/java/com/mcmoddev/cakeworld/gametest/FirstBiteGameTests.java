@@ -40087,6 +40087,13 @@ public final class FirstBiteGameTests {
 								CakeWorldBiomes
 										.FUDGE_WASTES
 										.getId()));
+		Holder<Biome> burntToffeeDeltas =
+				biomes.getHolderOrThrow(
+						ResourceKey.create(
+								Registry.BIOME_REGISTRY,
+								CakeWorldBiomes
+										.BURNT_TOFFEE_DELTAS
+										.getId()));
 		boolean ownStructureTag =
 				structures.getTag(
 						BurntToffeeFoundryFeature
@@ -40103,8 +40110,14 @@ public final class FirstBiteGameTests {
 						&& fudgeWastes.is(
 								BiomeTags
 										.HAS_BASTION_REMNANT)
+						&& burntToffeeDeltas.is(
+								BurntToffeeFoundryFeature
+										.GENERATES_IN)
+						&& burntToffeeDeltas.is(
+								BiomeTags
+										.HAS_BASTION_REMNANT)
 						&& ownStructureTag,
-				"Burnt-Toffee Foundry lost Fudge-Wastes native/CakeWorld biome eligibility or configured tag");
+				"Burnt-Toffee Foundry lost its Fudge-Wastes/Burnt-Toffee-Deltas native and CakeWorld eligibility or configured tag");
 
 		BlockPos anchor = helper.absolutePos(
 				new BlockPos(3, 3, 3));

@@ -128,6 +128,14 @@ public final class CakeWorldSounds {
 									new ResourceLocation(
 											CakeWorld.MODID,
 											"nougat_depths_settle")));
+	public static final RegistryObject<SoundEvent>
+			BURNT_TOFFEE_DELTAS_SNAP =
+					SOUNDS.register(
+							"burnt_toffee_deltas_snap",
+							() -> new SoundEvent(
+									new ResourceLocation(
+											CakeWorld.MODID,
+											"burnt_toffee_deltas_snap")));
 
 	private CakeWorldSounds() {
 	}

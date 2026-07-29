@@ -1195,19 +1195,29 @@ public final class DeepPantryGameTests {
 				"Fixed-seed terrain audit could not resolve Nether and End levels");
 		int auditChunkX = 16;
 		int auditChunkZ = 16;
+		for (int chunkX = auditChunkX - 5;
+				chunkX <= auditChunkX + 5; chunkX++) {
+			for (int chunkZ = auditChunkZ - 5;
+					chunkZ <= auditChunkZ + 5; chunkZ++) {
+				nether.getChunk(chunkX, chunkZ);
+			}
+		}
 
-		Map<Block, Integer> overworldResiduals = scanDimension(overworld,
-				Set.of(Blocks.STONE, Blocks.DEEPSLATE),
-				auditChunkX, auditChunkZ, 4, -64, 96);
-		Map<Block, Integer> netherResiduals = scanDimension(nether,
-				Set.of(Blocks.NETHERRACK, Blocks.BASALT, Blocks.BLACKSTONE),
-				auditChunkX, auditChunkZ, 4, 0, 127);
-		Map<Block, Integer> endResiduals = scanDimension(end,
-				Set.of(Blocks.END_STONE),
-				auditChunkX, auditChunkZ, 4, 0, 255);
-		Map<Integer, Integer> overworldResidualYs = countTargetYLevels(
-				overworld, Set.of(Blocks.STONE, Blocks.DEEPSLATE),
-				auditChunkX, auditChunkZ, 4, -64, 96);
+		helper.runAfterDelay(40, () -> {
+			Map<Block, Integer> overworldResiduals = scanDimension(overworld,
+					Set.of(Blocks.STONE, Blocks.DEEPSLATE),
+					auditChunkX, auditChunkZ, 4, -64, 96);
+			Map<Block, Integer> netherResiduals = scanDimension(nether,
+					Set.of(Blocks.NETHERRACK, Blocks.BASALT,
+							Blocks.BLACKSTONE),
+					auditChunkX, auditChunkZ, 4, 0, 127);
+			Map<Block, Integer> endResiduals = scanDimension(end,
+					Set.of(Blocks.END_STONE),
+					auditChunkX, auditChunkZ, 4, 0, 255);
+			Map<Integer, Integer> overworldResidualYs = countTargetYLevels(
+					overworld,
+					Set.of(Blocks.STONE, Blocks.DEEPSLATE),
+					auditChunkX, auditChunkZ, 4, -64, 96);
 
 		int lemonadeBelow = countBlockInRange(overworld,
 				CakeWorldFluids.LEMONADE_BLOCK.get(), auditChunkX,
@@ -1258,7 +1268,8 @@ public final class DeepPantryGameTests {
 		require(helper, endResiduals.isEmpty(),
 				"End terrain replacement left base hosts: "
 						+ describe(endResiduals));
-		helper.succeed();
+			helper.succeed();
+		});
 	}
 
 	@GameTest(template = EMPTY, timeoutTicks = 2400)
@@ -5545,12 +5556,16 @@ public final class DeepPantryGameTests {
 							? "reloaded"
 							: "seeded");
 			require(helper,
-					CakeWorldBiomes.FUDGE_WASTES
+					(CakeWorldBiomes.FUDGE_WASTES
 							.getId().equals(
 									audit.biome())
+							|| CakeWorldBiomes
+									.BURNT_TOFFEE_DELTAS
+									.getId().equals(
+											audit.biome()))
 							&& audit
 									.literalEligible(),
-					"Natural Burnt-Toffee Foundry left Fudge Wastes or lost native/CakeWorld Bastion eligibility: biome="
+					"Natural Burnt-Toffee Foundry left its two CakeWorld Nether homes or lost native/CakeWorld Bastion eligibility: biome="
 							+ audit.biome()
 							+ ", eligible="
 							+ audit

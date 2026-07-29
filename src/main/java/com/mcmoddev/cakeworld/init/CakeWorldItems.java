@@ -254,6 +254,21 @@ public final class CakeWorldItems {
 											MobEffects.DIG_SPEED,
 											200), 1.0F)
 									.build())));
+	public static final RegistryObject<Item> SMOKY_TOFFEE_SNAP =
+			ITEMS.register("smoky_toffee_snap",
+					() -> new Item(new Item.Properties()
+							.tab(CreativeModeTab.TAB_FOOD)
+							.food(new FoodProperties.Builder()
+									.nutrition(5)
+									.saturationMod(0.6F)
+									.effect(() -> new MobEffectInstance(
+											MobEffects.FIRE_RESISTANCE,
+											300), 1.0F)
+									.effect(() -> new MobEffectInstance(
+											CakeWorldEffects
+													.SUGAR_RUSH.get(),
+											160), 1.0F)
+									.build())));
 	public static final RegistryObject<Item> FIZZY_POPPERS =
 			ITEMS.register("fizzy_poppers",
 					() -> new Item(new Item.Properties()

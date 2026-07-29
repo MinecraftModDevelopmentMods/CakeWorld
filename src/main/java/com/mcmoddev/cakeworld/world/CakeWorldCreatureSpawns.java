@@ -424,6 +424,14 @@ public final class CakeWorldCreatureSpawns {
 			replace(event, MobCategory.MONSTER, EntityType.HOGLIN,
 					CakeWorldEntities.FUDGE_BOAR, 9, 3, 4);
 		}
+		if ("burnt_toffee_deltas".equals(biome.getPath())) {
+			replaceExisting(event, MobCategory.MONSTER,
+					EntityType.MAGMA_CUBE,
+					CakeWorldEntities.HOT_FUDGE_BLOB);
+			replaceExisting(event, MobCategory.MONSTER,
+					EntityType.GHAST,
+					CakeWorldEntities.MALLOW_FLOATER);
+		}
 	}
 
 	private static <T extends Mob> void replace(BiomeLoadingEvent event,

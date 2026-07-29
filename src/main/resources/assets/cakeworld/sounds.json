@@ -187,5 +187,14 @@
         "type": "event"
       }
     ]
+  },
+  "burnt_toffee_deltas_snap": {
+    "subtitle": "subtitles.cakeworld.burnt_toffee_deltas.snap",
+    "sounds": [
+      {
+        "name": "minecraft:ambient.basalt_deltas.additions",
+        "type": "event"
+      }
+    ]
   }
 }

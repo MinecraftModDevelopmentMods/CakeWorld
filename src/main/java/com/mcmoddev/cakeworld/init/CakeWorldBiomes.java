@@ -66,6 +66,8 @@ public final class CakeWorldBiomes {
 			jamGrottoes();
 	public static final RegistryObject<Biome> NOUGAT_DEPTHS =
 			nougatDepths();
+	public static final RegistryObject<Biome> BURNT_TOFFEE_DELTAS =
+			burntToffeeDeltas();
 	public static final RegistryObject<Biome> FUDGE_WASTES = copy(
 			"fudge_wastes", "nether_wastes", 2.0F, 0.0F);
 	public static final RegistryObject<Biome> MERINGUE_ISLANDS = copy(
@@ -193,6 +195,12 @@ public final class CakeWorldBiomes {
 					BiomeDictionary.Type.DENSE,
 					BiomeDictionary.Type.MAGICAL);
 			BiomeDictionary.addTypes(key(FUDGE_WASTES),
+					BiomeDictionary.Type.NETHER,
+					BiomeDictionary.Type.HOT,
+					BiomeDictionary.Type.DRY,
+					BiomeDictionary.Type.WASTELAND);
+			BiomeDictionary.addTypes(
+					key(BURNT_TOFFEE_DELTAS),
 					BiomeDictionary.Type.NETHER,
 					BiomeDictionary.Type.HOT,
 					BiomeDictionary.Type.DRY,
@@ -448,6 +456,30 @@ public final class CakeWorldBiomes {
 																.NOUGAT_DEPTHS_SETTLE
 																.get(),
 														0.0011D))
+										.build()));
+	}
+
+	private static RegistryObject<Biome> burntToffeeDeltas() {
+		return OreSpawnBiomes.copyAndRegister(BIOMES,
+				"burnt_toffee_deltas",
+				() -> vanilla("basalt_deltas"),
+				builder -> builder
+						.temperature(2.0F)
+						.downfall(0.0F)
+						.specialEffects(
+								effectsBuilder(
+										vanilla("basalt_deltas")
+												.getSpecialEffects())
+										.ambientParticle(
+												new AmbientParticleSettings(
+														ParticleTypes.ASH,
+														0.006F))
+										.ambientAdditionsSound(
+												new AmbientAdditionsSettings(
+														CakeWorldSounds
+																.BURNT_TOFFEE_DELTAS_SNAP
+																.get(),
+														0.0015D))
 										.build()));
 	}
 
