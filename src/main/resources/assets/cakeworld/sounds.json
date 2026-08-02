@@ -214,5 +214,14 @@
         "type": "event"
       }
     ]
+  },
+  "black_liquorice_labyrinths_creak": {
+    "subtitle": "subtitles.cakeworld.black_liquorice_labyrinths.creak",
+    "sounds": [
+      {
+        "name": "minecraft:block.roots.break",
+        "type": "event"
+      }
+    ]
   }
 }

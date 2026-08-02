@@ -5,6 +5,8 @@ import java.util.Objects;
 import com.mcmoddev.cakeworld.CakeWorld;
 import zone.moddev.mc.orespawn.api.OreSpawnBiomes;
 
+import net.minecraft.core.Holder;
+import net.minecraft.core.HolderSet;
 import net.minecraft.core.Registry;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
@@ -12,7 +14,11 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.biome.AmbientAdditionsSettings;
 import net.minecraft.world.level.biome.AmbientParticleSettings;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.BiomeGenerationSettings;
 import net.minecraft.world.level.biome.BiomeSpecialEffects;
+import net.minecraft.world.level.levelgen.GenerationStep;
+import net.minecraft.world.level.levelgen.carver.ConfiguredWorldCarver;
+import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.minecraftforge.common.BiomeDictionary;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -21,6 +27,18 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 public final class CakeWorldBiomes {
+	private static final ResourceKey<PlacedFeature>
+			SMALL_BASALT_COLUMNS = placedFeatureKey(
+					"small_basalt_columns");
+	private static final ResourceKey<PlacedFeature>
+			LARGE_BASALT_COLUMNS = placedFeatureKey(
+					"large_basalt_columns");
+	private static final ResourceKey<PlacedFeature>
+			BASALT_BLOBS = placedFeatureKey("basalt_blobs");
+	private static final ResourceKey<PlacedFeature>
+			BLACKSTONE_BLOBS = placedFeatureKey("blackstone_blobs");
+	private static final ResourceKey<PlacedFeature>
+			ORE_GRAVEL_NETHER = placedFeatureKey("ore_gravel_nether");
 	private static final DeferredRegister<Biome> BIOMES =
 			DeferredRegister.create(ForgeRegistries.BIOMES, CakeWorld.MODID);
 
@@ -72,6 +90,8 @@ public final class CakeWorldBiomes {
 			fudgeWastes();
 	public static final RegistryObject<Biome> CINNAMON_EMBER_GROVES =
 			cinnamonEmberGroves();
+	public static final RegistryObject<Biome> BLACK_LIQUORICE_LABYRINTHS =
+			blackLiquoriceLabyrinths();
 	public static final RegistryObject<Biome> MERINGUE_ISLANDS = copy(
 			"meringue_islands", "end_highlands", 0.5F, 0.0F);
 
@@ -213,6 +233,14 @@ public final class CakeWorldBiomes {
 					BiomeDictionary.Type.HOT,
 					BiomeDictionary.Type.DRY,
 					BiomeDictionary.Type.FOREST);
+			BiomeDictionary.addTypes(
+					key(BLACK_LIQUORICE_LABYRINTHS),
+					BiomeDictionary.Type.NETHER,
+					BiomeDictionary.Type.HOT,
+					BiomeDictionary.Type.DRY,
+					BiomeDictionary.Type.FOREST,
+					BiomeDictionary.Type.DENSE,
+					BiomeDictionary.Type.SPOOKY);
 			BiomeDictionary.addTypes(key(MERINGUE_ISLANDS),
 					BiomeDictionary.Type.END,
 					BiomeDictionary.Type.VOID,
@@ -474,6 +502,9 @@ public final class CakeWorldBiomes {
 				builder -> builder
 						.temperature(2.0F)
 						.downfall(0.0F)
+						.generationSettings(
+								withoutVanillaBasaltDeltaFeatures(
+										vanilla("basalt_deltas")))
 						.specialEffects(
 								effectsBuilder(
 										vanilla("basalt_deltas")
@@ -498,6 +529,9 @@ public final class CakeWorldBiomes {
 				builder -> builder
 						.temperature(2.0F)
 						.downfall(0.0F)
+						.generationSettings(
+								withoutVanillaNetherGravel(
+										vanilla("nether_wastes")))
 						.specialEffects(
 								effectsBuilder(
 										vanilla("nether_wastes")
@@ -523,6 +557,9 @@ public final class CakeWorldBiomes {
 				builder -> builder
 						.temperature(2.0F)
 						.downfall(0.0F)
+						.generationSettings(
+								withoutVanillaNetherGravel(
+										vanilla("crimson_forest")))
 						.specialEffects(
 								effectsBuilder(
 										vanilla("crimson_forest")
@@ -535,6 +572,33 @@ public final class CakeWorldBiomes {
 												new AmbientAdditionsSettings(
 														CakeWorldSounds
 																.CINNAMON_EMBER_GROVES_CRACKLE
+																.get(),
+														0.0015D))
+										.build()));
+	}
+
+	private static RegistryObject<Biome> blackLiquoriceLabyrinths() {
+		return OreSpawnBiomes.copyAndRegister(BIOMES,
+				"black_liquorice_labyrinths",
+				() -> vanilla("warped_forest"),
+				builder -> builder
+						.temperature(2.0F)
+						.downfall(0.0F)
+						.generationSettings(
+								withoutVanillaNetherGravel(
+										vanilla("warped_forest")))
+						.specialEffects(
+								effectsBuilder(
+										vanilla("warped_forest")
+												.getSpecialEffects())
+										.ambientParticle(
+												new AmbientParticleSettings(
+														ParticleTypes.ASH,
+														0.0015F))
+										.ambientAdditionsSound(
+												new AmbientAdditionsSettings(
+														CakeWorldSounds
+																.BLACK_LIQUORICE_LABYRINTHS_CREAK
 																.get(),
 														0.0015D))
 										.build()));
@@ -702,5 +766,52 @@ public final class CakeWorldBiomes {
 		return Objects.requireNonNull(
 				ForgeRegistries.BIOMES.getValue(sourceId),
 				"Missing vanilla biome " + sourceId);
+	}
+
+	private static BiomeGenerationSettings withoutVanillaBasaltDeltaFeatures(
+			Biome source) {
+		return withoutVanillaNetherFeatures(source, true);
+	}
+
+	private static BiomeGenerationSettings withoutVanillaNetherGravel(
+			Biome source) {
+		return withoutVanillaNetherFeatures(source, false);
+	}
+
+	private static BiomeGenerationSettings withoutVanillaNetherFeatures(
+			Biome source, boolean removeBasaltFeatures) {
+		BiomeGenerationSettings sourceSettings =
+				source.getGenerationSettings();
+		BiomeGenerationSettings.Builder builder =
+				new BiomeGenerationSettings.Builder();
+		for (GenerationStep.Carving stage
+				: sourceSettings.getCarvingStages()) {
+			for (Holder<ConfiguredWorldCarver<?>> carver
+					: sourceSettings.getCarvers(stage)) {
+				builder.addCarver(stage, carver);
+			}
+		}
+		for (int step = 0;
+				step < sourceSettings.features().size(); step++) {
+			HolderSet<PlacedFeature> features =
+					sourceSettings.features().get(step);
+			for (Holder<PlacedFeature> feature : features) {
+				boolean basaltSource = feature.is(SMALL_BASALT_COLUMNS)
+						|| feature.is(LARGE_BASALT_COLUMNS)
+						|| feature.is(BASALT_BLOBS)
+						|| feature.is(BLACKSTONE_BLOBS);
+				if (!feature.is(ORE_GRAVEL_NETHER)
+						&& !(removeBasaltFeatures && basaltSource)) {
+					builder.addFeature(step, feature);
+				}
+			}
+		}
+		return builder.build();
+	}
+
+	private static ResourceKey<PlacedFeature> placedFeatureKey(
+			String path) {
+		return ResourceKey.create(Registry.PLACED_FEATURE_REGISTRY,
+				new ResourceLocation("minecraft", path));
 	}
 }

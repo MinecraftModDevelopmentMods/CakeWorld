@@ -442,6 +442,12 @@ public final class CakeWorldCreatureSpawns {
 					EntityType.HOGLIN,
 					CakeWorldEntities.FUDGE_BOAR);
 		}
+		if ("black_liquorice_labyrinths".equals(
+				biome.getPath())) {
+			addIfAbsent(event, MobCategory.MONSTER,
+					CakeWorldEntities.LIQUORICE_WEAVER,
+					12, 2, 4);
+		}
 	}
 
 	private static <T extends Mob> void replace(BiomeLoadingEvent event,

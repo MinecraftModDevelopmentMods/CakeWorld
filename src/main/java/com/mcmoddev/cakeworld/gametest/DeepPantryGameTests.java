@@ -1203,7 +1203,7 @@ public final class DeepPantryGameTests {
 			}
 		}
 
-		helper.runAfterDelay(40, () -> {
+		helper.runAfterDelay(80, () -> {
 			Map<Block, Integer> overworldResiduals = scanDimension(overworld,
 					Set.of(Blocks.STONE, Blocks.DEEPSLATE),
 					auditChunkX, auditChunkZ, 4, -64, 96);

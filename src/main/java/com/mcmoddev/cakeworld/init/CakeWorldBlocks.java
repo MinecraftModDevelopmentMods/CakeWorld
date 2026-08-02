@@ -158,6 +158,9 @@ public final class CakeWorldBlocks {
 					BlockBehaviour.Properties.of(Material.DIRT)
 							.strength(0.6F)
 							.sound(SoundType.ROOTED_DIRT));
+	public static final RegistryObject<Block> BLACK_LIQUORICE_STONE =
+			block("black_liquorice_stone",
+					BlockBehaviour.Properties.copy(Blocks.BLACKSTONE));
 	public static final RegistryObject<Block> CANDIED_SOIL =
 			block("candied_soil",
 					BlockBehaviour.Properties.of(Material.DIRT)
@@ -230,6 +233,11 @@ public final class CakeWorldBlocks {
 							BlockBehaviour.Properties.of(Material.WOOD)
 									.strength(1.2F)
 									.sound(SoundType.WOOD)));
+	public static final RegistryObject<Block> BLACK_LIQUORICE_TANGLE =
+			block("black_liquorice_tangle",
+					BlockBehaviour.Properties.of(Material.REPLACEABLE_PLANT)
+							.noCollission().instabreak()
+							.sound(SoundType.ROOTED_DIRT));
 	public static final RegistryObject<Block> LIQUORICE_BRICKS =
 			block("liquorice_bricks",
 					BlockBehaviour.Properties

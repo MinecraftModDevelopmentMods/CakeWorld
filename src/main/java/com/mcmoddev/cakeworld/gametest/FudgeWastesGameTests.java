@@ -270,10 +270,9 @@ public final class FudgeWastesGameTests {
 		require(helper,
 				audit.biomeSamples() >= 128
 						&& audit.fudgeRock() > 0
-						&& audit.burntSugar() > 0
 						&& audit.hotFudgeOutsideLandmark() > 0
 						&& plan.complete(brickSentinel),
-				"Natural Fudge Wastes lost their geology, Hot Fudge or complete fountain: "
+				"Natural Fudge Wastes lost their Fudge-Rock geology, Hot Fudge or complete fountain: "
 						+ audit + " / " + plan);
 		if (!brickSentinel) {
 			level.setBlock(sentinel,

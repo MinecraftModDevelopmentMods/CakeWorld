@@ -323,8 +323,56 @@ public final class CakeWorldLandmarks {
 				&& "cinnamon_ember_groves".equals(biome.getPath())
 				&& cinnamonHearthGrove != null) {
 			event.getGeneration().getFeatures(
-					GenerationStep.Decoration.TOP_LAYER_MODIFICATION)
+							GenerationStep.Decoration.TOP_LAYER_MODIFICATION)
 					.add(cinnamonHearthGrove);
+		}
+		Holder<PlacedFeature> smallBurntToffeeColumns =
+				BurntToffeeColumnsFeature.smallPlacedFeature();
+		Holder<PlacedFeature> largeBurntToffeeColumns =
+				BurntToffeeColumnsFeature.largePlacedFeature();
+		Holder<PlacedFeature> burntToffeeBlobs =
+				BurntToffeeColumnsFeature.burntToffeeBlobsPlacedFeature();
+		Holder<PlacedFeature> burntSugarBlobs =
+				BurntToffeeColumnsFeature.burntSugarBlobsPlacedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(biome.getNamespace())
+				&& "burnt_toffee_deltas".equals(biome.getPath())
+				&& smallBurntToffeeColumns != null
+				&& largeBurntToffeeColumns != null
+				&& burntToffeeBlobs != null
+				&& burntSugarBlobs != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration.SURFACE_STRUCTURES)
+					.add(smallBurntToffeeColumns);
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration.SURFACE_STRUCTURES)
+					.add(largeBurntToffeeColumns);
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration.UNDERGROUND_DECORATION)
+					.add(burntToffeeBlobs);
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration.UNDERGROUND_DECORATION)
+					.add(burntSugarBlobs);
+		}
+		Holder<PlacedFeature> blackLiquoriceLoop =
+				BlackLiquoriceLoopFeature.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(biome.getNamespace())
+				&& "black_liquorice_labyrinths".equals(biome.getPath())
+				&& blackLiquoriceLoop != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration.TOP_LAYER_MODIFICATION)
+					.add(blackLiquoriceLoop);
+		}
+		Holder<PlacedFeature> blackLiquoriceTangles =
+				BlackLiquoriceTanglePatchFeature.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(biome.getNamespace())
+				&& "black_liquorice_labyrinths".equals(biome.getPath())
+				&& blackLiquoriceTangles != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration.VEGETAL_DECORATION)
+					.add(blackLiquoriceTangles);
 		}
 		Holder<PlacedFeature> manorRepair =
 				GrandGingerbreadManorRepairFeature
@@ -392,6 +440,8 @@ public final class CakeWorldLandmarks {
 						biome.getPath())
 						|| "fudge_wastes".equals(biome.getPath())
 						|| "cinnamon_ember_groves"
+								.equals(biome.getPath())
+						|| "black_liquorice_labyrinths"
 								.equals(biome.getPath()))
 				&& archRepair != null) {
 			event.getGeneration().getFeatures(

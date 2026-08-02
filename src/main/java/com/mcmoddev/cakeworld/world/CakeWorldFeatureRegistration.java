@@ -61,6 +61,12 @@ public final class CakeWorldFeatureRegistration {
 				FudgeFondueFountainFeature.FEATURE);
 		event.getRegistry().register(
 				CinnamonHearthGroveFeature.FEATURE);
+		event.getRegistry().register(
+				BlackLiquoriceLoopFeature.FEATURE);
+		event.getRegistry().register(
+				BlackLiquoriceTanglePatchFeature.FEATURE);
+		event.getRegistry().register(
+				BurntToffeeColumnsFeature.FEATURE);
 		event.getRegistry().register(GingerbreadVillageFeature.FEATURE);
 		event.getRegistry().register(
 				BiscuitBanditLookoutFeature.FEATURE);
@@ -204,6 +210,12 @@ public final class CakeWorldFeatureRegistration {
 					.registerConfiguredFeature();
 			CinnamonHearthGroveFeature
 					.registerConfiguredFeature();
+			BlackLiquoriceLoopFeature
+					.registerConfiguredFeature();
+			BlackLiquoriceTanglePatchFeature
+					.registerConfiguredFeature();
+			BurntToffeeColumnsFeature
+					.registerConfiguredFeatures();
 			GingerbreadVillageFeature.registerWorldgen();
 			BiscuitBanditLookoutFeature.registerWorldgen();
 			WaferMineFeature.registerWorldgen();

@@ -20,6 +20,7 @@ import com.mcmoddev.cakeworld.init.CakeWorldEffects;
 import com.mcmoddev.cakeworld.init.CakeWorldEntities;
 import com.mcmoddev.cakeworld.init.CakeWorldItems;
 import com.mcmoddev.cakeworld.init.CakeWorldSounds;
+import com.mcmoddev.cakeworld.world.BurntToffeeColumnsFeature;
 import com.mcmoddev.cakeworld.world.BurntToffeeDeltasPalette;
 import com.mcmoddev.cakeworld.world.BurntToffeeFoundryFeature;
 
@@ -52,10 +53,13 @@ import net.minecraft.world.level.biome.MobSpawnSettings;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.GenerationStep;
+import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.BiomeDictionary;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import org.slf4j.Logger;
 
@@ -129,7 +133,7 @@ public final class BurntToffeeDeltasGameTests {
 				CakeWorldEntities.FUDGE_SKATER.get(),
 				MobCategory.CREATURE, 60, 1, 2);
 
-		assertPalette(helper);
+		assertPalette(helper, deltas, registry);
 		assertSafeAsh(helper, level);
 		assertFood(helper, level);
 		assertFoundryHomes(helper, registry);
@@ -167,44 +171,44 @@ public final class BurntToffeeDeltasGameTests {
 			}
 		}
 		level.setChunkForced(anchorChunk.x, anchorChunk.z, true);
-		helper.runAfterDelay(40, () -> {
-			NaturalAudit audit = audit(level, anchorChunk, 1);
-			BlockPos sentinel = audit.firstAsh() == null
-					? null : audit.firstAsh().above();
-			boolean brickSentinel = sentinel != null
-					&& level.getBlockState(sentinel)
-							.is(Blocks.BRICKS);
-			LOGGER.info("Burnt-Toffee Deltas audit: anchor={}, anchorChunk={}, biomeSamples={}, crunchyAsh={}, burntSugar={}, toffeePillars={}, hotFudge={}, literalSource={}, brickSentinel={}, sentinel={}",
-					anchor, anchorChunk, audit.biomeSamples(),
-					audit.crunchyAsh(), audit.burntSugar(),
-					audit.toffeePillars(), audit.hotFudge(),
-					audit.literalSource(), brickSentinel,
-					sentinel);
+		NaturalAudit audit = audit(level, anchorChunk, 1);
+		BlockPos sentinel = audit.firstAsh() == null
+				? null : audit.firstAsh().above();
+		boolean brickSentinel = sentinel != null
+				&& level.getBlockState(sentinel)
+						.is(Blocks.BRICKS);
+		LOGGER.info("Burnt-Toffee Deltas audit: anchor={}, anchorChunk={}, biomeSamples={}, crunchyAsh={}, burntSugar={}, toffeePillars={}, hotFudge={}, literalSource={}, brickSentinel={}, sentinel={}",
+				anchor, anchorChunk, audit.biomeSamples(),
+				audit.crunchyAsh(), audit.burntSugar(),
+				audit.toffeePillars(), audit.hotFudge(),
+				audit.literalSource(), brickSentinel,
+				sentinel);
+		require(helper,
+				audit.biomeSamples() >= 128
+						&& audit.crunchyAsh() > 0
+						&& audit.burntSugar() > 0
+						&& audit.toffeePillars() > 0
+						&& audit.hotFudge() > 0
+						&& audit.literalSource() == 0
+						&& sentinel != null,
+				"Natural Burnt-Toffee Deltas lost their edible surface, native geology or Hot Fudge: "
+						+ audit);
+		if (!brickSentinel) {
+			level.setBlock(sentinel,
+					Blocks.BRICKS.defaultBlockState(), 2);
 			require(helper,
-					audit.biomeSamples() >= 128
-							&& audit.crunchyAsh() > 0
-							&& audit.burntSugar() > 0
-							&& audit.toffeePillars() > 0
-							&& audit.hotFudge() > 0
-							&& audit.literalSource() == 0
-							&& sentinel != null,
-					"Natural Burnt-Toffee Deltas lost their edible surface, volcanic geology, inherited-column conversion or Hot Fudge: "
-							+ audit);
-			if (!brickSentinel) {
-				level.setBlock(sentinel,
-						Blocks.BRICKS.defaultBlockState(), 2);
-				require(helper,
-						level.getBlockState(sentinel)
-								.is(Blocks.BRICKS),
-						"Could not seed the Burnt-Toffee Deltas reload sentinel");
-			}
-			level.setChunkForced(anchorChunk.x,
-					anchorChunk.z, false);
-			helper.succeed();
-		});
+					level.getBlockState(sentinel)
+							.is(Blocks.BRICKS),
+					"Could not seed the Burnt-Toffee Deltas reload sentinel");
+		}
+		level.setChunkForced(anchorChunk.x,
+				anchorChunk.z, false);
+		helper.succeed();
 	}
 
-	private static void assertPalette(GameTestHelper helper) {
+	private static void assertPalette(
+			GameTestHelper helper, Biome deltas,
+			Registry<Biome> registry) {
 		BlockState basaltX = Blocks.BASALT.defaultBlockState()
 				.setValue(RotatedPillarBlock.AXIS,
 						Direction.Axis.X);
@@ -216,6 +220,32 @@ public final class BurntToffeeDeltasGameTests {
 		BlockState smoothPillar =
 				BurntToffeeDeltasPalette
 						.convertedState(smooth);
+		ResourceKey<PlacedFeature> vanillaSmall = ResourceKey.create(
+				Registry.PLACED_FEATURE_REGISTRY,
+				new ResourceLocation("minecraft", "small_basalt_columns"));
+		ResourceKey<PlacedFeature> vanillaLarge = ResourceKey.create(
+				Registry.PLACED_FEATURE_REGISTRY,
+				new ResourceLocation("minecraft", "large_basalt_columns"));
+		ResourceKey<PlacedFeature> vanillaBasaltBlobs = ResourceKey.create(
+				Registry.PLACED_FEATURE_REGISTRY,
+				new ResourceLocation("minecraft", "basalt_blobs"));
+		ResourceKey<PlacedFeature> vanillaBlackstoneBlobs = ResourceKey.create(
+				Registry.PLACED_FEATURE_REGISTRY,
+				new ResourceLocation("minecraft", "blackstone_blobs"));
+		ResourceKey<PlacedFeature> vanillaGravelOre = ResourceKey.create(
+				Registry.PLACED_FEATURE_REGISTRY,
+				new ResourceLocation("minecraft", "ore_gravel_nether"));
+		for (ResourceLocation biomeId : List.of(
+				id("fudge_wastes"), id("burnt_toffee_deltas"),
+				id("cinnamon_ember_groves"),
+				id("black_liquorice_labyrinths"))) {
+			Biome cakeWorldNether = registry.get(biomeId);
+			require(helper, cakeWorldNether != null
+						&& !hasPlacedFeature(
+								cakeWorldNether, vanillaGravelOre),
+					"CakeWorld Nether biome leaked the cross-biome Gravel source: "
+							+ biomeId);
+		}
 		require(helper,
 				pillarX.is(CakeWorldBlocks
 						.BURNT_TOFFEE_PILLAR.get())
@@ -246,8 +276,30 @@ public final class BurntToffeeDeltasGameTests {
 								.is(Blocks.MAGMA_BLOCK)
 						&& BurntToffeeDeltasPalette
 								.convertedState(pillarX)
-								== pillarX,
-				"Burnt-Toffee Deltas palette lost axis, safety-hazard or idempotence boundaries");
+								== pillarX
+						&& ForgeRegistries.FEATURES.getValue(
+								BurntToffeeColumnsFeature.ID)
+								== BurntToffeeColumnsFeature.FEATURE
+						&& hasPlacedFeature(deltas,
+								BurntToffeeColumnsFeature.smallPlacedFeature(),
+								GenerationStep.Decoration.SURFACE_STRUCTURES)
+						&& hasPlacedFeature(deltas,
+								BurntToffeeColumnsFeature.largePlacedFeature(),
+								GenerationStep.Decoration.SURFACE_STRUCTURES)
+						&& hasPlacedFeature(deltas,
+								BurntToffeeColumnsFeature
+										.burntToffeeBlobsPlacedFeature(),
+								GenerationStep.Decoration.UNDERGROUND_DECORATION)
+						&& hasPlacedFeature(deltas,
+								BurntToffeeColumnsFeature
+										.burntSugarBlobsPlacedFeature(),
+								GenerationStep.Decoration.UNDERGROUND_DECORATION)
+						&& !hasPlacedFeature(deltas, vanillaSmall)
+						&& !hasPlacedFeature(deltas, vanillaLarge)
+						&& !hasPlacedFeature(deltas, vanillaBasaltBlobs)
+						&& !hasPlacedFeature(deltas, vanillaBlackstoneBlobs)
+						&& !hasPlacedFeature(deltas, vanillaGravelOre),
+				"Burnt-Toffee Deltas lost native geology, leaked vanilla formations or changed palette boundaries");
 	}
 
 	private static void assertSafeAsh(
@@ -399,7 +451,8 @@ public final class BurntToffeeDeltasGameTests {
 										.equals(Set.of(
 												"cakeworld:fudge_wastes",
 												BIOME_ID.toString(),
-												"cakeworld:cinnamon_ember_groves")),
+												"cakeworld:cinnamon_ember_groves",
+												"cakeworld:black_liquorice_labyrinths")),
 					template
 							+ " lost its Deltas selector, volcanic surface, geome or deposit boundary");
 			if (firstPalette == null) {
@@ -418,7 +471,10 @@ public final class BurntToffeeDeltasGameTests {
 		int burntSugar = 0;
 		int toffeePillars = 0;
 		int hotFudge = 0;
-		int literalSource = 0;
+		int basalt = 0;
+		int smoothBasalt = 0;
+		int blackstone = 0;
+		int gravel = 0;
 		BlockPos firstAsh = null;
 		BlockPos.MutableBlockPos cursor =
 				new BlockPos.MutableBlockPos();
@@ -459,12 +515,14 @@ public final class BurntToffeeDeltasGameTests {
 									.HOT_FUDGE_BLOCK.get())) {
 								hotFudge++;
 							}
-							if (state.is(Blocks.BASALT)
-									|| state.is(
-											Blocks.SMOOTH_BASALT)
-									|| state.is(Blocks.BLACKSTONE)
-									|| state.is(Blocks.GRAVEL)) {
-								literalSource++;
+							if (state.is(Blocks.BASALT)) {
+								basalt++;
+							} else if (state.is(Blocks.SMOOTH_BASALT)) {
+								smoothBasalt++;
+							} else if (state.is(Blocks.BLACKSTONE)) {
+								blackstone++;
+							} else if (state.is(Blocks.GRAVEL)) {
+								gravel++;
 							}
 						}
 					}
@@ -473,7 +531,8 @@ public final class BurntToffeeDeltasGameTests {
 		}
 		return new NaturalAudit(biomeSamples,
 				crunchyAsh, burntSugar, toffeePillars,
-				hotFudge, literalSource, firstAsh);
+				hotFudge, basalt, smoothBasalt,
+				blackstone, gravel, firstAsh);
 	}
 
 	private static void assertSpawn(
@@ -506,6 +565,26 @@ public final class BurntToffeeDeltasGameTests {
 			}
 		}
 		return null;
+	}
+
+	private static boolean hasPlacedFeature(Biome biome,
+			Holder<PlacedFeature> expected,
+			GenerationStep.Decoration decoration) {
+		if (biome == null || expected == null) {
+			return false;
+		}
+		int step = decoration.ordinal();
+		return biome.getGenerationSettings().features().size() > step
+				&& biome.getGenerationSettings().features().get(step)
+						.stream().anyMatch(expected::equals);
+	}
+
+	private static boolean hasPlacedFeature(Biome biome,
+			ResourceKey<PlacedFeature> expected) {
+		return biome != null
+				&& biome.getGenerationSettings().features().stream()
+						.anyMatch(features -> features.stream()
+								.anyMatch(feature -> feature.is(expected)));
 	}
 
 	private static boolean hasEffect(FoodProperties food,
@@ -562,7 +641,13 @@ public final class BurntToffeeDeltasGameTests {
 			int burntSugar,
 			int toffeePillars,
 			int hotFudge,
-			int literalSource,
+			int basalt,
+			int smoothBasalt,
+			int blackstone,
+			int gravel,
 			BlockPos firstAsh) {
+		private int literalSource() {
+			return basalt + smoothBasalt + blackstone + gravel;
+		}
 	}
 }

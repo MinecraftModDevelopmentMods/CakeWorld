@@ -114,6 +114,19 @@ public final class CakeWorldItems {
 											MobEffects.NIGHT_VISION,
 											240), 1.0F)
 									.build())));
+	public static final RegistryObject<Item> LABYRINTH_LIQUORICE_COIL =
+			ITEMS.register("labyrinth_liquorice_coil",
+					() -> new Item(new Item.Properties()
+							.tab(CreativeModeTab.TAB_FOOD)
+							.food(new FoodProperties.Builder()
+									.nutrition(7).saturationMod(0.75F)
+									.effect(() -> new MobEffectInstance(
+											MobEffects.NIGHT_VISION,
+											300), 1.0F)
+									.effect(() -> new MobEffectInstance(
+											MobEffects.FIRE_RESISTANCE,
+											200), 1.0F)
+									.build())));
 	public static final RegistryObject<Item> RAINBOW_ORCHARD_LOLLIPOP =
 			ITEMS.register("rainbow_orchard_lollipop",
 					() -> new Item(new Item.Properties()

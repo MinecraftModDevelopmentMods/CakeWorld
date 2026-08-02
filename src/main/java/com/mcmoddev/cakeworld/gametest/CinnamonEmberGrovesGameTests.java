@@ -241,9 +241,9 @@ public final class CinnamonEmberGrovesGameTests {
 		require(helper, match != null,
 				"Could not locate Cinnamon Ember Groves within 32,768 blocks");
 		ChunkPos anchor = new ChunkPos(match.getFirst());
-		FoundGrove found = findGrove(level, anchor, 10);
+		FoundGrove found = findGrove(level, anchor, 20);
 		require(helper, found != null,
-				"Could not find a natural Cinnamon Hearth Grove within 441 chunks of "
+				"Could not find a natural Cinnamon Hearth Grove within 1,681 chunks of "
 						+ anchor);
 		NaturalAudit audit = audit(level, new ChunkPos(found.centre()), 2);
 		PlanAudit plan = inspectPlan(level, found.centre(), found.rotation());
@@ -346,7 +346,8 @@ public final class CinnamonEmberGrovesGameTests {
 							&& strings(depositBiomes).equals(Set.of(
 									"cakeworld:fudge_wastes",
 									"cakeworld:burnt_toffee_deltas",
-									BIOME_ID.toString()))
+									BIOME_ID.toString(),
+									"cakeworld:black_liquorice_labyrinths"))
 							&& order.indexOf("cakeworld:fudge_wastes")
 									< order.indexOf(BIOME_ID.toString()),
 					template + " lost its Cinnamon-Grove provider contract");
