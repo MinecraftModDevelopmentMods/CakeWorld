@@ -161,6 +161,13 @@ public final class CakeWorldBlocks {
 	public static final RegistryObject<Block> BLACK_LIQUORICE_STONE =
 			block("black_liquorice_stone",
 					BlockBehaviour.Properties.copy(Blocks.BLACKSTONE));
+	public static final RegistryObject<Block> TREACLE_SOUL_CRUST =
+			block("treacle_soul_crust",
+					BlockBehaviour.Properties.of(Material.STONE)
+							.requiresCorrectToolForDrops()
+							.strength(0.8F, 4.0F)
+							.speedFactor(0.78F)
+							.sound(SoundType.SOUL_SAND));
 	public static final RegistryObject<Block> CANDIED_SOIL =
 			block("candied_soil",
 					BlockBehaviour.Properties.of(Material.DIRT)

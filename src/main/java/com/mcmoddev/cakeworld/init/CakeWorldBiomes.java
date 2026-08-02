@@ -39,6 +39,8 @@ public final class CakeWorldBiomes {
 			BLACKSTONE_BLOBS = placedFeatureKey("blackstone_blobs");
 	private static final ResourceKey<PlacedFeature>
 			ORE_GRAVEL_NETHER = placedFeatureKey("ore_gravel_nether");
+	private static final ResourceKey<PlacedFeature>
+			ORE_SOUL_SAND = placedFeatureKey("ore_soul_sand");
 	private static final DeferredRegister<Biome> BIOMES =
 			DeferredRegister.create(ForgeRegistries.BIOMES, CakeWorld.MODID);
 
@@ -92,6 +94,8 @@ public final class CakeWorldBiomes {
 			cinnamonEmberGroves();
 	public static final RegistryObject<Biome> BLACK_LIQUORICE_LABYRINTHS =
 			blackLiquoriceLabyrinths();
+	public static final RegistryObject<Biome> TREACLE_SOUL_VALLEYS =
+			treacleSoulValleys();
 	public static final RegistryObject<Biome> MERINGUE_ISLANDS = copy(
 			"meringue_islands", "end_highlands", 0.5F, 0.0F);
 
@@ -241,6 +245,14 @@ public final class CakeWorldBiomes {
 					BiomeDictionary.Type.FOREST,
 					BiomeDictionary.Type.DENSE,
 					BiomeDictionary.Type.SPOOKY);
+			BiomeDictionary.addTypes(
+					key(TREACLE_SOUL_VALLEYS),
+					BiomeDictionary.Type.NETHER,
+					BiomeDictionary.Type.HOT,
+					BiomeDictionary.Type.DRY,
+					BiomeDictionary.Type.SPARSE,
+					BiomeDictionary.Type.SPOOKY,
+					BiomeDictionary.Type.WASTELAND);
 			BiomeDictionary.addTypes(key(MERINGUE_ISLANDS),
 					BiomeDictionary.Type.END,
 					BiomeDictionary.Type.VOID,
@@ -604,6 +616,34 @@ public final class CakeWorldBiomes {
 										.build()));
 	}
 
+	private static RegistryObject<Biome> treacleSoulValleys() {
+		return OreSpawnBiomes.copyAndRegister(BIOMES,
+				"treacle_soul_valleys",
+				() -> vanilla("soul_sand_valley"),
+				builder -> builder
+						.temperature(2.0F)
+						.downfall(0.0F)
+						.generationSettings(
+								withoutVanillaSoulValleyTerrain(
+										vanilla("soul_sand_valley")))
+						.specialEffects(
+								effectsBuilder(
+										vanilla("soul_sand_valley")
+												.getSpecialEffects())
+										.ambientParticle(
+												new AmbientParticleSettings(
+														ParticleTypes
+																.SOUL_FIRE_FLAME,
+														0.002F))
+										.ambientAdditionsSound(
+												new AmbientAdditionsSettings(
+														CakeWorldSounds
+																.TREACLE_SOUL_VALLEYS_MURMUR
+																.get(),
+														0.0015D))
+										.build()));
+	}
+
 	private static RegistryObject<Biome> copyWithAmbient(
 			String name, String vanilla,
 			float temperature, float downfall,
@@ -770,16 +810,22 @@ public final class CakeWorldBiomes {
 
 	private static BiomeGenerationSettings withoutVanillaBasaltDeltaFeatures(
 			Biome source) {
-		return withoutVanillaNetherFeatures(source, true);
+		return withoutVanillaNetherFeatures(source, true, false);
 	}
 
 	private static BiomeGenerationSettings withoutVanillaNetherGravel(
 			Biome source) {
-		return withoutVanillaNetherFeatures(source, false);
+		return withoutVanillaNetherFeatures(source, false, false);
+	}
+
+	private static BiomeGenerationSettings withoutVanillaSoulValleyTerrain(
+			Biome source) {
+		return withoutVanillaNetherFeatures(source, false, true);
 	}
 
 	private static BiomeGenerationSettings withoutVanillaNetherFeatures(
-			Biome source, boolean removeBasaltFeatures) {
+			Biome source, boolean removeBasaltFeatures,
+			boolean removeSoulSandOre) {
 		BiomeGenerationSettings sourceSettings =
 				source.getGenerationSettings();
 		BiomeGenerationSettings.Builder builder =
@@ -801,6 +847,8 @@ public final class CakeWorldBiomes {
 						|| feature.is(BASALT_BLOBS)
 						|| feature.is(BLACKSTONE_BLOBS);
 				if (!feature.is(ORE_GRAVEL_NETHER)
+						&& !(removeSoulSandOre
+								&& feature.is(ORE_SOUL_SAND))
 						&& !(removeBasaltFeatures && basaltSource)) {
 					builder.addFeature(step, feature);
 				}

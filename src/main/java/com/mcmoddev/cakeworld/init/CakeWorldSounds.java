@@ -160,6 +160,14 @@ public final class CakeWorldSounds {
 									new ResourceLocation(
 											CakeWorld.MODID,
 											"black_liquorice_labyrinths_creak")));
+	public static final RegistryObject<SoundEvent>
+			TREACLE_SOUL_VALLEYS_MURMUR =
+					SOUNDS.register(
+							"treacle_soul_valleys_murmur",
+							() -> new SoundEvent(
+									new ResourceLocation(
+											CakeWorld.MODID,
+											"treacle_soul_valleys_murmur")));
 
 	private CakeWorldSounds() {
 	}

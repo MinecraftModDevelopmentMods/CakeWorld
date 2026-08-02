@@ -238,7 +238,8 @@ public final class BurntToffeeDeltasGameTests {
 		for (ResourceLocation biomeId : List.of(
 				id("fudge_wastes"), id("burnt_toffee_deltas"),
 				id("cinnamon_ember_groves"),
-				id("black_liquorice_labyrinths"))) {
+				id("black_liquorice_labyrinths"),
+				id("treacle_soul_valleys"))) {
 			Biome cakeWorldNether = registry.get(biomeId);
 			require(helper, cakeWorldNether != null
 						&& !hasPlacedFeature(
@@ -452,7 +453,8 @@ public final class BurntToffeeDeltasGameTests {
 												"cakeworld:fudge_wastes",
 												BIOME_ID.toString(),
 												"cakeworld:cinnamon_ember_groves",
-												"cakeworld:black_liquorice_labyrinths")),
+												"cakeworld:black_liquorice_labyrinths",
+												"cakeworld:treacle_soul_valleys")),
 					template
 							+ " lost its Deltas selector, volcanic surface, geome or deposit boundary");
 			if (firstPalette == null) {

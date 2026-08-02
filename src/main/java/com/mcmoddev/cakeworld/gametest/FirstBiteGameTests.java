@@ -35363,7 +35363,8 @@ public final class FirstBiteGameTests {
 				CakeWorldBiomes.CUSTARD_COAST.getId(),
 				CakeWorldBiomes.FUDGE_WASTES.getId(),
 				CakeWorldBiomes.CINNAMON_EMBER_GROVES.getId(),
-				CakeWorldBiomes.BLACK_LIQUORICE_LABYRINTHS.getId());
+				CakeWorldBiomes.BLACK_LIQUORICE_LABYRINTHS.getId(),
+				CakeWorldBiomes.TREACLE_SOUL_VALLEYS.getId());
 		boolean overworldRepairInstalled =
 				hasPlacedFeature(
 						level,
@@ -35404,7 +35405,7 @@ public final class FirstBiteGameTests {
 						&& netherRepairInstalled
 						&& eligibleBiomes
 								.equals(expectedBiomes),
-				"Burnt-Sugar Arch lost its configured structure, locate tag, nine-biome contract or Overworld/Nether repair: eligible="
+				"Burnt-Sugar Arch lost its configured structure, locate tag, ten-biome contract or Overworld/Nether repair: eligible="
 						+ eligibleBiomes
 						+ ", overworldRepair="
 						+ overworldRepairInstalled

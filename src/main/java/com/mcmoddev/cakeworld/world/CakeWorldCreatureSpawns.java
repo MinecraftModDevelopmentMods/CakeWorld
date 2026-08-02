@@ -448,6 +448,11 @@ public final class CakeWorldCreatureSpawns {
 					CakeWorldEntities.LIQUORICE_WEAVER,
 					12, 2, 4);
 		}
+		if ("treacle_soul_valleys".equals(biome.getPath())) {
+			replaceExisting(event, MobCategory.MONSTER,
+					EntityType.GHAST,
+					CakeWorldEntities.MALLOW_FLOATER);
+		}
 	}
 
 	private static <T extends Mob> void replace(BiomeLoadingEvent event,

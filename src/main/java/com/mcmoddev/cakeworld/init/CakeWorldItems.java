@@ -127,6 +127,19 @@ public final class CakeWorldItems {
 											MobEffects.FIRE_RESISTANCE,
 											200), 1.0F)
 									.build())));
+	public static final RegistryObject<Item> WISP_LIGHT_TOFFEE =
+			ITEMS.register("wisp_light_toffee",
+					() -> new Item(new Item.Properties()
+							.tab(CreativeModeTab.TAB_FOOD)
+							.food(new FoodProperties.Builder()
+									.nutrition(7).saturationMod(0.75F)
+									.effect(() -> new MobEffectInstance(
+											MobEffects.SLOW_FALLING,
+											240), 1.0F)
+									.effect(() -> new MobEffectInstance(
+											MobEffects.FIRE_RESISTANCE,
+											200), 1.0F)
+									.build())));
 	public static final RegistryObject<Item> RAINBOW_ORCHARD_LOLLIPOP =
 			ITEMS.register("rainbow_orchard_lollipop",
 					() -> new Item(new Item.Properties()

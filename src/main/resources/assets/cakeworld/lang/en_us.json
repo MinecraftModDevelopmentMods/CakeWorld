@@ -423,5 +423,9 @@
   "block.cakeworld.black_liquorice_stone": "Black-Liquorice Stone",
   "block.cakeworld.black_liquorice_tangle": "Black-Liquorice Tangle",
   "item.cakeworld.labyrinth_liquorice_coil": "Labyrinth Liquorice Coil",
-  "subtitles.cakeworld.black_liquorice_labyrinths.creak": "Liquorice roots creak in the dark"
+  "subtitles.cakeworld.black_liquorice_labyrinths.creak": "Liquorice roots creak in the dark",
+  "biome.cakeworld.treacle_soul_valleys": "Treacle Soul Valleys",
+  "block.cakeworld.treacle_soul_crust": "Treacle Soul Crust",
+  "item.cakeworld.wisp_light_toffee": "Wisp-Light Toffee",
+  "subtitles.cakeworld.treacle_soul_valleys.murmur": "Sugar wisps murmur across the treacle"
 }

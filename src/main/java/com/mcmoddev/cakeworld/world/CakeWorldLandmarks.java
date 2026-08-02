@@ -374,6 +374,26 @@ public final class CakeWorldLandmarks {
 					GenerationStep.Decoration.VEGETAL_DECORATION)
 					.add(blackLiquoriceTangles);
 		}
+		Holder<PlacedFeature> treacleSoulFlats =
+				TreacleSoulFlatFeature.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(biome.getNamespace())
+				&& "treacle_soul_valleys".equals(biome.getPath())
+				&& treacleSoulFlats != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration.TOP_LAYER_MODIFICATION)
+					.add(treacleSoulFlats);
+		}
+		Holder<PlacedFeature> wispLightCauseway =
+				WispLightCausewayFeature.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(biome.getNamespace())
+				&& "treacle_soul_valleys".equals(biome.getPath())
+				&& wispLightCauseway != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration.TOP_LAYER_MODIFICATION)
+					.add(wispLightCauseway);
+		}
 		Holder<PlacedFeature> manorRepair =
 				GrandGingerbreadManorRepairFeature
 						.placedFeature();

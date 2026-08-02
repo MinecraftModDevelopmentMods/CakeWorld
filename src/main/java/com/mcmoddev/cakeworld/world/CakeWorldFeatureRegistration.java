@@ -66,6 +66,10 @@ public final class CakeWorldFeatureRegistration {
 		event.getRegistry().register(
 				BlackLiquoriceTanglePatchFeature.FEATURE);
 		event.getRegistry().register(
+				TreacleSoulFlatFeature.FEATURE);
+		event.getRegistry().register(
+				WispLightCausewayFeature.FEATURE);
+		event.getRegistry().register(
 				BurntToffeeColumnsFeature.FEATURE);
 		event.getRegistry().register(GingerbreadVillageFeature.FEATURE);
 		event.getRegistry().register(
@@ -213,6 +217,10 @@ public final class CakeWorldFeatureRegistration {
 			BlackLiquoriceLoopFeature
 					.registerConfiguredFeature();
 			BlackLiquoriceTanglePatchFeature
+					.registerConfiguredFeature();
+			TreacleSoulFlatFeature
+					.registerConfiguredFeature();
+			WispLightCausewayFeature
 					.registerConfiguredFeature();
 			BurntToffeeColumnsFeature
 					.registerConfiguredFeatures();

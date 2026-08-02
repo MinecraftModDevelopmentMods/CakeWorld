@@ -223,5 +223,14 @@
         "type": "event"
       }
     ]
+  },
+  "treacle_soul_valleys_murmur": {
+    "subtitle": "subtitles.cakeworld.treacle_soul_valleys.murmur",
+    "sounds": [
+      {
+        "name": "minecraft:ambient.soul_sand_valley.additions",
+        "type": "event"
+      }
+    ]
   }
 }

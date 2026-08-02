@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {"item": "cakeworld:syrup_bucket"},
+    {"item": "cakeworld:marshmallow"},
+    {"item": "minecraft:sugar"}
+  ],
+  "result": {"item": "cakeworld:wisp_light_toffee", "count": 2}
+}
