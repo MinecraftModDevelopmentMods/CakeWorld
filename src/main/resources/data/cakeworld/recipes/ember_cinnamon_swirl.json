@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {"item": "cakeworld:cinnamon_stick"},
+    {"item": "minecraft:wheat"},
+    {"item": "minecraft:sugar"}
+  ],
+  "result": {"item": "cakeworld:ember_cinnamon_swirl", "count": 2}
+}

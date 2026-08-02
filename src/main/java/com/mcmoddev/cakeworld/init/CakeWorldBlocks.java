@@ -297,6 +297,22 @@ public final class CakeWorldBlocks {
 	public static final RegistryObject<Block> FUDGE_ROCK = block("fudge_rock",
 			BlockBehaviour.Properties.of(Material.STONE).requiresCorrectToolForDrops()
 					.strength(2.0F, 6.0F).sound(SoundType.NETHERRACK));
+	public static final RegistryObject<Block> CINNAMON_CRUST =
+			block("cinnamon_crust",
+					BlockBehaviour.Properties.of(Material.STONE)
+							.requiresCorrectToolForDrops()
+							.strength(1.0F, 4.0F)
+							.sound(SoundType.NETHERRACK));
+	public static final RegistryObject<Block> CINNAMON_LOG =
+			block("cinnamon_log",
+					() -> new RotatedPillarBlock(
+							BlockBehaviour.Properties.copy(
+									Blocks.CRIMSON_STEM)));
+	public static final RegistryObject<Block> EMBER_SPICE_LEAVES =
+			block("ember_spice_leaves",
+					BlockBehaviour.Properties.copy(
+							Blocks.NETHER_WART_BLOCK)
+							.lightLevel(state -> 10));
 	public static final RegistryObject<Block> WAFER_ROCK = stone("wafer_rock", 1.0F);
 	public static final RegistryObject<Block> NOUGAT_ROCK =
 			block("nougat_rock",

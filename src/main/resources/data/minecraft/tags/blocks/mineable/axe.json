@@ -8,6 +8,8 @@
     "cakeworld:wafer_block",
     "cakeworld:wafer_pillar",
     "cakeworld:wafer_stairs",
-    "cakeworld:wafer_slab"
+    "cakeworld:wafer_slab",
+    "cakeworld:cinnamon_log",
+    "cakeworld:ember_spice_leaves"
   ]
 }

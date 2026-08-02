@@ -316,6 +316,16 @@ public final class CakeWorldLandmarks {
 							.TOP_LAYER_MODIFICATION)
 					.add(fudgeFondueFountain);
 		}
+		Holder<PlacedFeature> cinnamonHearthGrove =
+				CinnamonHearthGroveFeature.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(biome.getNamespace())
+				&& "cinnamon_ember_groves".equals(biome.getPath())
+				&& cinnamonHearthGrove != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration.TOP_LAYER_MODIFICATION)
+					.add(cinnamonHearthGrove);
+		}
 		Holder<PlacedFeature> manorRepair =
 				GrandGingerbreadManorRepairFeature
 						.placedFeature();
@@ -380,9 +390,9 @@ public final class CakeWorldLandmarks {
 						biome.getNamespace())
 				&& (isCurrentOverworldBiome(
 						biome.getPath())
-						|| "fudge_wastes"
-								.equals(biome
-										.getPath()))
+						|| "fudge_wastes".equals(biome.getPath())
+						|| "cinnamon_ember_groves"
+								.equals(biome.getPath()))
 				&& archRepair != null) {
 			event.getGeneration().getFeatures(
 					GenerationStep.Decoration

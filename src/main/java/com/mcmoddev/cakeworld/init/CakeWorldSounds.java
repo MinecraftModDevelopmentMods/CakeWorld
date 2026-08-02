@@ -144,6 +144,14 @@ public final class CakeWorldSounds {
 									new ResourceLocation(
 											CakeWorld.MODID,
 											"fudge_wastes_bubble")));
+	public static final RegistryObject<SoundEvent>
+			CINNAMON_EMBER_GROVES_CRACKLE =
+					SOUNDS.register(
+							"cinnamon_ember_groves_crackle",
+							() -> new SoundEvent(
+									new ResourceLocation(
+											CakeWorld.MODID,
+											"cinnamon_ember_groves_crackle")));
 
 	private CakeWorldSounds() {
 	}

@@ -70,6 +70,8 @@ public final class CakeWorldBiomes {
 			burntToffeeDeltas();
 	public static final RegistryObject<Biome> FUDGE_WASTES =
 			fudgeWastes();
+	public static final RegistryObject<Biome> CINNAMON_EMBER_GROVES =
+			cinnamonEmberGroves();
 	public static final RegistryObject<Biome> MERINGUE_ISLANDS = copy(
 			"meringue_islands", "end_highlands", 0.5F, 0.0F);
 
@@ -205,6 +207,12 @@ public final class CakeWorldBiomes {
 					BiomeDictionary.Type.HOT,
 					BiomeDictionary.Type.DRY,
 					BiomeDictionary.Type.WASTELAND);
+			BiomeDictionary.addTypes(
+					key(CINNAMON_EMBER_GROVES),
+					BiomeDictionary.Type.NETHER,
+					BiomeDictionary.Type.HOT,
+					BiomeDictionary.Type.DRY,
+					BiomeDictionary.Type.FOREST);
 			BiomeDictionary.addTypes(key(MERINGUE_ISLANDS),
 					BiomeDictionary.Type.END,
 					BiomeDictionary.Type.VOID,
@@ -503,6 +511,30 @@ public final class CakeWorldBiomes {
 												new AmbientAdditionsSettings(
 														CakeWorldSounds
 																.FUDGE_WASTES_BUBBLE
+																.get(),
+														0.0015D))
+										.build()));
+	}
+
+	private static RegistryObject<Biome> cinnamonEmberGroves() {
+		return OreSpawnBiomes.copyAndRegister(BIOMES,
+				"cinnamon_ember_groves",
+				() -> vanilla("crimson_forest"),
+				builder -> builder
+						.temperature(2.0F)
+						.downfall(0.0F)
+						.specialEffects(
+								effectsBuilder(
+										vanilla("crimson_forest")
+												.getSpecialEffects())
+										.ambientParticle(
+												new AmbientParticleSettings(
+														ParticleTypes.FLAME,
+														0.0025F))
+										.ambientAdditionsSound(
+												new AmbientAdditionsSettings(
+														CakeWorldSounds
+																.CINNAMON_EMBER_GROVES_CRACKLE
 																.get(),
 														0.0015D))
 										.build()));

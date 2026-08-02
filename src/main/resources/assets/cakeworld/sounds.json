@@ -205,5 +205,14 @@
         "type": "event"
       }
     ]
+  },
+  "cinnamon_ember_groves_crackle": {
+    "subtitle": "subtitles.cakeworld.cinnamon_ember_groves.crackle",
+    "sounds": [
+      {
+        "name": "minecraft:block.fire.ambient",
+        "type": "event"
+      }
+    ]
   }
 }

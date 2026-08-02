@@ -411,5 +411,12 @@
   "block.cakeworld.crunchy_toffee_ash": "Crunchy Toffee Ash",
   "item.cakeworld.smoky_toffee_snap": "Smoky Toffee Snap",
   "item.cakeworld.fudge_fondue_dunk": "Fudge Fondue Dunk",
-  "subtitles.cakeworld.fudge_wastes.bubble": "Hot fudge bubbles"
+  "subtitles.cakeworld.fudge_wastes.bubble": "Hot fudge bubbles",
+  "biome.cakeworld.cinnamon_ember_groves": "Cinnamon Ember Groves",
+  "block.cakeworld.cinnamon_crust": "Cinnamon Crust",
+  "block.cakeworld.cinnamon_log": "Cinnamon Log",
+  "block.cakeworld.ember_spice_leaves": "Ember-Spice Leaves",
+  "item.cakeworld.cinnamon_stick": "Cinnamon Stick",
+  "item.cakeworld.ember_cinnamon_swirl": "Ember Cinnamon Swirl",
+  "subtitles.cakeworld.cinnamon_ember_groves.crackle": "Cinnamon embers crackle"
 }

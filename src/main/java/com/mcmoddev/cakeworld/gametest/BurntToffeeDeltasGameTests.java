@@ -396,9 +396,10 @@ public final class BurntToffeeDeltasGameTests {
 											"cakeworld:fudge_wastes")
 							&& strings(deposit
 									.getAsJsonArray("biome_ids"))
-									.equals(Set.of(
-											"cakeworld:fudge_wastes",
-											BIOME_ID.toString())),
+										.equals(Set.of(
+												"cakeworld:fudge_wastes",
+												BIOME_ID.toString(),
+												"cakeworld:cinnamon_ember_groves")),
 					template
 							+ " lost its Deltas selector, volcanic surface, geome or deposit boundary");
 			if (firstPalette == null) {

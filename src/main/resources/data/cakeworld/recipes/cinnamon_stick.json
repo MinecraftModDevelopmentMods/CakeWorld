@@ -1,0 +1,5 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [{"item": "cakeworld:cinnamon_log"}],
+  "result": {"item": "cakeworld:cinnamon_stick", "count": 4}
+}

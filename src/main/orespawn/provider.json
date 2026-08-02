@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "provider_modid": "cakeworld",
-  "provider_revision": 33,
+  "provider_revision": 34,
   "templates": {
     "cakeworld:edible_world": {
       "name_key": "template.cakeworld.edible_world",
@@ -303,6 +303,9 @@
           },
           "cakeworld:burnt_toffee_deltas": {
             "cakeworld:fudge_mantle": 20.0
+          },
+          "cakeworld:cinnamon_ember_groves": {
+            "cakeworld:fudge_mantle": 16.0
           },
           "cakeworld:meringue_islands": {
             "cakeworld:meringue_crust": 12.0,
@@ -649,7 +652,8 @@
                 "host_families": ["igneous_volcanic"],
                 "biome_ids": [
                   "cakeworld:fudge_wastes",
-                  "cakeworld:burnt_toffee_deltas"
+                  "cakeworld:burnt_toffee_deltas",
+                  "cakeworld:cinnamon_ember_groves"
                 ],
                 "geomes": {
                   "cakeworld:fudge_mantle": 3.0
@@ -1154,6 +1158,23 @@
                 "max_downfall": 1.0,
                 "surface": {
                   "top_block": "cakeworld:fudge_rock",
+                  "filler_block": "cakeworld:fudge_rock",
+                  "filler_depth": 5
+                }
+              },
+              "cakeworld:cinnamon_ember_groves": {
+                "enabled": true,
+                "weight": 1.25,
+                "similar_biomes": [
+                  "minecraft:crimson_forest"
+                ],
+                "required_similar_biomes": [],
+                "min_temperature": -2.0,
+                "max_temperature": 2.0,
+                "min_downfall": 0.0,
+                "max_downfall": 1.0,
+                "surface": {
+                  "top_block": "cakeworld:cinnamon_crust",
                   "filler_block": "cakeworld:fudge_rock",
                   "filler_depth": 5
                 }

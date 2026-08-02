@@ -432,6 +432,16 @@ public final class CakeWorldCreatureSpawns {
 					EntityType.GHAST,
 					CakeWorldEntities.MALLOW_FLOATER);
 		}
+		if ("cinnamon_ember_groves".equals(biome.getPath())) {
+			replace(event, MobCategory.MONSTER, EntityType.BLAZE,
+					CakeWorldEntities.CINNAMON_SPARK, 20, 1, 3);
+			replaceExisting(event, MobCategory.MONSTER,
+					EntityType.PIGLIN,
+					CakeWorldEntities.FUDGE_FOLK);
+			replaceExisting(event, MobCategory.MONSTER,
+					EntityType.HOGLIN,
+					CakeWorldEntities.FUDGE_BOAR);
+		}
 	}
 
 	private static <T extends Mob> void replace(BiomeLoadingEvent event,

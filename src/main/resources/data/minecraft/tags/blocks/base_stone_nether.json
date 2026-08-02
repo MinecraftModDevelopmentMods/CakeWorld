@@ -1,4 +1,7 @@
 {
   "replace": false,
-  "values": ["cakeworld:fudge_rock"]
+  "values": [
+    "cakeworld:fudge_rock",
+    "cakeworld:cinnamon_crust"
+  ]
 }

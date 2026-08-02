@@ -284,6 +284,25 @@ public final class CakeWorldItems {
 													.COCOA_COMFORT.get(),
 											200), 1.0F)
 									.build())));
+	public static final RegistryObject<Item> CINNAMON_STICK =
+			ITEMS.register("cinnamon_stick",
+					() -> new Item(new Item.Properties()
+							.tab(CreativeModeTab.TAB_MISC)));
+	public static final RegistryObject<Item> EMBER_CINNAMON_SWIRL =
+			ITEMS.register("ember_cinnamon_swirl",
+					() -> new Item(new Item.Properties()
+							.tab(CreativeModeTab.TAB_FOOD)
+							.food(new FoodProperties.Builder()
+									.nutrition(6)
+									.saturationMod(0.7F)
+									.effect(() -> new MobEffectInstance(
+											MobEffects.FIRE_RESISTANCE,
+											400), 1.0F)
+									.effect(() -> new MobEffectInstance(
+											CakeWorldEffects
+													.SUGAR_RUSH.get(),
+											160), 1.0F)
+									.build())));
 	public static final RegistryObject<Item> FIZZY_POPPERS =
 			ITEMS.register("fizzy_poppers",
 					() -> new Item(new Item.Properties()
