@@ -1486,12 +1486,6 @@ public final class DeepPantryGameTests {
 						CakeWorldBlocks
 								.GRAPE_GUMMY_BLOCK
 								.get(), 0);
-		long homes = level.getPoiManager().getCountInRange(
-				net.minecraft.world.entity.ai.village.poi
-						.PoiType.HOME::equals,
-				centre, 32,
-				net.minecraft.world.entity.ai.village.poi
-						.PoiManager.Occupancy.ANY);
 		ResourceLocation biomeId = level.registryAccess()
 				.registryOrThrow(Registry.BIOME_REGISTRY)
 				.getKey(level.getBiome(centre).value());
@@ -1505,6 +1499,12 @@ public final class DeepPantryGameTests {
 		// chunk forced briefly so reload evidence observes the saved residents
 		// and guardian rather than racing the asynchronous entity manager.
 		helper.runAfterDelay(20, () -> {
+			long homes = level.getPoiManager().getCountInRange(
+					net.minecraft.world.entity.ai.village.poi
+							.PoiType.HOME::equals,
+					centre, 32,
+					net.minecraft.world.entity.ai.village.poi
+							.PoiManager.Occupancy.ANY);
 			List<GingerbreadFolk> residents =
 					level.getEntitiesOfClass(
 							GingerbreadFolk.class,

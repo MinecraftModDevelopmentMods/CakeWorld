@@ -23,9 +23,9 @@ not call back into CakeWorld.
 Only `zone.moddev.mc.orespawn.api` is a supported Java API. Other OreSpawn
 packages are internal.
 
-The development build resolves the published Minecraft 1.18.2 OreSpawn 4.0.1
+The development build resolves the published Minecraft 1.18.2 OreSpawn 4.0.2
 beta through CurseMaven. `gradle.properties` pins CurseForge project `245586`
-and file `8525123`, rather than reading a mutable sibling build directory. When
+and file `8536302`, rather than reading a mutable sibling build directory. When
 testing a newer OreSpawn release, change the pinned file ID deliberately and
 repeat the compile, GameTest, fresh-world, save/reload, package, and client
 gates before treating earlier evidence as transferable.

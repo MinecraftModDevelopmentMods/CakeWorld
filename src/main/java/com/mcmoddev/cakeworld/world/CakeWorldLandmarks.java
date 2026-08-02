@@ -302,6 +302,20 @@ public final class CakeWorldLandmarks {
 							.TOP_LAYER_MODIFICATION)
 					.add(ancientNougatKitchen);
 		}
+		Holder<PlacedFeature> fudgeFondueFountain =
+				FudgeFondueFountainFeature
+						.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(
+						biome.getNamespace())
+				&& "fudge_wastes".equals(
+						biome.getPath())
+				&& fudgeFondueFountain != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration
+							.TOP_LAYER_MODIFICATION)
+					.add(fudgeFondueFountain);
+		}
 		Holder<PlacedFeature> manorRepair =
 				GrandGingerbreadManorRepairFeature
 						.placedFeature();

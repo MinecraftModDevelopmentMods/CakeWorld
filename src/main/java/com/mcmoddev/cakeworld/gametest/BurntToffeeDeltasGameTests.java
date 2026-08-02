@@ -62,8 +62,9 @@ import org.slf4j.Logger;
 /**
  * Contract proof for BIO-NE-002 and its existing STRUCT-018 anchor.
  *
- * <p>The OreSpawn 4.0.1 spring path is deliberately absent. Hot Fudge in this
- * slice is terrain/aquifer/deposit material, never accepted spring evidence.</p>
+ * <p>Hot Fudge in this historical slice remains terrain/aquifer/deposit
+ * material, never spring evidence. OS-104 separately proves the repaired
+ * OreSpawn 4.0.2 spring path.</p>
  */
 @PrefixGameTestTemplate(false)
 @GameTestHolder(CakeWorld.MODID)

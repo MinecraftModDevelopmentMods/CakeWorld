@@ -269,6 +269,21 @@ public final class CakeWorldItems {
 													.SUGAR_RUSH.get(),
 											160), 1.0F)
 									.build())));
+	public static final RegistryObject<Item> FUDGE_FONDUE_DUNK =
+			ITEMS.register("fudge_fondue_dunk",
+					() -> new Item(new Item.Properties()
+							.tab(CreativeModeTab.TAB_FOOD)
+							.food(new FoodProperties.Builder()
+									.nutrition(7)
+									.saturationMod(0.75F)
+									.effect(() -> new MobEffectInstance(
+											MobEffects.FIRE_RESISTANCE,
+											300), 1.0F)
+									.effect(() -> new MobEffectInstance(
+											CakeWorldEffects
+													.COCOA_COMFORT.get(),
+											200), 1.0F)
+									.build())));
 	public static final RegistryObject<Item> FIZZY_POPPERS =
 			ITEMS.register("fizzy_poppers",
 					() -> new Item(new Item.Properties()

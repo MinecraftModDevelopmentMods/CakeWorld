@@ -57,6 +57,8 @@ public final class CakeWorldFeatureRegistration {
 				JamLanternWalkFeature.FEATURE);
 		event.getRegistry().register(
 				AncientNougatKitchenFeature.FEATURE);
+		event.getRegistry().register(
+				FudgeFondueFountainFeature.FEATURE);
 		event.getRegistry().register(GingerbreadVillageFeature.FEATURE);
 		event.getRegistry().register(
 				BiscuitBanditLookoutFeature.FEATURE);
@@ -195,6 +197,8 @@ public final class CakeWorldFeatureRegistration {
 			JamLanternWalkFeature
 					.registerConfiguredFeature();
 			AncientNougatKitchenFeature
+					.registerConfiguredFeature();
+			FudgeFondueFountainFeature
 					.registerConfiguredFeature();
 			GingerbreadVillageFeature.registerWorldgen();
 			BiscuitBanditLookoutFeature.registerWorldgen();

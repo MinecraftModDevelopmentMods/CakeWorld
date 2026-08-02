@@ -196,5 +196,14 @@
         "type": "event"
       }
     ]
+  },
+  "fudge_wastes_bubble": {
+    "subtitle": "subtitles.cakeworld.fudge_wastes.bubble",
+    "sounds": [
+      {
+        "name": "minecraft:block.lava.pop",
+        "type": "event"
+      }
+    ]
   }
 }

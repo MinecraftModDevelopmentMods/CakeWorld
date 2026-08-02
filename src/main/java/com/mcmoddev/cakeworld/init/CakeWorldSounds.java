@@ -136,6 +136,14 @@ public final class CakeWorldSounds {
 									new ResourceLocation(
 											CakeWorld.MODID,
 											"burnt_toffee_deltas_snap")));
+	public static final RegistryObject<SoundEvent>
+			FUDGE_WASTES_BUBBLE =
+					SOUNDS.register(
+							"fudge_wastes_bubble",
+							() -> new SoundEvent(
+									new ResourceLocation(
+											CakeWorld.MODID,
+											"fudge_wastes_bubble")));
 
 	private CakeWorldSounds() {
 	}

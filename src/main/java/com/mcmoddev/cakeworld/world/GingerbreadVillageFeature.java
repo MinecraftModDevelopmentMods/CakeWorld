@@ -20,6 +20,7 @@ import net.minecraft.data.worldgen.Pools;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.village.poi.PoiType;
@@ -229,6 +230,7 @@ public final class GingerbreadVillageFeature
 				centre.offset(7, 1, 7),
 				centre.offset(-6, 1, 3), meeting);
 		spawnGuardian(world, centre.offset(0, 1, 3));
+		GingerbreadVillageResidents.queue(world, centre);
 		return true;
 	}
 
@@ -497,7 +499,9 @@ public final class GingerbreadVillageFeature
 
 	private static void registerPoi(WorldGenLevel world,
 			BlockPos pos, PoiType type) {
-		world.getLevel().getPoiManager().add(pos, type);
+		if (world instanceof ServerLevel level) {
+			level.getPoiManager().add(pos, type);
+		}
 	}
 
 	private static void spawnResident(WorldGenLevel world,
@@ -542,8 +546,10 @@ public final class GingerbreadVillageFeature
 
 	private static void claimPoi(WorldGenLevel world,
 			BlockPos pos, PoiType type) {
-		world.getLevel().getPoiManager().take(
-				type::equals, pos::equals, pos, 1);
+		if (world instanceof ServerLevel level) {
+			level.getPoiManager().take(
+					type::equals, pos::equals, pos, 1);
+		}
 	}
 
 	private static void spawnGuardian(WorldGenLevel world,
