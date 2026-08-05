@@ -281,6 +281,11 @@ tasks.named('processResources', ProcessResources).configure {
 
 // Example for how to get properties into the manifest for reading at runtime.
 tasks.named('jar', Jar).configure {
+    // The CurseForge artifact is distributed on its own, so carry the exact
+    // project license inside the JAR as well as declaring it in mods.toml.
+    from(layout.projectDirectory.file('LICENSE')) {
+        into 'META-INF'
+    }
     // Defence in depth for stale or externally generated resource outputs.
     exclude '**/AGENTS.md', '**/agent-notes/**', '**/.codex/**'
     manifest {

@@ -27,7 +27,7 @@ side="BOTH"
 [[dependencies.${mod_id}]]
 modId="orespawn"
 mandatory=true
-versionRange="[4.0.0,5.0.0)"
+versionRange="[4.0.2,5.0.0)"
 ordering="AFTER"
 side="BOTH"
 

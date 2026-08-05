@@ -1,26 +1,28 @@
 # Cake World
 
-Cake World is a Forge 1.18.2 proof mod that turns Minecraft's dimensions into
-edible alternatives using OreSpawn 4. It demonstrates that a child mod can
-register its own blocks, fluids, and biomes while delegating biome placement,
-terrain strata, surfaces, aquifers, snow, ice, and world-creation settings to
-OreSpawn.
+Cake World is an early-alpha, family-friendly confectionery world conversion
+for Forge 1.18.2, powered by MMD OreSpawn 4. It turns Minecraft's dimensions
+into edible alternatives while delegating biome placement, terrain strata,
+surfaces, aquifers, ores, and fresh-world settings to OreSpawn.
 
-The current proof includes:
+The first public alpha includes a broad but incomplete collection of edible
+terrain and fluids, themed biomes across all three vanilla dimensions, foods,
+creatures, structures, an Explorer's Cookbook, and optional Base Metals
+integration. Cake World has no TerraBlender dependency.
 
-- chocolate sponge, icing, biscuit stone, biscuit crumbs, frozen lemonade, and
-  fudge rock;
-- lemonade and hot-fudge fluids with buckets;
-- edible Overworld, Nether, and End biomes copied from vanilla starting points;
-- an OreSpawn provider and fresh-world auto-template;
-- no TerraBlender dependency.
+## Alpha Notice
 
-This is a development scaffold, not a finished gameplay release. The visual
-assets currently reuse vanilla textures so integration behavior can be tested
-before original art and content are produced. The intended full game is an
-original, family-friendly confectionery total conversion, documented before
-implementation so ambitious features can be built, verified, or deliberately
-shelved without losing the overall direction.
+This is a testable development alpha, not a finished gameplay release.
+Advanced structures and rare world-generation scenes are still being tuned,
+and many visual and audio assets deliberately reuse vanilla placeholders.
+
+- Create a fresh test world so the Cake World OreSpawn template can be
+  selected. Existing worlds keep their saved OreSpawn profile.
+- Back up any world you care about before testing an alpha build.
+- Expect incomplete presentation, balance, accessibility review, and
+  occasional missing or variable rare world-generation features.
+- Please report reproducible crashes, corrupt saves, or missing registry and
+  resource errors with the relevant log and world seed.
 
 ## Design and Integration Documents
 
@@ -41,7 +43,14 @@ shelved without losing the overall direction.
 - Minecraft 1.18.2
 - Forge 40.3.0 or compatible Forge 40 build
 - Java 17
-- MMD OreSpawn 4.0.2 for Minecraft 1.18.2
+- MMD OreSpawn 4.0.2 or a newer compatible 4.x release for Minecraft 1.18.2
+
+## Installation
+
+1. Install Forge for Minecraft 1.18.2 and run it with Java 17.
+2. Put the Cake World and MMD OreSpawn JARs in the profile's `mods` directory.
+3. Start Minecraft and create a fresh world for the automatic edible-world
+   profile.
 
 ## Build
 
@@ -55,7 +64,7 @@ locally built JAR is not required.
 ./gradlew eclipse
 ```
 
-The jar is written under `build/libs/`.
+The reobfuscated mod JAR is written under `build/libs/`.
 
 ## Integration
 
@@ -66,4 +75,9 @@ schema 4 and selects `cakeworld:edible_world` for fresh worlds unless a pack
 author has explicitly chosen another default template.
 
 The design documents describe target behavior. They do not imply that the
-current scaffold already implements the full wishlist.
+current alpha already implements the full wishlist.
+
+## License
+
+Cake World is licensed under the GNU General Public License version 3 only
+(`GPL-3.0-only`).
