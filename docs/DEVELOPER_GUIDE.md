@@ -82,10 +82,15 @@ saved profile is never silently rewritten.
 `cakeworld:edible_world_basemetals` is generated from that same canonical
 profile with the optional thirteen-resource compatibility overlay. The third
 template, `cakeworld:sampler_platter`, is deliberately non-automatic and must
-be selected explicitly. Provider revision 49 retains its first bounded
+be selected explicitly. Provider revision 50 retains its first bounded
 diagnostic plot—Candy Plains augmenting the delegated vanilla source with
 `minecraft_only` scope, tiny regions, partial coverage, and a positive
-fallback weight—and adds two namespace-filter plots. The Nether uses an
+fallback weight—and adds two namespace-filter plots. Five labelled Overworld
+boundary plots then use Gingerbread Hearthlands, Peppermint Pinewoods,
+Marshmallow Peaks, Cookie Forest and Soda Ocean to show `tiny`, `small`,
+`average`, `large` and `huge` regions at exact 128, 256, 512, 1,024 and 2,048
+block scales. Each plot has half coverage, so covered and delegated regions
+remain visible together. The Nether uses an
 explicit `minecraft` allow-list with `selected_namespaces`; its Fudge output
 lists one installed and one missing optional similar biome, while a competing
 Crags output requires a deliberately missing biome. The End declares a
@@ -197,7 +202,8 @@ remain ignored.
   showcase contract; they must not be presented as working examples.
 - The Sampler Platter currently proves explicit selection, augment mode,
   `minecraft_only` declaration, `selected_namespaces`, namespace include and
-  exclude lists, optional/required similar-biome behavior, and live
-  tiny/small/average region settings. An unrelated mod-biome pass-through
-  fixture, large/huge regions, extreme formations, aliases, retrogen, flat
-  bedrock, and the remaining labelled plots are still Slice 7 work.
+  exclude lists, optional/required similar-biome behavior, and all five live
+  region settings with fixed 128/256/512/1,024/2,048-block boundary evidence.
+  An unrelated mod-biome pass-through fixture, extreme formations, aliases,
+  retrogen, flat bedrock, and the remaining labelled plots are still Slice 7
+  work.

@@ -36,6 +36,16 @@ public final class SamplerPlatterGameTests {
 			new ResourceLocation("cakeworld", "sampler_platter");
 	private static final ResourceLocation CANDY_PLAINS =
 			new ResourceLocation("cakeworld", "candy_plains");
+	private static final ResourceLocation COOKIE_FOREST =
+			new ResourceLocation("cakeworld", "cookie_forest");
+	private static final ResourceLocation SODA_OCEAN =
+			new ResourceLocation("cakeworld", "soda_ocean");
+	private static final ResourceLocation GINGERBREAD_HEARTHLANDS =
+			new ResourceLocation("cakeworld", "gingerbread_hearthlands");
+	private static final ResourceLocation PEPPERMINT_PINEWOODS =
+			new ResourceLocation("cakeworld", "peppermint_pinewoods");
+	private static final ResourceLocation MARSHMALLOW_PEAKS =
+			new ResourceLocation("cakeworld", "marshmallow_peaks");
 	private static final ResourceLocation FUDGE_WASTES =
 			new ResourceLocation("cakeworld", "fudge_wastes");
 	private static final ResourceLocation CHILLI_CHOCOLATE_CRAGS =
@@ -51,8 +61,8 @@ public final class SamplerPlatterGameTests {
 	public static void packagedSamplerIsOptionalAndBounded(
 			GameTestHelper helper) {
 		JsonObject provider = packagedProvider(helper);
-		require(helper, provider.get("provider_revision").getAsInt() >= 49,
-				"Sampler similarity plots require provider revision 49");
+		require(helper, provider.get("provider_revision").getAsInt() >= 50,
+				"Sampler five-size plots require provider revision 50");
 		JsonObject templates = provider.getAsJsonObject("templates");
 		require(helper, templates.size() == 3,
 				"Generated provider must contain two adventures and one sampler");
@@ -71,13 +81,23 @@ public final class SamplerPlatterGameTests {
 							.getAsBoolean(),
 				"Sampler foundation must not take over vanilla ores");
 		JsonObject palettes = profile.getAsJsonObject("biome_palettes");
-		require(helper, palettes.size() == 3,
-				"Sampler namespace checkpoint must expose three plots");
+		require(helper, palettes.size() == 8,
+				"Sampler region checkpoint must expose eight plots");
 		JsonObject palette = palettes
 				.getAsJsonObject("cakeworld:sampler_overworld_augment");
 		requireSamplerPalette(helper, palette);
 		requireSelectedNamespacesPalette(helper, palettes.getAsJsonObject(
 				"cakeworld:sampler_nether_selected_namespaces"));
+		requireTinyRegionPalette(helper, palettes.getAsJsonObject(
+				"cakeworld:sampler_overworld_tiny_regions"));
+		requireSmallRegionPalette(helper, palettes.getAsJsonObject(
+				"cakeworld:sampler_overworld_small_regions"));
+		requireAverageRegionPalette(helper, palettes.getAsJsonObject(
+				"cakeworld:sampler_overworld_average_regions"));
+		requireLargeRegionPalette(helper, palettes.getAsJsonObject(
+				"cakeworld:sampler_overworld_large_regions"));
+		requireHugeRegionPalette(helper, palettes.getAsJsonObject(
+				"cakeworld:sampler_overworld_huge_regions"));
 		requireExcludedNamespacePalette(helper, palettes.getAsJsonObject(
 				"cakeworld:sampler_end_excluded_namespace"));
 		helper.succeed();
@@ -102,6 +122,16 @@ public final class SamplerPlatterGameTests {
 		requireSamplerPalette(helper, palette);
 		requireSelectedNamespacesPalette(helper, palettes.getAsJsonObject(
 				"cakeworld:sampler_nether_selected_namespaces"));
+		requireTinyRegionPalette(helper, palettes.getAsJsonObject(
+				"cakeworld:sampler_overworld_tiny_regions"));
+		requireSmallRegionPalette(helper, palettes.getAsJsonObject(
+				"cakeworld:sampler_overworld_small_regions"));
+		requireAverageRegionPalette(helper, palettes.getAsJsonObject(
+				"cakeworld:sampler_overworld_average_regions"));
+		requireLargeRegionPalette(helper, palettes.getAsJsonObject(
+				"cakeworld:sampler_overworld_large_regions"));
+		requireHugeRegionPalette(helper, palettes.getAsJsonObject(
+				"cakeworld:sampler_overworld_huge_regions"));
 		requireExcludedNamespacePalette(helper, palettes.getAsJsonObject(
 				"cakeworld:sampler_end_excluded_namespace"));
 
@@ -110,6 +140,11 @@ public final class SamplerPlatterGameTests {
 		Registry<Biome> registry = level.registryAccess()
 				.registryOrThrow(Registry.BIOME_REGISTRY);
 		Map<ResourceLocation, Integer> counts = new HashMap<>();
+		Map<Long, Integer> tinyRegionKinds = new HashMap<>();
+		Map<Long, Integer> smallRegionKinds = new HashMap<>();
+		Map<Long, Integer> averageRegionKinds = new HashMap<>();
+		Map<Long, Integer> largeRegionKinds = new HashMap<>();
+		Map<Long, Integer> hugeRegionKinds = new HashMap<>();
 		for (int x = -4096; x <= 4096; x += 32) {
 			for (int z = -4096; z <= 4096; z += 32) {
 				Holder<Biome> biome = generator.getNoiseBiome(
@@ -119,9 +154,31 @@ public final class SamplerPlatterGameTests {
 						.map(key -> key.location())
 						.orElseGet(() -> registry.getKey(biome.value()));
 				counts.merge(id, 1, Integer::sum);
+				int kind = CANDY_PLAINS.equals(id) ? 1
+						: GINGERBREAD_HEARTHLANDS.equals(id) ? 2
+						: PEPPERMINT_PINEWOODS.equals(id) ? 4
+						: MARSHMALLOW_PEAKS.equals(id) ? 8
+						: COOKIE_FOREST.equals(id) ? 16
+						: SODA_OCEAN.equals(id) ? 32
+						: "minecraft".equals(id.getNamespace()) ? 64 : 128;
+				tinyRegionKinds.merge(regionKey(x, z, 128), kind,
+						(left, right) -> left | right);
+				smallRegionKinds.merge(regionKey(x, z, 256), kind,
+						(left, right) -> left | right);
+				averageRegionKinds.merge(regionKey(x, z, 512), kind,
+						(left, right) -> left | right);
+				largeRegionKinds.merge(regionKey(x, z, 1024), kind,
+						(left, right) -> left | right);
+				hugeRegionKinds.merge(regionKey(x, z, 2048), kind,
+						(left, right) -> left | right);
 			}
 		}
 		int candy = counts.getOrDefault(CANDY_PLAINS, 0);
+		int gingerbread = counts.getOrDefault(GINGERBREAD_HEARTHLANDS, 0);
+		int peppermint = counts.getOrDefault(PEPPERMINT_PINEWOODS, 0);
+		int marshmallow = counts.getOrDefault(MARSHMALLOW_PEAKS, 0);
+		int cookie = counts.getOrDefault(COOKIE_FOREST, 0);
+		int soda = counts.getOrDefault(SODA_OCEAN, 0);
 		int minecraft = counts.entrySet().stream()
 				.filter(entry -> "minecraft".equals(
 						entry.getKey().getNamespace()))
@@ -130,19 +187,71 @@ public final class SamplerPlatterGameTests {
 				.sum();
 		require(helper, total == 66049,
 				"Sampler audit grid drifted from 66,049 positions");
-		require(helper, candy > 0,
-				"Augment sampler produced no Candy Plains output");
+		require(helper, candy > 0 && gingerbread > 0 && peppermint > 0
+					&& marshmallow > 0 && cookie > 0 && soda > 0,
+				"Five-size sampler omitted a labelled Overworld output: "
+						+ counts);
 		require(helper, minecraft > 0,
 				"Augment sampler did not retain delegated Minecraft biomes");
-		require(helper, candy < total && minecraft < total,
+		require(helper, candy < total && gingerbread < total
+					&& peppermint < total && marshmallow < total
+					&& minecraft < total && cookie < total && soda < total,
 				"Sampler collapsed into a single biome source");
-		require(helper, candy == 1414 && minecraft == 64635
-					&& counts.size() == 50,
-				"Fixed-seed augment distribution drifted: candy=" + candy
-						+ ", minecraft=" + minecraft + ", distinct="
-						+ counts.size());
-		LOGGER.info("Sampler Platter fixed-seed biome audit: samples={}, candyPlains={}, minecraft={}, distinct={}",
-				total, candy, minecraft, counts.size());
+		require(helper, candy == 1414 && gingerbread == 32455
+					&& peppermint == 14701 && marshmallow == 7989
+					&& cookie == 4256 && soda == 1820
+					&& minecraft == 3414 && counts.size() == 47,
+				"Fixed-seed five-size distribution drifted: " + counts);
+		int tinyConflicts = regionConflicts(tinyRegionKinds, 2,
+				4 | 8 | 16 | 32 | 64 | 128);
+		int smallConflicts = regionConflicts(smallRegionKinds, 4,
+				8 | 16 | 32 | 64 | 128);
+		int averageConflicts = regionConflicts(averageRegionKinds, 8,
+				16 | 32 | 64 | 128);
+		int largeConflicts = regionConflicts(largeRegionKinds, 16,
+				32 | 64 | 128);
+		int hugeConflicts = regionConflicts(hugeRegionKinds, 32,
+				64 | 128);
+		int tinyGingerbreadRegions = regionsWith(tinyRegionKinds, 2);
+		int smallPeppermintRegions = regionsWith(smallRegionKinds, 4);
+		int averageMarshmallowRegions = regionsWith(averageRegionKinds, 8);
+		int largeCookieRegions = regionsWith(largeRegionKinds, 16);
+		int largeOtherRegions = largeRegionKinds.size() - largeCookieRegions;
+		int hugeSodaRegions = regionsWith(hugeRegionKinds, 32);
+		require(helper, tinyConflicts == 0 && smallConflicts == 0
+					&& averageConflicts == 0 && largeConflicts == 0
+					&& hugeConflicts == 0,
+				"A labelled output crossed its 128/256/512/1024/2048-block region boundary");
+		require(helper, tinyGingerbreadRegions > 0
+					&& tinyGingerbreadRegions < tinyRegionKinds.size()
+					&& smallPeppermintRegions > 0
+					&& smallPeppermintRegions < smallRegionKinds.size()
+					&& averageMarshmallowRegions > 0
+					&& averageMarshmallowRegions < averageRegionKinds.size()
+					&& largeCookieRegions > 0
+					&& largeOtherRegions > 0 && hugeSodaRegions > 0
+					&& hugeSodaRegions < hugeRegionKinds.size(),
+				"Fixed grid did not observe both covered and delegated regions at every size");
+		require(helper, tinyRegionKinds.size() == 4225
+					&& tinyGingerbreadRegions == 2119
+					&& smallRegionKinds.size() == 1089
+					&& smallPeppermintRegions == 468
+					&& averageRegionKinds.size() == 289
+					&& averageMarshmallowRegions == 117
+					&& largeRegionKinds.size() == 81
+					&& largeCookieRegions == 29
+					&& hugeRegionKinds.size() == 25
+					&& hugeSodaRegions == 7,
+				"Fixed-seed five-size region coverage drifted");
+		LOGGER.info("Sampler Platter five-size audit: samples={}, candyPlains={}, gingerbread={}, peppermint={}, marshmallow={}, cookieForest={}, sodaOcean={}, minecraft={}, distinct={}, tinyRegions={}/{}/{}, smallRegions={}/{}/{}, averageRegions={}/{}/{}, largeRegions={}/{}/{}, hugeRegions={}/{}/{}",
+				total, candy, gingerbread, peppermint, marshmallow, cookie,
+				soda, minecraft, counts.size(), tinyRegionKinds.size(),
+				tinyGingerbreadRegions, tinyConflicts, smallRegionKinds.size(),
+				smallPeppermintRegions, smallConflicts,
+				averageRegionKinds.size(), averageMarshmallowRegions,
+				averageConflicts, largeRegionKinds.size(), largeCookieRegions,
+				largeConflicts, hugeRegionKinds.size(), hugeSodaRegions,
+				hugeConflicts);
 
 		ServerLevel nether = level.getServer().getLevel(Level.NETHER);
 		ServerLevel end = level.getServer().getLevel(Level.END);
@@ -204,6 +313,24 @@ public final class SamplerPlatterGameTests {
 				.filter(entry -> namespace.equals(
 						entry.getKey().getNamespace()))
 				.mapToInt(Map.Entry::getValue).sum();
+	}
+
+	private static long regionKey(int blockX, int blockZ, int regionSize) {
+		int regionX = Math.floorDiv(blockX, regionSize);
+		int regionZ = Math.floorDiv(blockZ, regionSize);
+		return ((long) regionX << 32) ^ (regionZ & 0xFFFFFFFFL);
+	}
+
+	private static int regionsWith(Map<Long, Integer> regions, int bit) {
+		return (int) regions.values().stream()
+				.filter(kinds -> (kinds & bit) != 0).count();
+	}
+
+	private static int regionConflicts(Map<Long, Integer> regions,
+			int outputBit, int laterMask) {
+		return (int) regions.values().stream()
+				.filter(kinds -> (kinds & outputBit) != 0
+						&& (kinds & laterMask) != 0).count();
 	}
 
 	private static void requireSamplerPalette(GameTestHelper helper,
@@ -325,6 +452,68 @@ public final class SamplerPlatterGameTests {
 					&& palette.getAsJsonObject("biomes")
 							.has("cakeworld:meringue_islands"),
 				"Sampler excluded-namespace output drifted");
+	}
+
+	private static void requireLargeRegionPalette(
+			GameTestHelper helper, JsonObject palette) {
+		requireRegionPalette(helper, palette, "large", 0.5,
+				"cakeworld:cookie_forest", 2,
+				"Sampler large-region plot drifted");
+	}
+
+	private static void requireTinyRegionPalette(
+			GameTestHelper helper, JsonObject palette) {
+		requireRegionPalette(helper, palette, "tiny", 0.5,
+				"cakeworld:gingerbread_hearthlands", 2,
+				"Sampler tiny-region boundary plot drifted");
+	}
+
+	private static void requireSmallRegionPalette(
+			GameTestHelper helper, JsonObject palette) {
+		requireRegionPalette(helper, palette, "small", 0.5,
+				"cakeworld:peppermint_pinewoods", 2,
+				"Sampler small-region boundary plot drifted");
+	}
+
+	private static void requireAverageRegionPalette(
+			GameTestHelper helper, JsonObject palette) {
+		requireRegionPalette(helper, palette, "average", 0.5,
+				"cakeworld:marshmallow_peaks", 3,
+				"Sampler average-region boundary plot drifted");
+	}
+
+	private static void requireHugeRegionPalette(
+			GameTestHelper helper, JsonObject palette) {
+		requireRegionPalette(helper, palette, "huge", 0.5,
+				"cakeworld:soda_ocean", 4,
+				"Sampler huge-region plot drifted");
+	}
+
+	private static void requireRegionPalette(GameTestHelper helper,
+			JsonObject palette, String regionSize, double coverage,
+			String biomeId, int fillerDepth, String message) {
+		JsonObject biomes = palette == null ? null
+				: palette.getAsJsonObject("biomes");
+		JsonObject biome = biomes == null ? null
+				: biomes.getAsJsonObject(biomeId);
+		require(helper, palette != null
+					&& "minecraft:overworld".equals(
+							palette.get("dimension").getAsString())
+					&& "replace".equals(palette.get("mode").getAsString())
+					&& "minecraft_only".equals(
+							palette.get("scope").getAsString())
+					&& regionSize.equals(
+							palette.get("region_size").getAsString())
+					&& palette.get("coverage").getAsDouble() == coverage
+					&& palette.get("fallback_weight").getAsDouble() == 0.0
+					&& palette.getAsJsonArray("include_namespaces").size() == 0
+					&& palette.getAsJsonArray("exclude_namespaces").size() == 0
+					&& biomes.size() == 1 && biome != null
+					&& biome.getAsJsonArray("similar_biomes").size() == 0
+					&& biome.getAsJsonArray("required_similar_biomes").size() == 0
+					&& biome.getAsJsonObject("surface")
+							.get("filler_depth").getAsInt() == fillerDepth,
+				message);
 	}
 
 	private static JsonObject packagedProvider(GameTestHelper helper) {

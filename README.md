@@ -78,8 +78,9 @@ contains the normal adventure, its conditional BaseMetals overlay, and the
 optional `cakeworld:sampler_platter` developer template. The Sampler is never
 auto-selected.
 
-To run the currently implemented Sampler augment, namespace-filter, and
-similar-biome dependency plots against a fresh fixed-seed world:
+To run the currently implemented Sampler augment, namespace-filter,
+similar-biome dependency, and five-size region-boundary plots against a fresh
+fixed-seed world:
 
 ```powershell
 ./gradlew runGameTestServer -PcakeworldSamplerRuntime=true -PcakeworldSamplerRunDirectory=run-sampler-platter-local
