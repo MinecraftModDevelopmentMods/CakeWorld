@@ -82,10 +82,14 @@ saved profile is never silently rewritten.
 `cakeworld:edible_world_basemetals` is generated from that same canonical
 profile with the optional thirteen-resource compatibility overlay. The third
 template, `cakeworld:sampler_platter`, is deliberately non-automatic and must
-be selected explicitly. Provider revision 47 implements its first bounded
-diagnostic plot: one Candy Plains output augments the delegated vanilla biome
-source with `minecraft_only` scope, tiny regions, partial coverage, and a
-positive fallback weight. Later Slice 7 plots remain separate wishlist work.
+be selected explicitly. Provider revision 48 retains its first bounded
+diagnostic plot—Candy Plains augmenting the delegated vanilla source with
+`minecraft_only` scope, tiny regions, partial coverage, and a positive
+fallback weight—and adds two namespace-filter plots. The Nether converts an
+explicit `minecraft` allow-list with `selected_namespaces`; the End declares a
+Meringue output under `all` scope but excludes `minecraft`, so vanilla End
+sources must delegate unchanged. Together they demonstrate include and
+exclude lists without adding callbacks or affecting either adventure.
 
 Run its isolated two-test fresh-world proof with:
 
@@ -188,6 +192,9 @@ remain ignored.
   remain incomplete even where automated gameplay contracts are verified.
 - A few OreSpawn capabilities are explicitly shelved with evidence in the
   showcase contract; they must not be presented as working examples.
-- The Sampler Platter currently proves its explicit-selection and augment
-  foundation only. Extreme formations, aliases, retrogen, flat bedrock, and
-  the remaining labelled diagnostic plots are still Slice 7 work.
+- The Sampler Platter currently proves explicit selection, augment mode,
+  `minecraft_only` declaration, `selected_namespaces`, namespace include and
+  exclude lists, and live tiny/small/average region settings. An unrelated
+  mod-biome pass-through fixture, large/huge regions, extreme formations,
+  aliases, retrogen, flat bedrock, and the remaining labelled plots are still
+  Slice 7 work.

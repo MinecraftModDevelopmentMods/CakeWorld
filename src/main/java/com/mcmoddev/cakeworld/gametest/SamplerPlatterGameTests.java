@@ -16,6 +16,7 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraftforge.gametest.GameTestHolder;
@@ -35,6 +36,10 @@ public final class SamplerPlatterGameTests {
 			new ResourceLocation("cakeworld", "sampler_platter");
 	private static final ResourceLocation CANDY_PLAINS =
 			new ResourceLocation("cakeworld", "candy_plains");
+	private static final ResourceLocation FUDGE_WASTES =
+			new ResourceLocation("cakeworld", "fudge_wastes");
+	private static final ResourceLocation MERINGUE_ISLANDS =
+			new ResourceLocation("cakeworld", "meringue_islands");
 	private static final Logger LOGGER = LogUtils.getLogger();
 
 	private SamplerPlatterGameTests() {
@@ -44,8 +49,8 @@ public final class SamplerPlatterGameTests {
 	public static void packagedSamplerIsOptionalAndBounded(
 			GameTestHelper helper) {
 		JsonObject provider = packagedProvider(helper);
-		require(helper, provider.get("provider_revision").getAsInt() >= 47,
-				"Sampler Platter requires provider revision 47");
+		require(helper, provider.get("provider_revision").getAsInt() >= 48,
+				"Sampler namespace plots require provider revision 48");
 		JsonObject templates = provider.getAsJsonObject("templates");
 		require(helper, templates.size() == 3,
 				"Generated provider must contain two adventures and one sampler");
@@ -63,9 +68,16 @@ public final class SamplerPlatterGameTests {
 					&& !profile.get("suppress_all_ore_features")
 							.getAsBoolean(),
 				"Sampler foundation must not take over vanilla ores");
-		JsonObject palette = profile.getAsJsonObject("biome_palettes")
+		JsonObject palettes = profile.getAsJsonObject("biome_palettes");
+		require(helper, palettes.size() == 3,
+				"Sampler namespace checkpoint must expose three plots");
+		JsonObject palette = palettes
 				.getAsJsonObject("cakeworld:sampler_overworld_augment");
 		requireSamplerPalette(helper, palette);
+		requireSelectedNamespacesPalette(helper, palettes.getAsJsonObject(
+				"cakeworld:sampler_nether_selected_namespaces"));
+		requireExcludedNamespacePalette(helper, palettes.getAsJsonObject(
+				"cakeworld:sampler_end_excluded_namespace"));
 		helper.succeed();
 	}
 
@@ -81,10 +93,15 @@ public final class SamplerPlatterGameTests {
 				.filter(SAMPLER_TEMPLATE::equals).isPresent(),
 				"Fresh diagnostic world did not explicitly select "
 						+ SAMPLER_TEMPLATE);
-		JsonObject palette = profile.toJson()
-				.getAsJsonObject("biome_palettes")
+		JsonObject palettes = profile.toJson()
+				.getAsJsonObject("biome_palettes");
+		JsonObject palette = palettes
 				.getAsJsonObject("cakeworld:sampler_overworld_augment");
 		requireSamplerPalette(helper, palette);
+		requireSelectedNamespacesPalette(helper, palettes.getAsJsonObject(
+				"cakeworld:sampler_nether_selected_namespaces"));
+		requireExcludedNamespacePalette(helper, palettes.getAsJsonObject(
+				"cakeworld:sampler_end_excluded_namespace"));
 
 		ServerLevel level = helper.getLevel();
 		ChunkGenerator generator = level.getChunkSource().getGenerator();
@@ -124,7 +141,61 @@ public final class SamplerPlatterGameTests {
 						+ counts.size());
 		LOGGER.info("Sampler Platter fixed-seed biome audit: samples={}, candyPlains={}, minecraft={}, distinct={}",
 				total, candy, minecraft, counts.size());
+
+		ServerLevel nether = level.getServer().getLevel(Level.NETHER);
+		ServerLevel end = level.getServer().getLevel(Level.END);
+		require(helper, nether != null && end != null,
+				"Sampler namespace proof requires Nether and End levels");
+		Map<ResourceLocation, Integer> netherCounts = sampleBiomes(nether,
+				64, 1024);
+		Map<ResourceLocation, Integer> endCounts = sampleBiomes(end, 64, 1024);
+		int netherTotal = total(netherCounts);
+		int fudge = netherCounts.getOrDefault(FUDGE_WASTES, 0);
+		int endTotal = total(endCounts);
+		int endMinecraft = namespaceTotal(endCounts, "minecraft");
+		require(helper, netherTotal == 4225 && fudge == netherTotal
+					&& netherCounts.size() == 1,
+				"Selected minecraft namespace was not fully converted in the Nether: "
+						+ netherCounts);
+		require(helper, endTotal == 4225 && endMinecraft == endTotal
+					&& !endCounts.containsKey(MERINGUE_ISLANDS),
+				"Excluded minecraft namespace did not delegate unchanged in the End: "
+						+ endCounts);
+		LOGGER.info("Sampler namespace audit: netherSamples={}, fudgeWastes={}, endSamples={}, endMinecraft={}, endDistinct={}",
+				netherTotal, fudge, endTotal, endMinecraft, endCounts.size());
 		helper.succeed();
+	}
+
+	private static Map<ResourceLocation, Integer> sampleBiomes(
+			ServerLevel level, int y, int radius) {
+		ChunkGenerator generator = level.getChunkSource().getGenerator();
+		Registry<Biome> registry = level.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY);
+		Map<ResourceLocation, Integer> counts = new HashMap<>();
+		for (int x = -radius; x <= radius; x += 32) {
+			for (int z = -radius; z <= radius; z += 32) {
+				Holder<Biome> biome = generator.getNoiseBiome(
+						QuartPos.fromBlock(x), QuartPos.fromBlock(y),
+						QuartPos.fromBlock(z));
+				ResourceLocation id = biome.unwrapKey()
+						.map(key -> key.location())
+						.orElseGet(() -> registry.getKey(biome.value()));
+				counts.merge(id, 1, Integer::sum);
+			}
+		}
+		return counts;
+	}
+
+	private static int total(Map<ResourceLocation, Integer> counts) {
+		return counts.values().stream().mapToInt(Integer::intValue).sum();
+	}
+
+	private static int namespaceTotal(
+			Map<ResourceLocation, Integer> counts, String namespace) {
+		return counts.entrySet().stream()
+				.filter(entry -> namespace.equals(
+						entry.getKey().getNamespace()))
+				.mapToInt(Map.Entry::getValue).sum();
 	}
 
 	private static void requireSamplerPalette(GameTestHelper helper,
@@ -175,6 +246,55 @@ public final class SamplerPlatterGameTests {
 							surface.get("underwater_block").getAsString())
 					&& surface.get("filler_depth").getAsInt() == 2,
 				"Sampler Candy Plains surface contract drifted");
+	}
+
+	private static void requireSelectedNamespacesPalette(
+			GameTestHelper helper, JsonObject palette) {
+		require(helper, palette != null
+					&& "minecraft:the_nether".equals(
+							palette.get("dimension").getAsString())
+					&& "replace".equals(palette.get("mode").getAsString())
+					&& "selected_namespaces".equals(
+							palette.get("scope").getAsString())
+					&& "small".equals(
+							palette.get("region_size").getAsString())
+					&& palette.get("coverage").getAsDouble() == 1.0
+					&& palette.get("fallback_weight").getAsDouble() == 0.0,
+				"Sampler selected-namespace palette controls drifted");
+		require(helper, palette.getAsJsonArray("include_namespaces").size() == 1
+					&& "minecraft".equals(palette
+							.getAsJsonArray("include_namespaces").get(0)
+							.getAsString())
+					&& palette.getAsJsonArray("exclude_namespaces").size() == 0,
+				"Sampler selected-namespace allow-list drifted");
+		require(helper, palette.getAsJsonObject("biomes").size() == 1
+					&& palette.getAsJsonObject("biomes")
+							.has("cakeworld:fudge_wastes"),
+				"Sampler selected-namespace output drifted");
+	}
+
+	private static void requireExcludedNamespacePalette(
+			GameTestHelper helper, JsonObject palette) {
+		require(helper, palette != null
+					&& "minecraft:the_end".equals(
+							palette.get("dimension").getAsString())
+					&& "replace".equals(palette.get("mode").getAsString())
+					&& "all".equals(palette.get("scope").getAsString())
+					&& "average".equals(
+							palette.get("region_size").getAsString())
+					&& palette.get("coverage").getAsDouble() == 1.0
+					&& palette.get("fallback_weight").getAsDouble() == 0.0,
+				"Sampler excluded-namespace palette controls drifted");
+		require(helper, palette.getAsJsonArray("include_namespaces").size() == 0
+					&& palette.getAsJsonArray("exclude_namespaces").size() == 1
+					&& "minecraft".equals(palette
+							.getAsJsonArray("exclude_namespaces").get(0)
+							.getAsString()),
+				"Sampler namespace exclusion list drifted");
+		require(helper, palette.getAsJsonObject("biomes").size() == 1
+					&& palette.getAsJsonObject("biomes")
+							.has("cakeworld:meringue_islands"),
+				"Sampler excluded-namespace output drifted");
 	}
 
 	private static JsonObject packagedProvider(GameTestHelper helper) {
