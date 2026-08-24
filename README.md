@@ -76,7 +76,8 @@ schema 4 and selects `cakeworld:edible_world` for fresh worlds unless a pack
 author has explicitly chosen another default template. The generated provider
 contains the normal adventure, its conditional BaseMetals overlay, and the
 optional `cakeworld:sampler_platter` developer template. The Sampler is never
-auto-selected.
+auto-selected. Its packaged retrogen rules are disabled fixtures; the build
+harness enables them only inside an explicitly reused, disposable test save.
 
 To run the currently implemented Sampler biome plots, profile-wide extreme
 `sky_v1` formation comparison, installed-output alias and three-layer
@@ -89,6 +90,19 @@ flat-bedrock proof against a fresh fixed-seed world:
 The task refuses a directory that already owns a saved world profile. Pass
 `-PcakeworldSamplerReuseWorld=true` as an additional, explicit flag only when
 collecting same-save reload evidence.
+
+The copied-world retrogen proof is deliberately three-phase and uses one
+ignored test directory. Never point these commands at a player world:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldSamplerRuntime=true -PcakeworldSamplerRunDirectory=run-sampler-retrogen-local -PcakeworldSamplerRetrogenPhase=baseline -PcakeworldGameTestNamespaces=cakeworld_sampler_retrogen
+./gradlew runGameTestServer -PcakeworldSamplerRuntime=true -PcakeworldSamplerReuseWorld=true -PcakeworldSamplerRunDirectory=run-sampler-retrogen-local -PcakeworldSamplerRetrogenPhase=apply -PcakeworldGameTestNamespaces=cakeworld_sampler_retrogen
+./gradlew runGameTestServer -PcakeworldSamplerRuntime=true -PcakeworldSamplerReuseWorld=true -PcakeworldSamplerRunDirectory=run-sampler-retrogen-local -PcakeworldSamplerRetrogenPhase=reload -PcakeworldGameTestNamespaces=cakeworld_sampler_retrogen
+```
+
+The baseline writes exact eligible and ineligible slabs into old chunks. Apply
+enables revision `5301` only in that save and proves bounded processing; reload
+proves the revision marker prevents a second pass while `force` remains false.
 
 The adventure remains on average `stable_layers`. The developer guide gives
 the separate same-seed baseline command; OreSpawn formations are profile-wide,

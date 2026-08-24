@@ -31,6 +31,8 @@ def samplerPlatterRunDirectory = providers.gradleProperty(
         'cakeworldSamplerRunDirectory').getOrElse('run-sampler-platter')
 def samplerPlatterReuseWorld = providers.gradleProperty(
         'cakeworldSamplerReuseWorld').map { it.toBoolean() }.getOrElse(false)
+def samplerRetrogenPhase = providers.gradleProperty(
+        'cakeworldSamplerRetrogenPhase').orNull
 def providerOverrideMode = providers.gradleProperty(
         'cakeworldProviderOverrideMode').orNull
 def providerOverrideRuntime = providerOverrideMode != null
@@ -146,6 +148,10 @@ minecraft {
             if (samplerPlatterRuntime) {
                 property 'cakeworld.samplerPlatterEvidence', 'true'
             }
+            if (samplerRetrogenPhase != null) {
+                property 'cakeworld.samplerRetrogenPhase',
+                        samplerRetrogenPhase
+            }
             if (providerOverrideRuntime) {
                 property 'cakeworld.providerOverrideMode',
                         providerOverrideMode
@@ -228,6 +234,47 @@ def prepareSamplerPlatterRun = tasks.register('prepareSamplerPlatterRun') {
         def runRoot = samplerPlatterRunRoot.asFile
         def savedProfile = new File(runRoot,
                 'world/serverconfig/orespawn-worldgen.json')
+        if (samplerRetrogenPhase != null
+                && !(samplerRetrogenPhase in ['baseline', 'apply', 'reload'])) {
+            throw new GradleException(
+                    "cakeworldSamplerRetrogenPhase must be baseline, apply, or reload; got '${samplerRetrogenPhase}'.")
+        }
+        if (samplerRetrogenPhase == 'reload'
+                && (!samplerPlatterReuseWorld || !savedProfile.isFile())) {
+            throw new GradleException(
+                    'Sampler retrogen reload requires an existing saved profile and -PcakeworldSamplerReuseWorld=true.')
+        }
+        if (samplerRetrogenPhase == 'apply') {
+            if (!samplerPlatterReuseWorld || !savedProfile.isFile()) {
+                throw new GradleException(
+                        'Sampler retrogen apply requires an existing saved profile and -PcakeworldSamplerReuseWorld=true.')
+            }
+            def parser = new groovy.json.JsonSlurper()
+            def profile = parser.parse(savedProfile) as Map
+            def ores = profile.ores as Map
+            def sprinkle = ores == null
+                    ? null : ores['cakeworld:ore/retrogen_sprinkles']
+            def control = ores == null
+                    ? null : ores['cakeworld:ore/retrogen_control']
+            if (!(sprinkle instanceof Map) || !(control instanceof Map)) {
+                throw new GradleException(
+                        'Saved Sampler profile does not contain both disabled retrogen fixtures.')
+            }
+            sprinkle.enabled = true
+            control.enabled = true
+            profile.retrogen = [
+                    enabled: true,
+                    force: false,
+                    revision: 5301,
+                    chunks_per_tick: 4
+            ]
+            savedProfile.setText(groovy.json.JsonOutput.prettyPrint(
+                    groovy.json.JsonOutput.toJson(profile))
+                    + System.lineSeparator(), 'UTF-8')
+            logger.lifecycle(
+                    "Enabled bounded retrogen revision 5301 only in copied Sampler profile: ${savedProfile}")
+            return
+        }
         if (savedProfile.isFile() && !samplerPlatterReuseWorld) {
             throw new GradleException(
                     "Sampler run directory already contains a saved world profile: ${savedProfile}. Use a new -PcakeworldSamplerRunDirectory value, or explicitly pass -PcakeworldSamplerReuseWorld=true for reload evidence.")

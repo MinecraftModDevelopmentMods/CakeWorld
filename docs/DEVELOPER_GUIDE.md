@@ -82,7 +82,7 @@ saved profile is never silently rewritten.
 `cakeworld:edible_world_basemetals` is generated from that same canonical
 profile with the optional thirteen-resource compatibility overlay. The third
 template, `cakeworld:sampler_platter`, is deliberately non-automatic and must
-be selected explicitly. Provider revision 52 retains its first bounded
+be selected explicitly. Provider revision 53 retains its first bounded
 diagnostic plot—Candy Plains augmenting the delegated vanilla source with
 `minecraft_only` scope, tiny regions, partial coverage, and a positive
 fallback weight—and adds two namespace-filter plots. Five labelled Overworld
@@ -105,7 +105,10 @@ fixed-seed comparison meaningful while leaving both automatically selected
 adventures on average `stable_layers` settings. The same explicit Sampler maps
 its installed Burnt-Sugar geology output to Sprinkle Cluster at bake time and
 enables exactly three flat bedrock layers in the Overworld and Nether. Its
-bedrock retrogen switch remains off.
+bedrock retrogen switch remains off. Two additional ore rules are packaged
+disabled beside a disabled profile-wide retrogen control. They are inert in an
+ordinary Sampler and exist solely so a copied test save can activate one
+retrogen-enabled Sprinkle rule beside one non-retrogen Fizzy-Pearl control.
 
 Run its isolated four-test fresh-world proof, including the formation survey,
 with:
@@ -119,6 +122,27 @@ world-owned OreSpawn profile. To prove persistence against the same save, run
 the same command again with `-PcakeworldSamplerReuseWorld=true`. This reuse
 flag is intentionally opt-in so an ordinary diagnostic run cannot silently
 turn into reload evidence.
+
+The bounded retrogen proof uses a separate ignored directory and three explicit
+phases. Do not substitute a player world:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldSamplerRuntime=true -PcakeworldSamplerRunDirectory=run-sampler-retrogen-local -PcakeworldSamplerRetrogenPhase=baseline -PcakeworldGameTestNamespaces=cakeworld_sampler_retrogen
+./gradlew runGameTestServer -PcakeworldSamplerRuntime=true -PcakeworldSamplerReuseWorld=true -PcakeworldSamplerRunDirectory=run-sampler-retrogen-local -PcakeworldSamplerRetrogenPhase=apply -PcakeworldGameTestNamespaces=cakeworld_sampler_retrogen
+./gradlew runGameTestServer -PcakeworldSamplerRuntime=true -PcakeworldSamplerReuseWorld=true -PcakeworldSamplerRunDirectory=run-sampler-retrogen-local -PcakeworldSamplerRetrogenPhase=reload -PcakeworldGameTestNamespaces=cakeworld_sampler_retrogen
+```
+
+Baseline creates a 256-block Biscuit-Stone layer and a 256-block Brick control
+layer in two already-generated chunks. Apply changes only the saved profile to
+revision `5301`, `force: false`, and four chunks per tick. The released
+OreSpawn queue may first process the ordinary spawn backlog, so the harness
+allows 200 ticks before checking the deliberately distant chunks. The accepted
+result is exactly 64 Sprinkle blocks and 192 remaining Biscuit blocks in the
+eligible layer, zero Fizzy-Pearl control output, an unchanged 256-block Brick
+layer, and intact sentinels. Reload must retain those exact counts, showing that
+the revision marker prevents a second pass. A public operator-command probe in
+the apply phase returns zero for both already auto-queued chunks; it is
+diagnostic and does not perform the proof itself.
 
 The same-seed stable baseline uses a separate world because OreSpawn formation
 settings are profile-wide:
@@ -223,7 +247,7 @@ remain ignored.
   `minecraft_only` declaration, `selected_namespaces`, namespace include and
   exclude lists, optional/required similar-biome behavior, and all five live
   region settings with fixed 128/256/512/1,024/2,048-block boundary evidence.
-  Its extreme formation, registered-output alias and three-layer flat-bedrock
-  cases are also automated. An unrelated mod-biome pass-through fixture,
-  retrogen, the minimum-style formation case and the remaining labelled plots
-  are still Slice 7 work.
+  Its extreme formation, registered-output alias, three-layer flat-bedrock and
+  copied-world retrogen cases are also automated. An unrelated mod-biome
+  pass-through fixture, the minimum-style formation case and the remaining
+  labelled plots are still Slice 7 work.

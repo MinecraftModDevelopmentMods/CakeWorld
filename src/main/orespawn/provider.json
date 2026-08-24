@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "provider_modid": "cakeworld",
-  "provider_revision": 52,
+  "provider_revision": 53,
   "templates": {
     "cakeworld:edible_world": {
       "name_key": "template.cakeworld.edible_world",
@@ -1507,6 +1507,68 @@
             "minecraft:overworld",
             "minecraft:the_nether"
           ]
+        },
+        "retrogen": {
+          "enabled": false,
+          "force": false,
+          "revision": 0,
+          "chunks_per_tick": 4
+        },
+        "ores": {
+          "cakeworld:ore/retrogen_sprinkles": {
+            "block": "cakeworld:sprinkle_cluster",
+            "enabled": false,
+            "source_mod": "cakeworld",
+            "retrogen": true,
+            "dimensions": {
+              "minecraft:overworld": {
+                "enabled": true,
+                "min_y": 20,
+                "max_y": 20,
+                "frequency": 64.0,
+                "quantity": 1,
+                "pattern": {
+                  "type": "orespawn:precision",
+                  "settings": {
+                    "spread": 0,
+                    "vertical_spread": 0,
+                    "node_size": 1,
+                    "length": 1
+                  }
+                },
+                "height_distribution": "uniform",
+                "discard_chance_on_air_exposure": 0.0,
+                "host_blocks": ["cakeworld:biscuit_stone"]
+              }
+            }
+          },
+          "cakeworld:ore/retrogen_control": {
+            "block": "cakeworld:fizzy_pearl",
+            "enabled": false,
+            "source_mod": "cakeworld",
+            "retrogen": false,
+            "dimensions": {
+              "minecraft:overworld": {
+                "enabled": true,
+                "min_y": 20,
+                "max_y": 20,
+                "frequency": 64.0,
+                "quantity": 1,
+                "pattern": {
+                  "type": "orespawn:precision",
+                  "settings": {
+                    "spread": 0,
+                    "vertical_spread": 0,
+                    "node_size": 1,
+                    "length": 1
+                  }
+                },
+                "height_distribution": "uniform",
+                "discard_chance_on_air_exposure": 0.0,
+                "host_blocks": ["cakeworld:biscuit_stone"]
+              }
+            }
+          }
         },
         "biome_palettes": {
           "cakeworld:sampler_overworld_augment": {

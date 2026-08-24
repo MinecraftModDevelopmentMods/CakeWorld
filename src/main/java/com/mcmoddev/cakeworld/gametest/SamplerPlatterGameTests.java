@@ -68,8 +68,8 @@ public final class SamplerPlatterGameTests {
 	public static void packagedSamplerIsOptionalAndBounded(
 			GameTestHelper helper) {
 		JsonObject provider = packagedProvider(helper);
-		require(helper, provider.get("provider_revision").getAsInt() >= 52,
-				"Sampler alias/bedrock comparison requires provider revision 52");
+		require(helper, provider.get("provider_revision").getAsInt() >= 53,
+				"Sampler retrogen fixture requires provider revision 53");
 		JsonObject templates = provider.getAsJsonObject("templates");
 		require(helper, templates.size() == 3,
 				"Generated provider must contain two adventures and one sampler");
@@ -90,6 +90,7 @@ public final class SamplerPlatterGameTests {
 		requireExtremeFormationProfile(helper,
 				profile.getAsJsonObject("formations"));
 		requireAliasAndFlatBedrockProfile(helper, profile);
+		requireInertRetrogenProfile(helper, profile);
 		requireSharedAdventureGeology(helper,
 				templates.getAsJsonObject("cakeworld:edible_world")
 						.getAsJsonObject("profile"), profile);
@@ -681,6 +682,29 @@ public final class SamplerPlatterGameTests {
 				&& "minecraft:the_nether".equals(bedrock
 						.getAsJsonArray("dimensions").get(1).getAsString()),
 				"Sampler flat-bedrock controls drifted");
+	}
+
+	private static void requireInertRetrogenProfile(
+			GameTestHelper helper, JsonObject profile) {
+		JsonObject retrogen = profile.getAsJsonObject("retrogen");
+		JsonObject ores = profile.getAsJsonObject("ores");
+		JsonObject sprinkles = ores == null ? null : ores.getAsJsonObject(
+				"cakeworld:ore/retrogen_sprinkles");
+		JsonObject control = ores == null ? null : ores.getAsJsonObject(
+				"cakeworld:ore/retrogen_control");
+		require(helper, retrogen != null
+				&& !retrogen.get("enabled").getAsBoolean()
+				&& !retrogen.get("force").getAsBoolean()
+				&& retrogen.get("revision").getAsInt() == 0
+				&& retrogen.get("chunks_per_tick").getAsInt() == 4
+				&& ores != null && ores.size() == 2
+				&& sprinkles != null
+				&& !sprinkles.get("enabled").getAsBoolean()
+				&& sprinkles.get("retrogen").getAsBoolean()
+				&& control != null
+				&& !control.get("enabled").getAsBoolean()
+				&& !control.get("retrogen").getAsBoolean(),
+				"Packaged Sampler retrogen fixtures must remain inert");
 	}
 
 	private static JsonObject packagedProvider(GameTestHelper helper) {
