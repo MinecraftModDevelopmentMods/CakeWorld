@@ -33,6 +33,7 @@ public final class ImcProviderGameTests {
 			ResourceKey.create(Registry.DIMENSION_REGISTRY,
 					new ResourceLocation("cakeworld", "sampler_pantry"));
 	private static final ChunkPos SURVEY_CHUNK = new ChunkPos(512, 512);
+	private static final int WEIGHTED_SURVEY_SIDE = 4;
 	private static final Logger LOGGER = LogUtils.getLogger();
 
 	private ImcProviderGameTests() {
@@ -44,6 +45,8 @@ public final class ImcProviderGameTests {
 		require(helper, Boolean.getBoolean("cakeworld.imcProviderFixture")
 				&& CakeWorldImcProviderFixture.submitted(),
 				"Conditional IMC provider was not submitted");
+		require(helper, CakeWorldImcProviderFixture.pointPatternRegistered(),
+				"Conditional one-candidate pattern was not registered");
 		require(helper, ImcProviderGameTests.class.getResource(
 				"/data/cakeworld/orespawn/provider.json") == null,
 				"Packaged provider was not isolated from the IMC proof");
@@ -77,7 +80,9 @@ public final class ImcProviderGameTests {
 				&& profile.oreIds().contains(
 						CakeWorldImcProviderFixture.RULE_ID)
 				&& profile.oreIds().contains(
-						CakeWorldImcProviderFixture.SELECTOR_RULE_ID),
+						CakeWorldImcProviderFixture.SELECTOR_RULE_ID)
+				&& profile.oreIds().contains(
+						CakeWorldImcProviderFixture.WEIGHTED_HOST_RULE_ID),
 				"IMC rule did not enter the world-owned profile");
 		JsonObject root = profile.toJson();
 		JsonObject rule = root.getAsJsonObject("ores").getAsJsonObject(
@@ -103,20 +108,49 @@ public final class ImcProviderGameTests {
 				.getAsJsonObject("minecraft:overworld");
 		require(helper, selector.get("enabled").getAsBoolean()
 				&& selector.get("frequency").getAsDouble() == 64.0D
+				&& selector.get("min_y").getAsInt() == 32
+				&& selector.get("max_y").getAsInt() == 47
 				&& selector.getAsJsonArray("host_blocks").size() == 1
 				&& !overworldOverride.get("enabled").getAsBoolean(),
 				"Selector or explicit Overworld override drifted");
+		JsonObject weightedRule = root.getAsJsonObject("ores")
+				.getAsJsonObject(
+						CakeWorldImcProviderFixture.WEIGHTED_HOST_RULE_ID
+								.toString());
+		JsonObject weightedSelector = weightedRule
+				.getAsJsonObject("dimension_selectors")
+				.getAsJsonObject("orespawn:all_except_nether_end");
+		JsonObject weightedBlock = weightedSelector
+				.getAsJsonArray("host_blocks").get(0).getAsJsonObject();
+		JsonObject weightedTag = weightedSelector
+				.getAsJsonArray("host_tags").get(0).getAsJsonObject();
+		require(helper, weightedSelector.get("min_y").getAsInt() == -32
+				&& weightedSelector.get("max_y").getAsInt() == 31
+				&& "cakeworld:imc_point_probe".equals(weightedSelector
+						.getAsJsonObject("pattern").get("type").getAsString())
+				&& "minecraft:stone".equals(
+						weightedBlock.get("block").getAsString())
+				&& weightedBlock.get("weight").getAsDouble() == 0.25D
+				&& "minecraft:deepslate_ore_replaceables".equals(
+						weightedTag.get("tag").getAsString())
+				&& weightedTag.get("weight").getAsDouble() == 0.75D
+				&& !weightedRule.getAsJsonObject("dimensions")
+						.getAsJsonObject("minecraft:overworld")
+						.get("enabled").getAsBoolean(),
+				"Weighted block/tag host declaration drifted");
 
 		JsonObject manifest = root.getAsJsonObject("providers")
 				.getAsJsonObject("cakeworld");
 		JsonArray known = manifest.getAsJsonArray("known_ores");
 		require(helper, manifest.get("provider_revision").getAsInt()
 						== CakeWorldImcProviderFixture.REVISION
-				&& known.size() == 2
+				&& known.size() == 3
 				&& CakeWorldImcProviderFixture.RULE_ID.toString().equals(
 						known.get(0).getAsString())
 				&& CakeWorldImcProviderFixture.SELECTOR_RULE_ID.toString()
-						.equals(known.get(1).getAsString()),
+						.equals(known.get(1).getAsString())
+				&& CakeWorldImcProviderFixture.WEIGHTED_HOST_RULE_ID
+						.toString().equals(known.get(2).getAsString()),
 				"IMC ownership manifest drifted");
 
 		ServerLevel pantry = helper.getLevel().getServer().getLevel(
@@ -134,7 +168,7 @@ public final class ImcProviderGameTests {
 				.getLevel(Level.NETHER), SURVEY_CHUNK, output);
 		int endOutputs = countBlock(helper.getLevel().getServer()
 				.getLevel(Level.END), SURVEY_CHUNK, output);
-		require(helper, pantryOutputs == 1818 && overworldOutputs == 0
+		require(helper, pantryOutputs == 1581 && overworldOutputs == 0
 				&& netherOutputs == 0 && endOutputs == 0,
 				"Selector/explicit-dimension runtime boundary failed: pantry="
 						+ pantryOutputs + ", overworld=" + overworldOutputs
@@ -143,19 +177,67 @@ public final class ImcProviderGameTests {
 		LOGGER.info("IMC selector audit: chunk={}, pantry={}, overworld={}, nether={}, end={}",
 				SURVEY_CHUNK, pantryOutputs, overworldOutputs, netherOutputs,
 				endOutputs);
+
+		Block weightedOutput = ForgeRegistries.BLOCKS.getValue(
+				CakeWorldImcProviderFixture.WEIGHTED_HOST_OUTPUT_ID);
+		require(helper, weightedOutput != null && weightedOutput != Blocks.AIR,
+				"Weighted-host output block is not registered");
+		int deepslateSelections = 0;
+		int stoneSelections = 0;
+		for (int x = 0; x < WEIGHTED_SURVEY_SIDE; x++) {
+			for (int z = 0; z < WEIGHTED_SURVEY_SIDE; z++) {
+				ChunkPos chunk = new ChunkPos(SURVEY_CHUNK.x + x,
+						SURVEY_CHUNK.z + z);
+				deepslateSelections += countBlock(pantry, chunk,
+						weightedOutput, -32, -1);
+				stoneSelections += countBlock(pantry, chunk,
+						weightedOutput, 0, 31);
+			}
+		}
+		double weightedRatio = stoneSelections == 0
+				? Double.POSITIVE_INFINITY
+				: deepslateSelections / (double) stoneSelections;
+		int weightedOverworld = countBlock(helper.getLevel(), SURVEY_CHUNK,
+				weightedOutput);
+		int weightedNether = countBlock(helper.getLevel().getServer()
+				.getLevel(Level.NETHER), SURVEY_CHUNK, weightedOutput);
+		int weightedEnd = countBlock(helper.getLevel().getServer()
+				.getLevel(Level.END), SURVEY_CHUNK, weightedOutput);
+		require(helper, deepslateSelections == 374
+				&& stoneSelections == 121
+				&& weightedRatio >= 2.5D && weightedRatio <= 3.5D
+				&& weightedOverworld == 0 && weightedNether == 0
+				&& weightedEnd == 0,
+				"Weighted host runtime boundary failed: deepslate="
+						+ deepslateSelections + ", stone=" + stoneSelections
+						+ ", ratio=" + weightedRatio + ", overworld="
+						+ weightedOverworld + ", nether=" + weightedNether
+						+ ", end=" + weightedEnd);
+		LOGGER.info("IMC weighted-host audit: chunks={}x{} from {}, deepslate_tag_0.75={}, stone_block_0.25={}, ratio={}, overworld={}, nether={}, end={}",
+				WEIGHTED_SURVEY_SIDE, WEIGHTED_SURVEY_SIDE, SURVEY_CHUNK,
+				deepslateSelections, stoneSelections,
+				weightedRatio, weightedOverworld, weightedNether, weightedEnd);
 		helper.succeed();
 	}
 
 	private static int countBlock(ServerLevel level, ChunkPos chunk,
 			Block target) {
+		return countBlock(level, chunk, target,
+				level == null ? 0 : level.getMinBuildHeight(),
+				level == null ? -1 : level.getMaxBuildHeight() - 1);
+	}
+
+	private static int countBlock(ServerLevel level, ChunkPos chunk,
+			Block target, int minY, int maxY) {
 		if (level == null) return -1;
 		level.getChunk(chunk.x, chunk.z);
 		BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
 		int count = 0;
 		for (int x = chunk.getMinBlockX(); x <= chunk.getMaxBlockX(); x++) {
 			for (int z = chunk.getMinBlockZ(); z <= chunk.getMaxBlockZ(); z++) {
-				for (int y = level.getMinBuildHeight();
-						y < level.getMaxBuildHeight(); y++) {
+				for (int y = Math.max(minY, level.getMinBuildHeight());
+						y <= Math.min(maxY,
+								level.getMaxBuildHeight() - 1); y++) {
 					cursor.set(x, y, z);
 					if (level.getBlockState(cursor).is(target)) count++;
 				}
