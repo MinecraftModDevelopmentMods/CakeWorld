@@ -102,6 +102,8 @@ public final class CakeWorldBiomes {
 			moltenMarshmallowCalderas();
 	public static final RegistryObject<Biome> MERINGUE_ISLANDS =
 			meringueIslands();
+	public static final RegistryObject<Biome> CANDYFLOSS_CLOUDBANKS =
+			candyflossCloudbanks();
 
 	private CakeWorldBiomes() {
 	}
@@ -275,6 +277,11 @@ public final class CakeWorldBiomes {
 					BiomeDictionary.Type.END,
 					BiomeDictionary.Type.VOID,
 					BiomeDictionary.Type.MAGICAL);
+			BiomeDictionary.addTypes(key(CANDYFLOSS_CLOUDBANKS),
+					BiomeDictionary.Type.END,
+					BiomeDictionary.Type.VOID,
+					BiomeDictionary.Type.MAGICAL,
+					BiomeDictionary.Type.RARE);
 		});
 	}
 
@@ -738,6 +745,32 @@ public final class CakeWorldBiomes {
 																.MERINGUE_ISLANDS_CHIME
 																.get(),
 														0.0012D))
+										.build()));
+	}
+
+	private static RegistryObject<Biome> candyflossCloudbanks() {
+		return OreSpawnBiomes.copyAndRegister(BIOMES,
+				"candyfloss_cloudbanks",
+				() -> vanilla("small_end_islands"),
+				builder -> builder
+						.temperature(0.5F)
+						.downfall(0.0F)
+						.specialEffects(
+								effectsBuilder(
+										vanilla("small_end_islands")
+												.getSpecialEffects())
+										.fogColor(0xF3B6D5)
+										.skyColor(0xC58BDE)
+										.ambientParticle(
+												new AmbientParticleSettings(
+														ParticleTypes.CLOUD,
+														0.003F))
+										.ambientAdditionsSound(
+												new AmbientAdditionsSettings(
+														CakeWorldSounds
+																.CANDYFLOSS_CLOUDBANKS_FLUTTER
+																.get(),
+														0.0015D))
 										.build()));
 	}
 

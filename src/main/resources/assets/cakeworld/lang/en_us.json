@@ -440,5 +440,9 @@
   "subtitles.cakeworld.molten_marshmallow_calderas.hiss": "Molten mallow hisses and puffs",
   "block.cakeworld.meringue_foam": "Meringue Foam",
   "item.cakeworld.starlight_pavlova": "Starlight Pavlova",
-  "subtitles.cakeworld.meringue_islands.chime": "Meringue islands chime softly"
+  "subtitles.cakeworld.meringue_islands.chime": "Meringue islands chime softly",
+  "biome.cakeworld.candyfloss_cloudbanks": "Candyfloss Cloudbanks",
+  "block.cakeworld.candyfloss_cloud": "Candyfloss Cloud",
+  "item.cakeworld.skyberry_candyfloss": "Skyberry Candyfloss",
+  "subtitles.cakeworld.candyfloss_cloudbanks.flutter": "Candyfloss clouds flutter overhead"
 }

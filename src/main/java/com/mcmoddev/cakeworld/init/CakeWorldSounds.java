@@ -189,6 +189,11 @@ public final class CakeWorldSounds {
 					() -> new SoundEvent(new ResourceLocation(
 							CakeWorld.MODID,
 							"meringue_islands_chime")));
+	public static final RegistryObject<SoundEvent> CANDYFLOSS_CLOUDBANKS_FLUTTER =
+			SOUNDS.register("candyfloss_cloudbanks_flutter",
+					() -> new SoundEvent(new ResourceLocation(
+							CakeWorld.MODID,
+							"candyfloss_cloudbanks_flutter")));
 
 	private CakeWorldSounds() {
 	}

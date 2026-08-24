@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "provider_modid": "cakeworld",
-  "provider_revision": 40,
+  "provider_revision": 41,
   "templates": {
     "cakeworld:edible_world": {
       "name_key": "template.cakeworld.edible_world",
@@ -320,6 +320,10 @@
             "cakeworld:fudge_mantle": 22.0
           },
           "cakeworld:meringue_islands": {
+            "cakeworld:meringue_crust": 12.0,
+            "cakeworld:rock_candy_uplift": 4.0
+          },
+          "cakeworld:candyfloss_cloudbanks": {
             "cakeworld:meringue_crust": 12.0,
             "cakeworld:rock_candy_uplift": 4.0
           }
@@ -1316,6 +1320,22 @@
                   "filler_block": "cakeworld:marshmallow",
                   "underwater_block": "cakeworld:marshmallow",
                   "filler_depth": 5
+                }
+              },
+              "cakeworld:candyfloss_cloudbanks": {
+                "enabled": true,
+                "weight": 2.0,
+                "similar_biomes": ["minecraft:small_end_islands"],
+                "required_similar_biomes": [],
+                "min_temperature": -2.0,
+                "max_temperature": 2.0,
+                "min_downfall": 0.0,
+                "max_downfall": 1.0,
+                "surface": {
+                  "top_block": "cakeworld:candyfloss_cloud",
+                  "filler_block": "cakeworld:candyfloss_cloud",
+                  "underwater_block": "cakeworld:meringue_foam",
+                  "filler_depth": 4
                 }
               }
             }

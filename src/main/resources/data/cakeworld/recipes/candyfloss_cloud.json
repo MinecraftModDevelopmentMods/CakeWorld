@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "minecraft:sugar" },
+    { "item": "minecraft:sugar" },
+    { "item": "minecraft:pink_dye" }
+  ],
+  "result": {
+    "item": "cakeworld:candyfloss_cloud",
+    "count": 8
+  }
+}

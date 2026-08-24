@@ -76,6 +76,8 @@ public final class CakeWorldFeatureRegistration {
 		event.getRegistry().register(
 				MeringueStarLandingFeature.FEATURE);
 		event.getRegistry().register(
+				CloudstepLookoutFeature.FEATURE);
+		event.getRegistry().register(
 				BurntToffeeColumnsFeature.FEATURE);
 		event.getRegistry().register(GingerbreadVillageFeature.FEATURE);
 		event.getRegistry().register(
@@ -233,6 +235,8 @@ public final class CakeWorldFeatureRegistration {
 			MallowSteamCalderaFeature
 					.registerConfiguredFeature();
 			MeringueStarLandingFeature
+					.registerConfiguredFeature();
+			CloudstepLookoutFeature
 					.registerConfiguredFeature();
 			BurntToffeeColumnsFeature
 					.registerConfiguredFeatures();

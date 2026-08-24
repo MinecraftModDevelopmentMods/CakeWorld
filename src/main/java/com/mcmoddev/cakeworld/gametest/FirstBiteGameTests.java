@@ -7210,8 +7210,28 @@ public final class FirstBiteGameTests {
 		ResourceLocation cloudbanks = new ResourceLocation(
 				CakeWorld.MODID,
 				"candyfloss_cloudbanks");
-		require(helper, biomes.get(cloudbanks) == null,
-				"Candyfloss Cloudbanks unexpectedly exists; MOB-030's staged spawn gate must be revisited");
+		Biome candyflossCloudbanks = biomes.get(cloudbanks);
+		require(helper, candyflossCloudbanks != null,
+				"Could not inspect Candyfloss Cloudbanks for MOB-030");
+		MobSpawnSettings.SpawnerData cloudbankLlamas =
+				candyflossCloudbanks.getMobSettings()
+						.getMobs(MobCategory.CREATURE)
+						.unwrap().stream()
+						.filter(spawn -> spawn.type
+								== CakeWorldEntities
+										.MERINGUE_LLAMA.get())
+						.findFirst().orElse(null);
+		require(helper,
+				cloudbankLlamas != null
+						&& cloudbankLlamas.getWeight().asInt() == 5
+						&& cloudbankLlamas.minCount == 4
+						&& cloudbankLlamas.maxCount == 6
+						&& candyflossCloudbanks.getMobSettings()
+								.getMobs(MobCategory.CREATURE)
+								.unwrap().stream()
+								.noneMatch(spawn -> spawn.type
+										== EntityType.LLAMA),
+				"Meringue Llama lost its exact Candyfloss-Cloudbanks herd or leaked a literal Llama");
 		Biome wafflePlateaus = biomes.get(
 				CakeWorldBiomes.WAFFLE_PLATEAUS.getId());
 		require(helper, wafflePlateaus != null,

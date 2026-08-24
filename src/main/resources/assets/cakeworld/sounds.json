@@ -259,5 +259,14 @@
         "type": "event"
       }
     ]
+  },
+  "candyfloss_cloudbanks_flutter": {
+    "subtitle": "subtitles.cakeworld.candyfloss_cloudbanks.flutter",
+    "sounds": [
+      {
+        "name": "minecraft:entity.parrot.fly",
+        "type": "event"
+      }
+    ]
   }
 }

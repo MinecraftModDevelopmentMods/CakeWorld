@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "cakeworld:candyfloss_cloud" },
+    { "item": "cakeworld:glowing_jam_berry" },
+    { "item": "minecraft:sugar" }
+  ],
+  "result": {
+    "item": "cakeworld:skyberry_candyfloss",
+    "count": 2
+  }
+}

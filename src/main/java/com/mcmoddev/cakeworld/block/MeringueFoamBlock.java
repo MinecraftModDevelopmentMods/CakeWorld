@@ -28,7 +28,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * deliberately low-value nibble stages. Standing on it also grants a short
  * Slow Falling rescue window for a forgiving first step into the End.
  */
-public final class MeringueFoamBlock extends MarshmallowBlock {
+public class MeringueFoamBlock extends MarshmallowBlock {
 	public static final int MAX_BITES = 3;
 	public static final int NIBBLE_NUTRITION = 1;
 	public static final float NIBBLE_SATURATION = 0.1F;
@@ -58,10 +58,14 @@ public final class MeringueFoamBlock extends MarshmallowBlock {
 	public void stepOn(Level level, BlockPos pos, BlockState state,
 			Entity entity) {
 		if (!level.isClientSide && entity instanceof LivingEntity living) {
-			living.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING,
-					SLOW_FALLING_TICKS, 0, true, false, true));
+			applyStepEffects(living);
 		}
 		super.stepOn(level, pos, state, entity);
+	}
+
+	protected void applyStepEffects(LivingEntity living) {
+		living.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING,
+				SLOW_FALLING_TICKS, 0, true, false, true));
 	}
 
 	@Override

@@ -421,8 +421,18 @@ public final class CakeWorldLandmarks {
 				&& "meringue_islands".equals(biome.getPath())
 				&& meringueStarLanding != null) {
 			event.getGeneration().getFeatures(
-					GenerationStep.Decoration.TOP_LAYER_MODIFICATION)
+						GenerationStep.Decoration.TOP_LAYER_MODIFICATION)
 					.add(meringueStarLanding);
+		}
+		Holder<PlacedFeature> cloudstepLookout =
+				CloudstepLookoutFeature.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(biome.getNamespace())
+				&& "candyfloss_cloudbanks".equals(biome.getPath())
+				&& cloudstepLookout != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration.TOP_LAYER_MODIFICATION)
+					.add(cloudstepLookout);
 		}
 		Holder<PlacedFeature> manorRepair =
 				GrandGingerbreadManorRepairFeature

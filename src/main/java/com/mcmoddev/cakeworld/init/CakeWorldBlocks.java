@@ -6,6 +6,7 @@ import com.mcmoddev.cakeworld.CakeWorld;
 import com.mcmoddev.cakeworld.block.BiscuitCrumbsBlock;
 import com.mcmoddev.cakeworld.block.CakeOvenBlock;
 import com.mcmoddev.cakeworld.block.CandyCookerBlock;
+import com.mcmoddev.cakeworld.block.CandyflossCloudBlock;
 import com.mcmoddev.cakeworld.block.CandySproutBlock;
 import com.mcmoddev.cakeworld.block.CaramelCrustBlock;
 import com.mcmoddev.cakeworld.block.ChocolateSpongeBlock;
@@ -95,6 +96,12 @@ public final class CakeWorldBlocks {
 	public static final RegistryObject<Block> MERINGUE_FOAM = block("meringue_foam",
 			() -> new MeringueFoamBlock(BlockBehaviour.Properties.of(Material.WOOL)
 					.strength(0.35F).sound(SoundType.WOOL)));
+	public static final RegistryObject<Block> CANDYFLOSS_CLOUD =
+			block("candyfloss_cloud",
+					() -> new CandyflossCloudBlock(
+							BlockBehaviour.Properties.of(Material.WOOL)
+									.strength(0.15F, 0.1F)
+									.sound(SoundType.WOOL)));
 	public static final RegistryObject<Block> GUMMY_BLOCK = gummy("gummy_block");
 	public static final RegistryObject<Block> RASPBERRY_GUMMY_BLOCK =
 			gummy("raspberry_gummy_block");
