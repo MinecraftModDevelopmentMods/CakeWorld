@@ -233,6 +233,9 @@ def providerOverrideValidFixture =
 def providerOverrideMalformedFixture =
         layout.projectDirectory.file(
                 'src/test/orespawn/provider-override-malformed.txt')
+def providerOverrideSchema3Fixture =
+        layout.projectDirectory.file(
+                'src/test/orespawn/provider-override-schema3.json')
 def providerOverrideRunRoot =
         layout.projectDirectory.dir(providerOverrideRunDirectory)
 
@@ -358,13 +361,15 @@ def prepareProviderOverrideRun = tasks.register(
     description = 'Prepares an isolated provider-override precedence or fail-closed run.'
     inputs.files(providerOverrideValidFixture,
             providerOverrideMalformedFixture,
+            providerOverrideSchema3Fixture,
             samplerPlatterServerProperties)
     outputs.upToDateWhen { false }
 
     doLast {
-        if (!(providerOverrideMode in ['valid', 'removed', 'malformed'])) {
+        if (!(providerOverrideMode in ['valid', 'removed', 'malformed',
+                'schema3'])) {
             throw new GradleException(
-                    "cakeworldProviderOverrideMode must be valid, removed, or malformed; got '${providerOverrideMode}'.")
+                    "cakeworldProviderOverrideMode must be valid, removed, malformed, or schema3; got '${providerOverrideMode}'.")
         }
         def runRoot = providerOverrideRunRoot.asFile
         def savedProfile = new File(runRoot,
@@ -386,13 +391,25 @@ def prepareProviderOverrideRun = tasks.register(
             return
         }
 
+        if (savedProfile.isFile() && providerOverrideMode == 'schema3'
+                && providerOverrideReuseWorld) {
+            if (!overrideFile.isFile()) {
+                throw new GradleException(
+                        "Schema-3 reload lost its authoritative fixture: ${overrideFile}")
+            }
+            logger.lifecycle(
+                    "Reusing schema-3 fixture and world-owned migrated profile: ${savedProfile}")
+            return
+        }
         if (savedProfile.isFile()) {
             throw new GradleException(
-                    "Provider-override run directory already contains a saved world profile: ${savedProfile}. Use a new -PcakeworldProviderOverrideRunDirectory value.")
+                    "Provider-override run directory already contains a saved world profile: ${savedProfile}. Use a new -PcakeworldProviderOverrideRunDirectory value, or use schema3 with -PcakeworldProviderOverrideReuseWorld=true for its reload proof.")
         }
         copy {
             from(providerOverrideMode == 'valid'
                     ? providerOverrideValidFixture
+                    : providerOverrideMode == 'schema3'
+                    ? providerOverrideSchema3Fixture
                     : providerOverrideMalformedFixture)
             into new File(runRoot, 'config')
             rename { 'cakeworld-orespawn.json' }
@@ -587,6 +604,43 @@ publishing {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+}
+
+def auditCakeWorldOreSpawnApiUsage = tasks.register(
+        'auditCakeWorldOreSpawnApiUsage') {
+    group = 'verification'
+    description = 'Rejects deprecated or internal OreSpawn Java dependencies from packaged CakeWorld source.'
+    inputs.files(fileTree('src/main/java') { include '**/*.java' })
+
+    doLast {
+        def violations = []
+        fileTree('src/main/java') { include '**/*.java' }.files
+                .sort { left, right -> left.path <=> right.path }
+                .each { source ->
+            source.eachLine('UTF-8') { line, number ->
+                def trimmed = line.trim()
+                if ((trimmed.startsWith(
+                        'import zone.moddev.mc.orespawn.')
+                        && !trimmed.startsWith(
+                                'import zone.moddev.mc.orespawn.api.'))
+                        || trimmed.startsWith(
+                                'import zone.moddev.mc.orespawn.api.OreSpawnOreIntegration')
+                        || trimmed.contains(
+                                'WorldgenProvider.OilDefinition')) {
+                    violations << "${source}:${number}: ${trimmed}"
+                }
+            }
+        }
+        if (!violations.isEmpty()) {
+            throw new GradleException(
+                    'CakeWorld crossed the current OreSpawn API boundary:\n'
+                            + violations.join('\n'))
+        }
+    }
+}
+
+tasks.named('check').configure {
+    dependsOn auditCakeWorldOreSpawnApiUsage
 }
 
 def prepareGameTestStructures = tasks.register('prepareGameTestStructures', Copy) {

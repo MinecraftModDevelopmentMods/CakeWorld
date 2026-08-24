@@ -229,6 +229,8 @@ directory; the valid run creates the saved profile needed by the removal run:
 ./gradlew runGameTestServer -PcakeworldProviderOverrideMode=valid -PcakeworldProviderOverrideRunDirectory=run-provider-override-local
 ./gradlew runGameTestServer -PcakeworldProviderOverrideMode=removed -PcakeworldProviderOverrideRunDirectory=run-provider-override-local -PcakeworldProviderOverrideReuseWorld=true
 ./gradlew runGameTestServer -PcakeworldProviderOverrideMode=malformed -PcakeworldProviderOverrideRunDirectory=run-provider-override-malformed-local
+./gradlew runGameTestServer -PcakeworldProviderOverrideMode=schema3 -PcakeworldProviderOverrideRunDirectory=run-provider-schema3-local
+./gradlew runGameTestServer -PcakeworldProviderOverrideMode=schema3 -PcakeworldProviderOverrideRunDirectory=run-provider-schema3-local -PcakeworldProviderOverrideReuseWorld=true
 ```
 
 The preparation task refuses fresh scenarios in a directory with an existing
@@ -236,6 +238,15 @@ world-owned profile. The `removed` mode requires both that profile and the
 explicit reuse flag, deletes only the isolated `cakeworld-orespawn.json`
 fixture, and preserves the save. These fixtures are test resources and are
 not included in the mod JAR.
+
+The final pair installs an isolated schema-3 provider whose auto-selected
+template deliberately contains an empty profile. Released OreSpawn must turn
+that declaration into a current schema-5 world snapshot with `geome` mode,
+`stable_layers`, all five `average` formation presets, the configured fluid
+default and provider revision `1101`, then retain those settings on same-save
+reload. CakeWorld's `check` task separately scans all packaged Java source and
+fails on deprecated `OilDefinition`/`OreSpawnOreIntegration` use or any
+OreSpawn import outside `zone.moddev.mc.orespawn.api`.
 
 ## Adding Content
 

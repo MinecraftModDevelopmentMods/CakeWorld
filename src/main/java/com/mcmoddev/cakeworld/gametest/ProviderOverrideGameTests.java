@@ -22,6 +22,8 @@ public final class ProviderOverrideGameTests {
 	private static final String EMPTY = "empty";
 	private static final ResourceLocation OVERRIDE_PROBE =
 			new ResourceLocation("cakeworld", "override_probe");
+	private static final ResourceLocation LEGACY_SCHEMA_PROBE =
+			new ResourceLocation("cakeworld", "legacy_schema_probe");
 
 	private ProviderOverrideGameTests() {
 	}
@@ -32,7 +34,7 @@ public final class ProviderOverrideGameTests {
 		String mode = System.getProperty(
 				"cakeworld.providerOverrideMode", "");
 		require(helper, mode.equals("valid") || mode.equals("removed")
-					|| mode.equals("malformed"),
+					|| mode.equals("malformed") || mode.equals("schema3"),
 				"Provider-override test ran without a supported scenario");
 		JsonObject packaged = packagedProvider(helper);
 		require(helper,
@@ -47,12 +49,51 @@ public final class ProviderOverrideGameTests {
 					.filter(OVERRIDE_PROBE::equals).isPresent(),
 					"Authoritative override template was not selected or persisted");
 			requireNoCakeWorldAdventureRules(helper, profile);
+		} else if (mode.equals("schema3")) {
+			requireLegacySchemaMigration(helper, profile);
 		} else {
 			require(helper, profile.selectedTemplate().isEmpty(),
 					"Malformed override unexpectedly fell back to a packaged template");
 			requireNoCakeWorldAdventureRules(helper, profile);
 		}
 		helper.succeed();
+	}
+
+	private static void requireLegacySchemaMigration(GameTestHelper helper,
+			GeologyProfileView profile) {
+		require(helper, profile.selectedTemplate()
+				.filter(LEGACY_SCHEMA_PROBE::equals).isPresent(),
+				"Schema-3 template was not selected or retained");
+		require(helper, profile.schemaVersion() == 5
+				&& "geome".equals(profile.geologyMode()),
+				"Schema-3 provider did not become a current world profile");
+		requireNoCakeWorldAdventureRules(helper, profile);
+		JsonObject root = profile.toJson();
+		JsonObject formations = root.getAsJsonObject("formations");
+		require(helper, formations != null
+				&& "stable_layers".equals(
+						formations.get("algorithm").getAsString())
+				&& "average".equals(
+						formations.get("horizontal_size").getAsString())
+				&& "average".equals(
+						formations.get("vertical_thickness").getAsString())
+				&& "average".equals(
+						formations.get("waviness").getAsString())
+				&& "average".equals(
+						formations.get("edge_irregularity").getAsString())
+				&& "average".equals(
+						formations.get("formation_continuity").getAsString()),
+				"Schema-3 empty profile lost documented formation defaults");
+		require(helper, root.has("place_fluid_deposits")
+				&& root.get("place_fluid_deposits").isJsonPrimitive(),
+				"Schema-3 profile did not normalize fluid-deposit default");
+		JsonObject manifest = root.has("providers")
+				? root.getAsJsonObject("providers")
+						.getAsJsonObject("cakeworld")
+				: null;
+		require(helper, manifest != null
+				&& manifest.get("provider_revision").getAsInt() == 1101,
+				"Schema-3 provider revision was not retained in the snapshot");
 	}
 
 	private static void requireNoCakeWorldAdventureRules(

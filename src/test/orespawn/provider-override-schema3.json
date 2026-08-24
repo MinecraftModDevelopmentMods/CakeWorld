@@ -1,0 +1,15 @@
+{
+  "schema_version": 3,
+  "provider_modid": "cakeworld",
+  "provider_revision": 1101,
+  "templates": {
+    "cakeworld:legacy_schema_probe": {
+      "name_key": "template.cakeworld.sampler_platter",
+      "description_key": "template.cakeworld.sampler_platter.description",
+      "required_mods": ["cakeworld"],
+      "auto_select": true,
+      "auto_select_priority": 1101,
+      "profile": {}
+    }
+  }
+}

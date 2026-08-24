@@ -148,6 +148,18 @@ Pack authors can replace CakeWorld's packaged declaration with
 removal, fresh-world restoration, and malformed fail-closed behavior have
 isolated Gradle proofs documented in `docs/DEVELOPER_GUIDE.md`.
 
+That harness also has an unbundled schema-3 compatibility case:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldProviderOverrideMode=schema3 -PcakeworldProviderOverrideRunDirectory=run-provider-schema3-local
+./gradlew runGameTestServer -PcakeworldProviderOverrideMode=schema3 -PcakeworldProviderOverrideRunDirectory=run-provider-schema3-local -PcakeworldProviderOverrideReuseWorld=true
+```
+
+The pair proves legacy declaration reading, current snapshot normalization and
+same-save retention. `check` also rejects deprecated
+`OilDefinition`/`OreSpawnOreIntegration` use and imports outside OreSpawn's
+public `zone.moddev.mc.orespawn.api` package.
+
 The design documents describe target behavior. They do not imply that the
 current alpha already implements the full wishlist.
 
