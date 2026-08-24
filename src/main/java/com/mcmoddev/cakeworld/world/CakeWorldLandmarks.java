@@ -444,6 +444,16 @@ public final class CakeWorldLandmarks {
 					GenerationStep.Decoration.TOP_LAYER_MODIFICATION)
 					.add(crumbMoonDial);
 		}
+		Holder<PlacedFeature> sugarStarObservatory =
+				SugarStarObservatoryFeature.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(biome.getNamespace())
+				&& "starlight_sugar_fields".equals(biome.getPath())
+				&& sugarStarObservatory != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration.TOP_LAYER_MODIFICATION)
+					.add(sugarStarObservatory);
+		}
 		Holder<PlacedFeature> manorRepair =
 				GrandGingerbreadManorRepairFeature
 						.placedFeature();

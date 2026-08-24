@@ -122,7 +122,7 @@ update deliberately and test both behaviors.
 
 ### Current implementation
 
-Provider revision 42 builds both adventure templates from
+Provider revision 43 builds both adventure templates from
 `src/main/orespawn/provider.json` and the small
 `src/main/orespawn/basemetals-overlay.json`. The compatibility overlay keeps
 the ten currently enabled BaseMetals resources enabled, keeps Copper,
@@ -130,7 +130,7 @@ Antimony, and Bismuth non-generating, and replaces the Nether and End host
 lists with CakeWorld edible geology. The canonical Nougat-Depths,
 Burnt-Toffee-Deltas, Cinnamon-Ember-Groves, Black-Liquorice-Labyrinths,
 Treacle-Soul-Valleys, Chilli-Chocolate-Crags, Molten-Marshmallow-Calderas,
-Meringue-Islands, Candyfloss-Cloudbanks and Mooncake-Barrens biome, landmark, geology and
+Meringue-Islands, Candyfloss-Cloudbanks, Mooncake-Barrens and Starlight-Sugar-Fields biome, landmark, geology and
 fluid-deposit profiles are
 byte-for-byte identical between the normal and BaseMetals adventures; the
 compatibility template differs only by the thirteen deliberate BaseMetals ore
@@ -155,7 +155,7 @@ The automated integration scenario verifies:
 |---|---|---|---|
 | COMPAT-BM-001 | Cold-Iron; `basemetals:coldiron_ore` | Frosted Cold-Iron | Nether material with a cold frosting crust. Joins `forge:ores/coldiron`; retains Cold-Iron smelting, blasting, crushing, mining tier, and recipe roles. |
 | COMPAT-BM-002 | Adamantine; `basemetals:adamantine_ore` | Jawbreaker Adamantine | Rare, exceptionally hard Nether jawbreaker. Joins `forge:ores/adamantine`; retains Adamantine processing, hardness intent, and progression. |
-| COMPAT-BM-003 | Starsteel; `basemetals:starsteel_ore` | Starlight Starsteel | End resource in Starlight Sugar Fields and Meringue geology. Joins `forge:ores/starsteel`; retains Starsteel processing and progression. |
+| COMPAT-BM-003 | Starsteel; `basemetals:starsteel_ore` | Starlight Starsteel | Verified optional End resource in Starlight Sugar Fields and Meringue geology. The canonical BaseMetals overlay restricts it to the End, uses sedimentary, metamorphic and intrusive host families, and weights Meringue Crust `4` and Rock-Candy Uplift `6` without relying on the currently shelved biome-filter seams. It joins `forge:ores/starsteel` and retains BaseMetals smelting, blasting, crushing and recipe-viewer progression. Fixed seed `5059928472718672684` measured exactly `0` Starsteel in `388,749` audited Starlight cells without BaseMetals and `15` naturally managed Starsteel blocks with BaseMetals; same-save reload retained the same `15`. The Sugar-Star Observatory contains no authored sample, so this is OreSpawn-attributed compatibility evidence rather than landmark decoration. |
 | COMPAT-BM-004 | Tin; `basemetals:tin_ore` | Silver-Dragée Tin | Overworld dragée-speckled ore. Joins `forge:ores/tin`; retains Tin smelting, blasting, crushing, and alloy recipe roles. |
 | COMPAT-BM-005 | Lead; `basemetals:lead_ore` | Liquorice Lead | Dense liquorice-striped ore. Joins `forge:ores/lead`; retains Lead processing and recipe roles. It is explicitly non-food. |
 | COMPAT-BM-006 | Zinc; `basemetals:zinc_ore` | Lemon-Drop Zinc | Bright lemon-drop crystal ore. Joins `forge:ores/zinc`; retains Zinc processing and alloy roles. |

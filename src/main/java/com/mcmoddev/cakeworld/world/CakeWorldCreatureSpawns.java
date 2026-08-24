@@ -385,6 +385,12 @@ public final class CakeWorldCreatureSpawns {
 					CakeWorldEntities.MERINGUE_LLAMA,
 					5, 4, 6);
 		}
+		if ("starlight_sugar_fields".equals(
+				biome.getPath())) {
+			addIfAbsent(event, MobCategory.MONSTER,
+					CakeWorldEntities.SUGAR_MITE,
+					8, 2, 4);
+		}
 		if ("soda_ocean".equals(biome.getPath())) {
 			replace(event, MobCategory.MONSTER, EntityType.DROWNED,
 					CakeWorldEntities.SOGGY_BISCUIT, 5, 1, 1);

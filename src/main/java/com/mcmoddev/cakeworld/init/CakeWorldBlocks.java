@@ -28,6 +28,7 @@ import com.mcmoddev.cakeworld.block.MixingBowlBlock;
 import com.mcmoddev.cakeworld.block.PoppingKernelStalkBlock;
 import com.mcmoddev.cakeworld.block.SherbetPowderBlock;
 import com.mcmoddev.cakeworld.block.SodaFountainBlock;
+import com.mcmoddev.cakeworld.block.StarlightSugarGrassBlock;
 import com.mcmoddev.cakeworld.block.TreacleReedBlock;
 import com.mcmoddev.cakeworld.block.WaferWindmillBlock;
 import com.mcmoddev.cakeworld.item.ReusableBlockItem;
@@ -108,6 +109,14 @@ public final class CakeWorldBlocks {
 							BlockBehaviour.Properties.of(Material.CLAY)
 									.strength(0.6F)
 									.sound(SoundType.SAND)));
+	public static final RegistryObject<Block> STARLIGHT_SUGAR_GRASS =
+			block("starlight_sugar_grass",
+					() -> new StarlightSugarGrassBlock(
+							BlockBehaviour.Properties.of(Material.AMETHYST)
+									.requiresCorrectToolForDrops()
+									.strength(1.2F, 3.0F)
+									.sound(SoundType.AMETHYST)
+									.lightLevel(state -> 7)));
 	public static final RegistryObject<Block> GUMMY_BLOCK = gummy("gummy_block");
 	public static final RegistryObject<Block> RASPBERRY_GUMMY_BLOCK =
 			gummy("raspberry_gummy_block");

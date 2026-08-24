@@ -335,8 +335,8 @@ public final class MooncakeBarrensGameTests {
 
 	private static void assertProvider(GameTestHelper helper) {
 		JsonObject provider = readProvider();
-		require(helper, provider.get("provider_revision").getAsInt() >= 42,
-				"Mooncake Barrens require provider revision 42");
+		require(helper, provider.get("provider_revision").getAsInt() >= 43,
+				"Mooncake Barrens require provider revision 43");
 		JsonObject firstPalette = null;
 		for (String template : List.of("cakeworld:edible_world",
 				"cakeworld:edible_world_basemetals")) {
@@ -357,7 +357,7 @@ public final class MooncakeBarrensGameTests {
 							&& "minecraft:the_end".equals(
 									end.get("dimension").getAsString())
 							&& "replace".equals(end.get("mode").getAsString())
-							&& end.getAsJsonObject("biomes").size() == 3
+							&& end.getAsJsonObject("biomes").size() == 4
 							&& close(placement.get("weight").getAsDouble(), 1.5D)
 							&& strings(placement.getAsJsonArray("similar_biomes"))
 									.equals(Set.of("minecraft:end_barrens"))

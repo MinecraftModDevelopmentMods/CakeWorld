@@ -40,7 +40,11 @@
               "sedimentary",
               "metamorphic",
               "igneous_intrusive"
-            ]
+            ],
+            "geomes": {
+              "cakeworld:meringue_crust": 4.0,
+              "cakeworld:rock_candy_uplift": 6.0
+            }
           }
         }
       },

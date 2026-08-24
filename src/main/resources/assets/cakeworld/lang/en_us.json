@@ -447,5 +447,10 @@
   "subtitles.cakeworld.candyfloss_cloudbanks.flutter": "Candyfloss clouds flutter overhead",
   "biome.cakeworld.mooncake_barrens": "Mooncake Barrens",
   "block.cakeworld.mooncake_crust": "Mooncake Crust",
-  "subtitles.cakeworld.mooncake_barrens.whisper": "Ancient crumbs whisper across the barrens"
+  "subtitles.cakeworld.mooncake_barrens.whisper": "Ancient crumbs whisper across the barrens",
+  "biome.cakeworld.starlight_sugar_fields": "Starlight Sugar Fields",
+  "block.cakeworld.starlight_sugar_grass": "Starlight Sugar Grass",
+  "item.cakeworld.star_sugar_crystals": "Star Sugar Crystals",
+  "item.cakeworld.constellation_candy": "Constellation Candy",
+  "subtitles.cakeworld.starlight_sugar_fields.twinkle": "Sugar stars twinkle in the quiet"
 }

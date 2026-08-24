@@ -360,8 +360,8 @@ public final class CandyflossCloudbanksGameTests {
 
 	private static void assertProvider(GameTestHelper helper) {
 		JsonObject provider = readProvider();
-		require(helper, provider.get("provider_revision").getAsInt() >= 42,
-				"Candyfloss Cloudbanks require provider revision 42");
+		require(helper, provider.get("provider_revision").getAsInt() >= 43,
+				"Candyfloss Cloudbanks require provider revision 43");
 		JsonObject firstPalette = null;
 		for (String template : List.of("cakeworld:edible_world",
 				"cakeworld:edible_world_basemetals")) {
@@ -382,7 +382,7 @@ public final class CandyflossCloudbanksGameTests {
 							&& "minecraft:the_end".equals(
 									end.get("dimension").getAsString())
 							&& "replace".equals(end.get("mode").getAsString())
-							&& end.getAsJsonObject("biomes").size() == 3
+							&& end.getAsJsonObject("biomes").size() == 4
 							&& close(placement.get("weight").getAsDouble(), 2.0D)
 							&& strings(placement.getAsJsonArray("similar_biomes"))
 									.equals(Set.of("minecraft:small_end_islands"))

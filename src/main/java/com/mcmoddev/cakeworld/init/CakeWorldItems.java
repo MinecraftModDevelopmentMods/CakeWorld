@@ -366,6 +366,22 @@ public final class CakeWorldItems {
 											MobEffects.JUMP,
 											200), 1.0F)
 									.build())));
+	public static final RegistryObject<Item> STAR_SUGAR_CRYSTALS =
+			food("star_sugar_crystals", 1, 0.1F);
+	public static final RegistryObject<Item> CONSTELLATION_CANDY =
+			ITEMS.register("constellation_candy",
+					() -> new Item(new Item.Properties()
+							.tab(CreativeModeTab.TAB_FOOD)
+							.food(new FoodProperties.Builder()
+									.nutrition(6)
+									.saturationMod(0.7F)
+									.effect(() -> new MobEffectInstance(
+											MobEffects.NIGHT_VISION,
+											400), 1.0F)
+									.effect(() -> new MobEffectInstance(
+											MobEffects.LUCK,
+											200), 1.0F)
+									.build())));
 	public static final RegistryObject<Item> CINNAMON_STICK =
 			ITEMS.register("cinnamon_stick",
 					() -> new Item(new Item.Properties()

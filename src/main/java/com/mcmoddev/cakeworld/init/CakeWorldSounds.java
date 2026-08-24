@@ -199,6 +199,11 @@ public final class CakeWorldSounds {
 					() -> new SoundEvent(new ResourceLocation(
 							CakeWorld.MODID,
 							"mooncake_barrens_whisper")));
+	public static final RegistryObject<SoundEvent> STARLIGHT_SUGAR_FIELDS_TWINKLE =
+			SOUNDS.register("starlight_sugar_fields_twinkle",
+					() -> new SoundEvent(new ResourceLocation(
+							CakeWorld.MODID,
+							"starlight_sugar_fields_twinkle")));
 
 	private CakeWorldSounds() {
 	}

@@ -106,6 +106,8 @@ public final class CakeWorldBiomes {
 			candyflossCloudbanks();
 	public static final RegistryObject<Biome> MOONCAKE_BARRENS =
 			mooncakeBarrens();
+	public static final RegistryObject<Biome> STARLIGHT_SUGAR_FIELDS =
+			starlightSugarFields();
 
 	private CakeWorldBiomes() {
 	}
@@ -290,6 +292,11 @@ public final class CakeWorldBiomes {
 					BiomeDictionary.Type.DRY,
 					BiomeDictionary.Type.SPARSE,
 					BiomeDictionary.Type.WASTELAND);
+			BiomeDictionary.addTypes(key(STARLIGHT_SUGAR_FIELDS),
+					BiomeDictionary.Type.END,
+					BiomeDictionary.Type.VOID,
+					BiomeDictionary.Type.MAGICAL,
+					BiomeDictionary.Type.PLAINS);
 		});
 	}
 
@@ -803,6 +810,32 @@ public final class CakeWorldBiomes {
 												new AmbientAdditionsSettings(
 														CakeWorldSounds
 																.MOONCAKE_BARRENS_WHISPER
+																.get(),
+														0.0012D))
+										.build()));
+	}
+
+	private static RegistryObject<Biome> starlightSugarFields() {
+		return OreSpawnBiomes.copyAndRegister(BIOMES,
+				"starlight_sugar_fields",
+				() -> vanilla("end_midlands"),
+				builder -> builder
+						.temperature(0.5F)
+						.downfall(0.0F)
+						.specialEffects(
+								effectsBuilder(
+										vanilla("end_midlands")
+												.getSpecialEffects())
+										.fogColor(0x3B386F)
+										.skyColor(0x17122E)
+										.ambientParticle(
+												new AmbientParticleSettings(
+														ParticleTypes.ELECTRIC_SPARK,
+														0.0015F))
+										.ambientAdditionsSound(
+												new AmbientAdditionsSettings(
+														CakeWorldSounds
+																.STARLIGHT_SUGAR_FIELDS_TWINKLE
 																.get(),
 														0.0012D))
 										.build()));

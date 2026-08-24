@@ -277,5 +277,14 @@
         "type": "event"
       }
     ]
+  },
+  "starlight_sugar_fields_twinkle": {
+    "subtitle": "subtitles.cakeworld.starlight_sugar_fields.twinkle",
+    "sounds": [
+      {
+        "name": "minecraft:block.beacon.ambient",
+        "type": "event"
+      }
+    ]
   }
 }
