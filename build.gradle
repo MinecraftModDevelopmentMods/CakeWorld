@@ -253,6 +253,10 @@ def imcProviderRunRoot =
         layout.projectDirectory.dir(imcProviderRunDirectory)
 def runtimePackagedProvider = layout.buildDirectory.file(
         'resources/main/data/cakeworld/orespawn/provider.json')
+def imcSamplerDimensionFixture = layout.projectDirectory.file(
+        'src/test/orespawn/imc-sampler-dimension.json')
+def runtimeImcSamplerDimension = layout.buildDirectory.file(
+        'resources/main/data/cakeworld/dimension/sampler_pantry.json')
 
 def prepareSamplerPlatterRun = tasks.register('prepareSamplerPlatterRun') {
     group = 'verification'
@@ -490,7 +494,8 @@ def prepareImcProviderRun = tasks.register('prepareImcProviderRun') {
     group = 'verification'
     description = 'Isolates the packaged provider so a conditional Forge IMC provider is authoritative.'
     dependsOn 'processResources'
-    inputs.files(generatedOreSpawnProvider, samplerPlatterServerProperties)
+    inputs.files(generatedOreSpawnProvider, samplerPlatterServerProperties,
+            imcSamplerDimensionFixture)
     outputs.upToDateWhen { false }
 
     doLast {
@@ -505,6 +510,15 @@ def prepareImcProviderRun = tasks.register('prepareImcProviderRun') {
         if (!runtimeProvider.isFile() || !runtimeProvider.delete()) {
             throw new GradleException(
                     "Could not isolate the generated packaged provider: ${runtimeProvider}")
+        }
+        copy {
+            from imcSamplerDimensionFixture
+            into runtimeImcSamplerDimension.get().asFile.parentFile
+            rename { 'sampler_pantry.json' }
+        }
+        if (!runtimeImcSamplerDimension.get().asFile.isFile()) {
+            throw new GradleException(
+                    "Could not install test-only IMC dimension: ${runtimeImcSamplerDimension.get().asFile}")
         }
         copy {
             from samplerPlatterServerProperties
@@ -534,6 +548,11 @@ def restorePackagedProviderAfterImc = tasks.register(
         if (!target.isFile()) {
             throw new GradleException(
                     "Could not restore generated packaged provider: ${target}")
+        }
+        def testDimension = runtimeImcSamplerDimension.get().asFile
+        if (testDimension.isFile() && !testDimension.delete()) {
+            throw new GradleException(
+                    "Could not remove test-only IMC dimension: ${testDimension}")
         }
         logger.lifecycle(
                 "Restored generated packaged provider after IMC evidence: ${target}")

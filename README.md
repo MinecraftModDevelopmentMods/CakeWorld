@@ -169,10 +169,13 @@ shipping two competing definitions:
 ```
 
 The harness removes only the generated provider from the development runtime,
-submits one disabled probe rule during `InterModEnqueueEvent`, verifies public
-ownership/freeze/immutability, and restores the generated resource in a task
-finalizer even when the server fails. It refuses a directory containing a
-saved world profile.
+installs one test-only flat ordinary dimension, submits a disabled lifecycle
+probe plus an active selector probe during `InterModEnqueueEvent`, verifies
+public ownership/freeze/immutability, and restores the generated resource while
+removing the dimension in a task finalizer even when the server fails. The
+selector produces output in that ordinary dimension, is explicitly disabled
+in the Overworld, and is excluded from the Nether and End. The harness refuses
+a directory containing a saved world profile.
 
 The design documents describe target behavior. They do not imply that the
 current alpha already implements the full wishlist.

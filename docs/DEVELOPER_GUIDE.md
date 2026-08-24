@@ -259,15 +259,22 @@ definitions, run this isolated fixture:
 ```
 
 The preparation task first runs resource generation, removes only
-`build/resources/main/data/cakeworld/orespawn/provider.json`, and refuses any
-saved profile in the requested directory. With the explicit JVM switch,
-CakeWorld builds one disabled `cakeworld:ore/imc_probe` rule entirely from
-registry IDs during `InterModEnqueueEvent` and calls `OreSpawnApi.enqueue`.
+`build/resources/main/data/cakeworld/orespawn/provider.json`, installs a
+test-only flat `cakeworld:sampler_pantry` dimension, and refuses any saved
+profile in the requested directory. With the explicit JVM switch, CakeWorld
+builds a disabled `cakeworld:ore/imc_probe` plus
+`cakeworld:ore/imc_selector_probe` entirely from registry IDs during
+`InterModEnqueueEvent` and calls `OreSpawnApi.enqueue`. The selector uses
+`orespawn:all_except_nether_end`, while an explicit disabled Overworld rule
+overrides it.
+
 The focused test requires public status `ACTIVE`, exact CakeWorld ownership in
-the world snapshot, provider revision `6001`, no selected template, inert rule
-settings and an immutable built definition. A finalizer restores the generated
-packaged provider after success or failure. The source provider is never
-mutated during parallel setup and the probe can never place blocks.
+the world snapshot, provider revision `6001`, no selected template, immutable
+built JSON and exact selector/override declarations. At fixed seed and chunk
+`512,512`, the ordinary test dimension contains exactly 1,818 Sprinkle outputs;
+Overworld, Nether and End each contain zero. A finalizer restores the generated
+packaged provider and removes the test dimension after success or failure. The
+source provider is never mutated during parallel setup.
 
 ## Adding Content
 
