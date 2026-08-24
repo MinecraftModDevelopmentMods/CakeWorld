@@ -414,6 +414,16 @@ public final class CakeWorldLandmarks {
 					GenerationStep.Decoration.TOP_LAYER_MODIFICATION)
 					.add(mallowSteamCaldera);
 		}
+		Holder<PlacedFeature> meringueStarLanding =
+				MeringueStarLandingFeature.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(biome.getNamespace())
+				&& "meringue_islands".equals(biome.getPath())
+				&& meringueStarLanding != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration.TOP_LAYER_MODIFICATION)
+					.add(meringueStarLanding);
+		}
 		Holder<PlacedFeature> manorRepair =
 				GrandGingerbreadManorRepairFeature
 						.placedFeature();

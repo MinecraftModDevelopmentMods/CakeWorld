@@ -250,5 +250,14 @@
         "type": "event"
       }
     ]
+  },
+  "meringue_islands_chime": {
+    "subtitle": "subtitles.cakeworld.meringue_islands.chime",
+    "sounds": [
+      {
+        "name": "minecraft:block.amethyst_block.chime",
+        "type": "event"
+      }
+    ]
   }
 }

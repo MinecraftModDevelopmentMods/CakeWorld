@@ -100,8 +100,8 @@ public final class CakeWorldBiomes {
 			chilliChocolateCrags();
 	public static final RegistryObject<Biome> MOLTEN_MARSHMALLOW_CALDERAS =
 			moltenMarshmallowCalderas();
-	public static final RegistryObject<Biome> MERINGUE_ISLANDS = copy(
-			"meringue_islands", "end_highlands", 0.5F, 0.0F);
+	public static final RegistryObject<Biome> MERINGUE_ISLANDS =
+			meringueIslands();
 
 	private CakeWorldBiomes() {
 	}
@@ -715,6 +715,30 @@ public final class CakeWorldBiomes {
 															.get(),
 													0.0015D))
 									.build()));
+	}
+
+	private static RegistryObject<Biome> meringueIslands() {
+		return OreSpawnBiomes.copyAndRegister(BIOMES,
+				"meringue_islands",
+				() -> vanilla("end_highlands"),
+				builder -> builder
+						.temperature(0.5F)
+						.downfall(0.0F)
+						.specialEffects(
+								effectsBuilder(
+										vanilla("end_highlands")
+												.getSpecialEffects())
+										.ambientParticle(
+												new AmbientParticleSettings(
+														ParticleTypes.END_ROD,
+														0.0012F))
+										.ambientAdditionsSound(
+												new AmbientAdditionsSettings(
+														CakeWorldSounds
+																.MERINGUE_ISLANDS_CHIME
+																.get(),
+														0.0012D))
+										.build()));
 	}
 
 	private static RegistryObject<Biome> copyWithAmbient(

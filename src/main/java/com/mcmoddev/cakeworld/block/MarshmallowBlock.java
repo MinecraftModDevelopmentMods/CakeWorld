@@ -14,7 +14,7 @@ import net.minecraft.world.phys.Vec3;
  * A rescue surface that always cancels fall damage and turns downward speed
  * into a deliberately small, capped rebound.
  */
-public final class MarshmallowBlock extends Block {
+public class MarshmallowBlock extends Block {
 	public static final double BOUNCE_MULTIPLIER = 0.45D;
 	public static final double MAXIMUM_BOUNCE = 0.8D;
 

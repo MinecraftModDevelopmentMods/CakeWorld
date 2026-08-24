@@ -182,8 +182,13 @@ public final class CakeWorldSounds {
 							"molten_marshmallow_calderas_hiss",
 							() -> new SoundEvent(
 									new ResourceLocation(
-											CakeWorld.MODID,
-											"molten_marshmallow_calderas_hiss")));
+									CakeWorld.MODID,
+									"molten_marshmallow_calderas_hiss")));
+	public static final RegistryObject<SoundEvent> MERINGUE_ISLANDS_CHIME =
+			SOUNDS.register("meringue_islands_chime",
+					() -> new SoundEvent(new ResourceLocation(
+							CakeWorld.MODID,
+							"meringue_islands_chime")));
 
 	private CakeWorldSounds() {
 	}

@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "cakeworld:marshmallow" },
+    { "item": "cakeworld:glowing_jam_berry" },
+    { "item": "minecraft:sugar" },
+    { "item": "minecraft:egg" }
+  ],
+  "result": {
+    "item": "cakeworld:starlight_pavlova",
+    "count": 2
+  }
+}

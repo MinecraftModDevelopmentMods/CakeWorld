@@ -757,8 +757,8 @@ public final class DeepPantryGameTests {
 				"cakeworld:fudge_wastes", "cakeworld:fudge_rock",
 				"cakeworld:fudge_rock", null, 5);
 		assertPaletteContract(helper, palettes, "cakeworld:end",
-				"cakeworld:meringue_islands", "cakeworld:icing",
-				"cakeworld:biscuit_stone", "cakeworld:biscuit_stone", 5);
+				"cakeworld:meringue_islands", "cakeworld:meringue_foam",
+				"cakeworld:marshmallow", "cakeworld:marshmallow", 5);
 
 		Map<String, SurfaceAudit> surfaces = new LinkedHashMap<>();
 		BlockPos hearthlands = locateBiome(helper, overworld,
@@ -839,8 +839,8 @@ public final class DeepPantryGameTests {
 				CakeWorldBlocks.FUDGE_ROCK.get(), 2));
 		surfaces.put("meringue_islands", auditSurface(end,
 				new BlockPos(0, 64, 0), id("meringue_islands"),
-				CakeWorldBlocks.ICING.get(),
-				CakeWorldBlocks.BISCUIT_STONE.get(), 2));
+				CakeWorldBlocks.MERINGUE_FOAM.get(),
+				CakeWorldBlocks.MARSHMALLOW.get(), 2));
 		for (Map.Entry<String, SurfaceAudit> entry : surfaces.entrySet()) {
 			require(helper, entry.getValue().biomeColumns() > 0
 							&& entry.getValue().topMatches() > 0

@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "bites=0": { "model": "cakeworld:block/meringue_foam" },
+    "bites=1": { "model": "cakeworld:block/meringue_foam_bites_1" },
+    "bites=2": { "model": "cakeworld:block/meringue_foam_bites_2" },
+    "bites=3": { "model": "cakeworld:block/meringue_foam_bites_3" }
+  }
+}

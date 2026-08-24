@@ -437,5 +437,8 @@
   "block.cakeworld.molten_mallow": "Molten Mallow",
   "item.cakeworld.molten_mallow_bucket": "Molten Mallow Bucket",
   "item.cakeworld.steam_puffed_mallow": "Steam-Puffed Mallow",
-  "subtitles.cakeworld.molten_marshmallow_calderas.hiss": "Molten mallow hisses and puffs"
+  "subtitles.cakeworld.molten_marshmallow_calderas.hiss": "Molten mallow hisses and puffs",
+  "block.cakeworld.meringue_foam": "Meringue Foam",
+  "item.cakeworld.starlight_pavlova": "Starlight Pavlova",
+  "subtitles.cakeworld.meringue_islands.chime": "Meringue islands chime softly"
 }
