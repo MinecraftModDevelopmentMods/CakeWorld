@@ -168,6 +168,12 @@ public final class CakeWorldBlocks {
 							.strength(0.8F, 4.0F)
 							.speedFactor(0.78F)
 							.sound(SoundType.SOUL_SAND));
+	public static final RegistryObject<Block> CHILLI_CHOCOLATE_ROCK =
+			block("chilli_chocolate_rock",
+					BlockBehaviour.Properties.of(Material.STONE)
+							.requiresCorrectToolForDrops()
+							.strength(2.2F, 6.0F)
+							.sound(SoundType.NETHERRACK));
 	public static final RegistryObject<Block> CANDIED_SOIL =
 			block("candied_soil",
 					BlockBehaviour.Properties.of(Material.DIRT)

@@ -452,7 +452,8 @@ public final class BlackLiquoriceLabyrinthsGameTests {
 									"cakeworld:burnt_toffee_deltas",
 									"cakeworld:cinnamon_ember_groves",
 									BIOME_ID.toString(),
-									"cakeworld:treacle_soul_valleys"))
+									"cakeworld:treacle_soul_valleys",
+									"cakeworld:chilli_chocolate_crags"))
 							&& order.indexOf("cakeworld:cinnamon_ember_groves")
 									< order.indexOf(BIOME_ID.toString()),
 					template + " lost its Labyrinth provider contract");

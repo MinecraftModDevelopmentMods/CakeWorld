@@ -96,6 +96,8 @@ public final class CakeWorldBiomes {
 			blackLiquoriceLabyrinths();
 	public static final RegistryObject<Biome> TREACLE_SOUL_VALLEYS =
 			treacleSoulValleys();
+	public static final RegistryObject<Biome> CHILLI_CHOCOLATE_CRAGS =
+			chilliChocolateCrags();
 	public static final RegistryObject<Biome> MERINGUE_ISLANDS = copy(
 			"meringue_islands", "end_highlands", 0.5F, 0.0F);
 
@@ -252,6 +254,13 @@ public final class CakeWorldBiomes {
 					BiomeDictionary.Type.DRY,
 					BiomeDictionary.Type.SPARSE,
 					BiomeDictionary.Type.SPOOKY,
+					BiomeDictionary.Type.WASTELAND);
+			BiomeDictionary.addTypes(
+					key(CHILLI_CHOCOLATE_CRAGS),
+					BiomeDictionary.Type.NETHER,
+					BiomeDictionary.Type.HOT,
+					BiomeDictionary.Type.DRY,
+					BiomeDictionary.Type.MOUNTAIN,
 					BiomeDictionary.Type.WASTELAND);
 			BiomeDictionary.addTypes(key(MERINGUE_ISLANDS),
 					BiomeDictionary.Type.END,
@@ -639,6 +648,34 @@ public final class CakeWorldBiomes {
 												new AmbientAdditionsSettings(
 														CakeWorldSounds
 																.TREACLE_SOUL_VALLEYS_MURMUR
+																.get(),
+														0.0015D))
+										.build()));
+	}
+
+	private static RegistryObject<Biome> chilliChocolateCrags() {
+		return OreSpawnBiomes.copyAndRegister(BIOMES,
+				"chilli_chocolate_crags",
+				() -> vanilla("nether_wastes"),
+				builder -> builder
+						.temperature(2.0F)
+						.downfall(0.0F)
+						.generationSettings(
+								withoutVanillaNetherGravel(
+										vanilla("nether_wastes")))
+						.specialEffects(
+								effectsBuilder(
+										vanilla("nether_wastes")
+												.getSpecialEffects())
+										.ambientParticle(
+												new AmbientParticleSettings(
+														ParticleTypes
+																.DRIPPING_LAVA,
+														0.006F))
+										.ambientAdditionsSound(
+												new AmbientAdditionsSettings(
+														CakeWorldSounds
+																.CHILLI_CHOCOLATE_CRAGS_RUMBLE
 																.get(),
 														0.0015D))
 										.build()));

@@ -310,6 +310,20 @@ public final class CakeWorldItems {
 													.COCOA_COMFORT.get(),
 											200), 1.0F)
 									.build())));
+	public static final RegistryObject<Item> CRAGFIRE_TRUFFLE =
+			ITEMS.register("cragfire_truffle",
+					() -> new Item(new Item.Properties()
+							.tab(CreativeModeTab.TAB_FOOD)
+							.food(new FoodProperties.Builder()
+									.nutrition(7)
+									.saturationMod(0.8F)
+									.effect(() -> new MobEffectInstance(
+											MobEffects.FIRE_RESISTANCE,
+											300), 1.0F)
+									.effect(() -> new MobEffectInstance(
+											MobEffects.DIG_SPEED,
+											200), 1.0F)
+									.build())));
 	public static final RegistryObject<Item> CINNAMON_STICK =
 			ITEMS.register("cinnamon_stick",
 					() -> new Item(new Item.Properties()

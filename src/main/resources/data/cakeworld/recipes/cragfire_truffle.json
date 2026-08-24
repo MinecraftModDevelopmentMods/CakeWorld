@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {"item": "cakeworld:cocoa_truffle"},
+    {"item": "cakeworld:fudge_square"},
+    {"item": "cakeworld:cinnamon_stick"}
+  ],
+  "result": {"item": "cakeworld:cragfire_truffle", "count": 2}
+}

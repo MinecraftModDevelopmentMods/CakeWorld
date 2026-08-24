@@ -394,6 +394,16 @@ public final class CakeWorldLandmarks {
 					GenerationStep.Decoration.TOP_LAYER_MODIFICATION)
 					.add(wispLightCauseway);
 		}
+		Holder<PlacedFeature> cragfireProspect =
+				CragfireProspectFeature.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(biome.getNamespace())
+				&& "chilli_chocolate_crags".equals(biome.getPath())
+				&& cragfireProspect != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration.TOP_LAYER_MODIFICATION)
+					.add(cragfireProspect);
+		}
 		Holder<PlacedFeature> manorRepair =
 				GrandGingerbreadManorRepairFeature
 						.placedFeature();

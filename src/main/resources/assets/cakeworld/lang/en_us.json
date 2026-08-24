@@ -427,5 +427,9 @@
   "biome.cakeworld.treacle_soul_valleys": "Treacle Soul Valleys",
   "block.cakeworld.treacle_soul_crust": "Treacle Soul Crust",
   "item.cakeworld.wisp_light_toffee": "Wisp-Light Toffee",
-  "subtitles.cakeworld.treacle_soul_valleys.murmur": "Sugar wisps murmur across the treacle"
+  "subtitles.cakeworld.treacle_soul_valleys.murmur": "Sugar wisps murmur across the treacle",
+  "biome.cakeworld.chilli_chocolate_crags": "Chilli-Chocolate Crags",
+  "block.cakeworld.chilli_chocolate_rock": "Chilli Chocolate Rock",
+  "item.cakeworld.cragfire_truffle": "Cragfire Truffle",
+  "subtitles.cakeworld.chilli_chocolate_crags.rumble": "The chilli-chocolate crags rumble"
 }

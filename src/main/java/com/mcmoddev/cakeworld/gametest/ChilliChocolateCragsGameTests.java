@@ -19,16 +19,17 @@ import com.mcmoddev.cakeworld.init.CakeWorldEntities;
 import com.mcmoddev.cakeworld.init.CakeWorldFluids;
 import com.mcmoddev.cakeworld.init.CakeWorldItems;
 import com.mcmoddev.cakeworld.init.CakeWorldSounds;
-import com.mcmoddev.cakeworld.world.TreacleSoulFlatFeature;
-import com.mcmoddev.cakeworld.world.WispLightCausewayFeature;
+import com.mcmoddev.cakeworld.world.CragfireProspectFeature;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
-import net.minecraft.core.HolderSet;
 import net.minecraft.core.Registry;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.gametest.framework.GameTest;
+import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.effect.MobEffect;
@@ -38,7 +39,6 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.ChunkPos;
@@ -47,40 +47,33 @@ import net.minecraft.world.level.biome.AmbientAdditionsSettings;
 import net.minecraft.world.level.biome.AmbientParticleSettings;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.MobSpawnSettings;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.placement.BiomeFilter;
-import net.minecraft.world.level.levelgen.placement.CountPlacement;
 import net.minecraft.world.level.levelgen.placement.HeightRangePlacement;
 import net.minecraft.world.level.levelgen.placement.InSquarePlacement;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.minecraft.world.level.levelgen.placement.RarityFilter;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.common.BiomeDictionary;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
-import net.minecraft.gametest.framework.GameTest;
-import net.minecraft.gametest.framework.GameTestHelper;
-
 import org.slf4j.Logger;
 
-/** Contract proof for BIO-NE-005, BLK-019, FOOD-010 and STRUCT-041. */
+/** Contract proof for the first complete BIO-NE-006 ecosystem slice. */
 @PrefixGameTestTemplate(false)
 @GameTestHolder(CakeWorld.MODID)
-public final class TreacleSoulValleysGameTests {
+public final class ChilliChocolateCragsGameTests {
 	private static final String EMPTY = "empty";
 	private static final Logger LOGGER = LogUtils.getLogger();
 	private static final ResourceLocation BIOME_ID =
-			id("treacle_soul_valleys");
+			id("chilli_chocolate_crags");
 	private static final ResourceKey<Biome> BIOME_KEY =
 			ResourceKey.create(Registry.BIOME_REGISTRY, BIOME_ID);
-	private static final ResourceKey<PlacedFeature> ORE_SOUL_SAND =
-			ResourceKey.create(Registry.PLACED_FEATURE_REGISTRY,
-					new ResourceLocation("minecraft", "ore_soul_sand"));
 	private static final Rotation[] ROTATIONS = {
 		Rotation.NONE,
 		Rotation.CLOCKWISE_90,
@@ -88,63 +81,85 @@ public final class TreacleSoulValleysGameTests {
 		Rotation.COUNTERCLOCKWISE_90
 	};
 
-	private TreacleSoulValleysGameTests() {
+	private ChilliChocolateCragsGameTests() {
 	}
 
-	@GameTest(template = EMPTY, batch = "bione005")
-	public static void valleysHaveAtmosphereFoodEcologyAndProfile(
+	@GameTest(template = EMPTY, batch = "bione006")
+	public static void cragsHaveReadableMiningEcologyFoodAndProfile(
 			GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		Registry<Biome> registry = level.registryAccess()
 				.registryOrThrow(Registry.BIOME_REGISTRY);
-		Biome biome = registry.get(BIOME_ID);
-		Holder<Biome> holder = registry.getHolder(BIOME_KEY).orElseThrow();
-		require(helper, biome != null
+		Biome crags = registry.get(BIOME_ID);
+		Holder<Biome> holder = registry.getHolder(BIOME_KEY)
+				.orElseThrow();
+		require(helper, crags != null
 						&& Biome.getBiomeCategory(holder)
 								== Biome.BiomeCategory.NETHER
-						&& close(biome.getBaseTemperature(), 2.0D)
-						&& close(biome.getDownfall(), 0.0D),
-				"Treacle Soul Valleys are not a hot, dry Soul-Sand-Valley copy");
+						&& close(crags.getBaseTemperature(), 2.0D)
+						&& close(crags.getDownfall(), 0.0D),
+				"Chilli-Chocolate Crags are not a hot, dry Nether biome");
 		for (BiomeDictionary.Type type : List.of(
 				BiomeDictionary.Type.NETHER,
 				BiomeDictionary.Type.HOT,
 				BiomeDictionary.Type.DRY,
-				BiomeDictionary.Type.SPARSE,
-				BiomeDictionary.Type.SPOOKY,
+				BiomeDictionary.Type.MOUNTAIN,
 				BiomeDictionary.Type.WASTELAND)) {
 			require(helper, BiomeDictionary.hasType(BIOME_KEY, type),
-					"Treacle Soul Valleys lost dictionary type " + type);
+					"Chilli-Chocolate Crags lost dictionary type " + type);
 		}
 		AmbientAdditionsSettings ambience =
-				biome.getAmbientAdditions().orElse(null);
+				crags.getAmbientAdditions().orElse(null);
 		AmbientParticleSettings particle =
-				biome.getAmbientParticle().orElse(null);
+				crags.getAmbientParticle().orElse(null);
 		require(helper, ambience != null
-						&& ambience.getSoundEvent().getLocation().equals(
-								CakeWorldSounds
-										.TREACLE_SOUL_VALLEYS_MURMUR.getId())
+						&& ambience.getSoundEvent().getLocation()
+								.equals(CakeWorldSounds
+										.CHILLI_CHOCOLATE_CRAGS_RUMBLE
+										.getId())
 						&& close(ambience.getTickChance(), 0.0015D)
 						&& particle != null
 						&& particle.getOptions().getType()
-								== ParticleTypes.SOUL_FIRE_FLAME,
-				"Treacle Soul Valleys lost their murmuring sugar-wisp atmosphere");
+								== ParticleTypes.DRIPPING_LAVA,
+				"Chilli-Chocolate Crags lost their visible heat atmosphere");
 
-		assertSpawn(helper, biome, EntityType.SKELETON,
-				CakeWorldEntities.CANDY_CANE_ARCHER.get(), 20, 5, 5);
-		assertSpawn(helper, biome, EntityType.GHAST,
+		assertSpawn(helper, crags, EntityType.ZOMBIFIED_PIGLIN,
+				CakeWorldEntities.STALE_FUDGE_FOLK.get(), 100, 4, 4);
+		assertSpawn(helper, crags, EntityType.GHAST,
 				CakeWorldEntities.MALLOW_FLOATER.get(), 50, 4, 4);
-		assertSpawn(helper, biome, EntityType.ENDERMAN,
+		assertSpawn(helper, crags, EntityType.MAGMA_CUBE,
+				CakeWorldEntities.HOT_FUDGE_BLOB.get(), 2, 4, 4);
+		assertSpawn(helper, crags, EntityType.ENDERMAN,
 				CakeWorldEntities.TAFFY_TALLWALKER.get(), 1, 4, 4);
-		assertSpawn(helper, biome, EntityType.STRIDER,
+		assertSpawn(helper, crags, EntityType.PIGLIN,
+				CakeWorldEntities.FUDGE_FOLK.get(), 15, 4, 4);
+		assertSpawn(helper, crags, EntityType.STRIDER,
 				CakeWorldEntities.FUDGE_SKATER.get(), 60, 1, 2);
+		assertSpawn(helper, crags, EntityType.HOGLIN,
+				CakeWorldEntities.FUDGE_BOAR.get(), 12, 2, 3);
 		int totalSpawns = 0;
 		for (MobCategory category : MobCategory.values()) {
-			totalSpawns += biome.getMobSettings().getMobs(category)
+			totalSpawns += crags.getMobSettings().getMobs(category)
 					.unwrap().size();
 		}
-		require(helper, totalSpawns == 4,
-				"Treacle Soul Valleys gained an undocumented creature role: "
+		require(helper, totalSpawns == 7
+						&& findSpawn(crags,
+								CakeWorldEntities.FUDGE_BRUTE.get()) == null,
+				"Crags gained an undocumented open role or leaked Fudge Brutes: "
 						+ totalSpawns);
+
+		BlockState rock = CakeWorldBlocks.CHILLI_CHOCOLATE_ROCK.get()
+				.defaultBlockState();
+		TagKey<Block> edibleHosts = TagKey.create(
+				Registry.BLOCK_REGISTRY, id("edible_ore_hosts"));
+		require(helper,
+				CakeWorldBlocks.CHILLI_CHOCOLATE_ROCK.get().getClass()
+						== Block.class
+						&& rock.is(BlockTags.MINEABLE_WITH_PICKAXE)
+						&& rock.is(BlockTags.BASE_STONE_NETHER)
+						&& rock.is(edibleHosts)
+						&& !rock.is(Blocks.MAGMA_BLOCK),
+				"Chilli Chocolate Rock lost its ordinary solid host contract");
 
 		for (String tag : List.of(
 				"minecraft:has_structure/bastion_remnant",
@@ -156,119 +171,96 @@ public final class TreacleSoulValleysGameTests {
 				"cakeworld:has_structure/rock_candy_fossil")) {
 			require(helper, holder.is(TagKey.create(
 					Registry.BIOME_REGISTRY, new ResourceLocation(tag))),
-					"Treacle Soul Valleys lost progression tag " + tag);
-		}
-
-		BlockState crust = CakeWorldBlocks.TREACLE_SOUL_CRUST.get()
-				.defaultBlockState();
-		require(helper, close(CakeWorldBlocks.TREACLE_SOUL_CRUST.get()
-						.getSpeedFactor(), 0.78D)
-						&& crust.is(BlockTags.BASE_STONE_NETHER)
-						&& crust.is(BlockTags.MINEABLE_WITH_PICKAXE)
-						&& crust.is(TagKey.create(Registry.BLOCK_REGISTRY,
-								id("edible_ore_hosts"))),
-				"Treacle Soul Crust lost its gentle slowdown or geology-host contract");
-		for (HolderSet<PlacedFeature> step
-				: biome.getGenerationSettings().features()) {
-			require(helper, step.stream().noneMatch(
-					feature -> feature.is(ORE_SOUL_SAND)),
-					"Treacle Soul Valleys retained vanilla Soul-Sand ore terrain");
+					"Crags lost structure-bound progression role " + tag);
 		}
 		assertFood(helper, level);
-		assertFeatures(helper, biome);
 		assertProvider(helper);
 		helper.succeed();
 	}
 
-	@GameTest(template = EMPTY, batch = "bione005")
-	public static void flatsAndCausewayAreContainedSafeAndDeterministic(
+	@GameTest(template = EMPTY, batch = "bione006")
+	public static void cragfireProspectIsBoundedSafeAndDeterministic(
 			GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
+		Holder<PlacedFeature> placed =
+				CragfireProspectFeature.placedFeature();
+		Biome crags = level.registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY).get(BIOME_ID);
+		require(helper, placed != null
+						&& placed.value().feature().value().feature()
+								== CragfireProspectFeature.FEATURE
+						&& placed.value().placement().size() == 4
+						&& placed.value().placement().get(0)
+								instanceof RarityFilter
+						&& placed.value().placement().get(1)
+								instanceof InSquarePlacement
+						&& placed.value().placement().get(2)
+								instanceof HeightRangePlacement
+						&& placed.value().placement().get(3)
+								instanceof BiomeFilter
+						&& CragfireProspectFeature
+								.AVERAGE_CHUNKS_PER_ATTEMPT == 2
+						&& CragfireProspectFeature.MIN_NATURAL_SUPPORTS == 33
+						&& hasPlacedFeature(crags, placed),
+				"Cragfire Prospect lost its bounded Crags placement chain");
+
 		BlockPos helperPos = helper.absolutePos(new BlockPos(8, 5, 8));
-		BlockPos centre = new BlockPos(helperPos.getX(), 64, helperPos.getZ());
+		BlockPos centre = new BlockPos(helperPos.getX(), 64,
+				helperPos.getZ());
 		for (Rotation rotation : ROTATIONS) {
-			prepareCauseway(level, centre, 81);
+			prepareSite(level, centre, 81);
 			Set<Integer> entitiesBefore = entityIds(level, centre);
 			require(helper,
-					WispLightCausewayFeature.hasSafeSite(
+					CragfireProspectFeature.hasSafeSite(
 							level, centre, rotation)
-							&& WispLightCausewayFeature.buildAt(
+							&& CragfireProspectFeature.buildAt(
 									level, centre, rotation),
-					"Wisp-Light Causeway rejected safe rotation " + rotation);
+					"Cragfire Prospect rejected safe rotation " + rotation);
 			PlanAudit plan = inspectPlan(level, centre, rotation);
 			require(helper, plan.complete(false),
-					"Wisp-Light Causeway plan changed for " + rotation
+					"Cragfire Prospect plan changed for " + rotation
 							+ ": " + plan);
 			require(helper, entitiesBefore.equals(entityIds(level, centre))
 						&& countBlockEntities(level, centre) == 0,
-					"Wisp-Light Causeway created an entity or block entity");
+					"Cragfire Prospect created an entity or block entity");
 		}
 
-		prepareCauseway(level, centre, 81);
-		level.setBlock(WispLightCausewayFeature.local(
+		prepareSite(level, centre, 81);
+		level.setBlock(CragfireProspectFeature.local(
 				centre, Rotation.NONE, 4, 2, 4),
 				Blocks.WATER.defaultBlockState(), 2);
-		require(helper, !WispLightCausewayFeature.hasSafeSite(
+		require(helper, !CragfireProspectFeature.hasSafeSite(
 				level, centre, Rotation.NONE),
-				"Wisp-Light Causeway replaced an existing fluid");
-		prepareCauseway(level, centre, 81);
-		level.setBlock(WispLightCausewayFeature.local(
+				"Cragfire Prospect replaced an existing fluid");
+		prepareSite(level, centre, 81);
+		level.setBlock(CragfireProspectFeature.local(
 				centre, Rotation.NONE, -4, 2, -4),
 				Blocks.CHEST.defaultBlockState(), 2);
-		require(helper, !WispLightCausewayFeature.hasSafeSite(
+		require(helper, !CragfireProspectFeature.hasSafeSite(
 				level, centre, Rotation.NONE),
-				"Wisp-Light Causeway replaced a block entity");
-		prepareCauseway(level, centre, 81);
-		level.setBlock(WispLightCausewayFeature.local(
+				"Cragfire Prospect replaced a block entity");
+		prepareSite(level, centre, 81);
+		level.setBlock(CragfireProspectFeature.local(
 				centre, Rotation.NONE, 1, 1, 1),
 				Blocks.BRICKS.defaultBlockState(), 2);
-		require(helper, !WispLightCausewayFeature.hasSafeSite(
+		require(helper, !CragfireProspectFeature.hasSafeSite(
 				level, centre, Rotation.NONE),
-				"Wisp-Light Causeway replaced an authored solid");
-		prepareCauseway(level, centre, 32);
-		require(helper, !WispLightCausewayFeature.hasSafeSite(
+				"Cragfire Prospect replaced an authored solid");
+		prepareSite(level, centre, 32);
+		require(helper, !CragfireProspectFeature.hasSafeSite(
 				level, centre, Rotation.NONE),
-				"Wisp-Light Causeway ignored its natural support threshold");
-		require(helper, !WispLightCausewayFeature.fitsWithinChunk(
+				"Cragfire Prospect ignored its natural support threshold");
+		require(helper, !CragfireProspectFeature.fitsWithinChunk(
 				new BlockPos(new ChunkPos(centre).getMinBlockX(),
 						centre.getY(), new ChunkPos(centre).getMinBlockZ()),
 				Rotation.NONE, new ChunkPos(centre)),
-				"Wisp-Light Causeway crossed its generating chunk");
-
-		prepareFlat(level, centre);
-		require(helper, TreacleSoulFlatFeature.hasSafeSite(level, centre)
-						&& TreacleSoulFlatFeature.buildAt(level, centre),
-				"Treacle Soul Flat rejected a safe fixture");
-		int rim = 0;
-		int syrup = 0;
-		for (int x = -2; x <= 2; x++) {
-			for (int z = -2; z <= 2; z++) {
-				BlockState state = level.getBlockState(centre.offset(x, 0, z));
-				if (state.is(CakeWorldBlocks.TREACLE_SOUL_CRUST.get())) {
-					rim++;
-				} else if (state.is(CakeWorldFluids.SYRUP_BLOCK.get())) {
-					syrup++;
-				}
-			}
-		}
-		require(helper, rim == 16 && syrup == 9,
-				"Treacle Soul Flat lost its exact contained 16/9 rim/source plan");
-		prepareFlat(level, centre);
-		level.setBlock(centre.offset(2, 0, 2),
-				Blocks.CHEST.defaultBlockState(), 2);
-		require(helper, !TreacleSoulFlatFeature.hasSafeSite(level, centre),
-				"Treacle Soul Flat replaced a block entity");
-		prepareFlat(level, centre);
-		level.setBlock(centre.offset(0, -1, 0),
-				Blocks.BRICKS.defaultBlockState(), 2);
-		require(helper, !TreacleSoulFlatFeature.hasSafeSite(level, centre),
-				"Treacle Soul Flat accepted a non-terrain support");
+				"Cragfire Prospect crossed its generating chunk");
 		helper.succeed();
 	}
 
-	@GameTest(template = EMPTY, batch = "bione005world",
+	@GameTest(template = EMPTY, batch = "bione006world",
 			timeoutTicks = 24000)
-	public static void focusedNaturalTreacleSoulValleysAudit(
+	public static void focusedNaturalChilliChocolateCragsAudit(
 			GameTestHelper helper) {
 		if (!Boolean.getBoolean("cakeworld.fixedWorldgenEvidence")) {
 			helper.succeed();
@@ -282,17 +274,17 @@ public final class TreacleSoulValleysGameTests {
 				biome -> biome.is(BIOME_KEY),
 				new BlockPos(0, 64, 0), 32768, 8);
 		require(helper, match != null,
-				"Could not locate Treacle Soul Valleys within 32,768 blocks");
+				"Could not locate Chilli-Chocolate Crags within 32,768 blocks");
 		ChunkPos anchor = new ChunkPos(match.getFirst());
-		FoundCauseway found = findCauseway(level, anchor, 16);
+		FoundProspect found = findProspect(level, anchor, 16);
 		require(helper, found != null,
-				"Could not find a natural Wisp-Light Causeway within 1,089 chunks of "
+				"Could not find a natural Cragfire Prospect within 1,089 chunks of "
 						+ anchor);
 		ChunkPos foundChunk = new ChunkPos(found.centre());
-		for (int chunkX = foundChunk.x - 2;
-				chunkX <= foundChunk.x + 2; chunkX++) {
-			for (int chunkZ = foundChunk.z - 2;
-					chunkZ <= foundChunk.z + 2; chunkZ++) {
+		for (int chunkX = foundChunk.x - 4;
+				chunkX <= foundChunk.x + 4; chunkX++) {
+			for (int chunkZ = foundChunk.z - 4;
+					chunkZ <= foundChunk.z + 4; chunkZ++) {
 				level.getChunk(chunkX, chunkZ);
 			}
 		}
@@ -300,106 +292,68 @@ public final class TreacleSoulValleysGameTests {
 		helper.runAfterDelay(40, () -> {
 			PlanAudit plan = inspectPlan(
 					level, found.centre(), found.rotation());
-			BlockPos sentinel = WispLightCausewayFeature.local(
-					found.centre(), found.rotation(), -3, 2, -3);
+			BlockPos sentinel = CragfireProspectFeature.local(
+					found.centre(), found.rotation(), -3, 1, -2);
 			boolean brickSentinel = level.getBlockState(sentinel)
 					.is(Blocks.BRICKS);
-			NaturalAudit audit = audit(level, foundChunk, 2, found.centre());
-			LOGGER.info("Treacle Soul Valleys audit: anchorChunk={}, centre={}, rotation={}, biomeSamples={}, crust={}, fudgeRock={}, independentSyrup={}, totalSyrup={}, hotFudge={}, literalSoulTerrain={}, plan={}, brickSentinel={}, sentinel={}",
+			NaturalAudit audit = audit(
+					level, foundChunk, 4, found.centre());
+			LOGGER.info("Chilli-Chocolate Crags audit: anchorChunk={}, centre={}, rotation={}, biomeSamples={}, chilliRock={}, fudgeRock={}, hotFudge={}, netherQuartz={}, netherGold={}, ancientDebris={}, plan={}, brickSentinel={}, sentinel={}",
 					anchor, found.centre(), found.rotation(),
-					audit.biomeSamples(), audit.crust(), audit.fudgeRock(),
-					audit.independentSyrup(), audit.totalSyrup(),
-					audit.hotFudge(), audit.literalSoulTerrain(),
-					plan, brickSentinel, sentinel);
+					audit.biomeSamples(), audit.chilliRock(),
+					audit.fudgeRock(), audit.hotFudge(),
+					audit.netherQuartz(), audit.netherGold(),
+					audit.ancientDebris(), plan,
+					brickSentinel, sentinel);
 			require(helper, audit.biomeSamples() >= 128
-							&& audit.crust() > 0
+							&& audit.chilliRock() > 0
 							&& audit.fudgeRock() > 0
-							&& audit.independentSyrup() > 0
-							&& audit.literalSoulTerrain() == 0
+							&& audit.netherQuartz() + audit.netherGold() > 0
 							&& plan.complete(brickSentinel),
-					"Natural Treacle Soul Valleys lost edible terrain, independent flats or their complete causeway: "
+					"Natural Crags lost terrain, progression ores or their complete Prospect: "
 							+ audit + " / " + plan);
 			if (!brickSentinel) {
 				level.setBlock(sentinel,
 						Blocks.BRICKS.defaultBlockState(), 2);
 				require(helper, level.getBlockState(sentinel)
 						.is(Blocks.BRICKS),
-						"Could not seed the Wisp-Light Causeway reload sentinel");
+						"Could not seed the Cragfire Prospect reload sentinel");
 			}
 			level.setChunkForced(foundChunk.x, foundChunk.z, false);
 			helper.succeed();
 		});
 	}
 
-	private static void assertFood(GameTestHelper helper, ServerLevel level) {
-		FoodProperties food = CakeWorldItems.WISP_LIGHT_TOFFEE.get()
+	private static void assertFood(
+			GameTestHelper helper, ServerLevel level) {
+		FoodProperties food = CakeWorldItems.CRAGFIRE_TRUFFLE.get()
 				.getFoodProperties();
 		Recipe<?> recipe = level.getRecipeManager()
-				.byKey(id("wisp_light_toffee")).orElse(null);
+				.byKey(id("cragfire_truffle")).orElse(null);
 		require(helper, food != null
 						&& food.getNutrition() == 7
-						&& close(food.getSaturationModifier(), 0.75D)
-						&& hasEffect(food, MobEffects.SLOW_FALLING, 240)
-						&& hasEffect(food, MobEffects.FIRE_RESISTANCE, 200)
+						&& close(food.getSaturationModifier(), 0.8D)
+						&& hasEffect(food, MobEffects.FIRE_RESISTANCE, 300)
+						&& hasEffect(food, MobEffects.DIG_SPEED, 200)
 						&& recipe != null
 						&& recipe.getType() == RecipeType.CRAFTING
 						&& recipe.getIngredients().size() == 3
 						&& ingredient(recipe, new ItemStack(
-								CakeWorldFluids.SYRUP_BUCKET.get()))
+								CakeWorldItems.COCOA_TRUFFLE.get()))
 						&& ingredient(recipe, new ItemStack(
-								CakeWorldBlocks.MARSHMALLOW.get()))
-						&& ingredient(recipe, new ItemStack(Items.SUGAR))
+								CakeWorldItems.FUDGE_SQUARE.get()))
+						&& ingredient(recipe, new ItemStack(
+								CakeWorldItems.CINNAMON_STICK.get()))
 						&& recipe.getResultItem().is(
-								CakeWorldItems.WISP_LIGHT_TOFFEE.get())
-						&& recipe.getResultItem().getCount() == 2
-						&& CakeWorldFluids.SYRUP_BUCKET.get()
-								.getCraftingRemainingItem() == Items.BUCKET,
-				"Wisp-Light Toffee lost its nutrition, rescue effects, recipe or bucket return");
-	}
-
-	private static void assertFeatures(GameTestHelper helper, Biome biome) {
-		Holder<PlacedFeature> flats = TreacleSoulFlatFeature.placedFeature();
-		Holder<PlacedFeature> causeway = WispLightCausewayFeature.placedFeature();
-		require(helper, flats != null
-						&& flats.value().feature().value().feature()
-								== TreacleSoulFlatFeature.FEATURE
-						&& flats.value().placement().size() == 4
-						&& flats.value().placement().get(0)
-								instanceof CountPlacement
-						&& flats.value().placement().get(1)
-								instanceof InSquarePlacement
-						&& flats.value().placement().get(2)
-								instanceof HeightRangePlacement
-						&& flats.value().placement().get(3)
-								instanceof BiomeFilter
-						&& TreacleSoulFlatFeature.ATTEMPTS_PER_CHUNK == 4
-						&& hasPlacedFeature(biome, flats,
-								GenerationStep.Decoration.TOP_LAYER_MODIFICATION),
-				"Treacle Soul Valleys lost their bounded syrup-flat feature");
-		require(helper, causeway != null
-						&& causeway.value().feature().value().feature()
-								== WispLightCausewayFeature.FEATURE
-						&& causeway.value().placement().size() == 4
-						&& causeway.value().placement().get(0)
-								instanceof RarityFilter
-						&& causeway.value().placement().get(1)
-								instanceof InSquarePlacement
-						&& causeway.value().placement().get(2)
-								instanceof HeightRangePlacement
-						&& causeway.value().placement().get(3)
-								instanceof BiomeFilter
-						&& WispLightCausewayFeature
-								.AVERAGE_CHUNKS_PER_ATTEMPT == 2
-						&& WispLightCausewayFeature.MIN_NATURAL_SUPPORTS == 33
-						&& hasPlacedFeature(biome, causeway,
-								GenerationStep.Decoration.TOP_LAYER_MODIFICATION),
-				"Treacle Soul Valleys lost their bounded Wisp-Light Causeway");
+								CakeWorldItems.CRAGFIRE_TRUFFLE.get())
+						&& recipe.getResultItem().getCount() == 2,
+				"Cragfire Truffle lost its nutrition, effects or recipe");
 	}
 
 	private static void assertProvider(GameTestHelper helper) {
 		JsonObject provider = readProvider();
-		require(helper, provider.get("provider_revision").getAsInt() >= 36,
-				"Treacle Soul Valleys require provider revision 36");
+		require(helper, provider.get("provider_revision").getAsInt() >= 38,
+				"Chilli-Chocolate Crags require provider revision 38");
 		JsonObject firstPalette = null;
 		for (String template : List.of(
 				"cakeworld:edible_world",
@@ -413,7 +367,8 @@ public final class TreacleSoulValleysGameTests {
 			JsonObject placement = nether.getAsJsonObject("biomes")
 					.getAsJsonObject(BIOME_ID.toString());
 			JsonObject surface = placement.getAsJsonObject("surface");
-			JsonArray depositBiomes = profile.getAsJsonObject("fluid_deposits")
+			JsonArray depositBiomes = profile
+					.getAsJsonObject("fluid_deposits")
 					.getAsJsonObject("cakeworld:fluid_deposit/hot_fudge")
 					.getAsJsonObject("dimensions")
 					.getAsJsonObject("minecraft:the_nether")
@@ -422,10 +377,10 @@ public final class TreacleSoulValleysGameTests {
 					.entrySet().stream().map(Map.Entry::getKey).toList();
 			require(helper, geomes.size() == 1
 							&& close(geomes.get("cakeworld:fudge_mantle")
-									.getAsDouble(), 14.0D)
-							&& close(placement.get("weight").getAsDouble(), 1.2D)
+									.getAsDouble(), 28.0D)
+							&& close(placement.get("weight").getAsDouble(), 0.65D)
 							&& strings(placement.getAsJsonArray("similar_biomes"))
-									.equals(Set.of("minecraft:soul_sand_valley"))
+									.equals(Set.of("minecraft:nether_wastes"))
 							&& strings(placement.getAsJsonArray(
 									"required_similar_biomes")).isEmpty()
 							&& close(placement.get("min_temperature")
@@ -436,7 +391,7 @@ public final class TreacleSoulValleysGameTests {
 									.getAsDouble(), 0.0D)
 							&& close(placement.get("max_downfall")
 									.getAsDouble(), 1.0D)
-							&& "cakeworld:treacle_soul_crust".equals(
+							&& "cakeworld:chilli_chocolate_rock".equals(
 									surface.get("top_block").getAsString())
 							&& "cakeworld:fudge_rock".equals(
 									surface.get("filler_block").getAsString())
@@ -446,11 +401,13 @@ public final class TreacleSoulValleysGameTests {
 									"cakeworld:burnt_toffee_deltas",
 									"cakeworld:cinnamon_ember_groves",
 									"cakeworld:black_liquorice_labyrinths",
-									BIOME_ID.toString(),
-									"cakeworld:chilli_chocolate_crags"))
-							&& order.indexOf("cakeworld:black_liquorice_labyrinths")
+									"cakeworld:treacle_soul_valleys",
+									BIOME_ID.toString()))
+							&& order.indexOf("cakeworld:fudge_wastes")
+									< order.indexOf(BIOME_ID.toString())
+							&& order.indexOf("cakeworld:treacle_soul_valleys")
 									< order.indexOf(BIOME_ID.toString()),
-					template + " lost its Treacle Soul Valley provider contract");
+					template + " lost its Crags provider contract");
 			if (firstPalette == null) {
 				firstPalette = nether;
 			} else {
@@ -460,7 +417,7 @@ public final class TreacleSoulValleysGameTests {
 		}
 	}
 
-	private static void prepareCauseway(
+	private static void prepareSite(
 			ServerLevel level, BlockPos centre, int supports) {
 		level.getEntitiesOfClass(Entity.class,
 				new AABB(centre.offset(-5, -1, -5), centre.offset(6, 4, 6)))
@@ -475,22 +432,8 @@ public final class TreacleSoulValleysGameTests {
 				if (Math.abs(x) <= 4 && Math.abs(z) <= 4
 						&& remaining-- > 0) {
 					level.setBlock(centre.offset(x, -1, z),
-							CakeWorldBlocks.FUDGE_ROCK.get()
+							CakeWorldBlocks.CHILLI_CHOCOLATE_ROCK.get()
 									.defaultBlockState(), 2);
-				}
-			}
-		}
-	}
-
-	private static void prepareFlat(ServerLevel level, BlockPos centre) {
-		for (int x = -3; x <= 3; x++) {
-			for (int z = -3; z <= 3; z++) {
-				for (int y = -1; y <= 1; y++) {
-					level.setBlock(centre.offset(x, y, z),
-							y == -1
-									? CakeWorldBlocks.FUDGE_ROCK.get()
-											.defaultBlockState()
-									: Blocks.AIR.defaultBlockState(), 2);
 				}
 			}
 		}
@@ -498,14 +441,15 @@ public final class TreacleSoulValleysGameTests {
 
 	private static PlanAudit inspectPlan(ServerLevel level,
 			BlockPos centre, Rotation rotation) {
-		int fudgeRock = 0;
-		int crust = 0;
-		int syrup = 0;
+		int chilli = 0;
 		int wafer = 0;
 		int marshmallow = 0;
+		int magma = 0;
 		int glass = 0;
 		int pillars = 0;
-		int mint = 0;
+		int fudgeGold = 0;
+		int vanillaQuartz = 0;
+		int ancientNougat = 0;
 		int coolingRacks = 0;
 		int mixingBowls = 0;
 		int sentinelBricks = 0;
@@ -513,24 +457,26 @@ public final class TreacleSoulValleysGameTests {
 			for (int z = -4; z <= 4; z++) {
 				for (int y = -1; y <= 2; y++) {
 					BlockState state = level.getBlockState(
-							WispLightCausewayFeature.local(
+							CragfireProspectFeature.local(
 									centre, rotation, x, y, z));
-					if (state.is(CakeWorldBlocks.FUDGE_ROCK.get())) {
-						fudgeRock++;
-					} else if (state.is(CakeWorldBlocks.TREACLE_SOUL_CRUST.get())) {
-						crust++;
-					} else if (state.is(CakeWorldFluids.SYRUP_BLOCK.get())) {
-						syrup++;
+					if (state.is(CakeWorldBlocks.CHILLI_CHOCOLATE_ROCK.get())) {
+						chilli++;
 					} else if (state.is(CakeWorldBlocks.WAFER_BLOCK.get())) {
 						wafer++;
 					} else if (state.is(CakeWorldBlocks.MARSHMALLOW.get())) {
 						marshmallow++;
+					} else if (state.is(Blocks.MAGMA_BLOCK)) {
+						magma++;
 					} else if (state.is(CakeWorldBlocks.CANDY_GLASS.get())) {
 						glass++;
 					} else if (state.is(CakeWorldBlocks.CANDY_CANE_PILLAR.get())) {
 						pillars++;
-					} else if (state.is(CakeWorldBlocks.MINT_CRYSTAL.get())) {
-						mint++;
+					} else if (state.is(CakeWorldBlocks.FUDGE_GOLD.get())) {
+						fudgeGold++;
+					} else if (state.is(CakeWorldBlocks.VANILLA_QUARTZ.get())) {
+						vanillaQuartz++;
+					} else if (state.is(CakeWorldBlocks.ANCIENT_NOUGAT.get())) {
+						ancientNougat++;
 					} else if (state.is(CakeWorldBlocks.COOLING_RACK.get())) {
 						coolingRacks++;
 					} else if (state.is(CakeWorldBlocks.MIXING_BOWL.get())) {
@@ -541,13 +487,13 @@ public final class TreacleSoulValleysGameTests {
 				}
 			}
 		}
-		return new PlanAudit(fudgeRock, crust, syrup, wafer,
-				marshmallow, glass, pillars, mint,
+		return new PlanAudit(chilli, wafer, marshmallow, magma,
+				glass, pillars, fudgeGold, vanillaQuartz, ancientNougat,
 				coolingRacks, mixingBowls, sentinelBricks);
 	}
 
-	private static FoundCauseway findCauseway(ServerLevel level,
-			ChunkPos anchor, int radius) {
+	private static FoundProspect findProspect(
+			ServerLevel level, ChunkPos anchor, int radius) {
 		BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
 		for (int ring = 0; ring <= radius; ring++) {
 			for (int chunkX = anchor.x - ring;
@@ -565,23 +511,22 @@ public final class TreacleSoulValleysGameTests {
 							x <= chunk.getMaxBlockX(); x++) {
 						for (int z = chunk.getMinBlockZ();
 								z <= chunk.getMaxBlockZ(); z++) {
-							for (int y = WispLightCausewayFeature.MIN_Y;
-									y <= WispLightCausewayFeature.MAX_Y + 1; y++) {
+							for (int y = CragfireProspectFeature.MIN_Y;
+									y <= CragfireProspectFeature.MAX_Y + 2; y++) {
 								cursor.set(x, y, z);
 								if (!level.getBlockState(cursor).is(
 										CakeWorldBlocks.MIXING_BOWL.get())) {
 									continue;
 								}
 								for (Rotation rotation : ROTATIONS) {
-									BlockPos markerOffset =
-											new BlockPos(2, 1, -4)
-													.rotate(rotation);
+									BlockPos markerOffset = new BlockPos(
+											-2, 1, 3).rotate(rotation);
 									BlockPos centre = cursor.immutable()
 											.subtract(markerOffset);
 									PlanAudit plan = inspectPlan(
 											level, centre, rotation);
-									if (plan.identifiesCauseway()) {
-										return new FoundCauseway(centre, rotation);
+									if (plan.identifiesProspect()) {
+										return new FoundProspect(centre, rotation);
 									}
 								}
 							}
@@ -594,14 +539,14 @@ public final class TreacleSoulValleysGameTests {
 	}
 
 	private static NaturalAudit audit(ServerLevel level,
-			ChunkPos anchor, int radius, BlockPos causeway) {
+			ChunkPos anchor, int radius, BlockPos prospect) {
 		int biomeSamples = 0;
-		int crust = 0;
+		int chilliRock = 0;
 		int fudgeRock = 0;
-		int independentSyrup = 0;
-		int totalSyrup = 0;
 		int hotFudge = 0;
-		int literalSoulTerrain = 0;
+		int netherQuartz = 0;
+		int netherGold = 0;
+		int ancientDebris = 0;
 		BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
 		for (int chunkX = anchor.x - radius;
 				chunkX <= anchor.x + radius; chunkX++) {
@@ -620,39 +565,40 @@ public final class TreacleSoulValleysGameTests {
 							}
 							biomeSamples++;
 							BlockState state = level.getBlockState(cursor);
-							if (state.is(CakeWorldBlocks.TREACLE_SOUL_CRUST.get())) {
-								crust++;
+							if (state.is(CakeWorldBlocks
+									.CHILLI_CHOCOLATE_ROCK.get())) {
+								if (!nearProspect(cursor, prospect)) {
+									chilliRock++;
+								}
 							} else if (state.is(CakeWorldBlocks.FUDGE_ROCK.get())) {
 								fudgeRock++;
-							} else if (state.is(CakeWorldFluids.SYRUP_BLOCK.get())) {
-								totalSyrup++;
-								if (!nearCauseway(cursor, causeway)) {
-									independentSyrup++;
-								}
 							} else if (state.is(CakeWorldFluids.HOT_FUDGE_BLOCK.get())) {
 								hotFudge++;
-							} else if (state.is(Blocks.SOUL_SAND)
-									|| state.is(Blocks.SOUL_SOIL)) {
-								literalSoulTerrain++;
+							} else if (state.is(Blocks.NETHER_QUARTZ_ORE)) {
+								netherQuartz++;
+							} else if (state.is(Blocks.NETHER_GOLD_ORE)) {
+								netherGold++;
+							} else if (state.is(Blocks.ANCIENT_DEBRIS)) {
+								ancientDebris++;
 							}
 						}
 					}
 				}
 			}
 		}
-		return new NaturalAudit(biomeSamples, crust, fudgeRock,
-				independentSyrup, totalSyrup, hotFudge,
-				literalSoulTerrain);
+		return new NaturalAudit(biomeSamples, chilliRock, fudgeRock,
+				hotFudge, netherQuartz, netherGold, ancientDebris);
 	}
 
-	private static boolean nearCauseway(BlockPos position, BlockPos centre) {
+	private static boolean nearProspect(BlockPos position, BlockPos centre) {
 		return Math.abs(position.getX() - centre.getX()) <= 4
 				&& position.getY() >= centre.getY() - 1
 				&& position.getY() <= centre.getY() + 2
 				&& Math.abs(position.getZ() - centre.getZ()) <= 4;
 	}
 
-	private static Set<Integer> entityIds(ServerLevel level, BlockPos centre) {
+	private static Set<Integer> entityIds(
+			ServerLevel level, BlockPos centre) {
 		Set<Integer> ids = new HashSet<>();
 		level.getEntitiesOfClass(Entity.class,
 				new AABB(centre.offset(-4, -1, -4), centre.offset(5, 3, 5)))
@@ -684,9 +630,8 @@ public final class TreacleSoulValleysGameTests {
 						&& converted.minCount == minimum
 						&& converted.maxCount == maximum
 						&& findSpawn(biome, vanilla) == null,
-				"Treacle Soul Valleys lost replacement "
-						+ replacement.getRegistryName() + " for "
-						+ vanilla.getRegistryName());
+				"Crags lost replacement " + replacement.getRegistryName()
+						+ " for " + vanilla.getRegistryName());
 	}
 
 	private static MobSpawnSettings.SpawnerData findSpawn(
@@ -702,10 +647,9 @@ public final class TreacleSoulValleysGameTests {
 		return null;
 	}
 
-	private static boolean hasPlacedFeature(Biome biome,
-			Holder<PlacedFeature> expected,
-			GenerationStep.Decoration decoration) {
-		int step = decoration.ordinal();
+	private static boolean hasPlacedFeature(
+			Biome biome, Holder<PlacedFeature> expected) {
+		int step = GenerationStep.Decoration.TOP_LAYER_MODIFICATION.ordinal();
 		return biome != null
 				&& biome.getGenerationSettings().features().size() > step
 				&& biome.getGenerationSettings().features().get(step)
@@ -732,7 +676,7 @@ public final class TreacleSoulValleysGameTests {
 
 	private static JsonObject readProvider() {
 		try (InputStreamReader reader = new InputStreamReader(
-				TreacleSoulValleysGameTests.class.getResourceAsStream(
+				ChilliChocolateCragsGameTests.class.getResourceAsStream(
 						"/data/cakeworld/orespawn/provider.json"),
 				StandardCharsets.UTF_8)) {
 			return JsonParser.parseReader(reader).getAsJsonObject();
@@ -758,32 +702,33 @@ public final class TreacleSoulValleysGameTests {
 		return new ResourceLocation(CakeWorld.MODID, path);
 	}
 
-	private record PlanAudit(int fudgeRock, int crust, int syrup,
-			int wafer, int marshmallow, int glass, int pillars, int mint,
-			int coolingRacks, int mixingBowls, int sentinelBricks) {
-		private boolean identifiesCauseway() {
-			return fudgeRock >= 60 && crust >= 20 && syrup >= 30
-					&& wafer >= 5 && marshmallow >= 1 && glass >= 6
-					&& pillars >= 3 && mint >= 3
+	private record PlanAudit(int chilli, int wafer, int marshmallow,
+			int magma, int glass, int pillars, int fudgeGold,
+			int vanillaQuartz, int ancientNougat, int coolingRacks,
+			int mixingBowls, int sentinelBricks) {
+		private boolean identifiesProspect() {
+			return chilli >= 120 && wafer >= 10 && marshmallow >= 3
+					&& magma == 1 && glass >= 6 && pillars >= 3
+					&& vanillaQuartz == 1 && ancientNougat == 1
 					&& coolingRacks == 1 && mixingBowls == 1
-					&& sentinelBricks <= 1;
+					&& fudgeGold + sentinelBricks == 1;
 		}
 
 		private boolean complete(boolean brickSentinel) {
-			return fudgeRock == 81 && crust == 30 && syrup == 42
-					&& wafer == 7 && marshmallow == 2 && glass == 8
-					&& pillars == 4
-					&& mint == (brickSentinel ? 3 : 4)
+			return chilli == 145 && wafer == 12 && marshmallow == 4
+					&& magma == 1 && glass == 8 && pillars == 4
+					&& fudgeGold == (brickSentinel ? 0 : 1)
+					&& vanillaQuartz == 1 && ancientNougat == 1
 					&& coolingRacks == 1 && mixingBowls == 1
 					&& sentinelBricks == (brickSentinel ? 1 : 0);
 		}
 	}
 
-	private record FoundCauseway(BlockPos centre, Rotation rotation) {
+	private record FoundProspect(BlockPos centre, Rotation rotation) {
 	}
 
-	private record NaturalAudit(int biomeSamples, int crust,
-			int fudgeRock, int independentSyrup, int totalSyrup,
-			int hotFudge, int literalSoulTerrain) {
+	private record NaturalAudit(int biomeSamples, int chilliRock,
+			int fudgeRock, int hotFudge, int netherQuartz,
+			int netherGold, int ancientDebris) {
 	}
 }

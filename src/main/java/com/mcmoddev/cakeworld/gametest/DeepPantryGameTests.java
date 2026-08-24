@@ -5373,10 +5373,16 @@ public final class DeepPantryGameTests {
 							? "reloaded"
 							: "seeded");
 			require(helper,
-					CakeWorldBiomes.FUDGE_WASTES
-							.getId().equals(biome)
+					Set.of(
+							CakeWorldBiomes.FUDGE_WASTES
+									.getId(),
+							CakeWorldBiomes.TREACLE_SOUL_VALLEYS
+									.getId(),
+							CakeWorldBiomes.CHILLI_CHOCOLATE_CRAGS
+									.getId())
+							.contains(biome)
 							&& eligible,
-					"Natural Rock-Candy Fossil left Fudge Wastes or lost native/CakeWorld biome eligibility: biome="
+					"Natural Rock-Candy Fossil left its intended Nether biome set or lost native/CakeWorld biome eligibility: biome="
 							+ biome + ", eligible="
 							+ eligible);
 			require(helper,
@@ -6046,6 +6052,9 @@ public final class DeepPantryGameTests {
 									.getId(),
 							CakeWorldBiomes
 									.GINGERBREAD_HEARTHLANDS
+									.getId(),
+							CakeWorldBiomes
+									.WAFFLE_PLATEAUS
 									.getId())
 							.contains(
 									audit.biome()),

@@ -232,5 +232,14 @@
         "type": "event"
       }
     ]
+  },
+  "chilli_chocolate_crags_rumble": {
+    "subtitle": "subtitles.cakeworld.chilli_chocolate_crags.rumble",
+    "sounds": [
+      {
+        "name": "minecraft:ambient.nether_wastes.additions",
+        "type": "event"
+      }
+    ]
   }
 }

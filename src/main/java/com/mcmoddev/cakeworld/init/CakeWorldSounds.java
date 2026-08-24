@@ -166,8 +166,16 @@ public final class CakeWorldSounds {
 							"treacle_soul_valleys_murmur",
 							() -> new SoundEvent(
 									new ResourceLocation(
+										CakeWorld.MODID,
+										"treacle_soul_valleys_murmur")));
+	public static final RegistryObject<SoundEvent>
+			CHILLI_CHOCOLATE_CRAGS_RUMBLE =
+					SOUNDS.register(
+							"chilli_chocolate_crags_rumble",
+							() -> new SoundEvent(
+									new ResourceLocation(
 											CakeWorld.MODID,
-											"treacle_soul_valleys_murmur")));
+											"chilli_chocolate_crags_rumble")));
 
 	private CakeWorldSounds() {
 	}

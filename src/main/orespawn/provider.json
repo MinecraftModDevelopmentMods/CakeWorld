@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "provider_modid": "cakeworld",
-  "provider_revision": 37,
+  "provider_revision": 38,
   "templates": {
     "cakeworld:edible_world": {
       "name_key": "template.cakeworld.edible_world",
@@ -312,6 +312,9 @@
           },
           "cakeworld:treacle_soul_valleys": {
             "cakeworld:fudge_mantle": 14.0
+          },
+          "cakeworld:chilli_chocolate_crags": {
+            "cakeworld:fudge_mantle": 28.0
           },
           "cakeworld:meringue_islands": {
             "cakeworld:meringue_crust": 12.0,
@@ -661,7 +664,8 @@
                   "cakeworld:burnt_toffee_deltas",
                   "cakeworld:cinnamon_ember_groves",
                   "cakeworld:black_liquorice_labyrinths",
-                  "cakeworld:treacle_soul_valleys"
+                  "cakeworld:treacle_soul_valleys",
+                  "cakeworld:chilli_chocolate_crags"
                 ],
                 "geomes": {
                   "cakeworld:fudge_mantle": 3.0
@@ -1217,6 +1221,23 @@
                 "max_downfall": 1.0,
                 "surface": {
                   "top_block": "cakeworld:treacle_soul_crust",
+                  "filler_block": "cakeworld:fudge_rock",
+                  "filler_depth": 5
+                }
+              },
+              "cakeworld:chilli_chocolate_crags": {
+                "enabled": true,
+                "weight": 0.65,
+                "similar_biomes": [
+                  "minecraft:nether_wastes"
+                ],
+                "required_similar_biomes": [],
+                "min_temperature": -2.0,
+                "max_temperature": 2.0,
+                "min_downfall": 0.0,
+                "max_downfall": 1.0,
+                "surface": {
+                  "top_block": "cakeworld:chilli_chocolate_rock",
                   "filler_block": "cakeworld:fudge_rock",
                   "filler_depth": 5
                 }
