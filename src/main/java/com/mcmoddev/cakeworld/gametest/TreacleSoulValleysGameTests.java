@@ -447,7 +447,8 @@ public final class TreacleSoulValleysGameTests {
 									"cakeworld:cinnamon_ember_groves",
 									"cakeworld:black_liquorice_labyrinths",
 									BIOME_ID.toString(),
-									"cakeworld:chilli_chocolate_crags"))
+									"cakeworld:chilli_chocolate_crags",
+									"cakeworld:molten_marshmallow_calderas"))
 							&& order.indexOf("cakeworld:black_liquorice_labyrinths")
 									< order.indexOf(BIOME_ID.toString()),
 					template + " lost its Treacle Soul Valley provider contract");

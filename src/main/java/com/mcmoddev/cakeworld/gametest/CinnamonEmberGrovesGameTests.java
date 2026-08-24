@@ -349,7 +349,8 @@ public final class CinnamonEmberGrovesGameTests {
 									BIOME_ID.toString(),
 									"cakeworld:black_liquorice_labyrinths",
 									"cakeworld:treacle_soul_valleys",
-									"cakeworld:chilli_chocolate_crags"))
+									"cakeworld:chilli_chocolate_crags",
+									"cakeworld:molten_marshmallow_calderas"))
 							&& order.indexOf("cakeworld:fudge_wastes")
 									< order.indexOf(BIOME_ID.toString()),
 					template + " lost its Cinnamon-Grove provider contract");

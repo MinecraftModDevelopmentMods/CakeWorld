@@ -436,6 +436,14 @@ public final class CakeWorldCreatureSpawns {
 			replace(event, MobCategory.MONSTER, EntityType.HOGLIN,
 					CakeWorldEntities.FUDGE_BOAR, 12, 2, 3);
 		}
+		if ("molten_marshmallow_calderas".equals(biome.getPath())) {
+			replace(event, MobCategory.MONSTER, EntityType.GHAST,
+					CakeWorldEntities.MALLOW_FLOATER, 40, 1, 1);
+			replace(event, MobCategory.MONSTER, EntityType.MAGMA_CUBE,
+					CakeWorldEntities.HOT_FUDGE_BLOB, 100, 2, 5);
+			addIfAbsent(event, MobCategory.MONSTER,
+					CakeWorldEntities.CINNAMON_SPARK, 8, 1, 2);
+		}
 		if ("burnt_toffee_deltas".equals(biome.getPath())) {
 			replaceExisting(event, MobCategory.MONSTER,
 					EntityType.MAGMA_CUBE,

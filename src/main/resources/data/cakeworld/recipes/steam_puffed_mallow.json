@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {"item": "cakeworld:marshmallow"},
+    {"item": "cakeworld:hot_fudge_bucket"},
+    {"item": "minecraft:sugar"}
+  ],
+  "result": {"item": "cakeworld:steam_puffed_mallow", "count": 2}
+}

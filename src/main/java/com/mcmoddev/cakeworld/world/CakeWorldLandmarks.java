@@ -404,6 +404,16 @@ public final class CakeWorldLandmarks {
 					GenerationStep.Decoration.TOP_LAYER_MODIFICATION)
 					.add(cragfireProspect);
 		}
+		Holder<PlacedFeature> mallowSteamCaldera =
+				MallowSteamCalderaFeature.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(biome.getNamespace())
+				&& "molten_marshmallow_calderas".equals(biome.getPath())
+				&& mallowSteamCaldera != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration.TOP_LAYER_MODIFICATION)
+					.add(mallowSteamCaldera);
+		}
 		Holder<PlacedFeature> manorRepair =
 				GrandGingerbreadManorRepairFeature
 						.placedFeature();

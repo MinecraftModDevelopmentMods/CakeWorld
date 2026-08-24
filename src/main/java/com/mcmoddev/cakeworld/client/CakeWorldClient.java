@@ -52,6 +52,11 @@ public final class CakeWorldClient {
 					RenderType.translucent());
 			ItemBlockRenderTypes.setRenderLayer(CakeWorldFluids.FLOWING_HOT_FUDGE.get(),
 					RenderType.translucent());
+			ItemBlockRenderTypes.setRenderLayer(CakeWorldFluids.MOLTEN_MALLOW.get(),
+					RenderType.translucent());
+			ItemBlockRenderTypes.setRenderLayer(
+					CakeWorldFluids.FLOWING_MOLTEN_MALLOW.get(),
+					RenderType.translucent());
 		});
 	}
 }

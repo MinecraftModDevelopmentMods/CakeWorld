@@ -2,6 +2,7 @@ package com.mcmoddev.cakeworld.init;
 
 import com.mcmoddev.cakeworld.CakeWorld;
 import com.mcmoddev.cakeworld.block.CakeLiquidBlock;
+import com.mcmoddev.cakeworld.block.MoltenMallowLiquidBlock;
 import com.mcmoddev.cakeworld.item.CakeBucketItem;
 
 import net.minecraft.resources.ResourceLocation;
@@ -65,6 +66,23 @@ public final class CakeWorldFluids {
 					.slopeFindDistance(2)
 					.levelDecreasePerBlock(2)
 					.tickRate(20);
+
+	private static final ForgeFlowingFluid.Properties MOLTEN_MALLOW_PROPERTIES =
+			new ForgeFlowingFluid.Properties(CakeWorldFluids::moltenMallow,
+					CakeWorldFluids::flowingMoltenMallow,
+					FluidAttributes.builder(WATER_STILL, WATER_FLOW)
+							.color(0xFFFFD9DF)
+							.density(900)
+							.viscosity(2400)
+							.temperature(345)
+							.luminosity(5)
+							.sound(SoundEvents.BUCKET_FILL,
+									SoundEvents.BUCKET_EMPTY))
+					.bucket(CakeWorldFluids::moltenMallowBucket)
+					.block(CakeWorldFluids::moltenMallowBlock)
+					.slopeFindDistance(3)
+					.levelDecreasePerBlock(2)
+					.tickRate(12);
 
 	private static final ForgeFlowingFluid.Properties JAM_PROPERTIES =
 			new ForgeFlowingFluid.Properties(CakeWorldFluids::jam,
@@ -152,6 +170,27 @@ public final class CakeWorldFluids {
 					new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)
 							.tab(CreativeModeTab.TAB_MISC)));
 
+	public static final RegistryObject<ForgeFlowingFluid.Source> MOLTEN_MALLOW =
+			FLUIDS.register("molten_mallow",
+					() -> new ForgeFlowingFluid.Source(
+							MOLTEN_MALLOW_PROPERTIES));
+	public static final RegistryObject<ForgeFlowingFluid.Flowing>
+			FLOWING_MOLTEN_MALLOW =
+					FLUIDS.register("flowing_molten_mallow",
+							() -> new ForgeFlowingFluid.Flowing(
+									MOLTEN_MALLOW_PROPERTIES));
+	public static final RegistryObject<LiquidBlock> MOLTEN_MALLOW_BLOCK =
+			BLOCKS.register("molten_mallow",
+					() -> new MoltenMallowLiquidBlock(
+							CakeWorldFluids::moltenMallowFlowing,
+							BlockBehaviour.Properties.of(Material.WATER)
+									.noCollission().strength(100.0F)
+									.lightLevel(state -> 5).noDrops()));
+	public static final RegistryObject<Item> MOLTEN_MALLOW_BUCKET =
+			ITEMS.register("molten_mallow_bucket",
+					() -> new CakeBucketItem(CakeWorldFluids::moltenMallow,
+							bucketProperties()));
+
 	public static final RegistryObject<ForgeFlowingFluid.Source> JAM =
 			FLUIDS.register("jam", () -> new ForgeFlowingFluid.Source(JAM_PROPERTIES));
 	public static final RegistryObject<ForgeFlowingFluid.Flowing> FLOWING_JAM =
@@ -219,6 +258,20 @@ public final class CakeWorldFluids {
 	public static FlowingFluid hotFudgeFlowing() { return HOT_FUDGE.get(); }
 	public static LiquidBlock hotFudgeBlock() { return HOT_FUDGE_BLOCK.get(); }
 	public static Item hotFudgeBucket() { return HOT_FUDGE_BUCKET.get(); }
+
+	public static Fluid moltenMallow() { return MOLTEN_MALLOW.get(); }
+	public static Fluid flowingMoltenMallow() {
+		return FLOWING_MOLTEN_MALLOW.get();
+	}
+	public static FlowingFluid moltenMallowFlowing() {
+		return MOLTEN_MALLOW.get();
+	}
+	public static LiquidBlock moltenMallowBlock() {
+		return MOLTEN_MALLOW_BLOCK.get();
+	}
+	public static Item moltenMallowBucket() {
+		return MOLTEN_MALLOW_BUCKET.get();
+	}
 
 	public static Fluid jam() { return JAM.get(); }
 	public static Fluid flowingJam() { return FLOWING_JAM.get(); }

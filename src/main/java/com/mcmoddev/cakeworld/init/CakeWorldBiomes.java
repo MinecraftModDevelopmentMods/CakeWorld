@@ -98,6 +98,8 @@ public final class CakeWorldBiomes {
 			treacleSoulValleys();
 	public static final RegistryObject<Biome> CHILLI_CHOCOLATE_CRAGS =
 			chilliChocolateCrags();
+	public static final RegistryObject<Biome> MOLTEN_MARSHMALLOW_CALDERAS =
+			moltenMarshmallowCalderas();
 	public static final RegistryObject<Biome> MERINGUE_ISLANDS = copy(
 			"meringue_islands", "end_highlands", 0.5F, 0.0F);
 
@@ -262,6 +264,13 @@ public final class CakeWorldBiomes {
 					BiomeDictionary.Type.DRY,
 					BiomeDictionary.Type.MOUNTAIN,
 					BiomeDictionary.Type.WASTELAND);
+			BiomeDictionary.addTypes(
+					key(MOLTEN_MARSHMALLOW_CALDERAS),
+					BiomeDictionary.Type.NETHER,
+					BiomeDictionary.Type.HOT,
+					BiomeDictionary.Type.DRY,
+					BiomeDictionary.Type.MOUNTAIN,
+					BiomeDictionary.Type.MAGICAL);
 			BiomeDictionary.addTypes(key(MERINGUE_ISLANDS),
 					BiomeDictionary.Type.END,
 					BiomeDictionary.Type.VOID,
@@ -679,6 +688,33 @@ public final class CakeWorldBiomes {
 																.get(),
 														0.0015D))
 										.build()));
+	}
+
+	private static RegistryObject<Biome> moltenMarshmallowCalderas() {
+		return OreSpawnBiomes.copyAndRegister(BIOMES,
+				"molten_marshmallow_calderas",
+				() -> vanilla("basalt_deltas"),
+				builder -> builder
+						.temperature(2.0F)
+						.downfall(0.0F)
+						.generationSettings(
+								withoutVanillaBasaltDeltaFeatures(
+										vanilla("basalt_deltas")))
+						.specialEffects(
+								effectsBuilder(
+										vanilla("basalt_deltas")
+												.getSpecialEffects())
+									.ambientParticle(
+											new AmbientParticleSettings(
+													ParticleTypes.CLOUD,
+													0.004F))
+									.ambientAdditionsSound(
+											new AmbientAdditionsSettings(
+													CakeWorldSounds
+															.MOLTEN_MARSHMALLOW_CALDERAS_HISS
+															.get(),
+													0.0015D))
+									.build()));
 	}
 
 	private static RegistryObject<Biome> copyWithAmbient(

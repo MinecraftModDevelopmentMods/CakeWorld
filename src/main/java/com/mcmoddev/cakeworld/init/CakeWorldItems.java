@@ -324,6 +324,20 @@ public final class CakeWorldItems {
 											MobEffects.DIG_SPEED,
 											200), 1.0F)
 									.build())));
+	public static final RegistryObject<Item> STEAM_PUFFED_MALLOW =
+			ITEMS.register("steam_puffed_mallow",
+					() -> new Item(new Item.Properties()
+							.tab(CreativeModeTab.TAB_FOOD)
+							.food(new FoodProperties.Builder()
+									.nutrition(7)
+									.saturationMod(0.75F)
+									.effect(() -> new MobEffectInstance(
+											MobEffects.FIRE_RESISTANCE,
+											240), 1.0F)
+									.effect(() -> new MobEffectInstance(
+											MobEffects.SLOW_FALLING,
+											240), 1.0F)
+									.build())));
 	public static final RegistryObject<Item> CINNAMON_STICK =
 			ITEMS.register("cinnamon_stick",
 					() -> new Item(new Item.Properties()

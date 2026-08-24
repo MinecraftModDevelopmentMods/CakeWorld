@@ -35365,7 +35365,8 @@ public final class FirstBiteGameTests {
 				CakeWorldBiomes.CINNAMON_EMBER_GROVES.getId(),
 				CakeWorldBiomes.BLACK_LIQUORICE_LABYRINTHS.getId(),
 				CakeWorldBiomes.TREACLE_SOUL_VALLEYS.getId(),
-				CakeWorldBiomes.CHILLI_CHOCOLATE_CRAGS.getId());
+				CakeWorldBiomes.CHILLI_CHOCOLATE_CRAGS.getId(),
+				CakeWorldBiomes.MOLTEN_MARSHMALLOW_CALDERAS.getId());
 		boolean overworldRepairInstalled =
 				hasPlacedFeature(
 						level,

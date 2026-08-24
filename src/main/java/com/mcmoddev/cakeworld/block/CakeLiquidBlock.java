@@ -11,7 +11,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.phys.Vec3;
 
-public final class CakeLiquidBlock extends LiquidBlock {
+public class CakeLiquidBlock extends LiquidBlock {
 	private final Supplier<? extends FlowingFluid> fluid;
 	private final double horizontalDrag;
 	private final double downwardDrag;

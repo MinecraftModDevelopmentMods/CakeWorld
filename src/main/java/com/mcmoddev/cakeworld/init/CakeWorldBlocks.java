@@ -174,6 +174,13 @@ public final class CakeWorldBlocks {
 							.requiresCorrectToolForDrops()
 							.strength(2.2F, 6.0F)
 							.sound(SoundType.NETHERRACK));
+	public static final RegistryObject<Block> TOASTED_MALLOW_CRUST =
+			block("toasted_mallow_crust",
+					() -> new MarshmallowBlock(
+							BlockBehaviour.Properties.of(Material.STONE)
+									.requiresCorrectToolForDrops()
+									.strength(1.2F, 4.0F)
+									.sound(SoundType.WART_BLOCK)));
 	public static final RegistryObject<Block> CANDIED_SOIL =
 			block("candied_soil",
 					BlockBehaviour.Properties.of(Material.DIRT)

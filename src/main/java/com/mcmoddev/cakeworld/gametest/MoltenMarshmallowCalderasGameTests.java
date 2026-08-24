@@ -13,13 +13,15 @@ import com.google.gson.JsonParser;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.logging.LogUtils;
 import com.mcmoddev.cakeworld.CakeWorld;
+import com.mcmoddev.cakeworld.block.MarshmallowBlock;
+import com.mcmoddev.cakeworld.block.MoltenMallowLiquidBlock;
 import com.mcmoddev.cakeworld.init.CakeWorldBiomes;
 import com.mcmoddev.cakeworld.init.CakeWorldBlocks;
 import com.mcmoddev.cakeworld.init.CakeWorldEntities;
 import com.mcmoddev.cakeworld.init.CakeWorldFluids;
 import com.mcmoddev.cakeworld.init.CakeWorldItems;
 import com.mcmoddev.cakeworld.init.CakeWorldSounds;
-import com.mcmoddev.cakeworld.world.CragfireProspectFeature;
+import com.mcmoddev.cakeworld.world.MallowSteamCalderaFeature;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -31,14 +33,17 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.ChunkPos;
@@ -58,20 +63,21 @@ import net.minecraft.world.level.levelgen.placement.InSquarePlacement;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.minecraft.world.level.levelgen.placement.RarityFilter;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.BiomeDictionary;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
 import org.slf4j.Logger;
 
-/** Contract proof for the first complete BIO-NE-006 ecosystem slice. */
+/** Contract proof for the first complete BIO-NE-007 ecosystem slice. */
 @PrefixGameTestTemplate(false)
 @GameTestHolder(CakeWorld.MODID)
-public final class ChilliChocolateCragsGameTests {
+public final class MoltenMarshmallowCalderasGameTests {
 	private static final String EMPTY = "empty";
 	private static final Logger LOGGER = LogUtils.getLogger();
 	private static final ResourceLocation BIOME_ID =
-			id("chilli_chocolate_crags");
+			id("molten_marshmallow_calderas");
 	private static final ResourceKey<Biome> BIOME_KEY =
 			ResourceKey.create(Registry.BIOME_REGISTRY, BIOME_ID);
 	private static final Rotation[] ROTATIONS = {
@@ -81,85 +87,127 @@ public final class ChilliChocolateCragsGameTests {
 		Rotation.COUNTERCLOCKWISE_90
 	};
 
-	private ChilliChocolateCragsGameTests() {
+	private MoltenMarshmallowCalderasGameTests() {
 	}
 
-	@GameTest(template = EMPTY, batch = "bione006")
-	public static void cragsHaveReadableMiningEcologyFoodAndProfile(
+	@GameTest(template = EMPTY, batch = "bione007")
+	public static void calderasHaveReadableMiningEcologyFoodAndProfile(
 			GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		Registry<Biome> registry = level.registryAccess()
 				.registryOrThrow(Registry.BIOME_REGISTRY);
-		Biome crags = registry.get(BIOME_ID);
+		Biome calderas = registry.get(BIOME_ID);
 		Holder<Biome> holder = registry.getHolder(BIOME_KEY)
 				.orElseThrow();
-		require(helper, crags != null
+		require(helper, calderas != null
 						&& Biome.getBiomeCategory(holder)
 								== Biome.BiomeCategory.NETHER
-						&& close(crags.getBaseTemperature(), 2.0D)
-						&& close(crags.getDownfall(), 0.0D),
-				"Chilli-Chocolate Crags are not a hot, dry Nether biome");
+						&& close(calderas.getBaseTemperature(), 2.0D)
+						&& close(calderas.getDownfall(), 0.0D),
+				"Molten-Marshmallow Calderas are not a hot, dry Nether biome");
 		for (BiomeDictionary.Type type : List.of(
 				BiomeDictionary.Type.NETHER,
 				BiomeDictionary.Type.HOT,
 				BiomeDictionary.Type.DRY,
 				BiomeDictionary.Type.MOUNTAIN,
-				BiomeDictionary.Type.WASTELAND)) {
+				BiomeDictionary.Type.MAGICAL)) {
 			require(helper, BiomeDictionary.hasType(BIOME_KEY, type),
-					"Chilli-Chocolate Crags lost dictionary type " + type);
+					"Molten-Marshmallow Calderas lost dictionary type " + type);
 		}
 		AmbientAdditionsSettings ambience =
-				crags.getAmbientAdditions().orElse(null);
+				calderas.getAmbientAdditions().orElse(null);
 		AmbientParticleSettings particle =
-				crags.getAmbientParticle().orElse(null);
+				calderas.getAmbientParticle().orElse(null);
 		require(helper, ambience != null
 						&& ambience.getSoundEvent().getLocation()
 								.equals(CakeWorldSounds
-										.CHILLI_CHOCOLATE_CRAGS_RUMBLE
+										.MOLTEN_MARSHMALLOW_CALDERAS_HISS
 										.getId())
 						&& close(ambience.getTickChance(), 0.0015D)
 						&& particle != null
 						&& particle.getOptions().getType()
-								== ParticleTypes.DRIPPING_LAVA,
-				"Chilli-Chocolate Crags lost their visible heat atmosphere");
+								== ParticleTypes.CLOUD,
+				"Molten-Marshmallow Calderas lost their visible heat atmosphere");
 
-		assertSpawn(helper, crags, EntityType.ZOMBIFIED_PIGLIN,
-				CakeWorldEntities.STALE_FUDGE_FOLK.get(), 100, 4, 4);
-		assertSpawn(helper, crags, EntityType.GHAST,
-				CakeWorldEntities.MALLOW_FLOATER.get(), 50, 4, 4);
-		assertSpawn(helper, crags, EntityType.MAGMA_CUBE,
-				CakeWorldEntities.HOT_FUDGE_BLOB.get(), 2, 4, 4);
-		assertSpawn(helper, crags, EntityType.ENDERMAN,
-				CakeWorldEntities.TAFFY_TALLWALKER.get(), 1, 4, 4);
-		assertSpawn(helper, crags, EntityType.PIGLIN,
-				CakeWorldEntities.FUDGE_FOLK.get(), 15, 4, 4);
-		assertSpawn(helper, crags, EntityType.STRIDER,
+		assertSpawn(helper, calderas, EntityType.GHAST,
+				CakeWorldEntities.MALLOW_FLOATER.get(), 40, 1, 1);
+		assertSpawn(helper, calderas, EntityType.MAGMA_CUBE,
+				CakeWorldEntities.HOT_FUDGE_BLOB.get(), 100, 2, 5);
+		assertSpawn(helper, calderas, EntityType.STRIDER,
 				CakeWorldEntities.FUDGE_SKATER.get(), 60, 1, 2);
-		assertSpawn(helper, crags, EntityType.HOGLIN,
-				CakeWorldEntities.FUDGE_BOAR.get(), 12, 2, 3);
+		assertSpawn(helper, calderas, EntityType.ENDERMAN,
+				CakeWorldEntities.TAFFY_TALLWALKER.get(), 10, 1, 4);
+		MobSpawnSettings.SpawnerData sparks = findSpawn(calderas,
+				CakeWorldEntities.CINNAMON_SPARK.get());
 		int totalSpawns = 0;
 		for (MobCategory category : MobCategory.values()) {
-			totalSpawns += crags.getMobSettings().getMobs(category)
+			totalSpawns += calderas.getMobSettings().getMobs(category)
 					.unwrap().size();
 		}
-		require(helper, totalSpawns == 7
-						&& findSpawn(crags,
+		require(helper, totalSpawns == 5
+						&& sparks != null
+						&& sparks.getWeight().asInt() == 8
+						&& sparks.minCount == 1
+						&& sparks.maxCount == 2
+						&& findSpawn(calderas,
 								CakeWorldEntities.FUDGE_BRUTE.get()) == null,
-				"Crags gained an undocumented open role or leaked Fudge Brutes: "
+				"Calderas gained an undocumented open role or leaked Fudge Brutes: "
 						+ totalSpawns);
 
-		BlockState rock = CakeWorldBlocks.CHILLI_CHOCOLATE_ROCK.get()
+		BlockState crust = CakeWorldBlocks.TOASTED_MALLOW_CRUST.get()
 				.defaultBlockState();
 		TagKey<Block> edibleHosts = TagKey.create(
 				Registry.BLOCK_REGISTRY, id("edible_ore_hosts"));
 		require(helper,
-				CakeWorldBlocks.CHILLI_CHOCOLATE_ROCK.get().getClass()
-						== Block.class
-						&& rock.is(BlockTags.MINEABLE_WITH_PICKAXE)
-						&& rock.is(BlockTags.BASE_STONE_NETHER)
-						&& rock.is(edibleHosts)
-						&& !rock.is(Blocks.MAGMA_BLOCK),
-				"Chilli Chocolate Rock lost its ordinary solid host contract");
+				CakeWorldBlocks.TOASTED_MALLOW_CRUST.get()
+						instanceof MarshmallowBlock
+						&& crust.is(BlockTags.MINEABLE_WITH_PICKAXE)
+						&& crust.is(BlockTags.BASE_STONE_NETHER)
+						&& crust.is(edibleHosts)
+						&& !crust.is(Blocks.MAGMA_BLOCK),
+				"Toasted Mallow Crust lost its cushioning host contract");
+
+		MoltenMallowLiquidBlock molten = (MoltenMallowLiquidBlock)
+				CakeWorldFluids.MOLTEN_MALLOW_BLOCK.get();
+		ArmorStand falling = new ArmorStand(level, 0.5D, 64.5D, 0.5D);
+		falling.setDeltaMovement(1.0D, -0.8D, -1.0D);
+		falling.fallDistance = 12.0F;
+		float health = falling.getHealth();
+		molten.entityInside(molten.defaultBlockState(), level,
+				BlockPos.ZERO, falling);
+		Vec3 rescued = falling.getDeltaMovement();
+		ArmorStand descending = new ArmorStand(level, 0.5D, 64.5D, 0.5D);
+		descending.setShiftKeyDown(true);
+		descending.setDeltaMovement(1.0D, -0.8D, -1.0D);
+		descending.fallDistance = 12.0F;
+		molten.entityInside(molten.defaultBlockState(), level,
+				BlockPos.ZERO, descending);
+		Vec3 controlledDescent = descending.getDeltaMovement();
+		require(helper,
+				close(rescued.x, 0.82D)
+						&& close(rescued.y, 0.16D)
+						&& close(rescued.z, -0.82D)
+						&& close(falling.fallDistance, 0.0D)
+						&& close(falling.getHealth(), health)
+						&& close(controlledDescent.x, 0.82D)
+						&& close(controlledDescent.y, -0.2D)
+						&& close(controlledDescent.z, -0.82D)
+						&& close(descending.fallDistance, 0.0D)
+						&& !CakeWorldFluids.MOLTEN_MALLOW.get()
+								.is(FluidTags.LAVA)
+						&& !CakeWorldFluids.MOLTEN_MALLOW.get()
+								.is(FluidTags.WATER),
+				"Molten Mallow lost its non-damaging updraft or controlled-descent contract");
+
+		for (String vanillaFeature : List.of(
+				"small_basalt_columns", "large_basalt_columns",
+				"basalt_blobs", "blackstone_blobs", "ore_gravel_nether")) {
+			require(helper, !hasPlacedFeature(calderas,
+					ResourceKey.create(Registry.PLACED_FEATURE_REGISTRY,
+							new ResourceLocation("minecraft", vanillaFeature))),
+					"Calderas leaked copied Basalt Deltas feature "
+							+ vanillaFeature);
+		}
 
 		for (String tag : List.of(
 				"minecraft:has_structure/bastion_remnant",
@@ -171,24 +219,24 @@ public final class ChilliChocolateCragsGameTests {
 				"cakeworld:has_structure/rock_candy_fossil")) {
 			require(helper, holder.is(TagKey.create(
 					Registry.BIOME_REGISTRY, new ResourceLocation(tag))),
-					"Crags lost structure-bound progression role " + tag);
+					"Calderas lost structure-bound progression role " + tag);
 		}
 		assertFood(helper, level);
 		assertProvider(helper);
 		helper.succeed();
 	}
 
-	@GameTest(template = EMPTY, batch = "bione006")
-	public static void cragfireProspectIsBoundedSafeAndDeterministic(
+	@GameTest(template = EMPTY, batch = "bione007")
+	public static void mallowSteamCalderaIsBoundedSafeAndDeterministic(
 			GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		Holder<PlacedFeature> placed =
-				CragfireProspectFeature.placedFeature();
-		Biome crags = level.registryAccess()
+				MallowSteamCalderaFeature.placedFeature();
+		Biome calderas = level.registryAccess()
 				.registryOrThrow(Registry.BIOME_REGISTRY).get(BIOME_ID);
 		require(helper, placed != null
 						&& placed.value().feature().value().feature()
-								== CragfireProspectFeature.FEATURE
+								== MallowSteamCalderaFeature.FEATURE
 						&& placed.value().placement().size() == 4
 						&& placed.value().placement().get(0)
 								instanceof RarityFilter
@@ -198,11 +246,12 @@ public final class ChilliChocolateCragsGameTests {
 								instanceof HeightRangePlacement
 						&& placed.value().placement().get(3)
 								instanceof BiomeFilter
-						&& CragfireProspectFeature
+						&& MallowSteamCalderaFeature
 								.AVERAGE_CHUNKS_PER_ATTEMPT == 2
-						&& CragfireProspectFeature.MIN_NATURAL_SUPPORTS == 33
-						&& hasPlacedFeature(crags, placed),
-				"Cragfire Prospect lost its bounded Crags placement chain");
+						&& MallowSteamCalderaFeature.MIN_NATURAL_SUPPORTS == 33
+						&& MallowSteamCalderaFeature.MIN_OPEN_HEADROOM == 9
+						&& hasPlacedFeature(calderas, placed),
+				"Mallow Steam Caldera lost its bounded Calderas placement chain");
 
 		BlockPos helperPos = helper.absolutePos(new BlockPos(8, 5, 8));
 		BlockPos centre = new BlockPos(helperPos.getX(), 64,
@@ -211,56 +260,67 @@ public final class ChilliChocolateCragsGameTests {
 			prepareSite(level, centre, 81);
 			Set<Integer> entitiesBefore = entityIds(level, centre);
 			require(helper,
-					CragfireProspectFeature.hasSafeSite(
+					MallowSteamCalderaFeature.hasSafeSite(
 							level, centre, rotation)
-							&& CragfireProspectFeature.buildAt(
+							&& MallowSteamCalderaFeature.buildAt(
 									level, centre, rotation),
-					"Cragfire Prospect rejected safe rotation " + rotation);
+					"Mallow Steam Caldera rejected safe rotation " + rotation);
 			PlanAudit plan = inspectPlan(level, centre, rotation);
 			require(helper, plan.complete(false),
-					"Cragfire Prospect plan changed for " + rotation
+					"Mallow Steam Caldera plan changed for " + rotation
 							+ ": " + plan);
 			require(helper, entitiesBefore.equals(entityIds(level, centre))
 						&& countBlockEntities(level, centre) == 0,
-					"Cragfire Prospect created an entity or block entity");
+					"Mallow Steam Caldera created an entity or block entity");
 		}
+		prepareSite(level, centre, 81);
+		level.setBlock(centre.offset(1, 1, 1),
+				CakeWorldBlocks.FUDGE_ROCK.get().defaultBlockState(), 2);
+		require(helper,
+				MallowSteamCalderaFeature.hasSafeSite(
+						level, centre, Rotation.NONE)
+						&& MallowSteamCalderaFeature.buildAt(
+								level, centre, Rotation.NONE)
+						&& inspectPlan(level, centre, Rotation.NONE)
+								.complete(false),
+				"Mallow Steam Caldera did not carve its own shallow natural relief");
 
 		prepareSite(level, centre, 81);
-		level.setBlock(CragfireProspectFeature.local(
+		level.setBlock(MallowSteamCalderaFeature.local(
 				centre, Rotation.NONE, 4, 2, 4),
 				Blocks.WATER.defaultBlockState(), 2);
-		require(helper, !CragfireProspectFeature.hasSafeSite(
+		require(helper, !MallowSteamCalderaFeature.hasSafeSite(
 				level, centre, Rotation.NONE),
-				"Cragfire Prospect replaced an existing fluid");
+				"Mallow Steam Caldera replaced an existing fluid");
 		prepareSite(level, centre, 81);
-		level.setBlock(CragfireProspectFeature.local(
+		level.setBlock(MallowSteamCalderaFeature.local(
 				centre, Rotation.NONE, -4, 2, -4),
 				Blocks.CHEST.defaultBlockState(), 2);
-		require(helper, !CragfireProspectFeature.hasSafeSite(
+		require(helper, !MallowSteamCalderaFeature.hasSafeSite(
 				level, centre, Rotation.NONE),
-				"Cragfire Prospect replaced a block entity");
+				"Mallow Steam Caldera replaced a block entity");
 		prepareSite(level, centre, 81);
-		level.setBlock(CragfireProspectFeature.local(
+		level.setBlock(MallowSteamCalderaFeature.local(
 				centre, Rotation.NONE, 1, 1, 1),
 				Blocks.BRICKS.defaultBlockState(), 2);
-		require(helper, !CragfireProspectFeature.hasSafeSite(
+		require(helper, !MallowSteamCalderaFeature.hasSafeSite(
 				level, centre, Rotation.NONE),
-				"Cragfire Prospect replaced an authored solid");
+				"Mallow Steam Caldera replaced an authored solid");
 		prepareSite(level, centre, 32);
-		require(helper, !CragfireProspectFeature.hasSafeSite(
+		require(helper, !MallowSteamCalderaFeature.hasSafeSite(
 				level, centre, Rotation.NONE),
-				"Cragfire Prospect ignored its natural support threshold");
-		require(helper, !CragfireProspectFeature.fitsWithinChunk(
+				"Mallow Steam Caldera ignored its natural support threshold");
+		require(helper, !MallowSteamCalderaFeature.fitsWithinChunk(
 				new BlockPos(new ChunkPos(centre).getMinBlockX(),
 						centre.getY(), new ChunkPos(centre).getMinBlockZ()),
 				Rotation.NONE, new ChunkPos(centre)),
-				"Cragfire Prospect crossed its generating chunk");
+				"Mallow Steam Caldera crossed its generating chunk");
 		helper.succeed();
 	}
 
-	@GameTest(template = EMPTY, batch = "bione006world",
+	@GameTest(template = EMPTY, batch = "bione007world",
 			timeoutTicks = 24000)
-	public static void focusedNaturalChilliChocolateCragsAudit(
+	public static void focusedNaturalMoltenMarshmallowCalderasAudit(
 			GameTestHelper helper) {
 		if (!Boolean.getBoolean("cakeworld.fixedWorldgenEvidence")) {
 			helper.succeed();
@@ -274,11 +334,11 @@ public final class ChilliChocolateCragsGameTests {
 				biome -> biome.is(BIOME_KEY),
 				new BlockPos(0, 64, 0), 32768, 8);
 		require(helper, match != null,
-				"Could not locate Chilli-Chocolate Crags within 32,768 blocks");
+				"Could not locate Molten-Marshmallow Calderas within 32,768 blocks");
 		ChunkPos anchor = new ChunkPos(match.getFirst());
-		FoundProspect found = findProspect(level, anchor, 16);
+		FoundCaldera found = findCaldera(level, anchor, 16);
 		require(helper, found != null,
-				"Could not find a natural Cragfire Prospect within 1,089 chunks of "
+				"Could not find a natural Mallow Steam Caldera within 1,089 chunks of "
 						+ anchor);
 		ChunkPos foundChunk = new ChunkPos(found.centre());
 		for (int chunkX = foundChunk.x - 4;
@@ -292,32 +352,34 @@ public final class ChilliChocolateCragsGameTests {
 		helper.runAfterDelay(40, () -> {
 			PlanAudit plan = inspectPlan(
 					level, found.centre(), found.rotation());
-			BlockPos sentinel = CragfireProspectFeature.local(
-					found.centre(), found.rotation(), -3, 1, -2);
+			BlockPos sentinel = MallowSteamCalderaFeature.local(
+					found.centre(), found.rotation(), -4, 0, 0);
 			boolean brickSentinel = level.getBlockState(sentinel)
 					.is(Blocks.BRICKS);
 			NaturalAudit audit = audit(
 					level, foundChunk, 4, found.centre());
-			LOGGER.info("Chilli-Chocolate Crags audit: anchorChunk={}, centre={}, rotation={}, biomeSamples={}, chilliRock={}, fudgeRock={}, hotFudge={}, netherQuartz={}, netherGold={}, ancientDebris={}, plan={}, brickSentinel={}, sentinel={}",
+			LOGGER.info("Molten-Marshmallow Calderas audit: anchorChunk={}, centre={}, rotation={}, biomeSamples={}, toastedCrust={}, fudgeRock={}, moltenMallow={}, hotFudge={}, netherQuartz={}, netherGold={}, ancientDebris={}, plan={}, brickSentinel={}, sentinel={}",
 					anchor, found.centre(), found.rotation(),
-					audit.biomeSamples(), audit.chilliRock(),
-					audit.fudgeRock(), audit.hotFudge(),
+					audit.biomeSamples(), audit.toastedCrust(),
+					audit.fudgeRock(), audit.moltenMallow(),
+					audit.hotFudge(),
 					audit.netherQuartz(), audit.netherGold(),
 					audit.ancientDebris(), plan,
 					brickSentinel, sentinel);
 			require(helper, audit.biomeSamples() >= 128
-							&& audit.chilliRock() > 0
+							&& audit.toastedCrust() > 0
 							&& audit.fudgeRock() > 0
+							&& audit.moltenMallow() > 0
 							&& audit.netherQuartz() + audit.netherGold() > 0
 							&& plan.complete(brickSentinel),
-					"Natural Crags lost terrain, progression ores or their complete Prospect: "
+					"Natural Calderas lost terrain, deposits, progression ores or their complete Caldera: "
 							+ audit + " / " + plan);
 			if (!brickSentinel) {
 				level.setBlock(sentinel,
 						Blocks.BRICKS.defaultBlockState(), 2);
 				require(helper, level.getBlockState(sentinel)
 						.is(Blocks.BRICKS),
-						"Could not seed the Cragfire Prospect reload sentinel");
+						"Could not seed the Mallow Steam Caldera reload sentinel");
 			}
 			level.setChunkForced(foundChunk.x, foundChunk.z, false);
 			helper.succeed();
@@ -326,34 +388,34 @@ public final class ChilliChocolateCragsGameTests {
 
 	private static void assertFood(
 			GameTestHelper helper, ServerLevel level) {
-		FoodProperties food = CakeWorldItems.CRAGFIRE_TRUFFLE.get()
+		FoodProperties food = CakeWorldItems.STEAM_PUFFED_MALLOW.get()
 				.getFoodProperties();
 		Recipe<?> recipe = level.getRecipeManager()
-				.byKey(id("cragfire_truffle")).orElse(null);
+				.byKey(id("steam_puffed_mallow")).orElse(null);
 		require(helper, food != null
 						&& food.getNutrition() == 7
-						&& close(food.getSaturationModifier(), 0.8D)
-						&& hasEffect(food, MobEffects.FIRE_RESISTANCE, 300)
-						&& hasEffect(food, MobEffects.DIG_SPEED, 200)
+						&& close(food.getSaturationModifier(), 0.75D)
+						&& hasEffect(food, MobEffects.FIRE_RESISTANCE, 240)
+						&& hasEffect(food, MobEffects.SLOW_FALLING, 240)
 						&& recipe != null
 						&& recipe.getType() == RecipeType.CRAFTING
 						&& recipe.getIngredients().size() == 3
 						&& ingredient(recipe, new ItemStack(
-								CakeWorldItems.COCOA_TRUFFLE.get()))
+								CakeWorldBlocks.MARSHMALLOW.get()))
 						&& ingredient(recipe, new ItemStack(
-								CakeWorldItems.FUDGE_SQUARE.get()))
+								CakeWorldFluids.HOT_FUDGE_BUCKET.get()))
 						&& ingredient(recipe, new ItemStack(
-								CakeWorldItems.CINNAMON_STICK.get()))
+								Items.SUGAR))
 						&& recipe.getResultItem().is(
-								CakeWorldItems.CRAGFIRE_TRUFFLE.get())
+								CakeWorldItems.STEAM_PUFFED_MALLOW.get())
 						&& recipe.getResultItem().getCount() == 2,
-				"Cragfire Truffle lost its nutrition, effects or recipe");
+				"Steam-Puffed Mallow lost its nutrition, effects or recipe");
 	}
 
 	private static void assertProvider(GameTestHelper helper) {
 		JsonObject provider = readProvider();
-		require(helper, provider.get("provider_revision").getAsInt() >= 38,
-				"Chilli-Chocolate Crags require provider revision 38");
+		require(helper, provider.get("provider_revision").getAsInt() >= 39,
+				"Molten-Marshmallow Calderas require provider revision 39");
 		JsonObject firstPalette = null;
 		for (String template : List.of(
 				"cakeworld:edible_world",
@@ -373,14 +435,20 @@ public final class ChilliChocolateCragsGameTests {
 					.getAsJsonObject("dimensions")
 					.getAsJsonObject("minecraft:the_nether")
 					.getAsJsonArray("biome_ids");
+			JsonObject moltenDeposit = profile
+					.getAsJsonObject("fluid_deposits")
+					.getAsJsonObject("cakeworld:fluid_deposit/molten_mallow");
+			JsonObject moltenPlacement = moltenDeposit
+					.getAsJsonObject("dimensions")
+					.getAsJsonObject("minecraft:the_nether");
 			List<String> order = nether.getAsJsonObject("biomes")
 					.entrySet().stream().map(Map.Entry::getKey).toList();
 			require(helper, geomes.size() == 1
 							&& close(geomes.get("cakeworld:fudge_mantle")
-									.getAsDouble(), 28.0D)
-							&& close(placement.get("weight").getAsDouble(), 0.65D)
+									.getAsDouble(), 22.0D)
+							&& close(placement.get("weight").getAsDouble(), 0.8D)
 							&& strings(placement.getAsJsonArray("similar_biomes"))
-									.equals(Set.of("minecraft:nether_wastes"))
+									.equals(Set.of("minecraft:basalt_deltas"))
 							&& strings(placement.getAsJsonArray(
 									"required_similar_biomes")).isEmpty()
 							&& close(placement.get("min_temperature")
@@ -391,7 +459,7 @@ public final class ChilliChocolateCragsGameTests {
 									.getAsDouble(), 0.0D)
 							&& close(placement.get("max_downfall")
 									.getAsDouble(), 1.0D)
-							&& "cakeworld:chilli_chocolate_rock".equals(
+							&& "cakeworld:toasted_mallow_crust".equals(
 									surface.get("top_block").getAsString())
 							&& "cakeworld:fudge_rock".equals(
 									surface.get("filler_block").getAsString())
@@ -402,16 +470,21 @@ public final class ChilliChocolateCragsGameTests {
 									"cakeworld:cinnamon_ember_groves",
 									"cakeworld:black_liquorice_labyrinths",
 									"cakeworld:treacle_soul_valleys",
-									BIOME_ID.toString(),
-									"cakeworld:molten_marshmallow_calderas"))
-							&& order.indexOf("cakeworld:fudge_wastes")
-									< order.indexOf(BIOME_ID.toString())
-							&& order.indexOf("cakeworld:treacle_soul_valleys")
-									< order.indexOf(BIOME_ID.toString())
-							&& order.indexOf(BIOME_ID.toString())
-									< order.indexOf(
-											"cakeworld:molten_marshmallow_calderas"),
-					template + " lost its Crags provider contract");
+									"cakeworld:chilli_chocolate_crags",
+									BIOME_ID.toString()))
+							&& "cakeworld:molten_mallow".equals(
+									moltenDeposit.get("block").getAsString())
+							&& strings(moltenPlacement
+									.getAsJsonArray("biome_ids"))
+									.equals(Set.of(BIOME_ID.toString()))
+							&& strings(moltenPlacement
+									.getAsJsonArray("host_families"))
+									.equals(Set.of("igneous_volcanic"))
+							&& close(moltenPlacement.get("frequency")
+									.getAsDouble(), 0.08D)
+							&& order.indexOf("cakeworld:chilli_chocolate_crags")
+									< order.indexOf(BIOME_ID.toString()),
+					template + " lost its Calderas provider contract");
 			if (firstPalette == null) {
 				firstPalette = nether;
 			} else {
@@ -436,7 +509,7 @@ public final class ChilliChocolateCragsGameTests {
 				if (Math.abs(x) <= 4 && Math.abs(z) <= 4
 						&& remaining-- > 0) {
 					level.setBlock(centre.offset(x, -1, z),
-							CakeWorldBlocks.CHILLI_CHOCOLATE_ROCK.get()
+							CakeWorldBlocks.TOASTED_MALLOW_CRUST.get()
 									.defaultBlockState(), 2);
 				}
 			}
@@ -445,15 +518,12 @@ public final class ChilliChocolateCragsGameTests {
 
 	private static PlanAudit inspectPlan(ServerLevel level,
 			BlockPos centre, Rotation rotation) {
-		int chilli = 0;
-		int wafer = 0;
+		int fudge = 0;
+		int crust = 0;
+		int moltenMallow = 0;
 		int marshmallow = 0;
-		int magma = 0;
 		int glass = 0;
 		int pillars = 0;
-		int fudgeGold = 0;
-		int vanillaQuartz = 0;
-		int ancientNougat = 0;
 		int coolingRacks = 0;
 		int mixingBowls = 0;
 		int sentinelBricks = 0;
@@ -461,26 +531,22 @@ public final class ChilliChocolateCragsGameTests {
 			for (int z = -4; z <= 4; z++) {
 				for (int y = -1; y <= 2; y++) {
 					BlockState state = level.getBlockState(
-							CragfireProspectFeature.local(
+							MallowSteamCalderaFeature.local(
 									centre, rotation, x, y, z));
-					if (state.is(CakeWorldBlocks.CHILLI_CHOCOLATE_ROCK.get())) {
-						chilli++;
-					} else if (state.is(CakeWorldBlocks.WAFER_BLOCK.get())) {
-						wafer++;
+					if (state.is(CakeWorldBlocks.FUDGE_ROCK.get())) {
+						fudge++;
+					} else if (state.is(
+							CakeWorldBlocks.TOASTED_MALLOW_CRUST.get())) {
+						crust++;
+					} else if (state.is(
+							CakeWorldFluids.MOLTEN_MALLOW_BLOCK.get())) {
+						moltenMallow++;
 					} else if (state.is(CakeWorldBlocks.MARSHMALLOW.get())) {
 						marshmallow++;
-					} else if (state.is(Blocks.MAGMA_BLOCK)) {
-						magma++;
 					} else if (state.is(CakeWorldBlocks.CANDY_GLASS.get())) {
 						glass++;
 					} else if (state.is(CakeWorldBlocks.CANDY_CANE_PILLAR.get())) {
 						pillars++;
-					} else if (state.is(CakeWorldBlocks.FUDGE_GOLD.get())) {
-						fudgeGold++;
-					} else if (state.is(CakeWorldBlocks.VANILLA_QUARTZ.get())) {
-						vanillaQuartz++;
-					} else if (state.is(CakeWorldBlocks.ANCIENT_NOUGAT.get())) {
-						ancientNougat++;
 					} else if (state.is(CakeWorldBlocks.COOLING_RACK.get())) {
 						coolingRacks++;
 					} else if (state.is(CakeWorldBlocks.MIXING_BOWL.get())) {
@@ -491,12 +557,11 @@ public final class ChilliChocolateCragsGameTests {
 				}
 			}
 		}
-		return new PlanAudit(chilli, wafer, marshmallow, magma,
-				glass, pillars, fudgeGold, vanillaQuartz, ancientNougat,
-				coolingRacks, mixingBowls, sentinelBricks);
+		return new PlanAudit(fudge, crust, moltenMallow, marshmallow,
+				glass, pillars, coolingRacks, mixingBowls, sentinelBricks);
 	}
 
-	private static FoundProspect findProspect(
+	private static FoundCaldera findCaldera(
 			ServerLevel level, ChunkPos anchor, int radius) {
 		BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
 		for (int ring = 0; ring <= radius; ring++) {
@@ -515,8 +580,8 @@ public final class ChilliChocolateCragsGameTests {
 							x <= chunk.getMaxBlockX(); x++) {
 						for (int z = chunk.getMinBlockZ();
 								z <= chunk.getMaxBlockZ(); z++) {
-							for (int y = CragfireProspectFeature.MIN_Y;
-									y <= CragfireProspectFeature.MAX_Y + 2; y++) {
+							for (int y = MallowSteamCalderaFeature.MIN_Y;
+									y <= MallowSteamCalderaFeature.MAX_Y + 2; y++) {
 								cursor.set(x, y, z);
 								if (!level.getBlockState(cursor).is(
 										CakeWorldBlocks.MIXING_BOWL.get())) {
@@ -524,13 +589,13 @@ public final class ChilliChocolateCragsGameTests {
 								}
 								for (Rotation rotation : ROTATIONS) {
 									BlockPos markerOffset = new BlockPos(
-											-2, 1, 3).rotate(rotation);
+											2, 1, -4).rotate(rotation);
 									BlockPos centre = cursor.immutable()
 											.subtract(markerOffset);
 									PlanAudit plan = inspectPlan(
 											level, centre, rotation);
-									if (plan.identifiesProspect()) {
-										return new FoundProspect(centre, rotation);
+									if (plan.identifiesCaldera()) {
+										return new FoundCaldera(centre, rotation);
 									}
 								}
 							}
@@ -543,10 +608,11 @@ public final class ChilliChocolateCragsGameTests {
 	}
 
 	private static NaturalAudit audit(ServerLevel level,
-			ChunkPos anchor, int radius, BlockPos prospect) {
+			ChunkPos anchor, int radius, BlockPos caldera) {
 		int biomeSamples = 0;
-		int chilliRock = 0;
+		int toastedCrust = 0;
 		int fudgeRock = 0;
+		int moltenMallow = 0;
 		int hotFudge = 0;
 		int netherQuartz = 0;
 		int netherGold = 0;
@@ -570,12 +636,17 @@ public final class ChilliChocolateCragsGameTests {
 							biomeSamples++;
 							BlockState state = level.getBlockState(cursor);
 							if (state.is(CakeWorldBlocks
-									.CHILLI_CHOCOLATE_ROCK.get())) {
-								if (!nearProspect(cursor, prospect)) {
-									chilliRock++;
+									.TOASTED_MALLOW_CRUST.get())) {
+								if (!nearCaldera(cursor, caldera)) {
+									toastedCrust++;
 								}
 							} else if (state.is(CakeWorldBlocks.FUDGE_ROCK.get())) {
 								fudgeRock++;
+							} else if (state.is(CakeWorldFluids
+									.MOLTEN_MALLOW_BLOCK.get())) {
+								if (!nearCaldera(cursor, caldera)) {
+									moltenMallow++;
+								}
 							} else if (state.is(CakeWorldFluids.HOT_FUDGE_BLOCK.get())) {
 								hotFudge++;
 							} else if (state.is(Blocks.NETHER_QUARTZ_ORE)) {
@@ -590,11 +661,12 @@ public final class ChilliChocolateCragsGameTests {
 				}
 			}
 		}
-		return new NaturalAudit(biomeSamples, chilliRock, fudgeRock,
-				hotFudge, netherQuartz, netherGold, ancientDebris);
+		return new NaturalAudit(biomeSamples, toastedCrust, fudgeRock,
+				moltenMallow, hotFudge, netherQuartz, netherGold,
+				ancientDebris);
 	}
 
-	private static boolean nearProspect(BlockPos position, BlockPos centre) {
+	private static boolean nearCaldera(BlockPos position, BlockPos centre) {
 		return Math.abs(position.getX() - centre.getX()) <= 4
 				&& position.getY() >= centre.getY() - 1
 				&& position.getY() <= centre.getY() + 2
@@ -634,7 +706,7 @@ public final class ChilliChocolateCragsGameTests {
 						&& converted.minCount == minimum
 						&& converted.maxCount == maximum
 						&& findSpawn(biome, vanilla) == null,
-				"Crags lost replacement " + replacement.getRegistryName()
+				"Calderas lost replacement " + replacement.getRegistryName()
 						+ " for " + vanilla.getRegistryName());
 	}
 
@@ -660,6 +732,14 @@ public final class ChilliChocolateCragsGameTests {
 						.stream().anyMatch(feature -> feature.equals(expected));
 	}
 
+	private static boolean hasPlacedFeature(
+			Biome biome, ResourceKey<PlacedFeature> expected) {
+		return biome != null
+				&& biome.getGenerationSettings().features().stream()
+						.anyMatch(features -> features.stream()
+								.anyMatch(feature -> feature.is(expected)));
+	}
+
 	private static boolean ingredient(Recipe<?> recipe, ItemStack stack) {
 		return recipe.getIngredients().stream()
 				.anyMatch(ingredient -> ingredient.test(stack));
@@ -680,7 +760,7 @@ public final class ChilliChocolateCragsGameTests {
 
 	private static JsonObject readProvider() {
 		try (InputStreamReader reader = new InputStreamReader(
-				ChilliChocolateCragsGameTests.class.getResourceAsStream(
+				MoltenMarshmallowCalderasGameTests.class.getResourceAsStream(
 						"/data/cakeworld/orespawn/provider.json"),
 				StandardCharsets.UTF_8)) {
 			return JsonParser.parseReader(reader).getAsJsonObject();
@@ -706,33 +786,31 @@ public final class ChilliChocolateCragsGameTests {
 		return new ResourceLocation(CakeWorld.MODID, path);
 	}
 
-	private record PlanAudit(int chilli, int wafer, int marshmallow,
-			int magma, int glass, int pillars, int fudgeGold,
-			int vanillaQuartz, int ancientNougat, int coolingRacks,
+	private record PlanAudit(int fudge, int crust, int moltenMallow,
+			int marshmallow, int glass, int pillars, int coolingRacks,
 			int mixingBowls, int sentinelBricks) {
-		private boolean identifiesProspect() {
-			return chilli >= 120 && wafer >= 10 && marshmallow >= 3
-					&& magma == 1 && glass >= 6 && pillars >= 3
-					&& vanillaQuartz == 1 && ancientNougat == 1
-					&& coolingRacks == 1 && mixingBowls == 1
-					&& fudgeGold + sentinelBricks == 1;
+		private boolean identifiesCaldera() {
+			return fudge >= 70 && crust + sentinelBricks == 32
+					&& moltenMallow >= 36 && marshmallow == 9
+					&& glass == 4 && pillars == 4
+					&& coolingRacks == 1 && mixingBowls == 1;
 		}
 
 		private boolean complete(boolean brickSentinel) {
-			return chilli == 145 && wafer == 12 && marshmallow == 4
-					&& magma == 1 && glass == 8 && pillars == 4
-					&& fudgeGold == (brickSentinel ? 0 : 1)
-					&& vanillaQuartz == 1 && ancientNougat == 1
+			return fudge == 81
+					&& crust == (brickSentinel ? 31 : 32)
+					&& moltenMallow == 40 && marshmallow == 9
+					&& glass == 4 && pillars == 4
 					&& coolingRacks == 1 && mixingBowls == 1
 					&& sentinelBricks == (brickSentinel ? 1 : 0);
 		}
 	}
 
-	private record FoundProspect(BlockPos centre, Rotation rotation) {
+	private record FoundCaldera(BlockPos centre, Rotation rotation) {
 	}
 
-	private record NaturalAudit(int biomeSamples, int chilliRock,
-			int fudgeRock, int hotFudge, int netherQuartz,
+	private record NaturalAudit(int biomeSamples, int toastedCrust,
+			int fudgeRock, int moltenMallow, int hotFudge, int netherQuartz,
 			int netherGold, int ancientDebris) {
 	}
 }

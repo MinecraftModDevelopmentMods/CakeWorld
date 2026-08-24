@@ -431,5 +431,11 @@
   "biome.cakeworld.chilli_chocolate_crags": "Chilli-Chocolate Crags",
   "block.cakeworld.chilli_chocolate_rock": "Chilli Chocolate Rock",
   "item.cakeworld.cragfire_truffle": "Cragfire Truffle",
-  "subtitles.cakeworld.chilli_chocolate_crags.rumble": "The chilli-chocolate crags rumble"
+  "subtitles.cakeworld.chilli_chocolate_crags.rumble": "The chilli-chocolate crags rumble",
+  "biome.cakeworld.molten_marshmallow_calderas": "Molten-Marshmallow Calderas",
+  "block.cakeworld.toasted_mallow_crust": "Toasted Mallow Crust",
+  "block.cakeworld.molten_mallow": "Molten Mallow",
+  "item.cakeworld.molten_mallow_bucket": "Molten Mallow Bucket",
+  "item.cakeworld.steam_puffed_mallow": "Steam-Puffed Mallow",
+  "subtitles.cakeworld.molten_marshmallow_calderas.hiss": "Molten mallow hisses and puffs"
 }

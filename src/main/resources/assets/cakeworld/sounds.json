@@ -241,5 +241,14 @@
         "type": "event"
       }
     ]
+  },
+  "molten_marshmallow_calderas_hiss": {
+    "subtitle": "subtitles.cakeworld.molten_marshmallow_calderas.hiss",
+    "sounds": [
+      {
+        "name": "minecraft:block.fire.extinguish",
+        "type": "event"
+      }
+    ]
   }
 }

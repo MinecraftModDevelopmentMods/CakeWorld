@@ -5379,6 +5379,8 @@ public final class DeepPantryGameTests {
 							CakeWorldBiomes.TREACLE_SOUL_VALLEYS
 									.getId(),
 							CakeWorldBiomes.CHILLI_CHOCOLATE_CRAGS
+									.getId(),
+							CakeWorldBiomes.MOLTEN_MARSHMALLOW_CALDERAS
 									.getId())
 							.contains(biome)
 							&& eligible,

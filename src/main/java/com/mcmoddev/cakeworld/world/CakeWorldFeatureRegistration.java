@@ -72,6 +72,8 @@ public final class CakeWorldFeatureRegistration {
 		event.getRegistry().register(
 				CragfireProspectFeature.FEATURE);
 		event.getRegistry().register(
+				MallowSteamCalderaFeature.FEATURE);
+		event.getRegistry().register(
 				BurntToffeeColumnsFeature.FEATURE);
 		event.getRegistry().register(GingerbreadVillageFeature.FEATURE);
 		event.getRegistry().register(
@@ -225,6 +227,8 @@ public final class CakeWorldFeatureRegistration {
 			WispLightCausewayFeature
 					.registerConfiguredFeature();
 			CragfireProspectFeature
+					.registerConfiguredFeature();
+			MallowSteamCalderaFeature
 					.registerConfiguredFeature();
 			BurntToffeeColumnsFeature
 					.registerConfiguredFeatures();
