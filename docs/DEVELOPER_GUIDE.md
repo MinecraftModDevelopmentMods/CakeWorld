@@ -248,6 +248,27 @@ reload. CakeWorld's `check` task separately scans all packaged Java source and
 fails on deprecated `OilDefinition`/`OreSpawnOreIntegration` use or any
 OreSpawn import outside `zone.moddev.mc.orespawn.api`.
 
+## Forge IMC Provider Alternative
+
+CakeWorld intentionally distributes only the packaged JSON provider. To show
+the equivalent Java submission lifecycle without creating duplicate production
+definitions, run this isolated fixture:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldImcProviderRuntime=true -PcakeworldImcProviderRunDirectory=run-imc-provider-local
+```
+
+The preparation task first runs resource generation, removes only
+`build/resources/main/data/cakeworld/orespawn/provider.json`, and refuses any
+saved profile in the requested directory. With the explicit JVM switch,
+CakeWorld builds one disabled `cakeworld:ore/imc_probe` rule entirely from
+registry IDs during `InterModEnqueueEvent` and calls `OreSpawnApi.enqueue`.
+The focused test requires public status `ACTIVE`, exact CakeWorld ownership in
+the world snapshot, provider revision `6001`, no selected template, inert rule
+settings and an immutable built definition. A finalizer restores the generated
+packaged provider after success or failure. The source provider is never
+mutated during parallel setup and the probe can never place blocks.
+
 ## Adding Content
 
 For a new rock:

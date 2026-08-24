@@ -1,6 +1,7 @@
 package com.mcmoddev.cakeworld;
 
 import com.mcmoddev.cakeworld.command.CakeWorldCommands;
+import com.mcmoddev.cakeworld.gametest.CakeWorldImcProviderFixture;
 import com.mcmoddev.cakeworld.gametest.SamplerThirdPartyBiomeFixture;
 import com.mcmoddev.cakeworld.init.CakeWorldBiomes;
 import com.mcmoddev.cakeworld.init.CakeWorldBlocks;
@@ -31,6 +32,9 @@ public final class CakeWorld {
 		CakeWorldBiomes.register(modBus);
 		if (Boolean.getBoolean("cakeworld.samplerThirdPartyFixture")) {
 			SamplerThirdPartyBiomeFixture.register(modBus);
+		}
+		if (Boolean.getBoolean("cakeworld.imcProviderFixture")) {
+			CakeWorldImcProviderFixture.register(modBus);
 		}
 		modBus.addListener(CakeWorldBiomes::commonSetup);
 		CakeWorldNetwork.register();

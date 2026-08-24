@@ -160,6 +160,20 @@ same-save retention. `check` also rejects deprecated
 `OilDefinition`/`OreSpawnOreIntegration` use and imports outside OreSpawn's
 public `zone.moddev.mc.orespawn.api` package.
 
+The packaged JSON remains CakeWorld's canonical distributable declaration. A
+separate one-shot harness demonstrates the alternative Forge IMC path without
+shipping two competing definitions:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldImcProviderRuntime=true -PcakeworldImcProviderRunDirectory=run-imc-provider-local
+```
+
+The harness removes only the generated provider from the development runtime,
+submits one disabled probe rule during `InterModEnqueueEvent`, verifies public
+ownership/freeze/immutability, and restores the generated resource in a task
+finalizer even when the server fails. It refuses a directory containing a
+saved world profile.
+
 The design documents describe target behavior. They do not imply that the
 current alpha already implements the full wishlist.
 

@@ -48,10 +48,16 @@ def providerOverrideRunDirectory = providers.gradleProperty(
 def providerOverrideReuseWorld = providers.gradleProperty(
         'cakeworldProviderOverrideReuseWorld')
         .map { it.toBoolean() }.getOrElse(false)
+def imcProviderRuntime = providers.gradleProperty(
+        'cakeworldImcProviderRuntime').map { it.toBoolean() }.getOrElse(false)
+def imcProviderRunDirectory = providers.gradleProperty(
+        'cakeworldImcProviderRunDirectory').getOrElse('run-imc-provider')
 def cakeworldGameTestNamespaces = providers.gradleProperty(
         'cakeworldGameTestNamespaces').getOrElse(
         providerOverrideRuntime
                 ? 'cakeworld_provider_override'
+                : imcProviderRuntime
+                        ? 'cakeworld_imc_provider'
                 : samplerThirdPartyRuntime
                         ? 'cakeworld_sampler_third_party'
                 : samplerPlatterRuntime ? 'cakeworld_sampler' : mod_id)
@@ -144,6 +150,8 @@ minecraft {
         gameTestServer {
             if (providerOverrideRuntime) {
                 workingDirectory project.file(providerOverrideRunDirectory)
+            } else if (imcProviderRuntime) {
+                workingDirectory project.file(imcProviderRunDirectory)
             } else if (samplerPlatterRuntime) {
                 workingDirectory project.file(samplerPlatterRunDirectory)
             } else if (baseMetalsIntegration) {
@@ -170,6 +178,9 @@ minecraft {
             if (providerOverrideRuntime) {
                 property 'cakeworld.providerOverrideMode',
                         providerOverrideMode
+            }
+            if (imcProviderRuntime) {
+                property 'cakeworld.imcProviderFixture', 'true'
             }
             if (freshWorldgenIntegration) {
                 property 'cakeworld.fixedWorldgenEvidence', 'true'
@@ -238,6 +249,10 @@ def providerOverrideSchema3Fixture =
                 'src/test/orespawn/provider-override-schema3.json')
 def providerOverrideRunRoot =
         layout.projectDirectory.dir(providerOverrideRunDirectory)
+def imcProviderRunRoot =
+        layout.projectDirectory.dir(imcProviderRunDirectory)
+def runtimePackagedProvider = layout.buildDirectory.file(
+        'resources/main/data/cakeworld/orespawn/provider.json')
 
 def prepareSamplerPlatterRun = tasks.register('prepareSamplerPlatterRun') {
     group = 'verification'
@@ -471,12 +486,70 @@ def generateCakeWorldOreSpawnProvider =
 
 sourceSets.main.resources { srcDir generatedOreSpawnResources }
 
+def prepareImcProviderRun = tasks.register('prepareImcProviderRun') {
+    group = 'verification'
+    description = 'Isolates the packaged provider so a conditional Forge IMC provider is authoritative.'
+    dependsOn 'processResources'
+    inputs.files(generatedOreSpawnProvider, samplerPlatterServerProperties)
+    outputs.upToDateWhen { false }
+
+    doLast {
+        def runRoot = imcProviderRunRoot.asFile
+        def savedProfile = new File(runRoot,
+                'world/serverconfig/orespawn-worldgen.json')
+        if (savedProfile.isFile()) {
+            throw new GradleException(
+                    "IMC provider run directory already contains a saved world profile: ${savedProfile}. Use a new -PcakeworldImcProviderRunDirectory value.")
+        }
+        def runtimeProvider = runtimePackagedProvider.get().asFile
+        if (!runtimeProvider.isFile() || !runtimeProvider.delete()) {
+            throw new GradleException(
+                    "Could not isolate the generated packaged provider: ${runtimeProvider}")
+        }
+        copy {
+            from samplerPlatterServerProperties
+            into runRoot
+            rename { 'server.properties' }
+        }
+        logger.lifecycle(
+                "Removed only the build-output provider for isolated IMC evidence: ${runtimeProvider}")
+    }
+}
+
+def restorePackagedProviderAfterImc = tasks.register(
+        'restorePackagedProviderAfterImc') {
+    group = 'verification'
+    description = 'Restores the generated packaged provider after the isolated IMC runtime.'
+    dependsOn 'generateCakeWorldOreSpawnProvider'
+    outputs.upToDateWhen { false }
+
+    doLast {
+        def target = runtimePackagedProvider.get().asFile
+        target.parentFile.mkdirs()
+        copy {
+            from generatedOreSpawnProvider
+            into target.parentFile
+            rename { 'provider.json' }
+        }
+        if (!target.isFile()) {
+            throw new GradleException(
+                    "Could not restore generated packaged provider: ${target}")
+        }
+        logger.lifecycle(
+                "Restored generated packaged provider after IMC evidence: ${target}")
+    }
+}
+
 tasks.configureEach {
     if (samplerPlatterRuntime && name == 'runGameTestServer') {
         dependsOn prepareSamplerPlatterRun
     }
     if (providerOverrideRuntime && name == 'runGameTestServer') {
         dependsOn prepareProviderOverrideRun
+    }
+    if (imcProviderRuntime && name == 'runGameTestServer') {
+        dependsOn prepareImcProviderRun
+        finalizedBy restorePackagedProviderAfterImc
     }
 }
 
@@ -649,6 +722,8 @@ def prepareGameTestStructures = tasks.register('prepareGameTestStructures', Copy
     from layout.projectDirectory.dir('src/gametest/resources/gameteststructures')
     into layout.projectDirectory.dir(providerOverrideRuntime
             ? "${providerOverrideRunDirectory}/gameteststructures"
+            : imcProviderRuntime
+            ? "${imcProviderRunDirectory}/gameteststructures"
             : samplerPlatterRuntime
             ? "${samplerPlatterRunDirectory}/gameteststructures"
             : baseMetalsIntegration
