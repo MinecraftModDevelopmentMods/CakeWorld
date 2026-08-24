@@ -31,9 +31,20 @@ def samplerPlatterRunDirectory = providers.gradleProperty(
         'cakeworldSamplerRunDirectory').getOrElse('run-sampler-platter')
 def samplerPlatterReuseWorld = providers.gradleProperty(
         'cakeworldSamplerReuseWorld').map { it.toBoolean() }.getOrElse(false)
+def providerOverrideMode = providers.gradleProperty(
+        'cakeworldProviderOverrideMode').orNull
+def providerOverrideRuntime = providerOverrideMode != null
+def providerOverrideRunDirectory = providers.gradleProperty(
+        'cakeworldProviderOverrideRunDirectory')
+        .getOrElse('run-provider-override')
+def providerOverrideReuseWorld = providers.gradleProperty(
+        'cakeworldProviderOverrideReuseWorld')
+        .map { it.toBoolean() }.getOrElse(false)
 def cakeworldGameTestNamespaces = providers.gradleProperty(
         'cakeworldGameTestNamespaces').getOrElse(
-        samplerPlatterRuntime ? 'cakeworld_sampler' : mod_id)
+        providerOverrideRuntime
+                ? 'cakeworld_provider_override'
+                : samplerPlatterRuntime ? 'cakeworld_sampler' : mod_id)
 minecraft {
     // The mappings can be changed at any time and must be in the following format.
     // Channel:   Version:
@@ -119,7 +130,9 @@ minecraft {
         // By default, the server will crash when no gametests are provided.
         // The gametest system is also enabled by default for other run configs under the /test command.
         gameTestServer {
-            if (samplerPlatterRuntime) {
+            if (providerOverrideRuntime) {
+                workingDirectory project.file(providerOverrideRunDirectory)
+            } else if (samplerPlatterRuntime) {
                 workingDirectory project.file(samplerPlatterRunDirectory)
             } else if (baseMetalsIntegration) {
                 workingDirectory project.file(baseMetalsRunDirectory)
@@ -130,6 +143,10 @@ minecraft {
                     cakeworldGameTestNamespaces
             if (samplerPlatterRuntime) {
                 property 'cakeworld.samplerPlatterEvidence', 'true'
+            }
+            if (providerOverrideRuntime) {
+                property 'cakeworld.providerOverrideMode',
+                        providerOverrideMode
             }
             if (freshWorldgenIntegration) {
                 property 'cakeworld.fixedWorldgenEvidence', 'true'
@@ -183,6 +200,14 @@ def samplerPlatterServerProperties =
                 'src/test/orespawn/sampler-platter-server.properties')
 def samplerPlatterRunRoot =
         layout.projectDirectory.dir(samplerPlatterRunDirectory)
+def providerOverrideValidFixture =
+        layout.projectDirectory.file(
+                'src/test/orespawn/provider-override-valid.json')
+def providerOverrideMalformedFixture =
+        layout.projectDirectory.file(
+                'src/test/orespawn/provider-override-malformed.txt')
+def providerOverrideRunRoot =
+        layout.projectDirectory.dir(providerOverrideRunDirectory)
 
 def prepareSamplerPlatterRun = tasks.register('prepareSamplerPlatterRun') {
     group = 'verification'
@@ -210,6 +235,59 @@ def prepareSamplerPlatterRun = tasks.register('prepareSamplerPlatterRun') {
             from samplerPlatterGlobalConfig
             into new File(runRoot, 'config')
             rename { 'orespawn-worldgen.json' }
+        }
+        copy {
+            from samplerPlatterServerProperties
+            into runRoot
+            rename { 'server.properties' }
+        }
+    }
+}
+
+def prepareProviderOverrideRun = tasks.register(
+        'prepareProviderOverrideRun') {
+    group = 'verification'
+    description = 'Prepares an isolated provider-override precedence or fail-closed run.'
+    inputs.files(providerOverrideValidFixture,
+            providerOverrideMalformedFixture,
+            samplerPlatterServerProperties)
+    outputs.upToDateWhen { false }
+
+    doLast {
+        if (!(providerOverrideMode in ['valid', 'removed', 'malformed'])) {
+            throw new GradleException(
+                    "cakeworldProviderOverrideMode must be valid, removed, or malformed; got '${providerOverrideMode}'.")
+        }
+        def runRoot = providerOverrideRunRoot.asFile
+        def savedProfile = new File(runRoot,
+                'world/serverconfig/orespawn-worldgen.json')
+        def overrideFile = new File(runRoot,
+                'config/cakeworld-orespawn.json')
+
+        if (providerOverrideMode == 'removed') {
+            if (!providerOverrideReuseWorld || !savedProfile.isFile()) {
+                throw new GradleException(
+                        'Removed-override evidence requires an existing saved profile and -PcakeworldProviderOverrideReuseWorld=true.')
+            }
+            if (overrideFile.isFile() && !overrideFile.delete()) {
+                throw new GradleException(
+                        "Could not remove isolated provider override fixture: ${overrideFile}")
+            }
+            logger.lifecycle(
+                    "Removed isolated override fixture and retained world-owned profile: ${savedProfile}")
+            return
+        }
+
+        if (savedProfile.isFile()) {
+            throw new GradleException(
+                    "Provider-override run directory already contains a saved world profile: ${savedProfile}. Use a new -PcakeworldProviderOverrideRunDirectory value.")
+        }
+        copy {
+            from(providerOverrideMode == 'valid'
+                    ? providerOverrideValidFixture
+                    : providerOverrideMalformedFixture)
+            into new File(runRoot, 'config')
+            rename { 'cakeworld-orespawn.json' }
         }
         copy {
             from samplerPlatterServerProperties
@@ -261,6 +339,9 @@ sourceSets.main.resources { srcDir generatedOreSpawnResources }
 tasks.configureEach {
     if (samplerPlatterRuntime && name == 'runGameTestServer') {
         dependsOn prepareSamplerPlatterRun
+    }
+    if (providerOverrideRuntime && name == 'runGameTestServer') {
+        dependsOn prepareProviderOverrideRun
     }
 }
 
@@ -394,7 +475,9 @@ def prepareGameTestStructures = tasks.register('prepareGameTestStructures', Copy
     group = 'verification'
     description = 'Copies tracked SNBT fixtures into the GameTest working directory.'
     from layout.projectDirectory.dir('src/gametest/resources/gameteststructures')
-    into layout.projectDirectory.dir(samplerPlatterRuntime
+    into layout.projectDirectory.dir(providerOverrideRuntime
+            ? "${providerOverrideRunDirectory}/gameteststructures"
+            : samplerPlatterRuntime
             ? "${samplerPlatterRunDirectory}/gameteststructures"
             : baseMetalsIntegration
             ? "${baseMetalsRunDirectory}/gameteststructures"

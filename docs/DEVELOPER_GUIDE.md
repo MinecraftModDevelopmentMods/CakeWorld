@@ -99,6 +99,43 @@ the same command again with `-PcakeworldSamplerReuseWorld=true`. This reuse
 flag is intentionally opt-in so an ordinary diagnostic run cannot silently
 turn into reload evidence.
 
+## Provider Overrides
+
+Released OreSpawn 4.0.6 looks for CakeWorld's pack-author override at:
+
+```text
+config/cakeworld-orespawn.json
+```
+
+A present, valid file is authoritative: it replaces CakeWorld's packaged
+provider declaration for that installation. New worlds snapshot the selected
+effective profile into `world/serverconfig/orespawn-worldgen.json`; deleting
+the global override later does not silently convert that existing save. New
+worlds created after deletion use the packaged provider again unless another
+explicit global selection wins.
+
+A present malformed override fails closed. OreSpawn reports the validation
+error and leaves CakeWorld's provider inactive instead of falling back to the
+packaged total conversion. In Forge's development lifecycle the same unique
+error can be emitted in both provider-discovery passes. This is noisy but does
+not create duplicate active definitions or stop the server safely creating a
+non-CakeWorld world.
+
+The repository contains an isolated three-part proof. Use a disposable run
+directory; the valid run creates the saved profile needed by the removal run:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldProviderOverrideMode=valid -PcakeworldProviderOverrideRunDirectory=run-provider-override-local
+./gradlew runGameTestServer -PcakeworldProviderOverrideMode=removed -PcakeworldProviderOverrideRunDirectory=run-provider-override-local -PcakeworldProviderOverrideReuseWorld=true
+./gradlew runGameTestServer -PcakeworldProviderOverrideMode=malformed -PcakeworldProviderOverrideRunDirectory=run-provider-override-malformed-local
+```
+
+The preparation task refuses fresh scenarios in a directory with an existing
+world-owned profile. The `removed` mode requires both that profile and the
+explicit reuse flag, deletes only the isolated `cakeworld-orespawn.json`
+fixture, and preserves the save. These fixtures are test resources and are
+not included in the mod JAR.
+
 ## Adding Content
 
 For a new rock:

@@ -89,6 +89,11 @@ The task refuses a directory that already owns a saved world profile. Pass
 `-PcakeworldSamplerReuseWorld=true` as an additional, explicit flag only when
 collecting same-save reload evidence.
 
+Pack authors can replace CakeWorld's packaged declaration with
+`config/cakeworld-orespawn.json`. Valid precedence, same-save persistence after
+removal, fresh-world restoration, and malformed fail-closed behavior have
+isolated Gradle proofs documented in `docs/DEVELOPER_GUIDE.md`.
+
 The design documents describe target behavior. They do not imply that the
 current alpha already implements the full wishlist.
 
