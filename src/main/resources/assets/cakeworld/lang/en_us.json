@@ -444,5 +444,8 @@
   "biome.cakeworld.candyfloss_cloudbanks": "Candyfloss Cloudbanks",
   "block.cakeworld.candyfloss_cloud": "Candyfloss Cloud",
   "item.cakeworld.skyberry_candyfloss": "Skyberry Candyfloss",
-  "subtitles.cakeworld.candyfloss_cloudbanks.flutter": "Candyfloss clouds flutter overhead"
+  "subtitles.cakeworld.candyfloss_cloudbanks.flutter": "Candyfloss clouds flutter overhead",
+  "biome.cakeworld.mooncake_barrens": "Mooncake Barrens",
+  "block.cakeworld.mooncake_crust": "Mooncake Crust",
+  "subtitles.cakeworld.mooncake_barrens.whisper": "Ancient crumbs whisper across the barrens"
 }

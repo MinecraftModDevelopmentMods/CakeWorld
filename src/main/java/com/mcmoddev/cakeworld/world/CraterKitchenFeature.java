@@ -43,9 +43,9 @@ import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
 /**
  * A quiet ruined kitchen carved into a safe End-island crater.
  *
- * <p>Meringue Islands is the explicit proving ground until Mooncake Barrens
- * exists. The structure creates a traversable stepped bowl, rather than
- * placing a decorative building beside a randomly dangerous void edge.</p>
+ * <p>Mooncake Barrens is the structure's mature home. The structure creates a
+ * traversable stepped bowl, rather than placing a decorative building beside
+ * a randomly dangerous void edge.</p>
  */
 public final class CraterKitchenFeature
 		extends Feature<NoneFeatureConfiguration>
@@ -267,8 +267,8 @@ public final class CraterKitchenFeature
 	private static void buildCrater(
 			WorldGenLevel world, BlockPos centre,
 			Rotation rotation, BoundingBox bounds) {
-		BlockState meringue =
-				CakeWorldBlocks.MERINGUE_BRICKS.get()
+		BlockState crust =
+				CakeWorldBlocks.MOONCAKE_CRUST.get()
 						.defaultBlockState();
 		BlockState macaron =
 				CakeWorldBlocks.MACARON_BRICKS.get()
@@ -286,7 +286,7 @@ public final class CraterKitchenFeature
 				fill(world, bounds, centre, rotation,
 						x, 0, z,
 						x, floorY, z,
-						meringue);
+						crust);
 				fill(world, bounds, centre, rotation,
 						x, floorY + 1, z,
 						x, 10, z,
@@ -304,7 +304,7 @@ public final class CraterKitchenFeature
 								? macaron
 								: ancientCrumb
 										? crumbs
-										: meringue);
+										: crust);
 			}
 		}
 	}

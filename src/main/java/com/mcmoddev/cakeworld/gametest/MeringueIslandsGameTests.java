@@ -141,12 +141,15 @@ public final class MeringueIslandsGameTests {
 
 		for (String tag : List.of(
 				"minecraft:has_structure/end_city",
-				"cakeworld:has_structure/macaron_citadel",
-				"cakeworld:has_structure/crater_kitchen")) {
+				"cakeworld:has_structure/macaron_citadel")) {
 			require(helper, holder.is(TagKey.create(Registry.BIOME_REGISTRY,
 					new ResourceLocation(tag))),
 					"Meringue Islands lost structure progression role " + tag);
 		}
+		require(helper, !holder.is(TagKey.create(Registry.BIOME_REGISTRY,
+				new ResourceLocation(
+						"cakeworld:has_structure/crater_kitchen"))),
+				"Meringue Islands retained the migrated Crater Kitchen role");
 		assertFoam(helper, level);
 		assertFood(helper, level);
 		assertProvider(helper);
@@ -362,8 +365,8 @@ public final class MeringueIslandsGameTests {
 
 	private static void assertProvider(GameTestHelper helper) {
 		JsonObject provider = readProvider();
-		require(helper, provider.get("provider_revision").getAsInt() >= 40,
-				"Meringue Islands require provider revision 40");
+		require(helper, provider.get("provider_revision").getAsInt() >= 42,
+				"Meringue Islands require provider revision 42");
 		JsonObject firstPalette = null;
 		for (String template : List.of("cakeworld:edible_world",
 				"cakeworld:edible_world_basemetals")) {
@@ -387,7 +390,7 @@ public final class MeringueIslandsGameTests {
 							&& "all".equals(end.get("scope").getAsString())
 							&& close(end.get("coverage").getAsDouble(), 1.0D)
 							&& close(end.get("fallback_weight").getAsDouble(), 0.0D)
-							&& end.getAsJsonObject("biomes").size() == 2
+							&& end.getAsJsonObject("biomes").size() == 3
 							&& close(placement.get("weight").getAsDouble(), 1.0D)
 							&& strings(placement.getAsJsonArray("similar_biomes"))
 									.isEmpty()

@@ -24,7 +24,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 /**
  * Soft starter terrain that can be deliberately nibbled in four small portions.
  */
-public final class ChocolateSpongeBlock extends Block {
+public class ChocolateSpongeBlock extends Block {
 	public static final float FALL_DAMAGE_MULTIPLIER = 0.25F;
 	public static final int MAX_BITES = 3;
 	public static final int NIBBLE_NUTRITION = 1;

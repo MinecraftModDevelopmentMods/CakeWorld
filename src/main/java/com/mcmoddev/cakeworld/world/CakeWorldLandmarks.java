@@ -434,6 +434,16 @@ public final class CakeWorldLandmarks {
 					GenerationStep.Decoration.TOP_LAYER_MODIFICATION)
 					.add(cloudstepLookout);
 		}
+		Holder<PlacedFeature> crumbMoonDial =
+				CrumbMoonDialFeature.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(biome.getNamespace())
+				&& "mooncake_barrens".equals(biome.getPath())
+				&& crumbMoonDial != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration.TOP_LAYER_MODIFICATION)
+					.add(crumbMoonDial);
+		}
 		Holder<PlacedFeature> manorRepair =
 				GrandGingerbreadManorRepairFeature
 						.placedFeature();
@@ -587,7 +597,7 @@ public final class CakeWorldLandmarks {
 		if (biome != null
 				&& CakeWorld.MODID.equals(
 						biome.getNamespace())
-				&& "meringue_islands".equals(
+				&& "mooncake_barrens".equals(
 						biome.getPath())
 				&& craterKitchenRepair != null) {
 			event.getGeneration().getFeatures(

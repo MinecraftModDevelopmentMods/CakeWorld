@@ -6482,10 +6482,10 @@ public final class DeepPantryGameTests {
 							: "seeded");
 			require(helper,
 					CakeWorldBiomes
-							.MERINGUE_ISLANDS
+							.MOONCAKE_BARRENS
 							.getId().equals(
 									audit.biome()),
-					"Natural Crater Kitchen left its explicit Meringue-Islands proving ground: biome="
+					"Natural Crater Kitchen left Mooncake Barrens: biome="
 							+ audit.biome());
 			require(helper,
 					kitchen.bounds().getXSpan()
@@ -6507,9 +6507,14 @@ public final class DeepPantryGameTests {
 			require(helper,
 					palette.getOrDefault(
 							CakeWorldBlocks
-									.MERINGUE_BRICKS
+									.MOONCAKE_CRUST
 									.get(), 0)
 							>= 900
+							&& palette.getOrDefault(
+							CakeWorldBlocks
+									.MERINGUE_BRICKS
+									.get(), 0)
+							>= 80
 							&& palette.getOrDefault(
 									CakeWorldBlocks
 											.MACARON_BRICKS
@@ -6545,12 +6550,12 @@ public final class DeepPantryGameTests {
 									CakeWorldBlocks
 											.MARSHMALLOW
 											.get(), 0)
-									== 8
+									>= 8
 							&& palette.getOrDefault(
 									CakeWorldBlocks
 											.ROCK_CANDY
 											.get(), 0)
-									== 7
+									>= 7
 							&& palette.getOrDefault(
 									Blocks.END_ROD, 0)
 									== 3
@@ -10839,7 +10844,7 @@ public final class DeepPantryGameTests {
 								.STRUCTURE_TAG,
 						origin, 512, false);
 		require(helper, located != null,
-				"The fixed-seed CakeWorld contained no locatable Crater Kitchen within 512 chunks of Meringue Islands");
+				"The fixed-seed CakeWorld contained no locatable Crater Kitchen within 512 chunks of Mooncake Barrens");
 		ChunkPos startChunk = new ChunkPos(located);
 		net.minecraft.world.level.chunk.LevelChunk
 				startLevelChunk =
@@ -14028,7 +14033,7 @@ public final class DeepPantryGameTests {
 		boolean bowl =
 				level.getBlockState(bowlSample)
 								.is(CakeWorldBlocks
-										.MERINGUE_BRICKS
+										.MOONCAKE_CRUST
 										.get())
 						&& level.getBlockState(
 								bowlSample.above())

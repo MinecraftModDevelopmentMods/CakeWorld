@@ -122,15 +122,15 @@ update deliberately and test both behaviors.
 
 ### Current implementation
 
-Provider revision 41 builds both adventure templates from
+Provider revision 42 builds both adventure templates from
 `src/main/orespawn/provider.json` and the small
 `src/main/orespawn/basemetals-overlay.json`. The compatibility overlay keeps
 the ten currently enabled BaseMetals resources enabled, keeps Copper,
 Antimony, and Bismuth non-generating, and replaces the Nether and End host
 lists with CakeWorld edible geology. The canonical Nougat-Depths,
 Burnt-Toffee-Deltas, Cinnamon-Ember-Groves, Black-Liquorice-Labyrinths,
-Treacle-Soul-Valleys, Chilli-Chocolate-Crags, Molten-Marshmallow-Calderas and
-Meringue-Islands and Candyfloss-Cloudbanks biome, landmark, geology and
+Treacle-Soul-Valleys, Chilli-Chocolate-Crags, Molten-Marshmallow-Calderas,
+Meringue-Islands, Candyfloss-Cloudbanks and Mooncake-Barrens biome, landmark, geology and
 fluid-deposit profiles are
 byte-for-byte identical between the normal and BaseMetals adventures; the
 compatibility template differs only by the thirteen deliberate BaseMetals ore

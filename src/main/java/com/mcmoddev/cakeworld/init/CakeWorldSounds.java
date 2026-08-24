@@ -194,6 +194,11 @@ public final class CakeWorldSounds {
 					() -> new SoundEvent(new ResourceLocation(
 							CakeWorld.MODID,
 							"candyfloss_cloudbanks_flutter")));
+	public static final RegistryObject<SoundEvent> MOONCAKE_BARRENS_WHISPER =
+			SOUNDS.register("mooncake_barrens_whisper",
+					() -> new SoundEvent(new ResourceLocation(
+							CakeWorld.MODID,
+							"mooncake_barrens_whisper")));
 
 	private CakeWorldSounds() {
 	}

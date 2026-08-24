@@ -104,6 +104,8 @@ public final class CakeWorldBiomes {
 			meringueIslands();
 	public static final RegistryObject<Biome> CANDYFLOSS_CLOUDBANKS =
 			candyflossCloudbanks();
+	public static final RegistryObject<Biome> MOONCAKE_BARRENS =
+			mooncakeBarrens();
 
 	private CakeWorldBiomes() {
 	}
@@ -282,6 +284,12 @@ public final class CakeWorldBiomes {
 					BiomeDictionary.Type.VOID,
 					BiomeDictionary.Type.MAGICAL,
 					BiomeDictionary.Type.RARE);
+			BiomeDictionary.addTypes(key(MOONCAKE_BARRENS),
+					BiomeDictionary.Type.END,
+					BiomeDictionary.Type.VOID,
+					BiomeDictionary.Type.DRY,
+					BiomeDictionary.Type.SPARSE,
+					BiomeDictionary.Type.WASTELAND);
 		});
 	}
 
@@ -771,6 +779,32 @@ public final class CakeWorldBiomes {
 																.CANDYFLOSS_CLOUDBANKS_FLUTTER
 																.get(),
 														0.0015D))
+										.build()));
+	}
+
+	private static RegistryObject<Biome> mooncakeBarrens() {
+		return OreSpawnBiomes.copyAndRegister(BIOMES,
+				"mooncake_barrens",
+				() -> vanilla("end_barrens"),
+				builder -> builder
+						.temperature(0.5F)
+						.downfall(0.0F)
+						.specialEffects(
+								effectsBuilder(
+										vanilla("end_barrens")
+												.getSpecialEffects())
+										.fogColor(0xD8B66A)
+										.skyColor(0x8C74A8)
+										.ambientParticle(
+												new AmbientParticleSettings(
+														ParticleTypes.FALLING_HONEY,
+														0.0012F))
+										.ambientAdditionsSound(
+												new AmbientAdditionsSettings(
+														CakeWorldSounds
+																.MOONCAKE_BARRENS_WHISPER
+																.get(),
+														0.0012D))
 										.build()));
 	}
 

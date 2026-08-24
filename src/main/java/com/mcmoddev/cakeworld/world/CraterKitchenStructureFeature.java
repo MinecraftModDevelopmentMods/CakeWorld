@@ -3,7 +3,10 @@ package com.mcmoddev.cakeworld.world;
 import java.util.Optional;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.QuartPos;
 import net.minecraft.data.worldgen.Pools;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.feature.StructureFeature;
@@ -56,6 +59,14 @@ public final class CraterKitchenStructureFeature
 								Heightmap.Types
 										.MOTION_BLOCKING_NO_LEAVES,
 								context.heightAccessor());
+				Holder<Biome> biome = context.chunkGenerator()
+						.getNoiseBiome(
+								QuartPos.fromBlock(centreX + x),
+								QuartPos.fromBlock(height),
+								QuartPos.fromBlock(centreZ + z));
+				if (!context.validBiome().test(biome)) {
+					return Optional.empty();
+				}
 				totalHeight += height;
 				minimumHeight = Math.min(
 						minimumHeight, height);

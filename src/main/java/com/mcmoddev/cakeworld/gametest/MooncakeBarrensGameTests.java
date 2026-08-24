@@ -14,13 +14,14 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.logging.LogUtils;
 import com.mcmoddev.cakeworld.CakeWorld;
-import com.mcmoddev.cakeworld.block.CandyflossCloudBlock;
-import com.mcmoddev.cakeworld.block.MeringueFoamBlock;
+import com.mcmoddev.cakeworld.block.ChocolateSpongeBlock;
+import com.mcmoddev.cakeworld.init.CakeWorldBiomes;
 import com.mcmoddev.cakeworld.init.CakeWorldBlocks;
 import com.mcmoddev.cakeworld.init.CakeWorldEntities;
 import com.mcmoddev.cakeworld.init.CakeWorldItems;
 import com.mcmoddev.cakeworld.init.CakeWorldSounds;
-import com.mcmoddev.cakeworld.world.CloudstepLookoutFeature;
+import com.mcmoddev.cakeworld.world.CraterKitchenFeature;
+import com.mcmoddev.cakeworld.world.CrumbMoonDialFeature;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -33,15 +34,13 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.effect.MobEffect;
-import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
-import net.minecraft.world.entity.decoration.ArmorStand;
+import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -72,14 +71,13 @@ import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
 import org.slf4j.Logger;
 
-/** Contract proof for the first complete BIO-END-002 ecosystem slice. */
+/** Contract proof for the complete BIO-END-003 ecosystem slice. */
 @PrefixGameTestTemplate(false)
 @GameTestHolder(CakeWorld.MODID)
-public final class CandyflossCloudbanksGameTests {
+public final class MooncakeBarrensGameTests {
 	private static final String EMPTY = "empty";
 	private static final Logger LOGGER = LogUtils.getLogger();
-	private static final ResourceLocation BIOME_ID =
-			id("candyfloss_cloudbanks");
+	private static final ResourceLocation BIOME_ID = id("mooncake_barrens");
 	private static final ResourceKey<Biome> BIOME_KEY =
 			ResourceKey.create(Registry.BIOME_REGISTRY, BIOME_ID);
 	private static final Rotation[] ROTATIONS = {
@@ -89,83 +87,82 @@ public final class CandyflossCloudbanksGameTests {
 			Rotation.COUNTERCLOCKWISE_90
 	};
 
-	private CandyflossCloudbanksGameTests() {
+	private MooncakeBarrensGameTests() {
 	}
 
-	@GameTest(template = EMPTY, batch = "bioend002")
-	public static void cloudbanksHaveFloatyEcologyFoodAndProfile(
+	@GameTest(template = EMPTY, batch = "bioend003")
+	public static void barrensHaveQuietEcologyFoodAndProfile(
 			GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		Registry<Biome> registry = level.registryAccess()
 				.registryOrThrow(Registry.BIOME_REGISTRY);
-		Biome cloudbanks = registry.get(BIOME_ID);
-		require(helper, cloudbanks != null
-						&& close(cloudbanks.getBaseTemperature(), 0.5D)
-						&& close(cloudbanks.getDownfall(), 0.0D),
-				"Candyfloss Cloudbanks lost their cool, dry End climate");
+		Biome barrens = registry.get(BIOME_ID);
+		Holder<Biome> holder = registry.getHolder(BIOME_KEY).orElseThrow();
+		require(helper, barrens != null
+						&& close(barrens.getBaseTemperature(), 0.5D)
+						&& close(barrens.getDownfall(), 0.0D),
+				"Mooncake Barrens lost their cool, dry End climate");
 		for (BiomeDictionary.Type type : List.of(
 				BiomeDictionary.Type.END,
 				BiomeDictionary.Type.VOID,
-				BiomeDictionary.Type.MAGICAL,
-				BiomeDictionary.Type.RARE)) {
+				BiomeDictionary.Type.DRY,
+				BiomeDictionary.Type.SPARSE,
+				BiomeDictionary.Type.WASTELAND)) {
 			require(helper, BiomeDictionary.hasType(BIOME_KEY, type),
-					"Candyfloss Cloudbanks lost dictionary type " + type);
+					"Mooncake Barrens lost dictionary type " + type);
 		}
 
 		AmbientAdditionsSettings ambience =
-				cloudbanks.getAmbientAdditions().orElse(null);
+				barrens.getAmbientAdditions().orElse(null);
 		AmbientParticleSettings particle =
-				cloudbanks.getAmbientParticle().orElse(null);
+				barrens.getAmbientParticle().orElse(null);
 		require(helper, ambience != null
 						&& ambience.getSoundEvent().getLocation().equals(
-								CakeWorldSounds
-										.CANDYFLOSS_CLOUDBANKS_FLUTTER.getId())
-						&& close(ambience.getTickChance(), 0.0015D)
+								CakeWorldSounds.MOONCAKE_BARRENS_WHISPER.getId())
+						&& close(ambience.getTickChance(), 0.0012D)
 						&& particle != null
-						&& particle.getOptions().getType() == ParticleTypes.CLOUD,
-				"Candyfloss Cloudbanks lost their pink-cloud atmosphere");
+						&& particle.getOptions().getType()
+								== ParticleTypes.FALLING_HONEY,
+				"Mooncake Barrens lost their sparse golden atmosphere");
 
-		MobSpawnSettings.SpawnerData llama = findSpawn(cloudbanks,
-				CakeWorldEntities.MERINGUE_LLAMA.get());
-		MobSpawnSettings.SpawnerData tallwalker = findSpawn(cloudbanks,
+		MobSpawnSettings.SpawnerData tallwalker = findSpawn(barrens,
 				CakeWorldEntities.TAFFY_TALLWALKER.get());
 		int totalSpawns = 0;
 		for (MobCategory category : MobCategory.values()) {
-			totalSpawns += cloudbanks.getMobSettings().getMobs(category)
+			totalSpawns += barrens.getMobSettings().getMobs(category)
 					.unwrap().size();
 		}
-		require(helper, llama != null
-						&& llama.getWeight().asInt() == 5
-						&& llama.minCount == 4 && llama.maxCount == 6
-						&& tallwalker != null
+		require(helper, tallwalker != null
 						&& tallwalker.getWeight().asInt() == 10
 						&& tallwalker.minCount == 4
 						&& tallwalker.maxCount == 4
-						&& findSpawn(cloudbanks, EntityType.LLAMA) == null
-						&& findSpawn(cloudbanks, EntityType.ENDERMAN) == null
-						&& totalSpawns == 2,
-				"Candyfloss Cloudbanks lost exact Llama/Tallwalker ecology: "
+						&& findSpawn(barrens, EntityType.ENDERMAN) == null
+						&& totalSpawns == 1,
+				"Mooncake Barrens lost their exact inherited Tallwalker ecology: "
 						+ totalSpawns);
 
-		require(helper, CakeWorldBlocks.CANDYFLOSS_CLOUD.get()
-				.defaultBlockState().is(BlockTags.ANIMALS_SPAWNABLE_ON),
-				"Candyfloss Cloud no longer supports Meringue Llama spawning");
-		assertCloud(helper, level);
-		assertFoodAndRecipes(helper, level);
+		TagKey<Biome> kitchenTag = CraterKitchenFeature.GENERATES_IN;
+		Holder<Biome> meringue = registry.getHolder(ResourceKey.create(
+				Registry.BIOME_REGISTRY,
+				CakeWorldBiomes.MERINGUE_ISLANDS.getId())).orElseThrow();
+		require(helper, holder.is(kitchenTag) && !meringue.is(kitchenTag),
+				"Crater Kitchen did not migrate exclusively to Mooncake Barrens");
+		assertCrust(helper, level);
+		assertMooncake(helper, level);
 		assertProvider(helper);
 		helper.succeed();
 	}
 
-	@GameTest(template = EMPTY, batch = "bioend002")
-	public static void cloudstepLookoutIsBoundedSafeAndDeterministic(
+	@GameTest(template = EMPTY, batch = "bioend003")
+	public static void crumbMoonDialIsBoundedSafeAndDeterministic(
 			GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		Holder<PlacedFeature> placed = CloudstepLookoutFeature.placedFeature();
-		Biome cloudbanks = level.registryAccess()
+		Holder<PlacedFeature> placed = CrumbMoonDialFeature.placedFeature();
+		Biome barrens = level.registryAccess()
 				.registryOrThrow(Registry.BIOME_REGISTRY).get(BIOME_ID);
 		require(helper, placed != null
 						&& placed.value().feature().value().feature()
-								== CloudstepLookoutFeature.FEATURE
+								== CrumbMoonDialFeature.FEATURE
 						&& placed.value().placement().size() == 4
 						&& placed.value().placement().get(0)
 								instanceof RarityFilter
@@ -175,11 +172,10 @@ public final class CandyflossCloudbanksGameTests {
 								instanceof HeightmapPlacement
 						&& placed.value().placement().get(3)
 								instanceof BiomeFilter
-						&& CloudstepLookoutFeature
-								.AVERAGE_CHUNKS_PER_ATTEMPT == 2
-						&& CloudstepLookoutFeature.MAX_TERRAIN_RELIEF == 6
-						&& hasPlacedFeature(cloudbanks, placed),
-				"Cloudstep Lookout lost its bounded placement chain");
+						&& CrumbMoonDialFeature.AVERAGE_CHUNKS_PER_ATTEMPT == 2
+						&& CrumbMoonDialFeature.MAX_TERRAIN_RELIEF == 6
+						&& hasPlacedFeature(barrens, placed),
+				"Crumb Moon Dial lost its bounded placement chain");
 
 		ChunkPos helperChunk = new ChunkPos(helper.absolutePos(
 				new BlockPos(8, 5, 8)));
@@ -189,48 +185,48 @@ public final class CandyflossCloudbanksGameTests {
 			prepareSite(level, centre);
 			Set<Integer> entitiesBefore = entityIds(level, centre);
 			require(helper,
-					CloudstepLookoutFeature.hasSafeFootprint(
+					CrumbMoonDialFeature.hasSafeFootprint(
 							level, centre, rotation)
-							&& CloudstepLookoutFeature.buildAt(
+							&& CrumbMoonDialFeature.buildAt(
 									level, centre, rotation),
-					"Cloudstep Lookout rejected safe rotation " + rotation);
+					"Crumb Moon Dial rejected safe rotation " + rotation);
 			PlanAudit plan = inspectPlan(level, centre, rotation);
 			require(helper, plan.complete(false, true),
-					"Cloudstep Lookout plan changed for " + rotation
+					"Crumb Moon Dial plan changed for " + rotation
 							+ ": " + plan);
 			require(helper, entitiesBefore.equals(entityIds(level, centre))
 						&& countBlockEntities(level, centre) == 0,
-					"Cloudstep Lookout created an entity or block entity");
+					"Crumb Moon Dial created an entity or block entity");
 		}
 
 		prepareSite(level, centre);
 		level.setBlock(centre.offset(3, 1, 3),
 				Blocks.WATER.defaultBlockState(), 2);
-		require(helper, !CloudstepLookoutFeature.hasSafeFootprint(
+		require(helper, !CrumbMoonDialFeature.hasSafeFootprint(
 				level, centre, Rotation.NONE),
-				"Cloudstep Lookout replaced an existing fluid");
+				"Crumb Moon Dial replaced an existing fluid");
 		prepareSite(level, centre);
 		level.setBlock(centre.offset(-3, 1, -3),
 				Blocks.CHEST.defaultBlockState(), 2);
-		require(helper, !CloudstepLookoutFeature.hasSafeFootprint(
+		require(helper, !CrumbMoonDialFeature.hasSafeFootprint(
 				level, centre, Rotation.NONE),
-				"Cloudstep Lookout replaced a block entity");
+				"Crumb Moon Dial replaced a block entity");
 		prepareSite(level, centre);
 		level.setBlock(centre.offset(1, 1, 1),
 				Blocks.BRICKS.defaultBlockState(), 2);
-		require(helper, !CloudstepLookoutFeature.hasSafeFootprint(
+		require(helper, !CrumbMoonDialFeature.hasSafeFootprint(
 				level, centre, Rotation.NONE),
-				"Cloudstep Lookout replaced an authored solid");
-		require(helper, !CloudstepLookoutFeature.fitsWithinChunk(
+				"Crumb Moon Dial replaced an authored solid");
+		require(helper, !CrumbMoonDialFeature.fitsWithinChunk(
 				new BlockPos(helperChunk.getMinBlockX(), centre.getY(),
 						helperChunk.getMinBlockZ()), Rotation.NONE, helperChunk),
-				"Cloudstep Lookout crossed its generating chunk");
+				"Crumb Moon Dial crossed its generating chunk");
 		helper.succeed();
 	}
 
-	@GameTest(template = EMPTY, batch = "bioend002world",
+	@GameTest(template = EMPTY, batch = "bioend003world",
 			timeoutTicks = 24000)
-	public static void focusedNaturalCandyflossCloudbanksAudit(
+	public static void focusedNaturalMooncakeBarrensAudit(
 			GameTestHelper helper) {
 		if (!Boolean.getBoolean("cakeworld.fixedWorldgenEvidence")) {
 			helper.succeed();
@@ -243,11 +239,11 @@ public final class CandyflossCloudbanksGameTests {
 				biome -> biome.is(BIOME_KEY), new BlockPos(0, 64, 0),
 				32768, 8);
 		require(helper, match != null,
-				"Could not locate Candyfloss Cloudbanks within 32,768 blocks");
+				"Could not locate Mooncake Barrens within 32,768 blocks");
 		ChunkPos anchor = new ChunkPos(match.getFirst());
-		FoundLookout found = findLookout(level, anchor, 16);
+		FoundDial found = findDial(level, anchor, 16);
 		require(helper, found != null,
-				"Could not find a natural Cloudstep Lookout within 1,089 chunks of "
+				"Could not find a natural Crumb Moon Dial within 1,089 chunks of "
 						+ anchor);
 		ChunkPos foundChunk = new ChunkPos(found.centre());
 		for (int chunkX = foundChunk.x - 4;
@@ -260,108 +256,87 @@ public final class CandyflossCloudbanksGameTests {
 		level.setChunkForced(foundChunk.x, foundChunk.z, true);
 		helper.runAfterDelay(40, () -> {
 			PlanAudit plan = inspectPlan(level, found.centre(), found.rotation());
-			int[] flag = CloudstepLookoutFeature.flags()[0];
-			BlockPos sentinel = CloudstepLookoutFeature.local(
-					found.centre(), found.rotation(), flag[0], 5, flag[1]);
-			boolean brickSentinel = level.getBlockState(sentinel).is(Blocks.BRICKS);
+			int[] light = CrumbMoonDialFeature.lights()[0];
+			BlockPos sentinel = CrumbMoonDialFeature.local(
+					found.centre(), found.rotation(), light[0], 4, light[1]);
+			boolean brickSentinel = level.getBlockState(sentinel)
+					.is(Blocks.BRICKS);
 			NaturalAudit audit = audit(level, foundChunk, 4, found.centre());
-			LOGGER.info("Candyfloss Cloudbanks audit: anchorChunk={}, centre={}, rotation={}, biomeSamples={}, candyflossCloud={}, meringueFoam={}, nougatRock={}, rockCandy={}, plan={}, brickSentinel={}, sentinel={}",
+			LOGGER.info("Mooncake Barrens audit: anchorChunk={}, centre={}, rotation={}, biomeSamples={}, mooncakeCrust={}, biscuitStone={}, nougatRock={}, rockCandy={}, plan={}, brickSentinel={}, sentinel={}",
 					anchor, found.centre(), found.rotation(),
-					audit.biomeSamples(), audit.candyflossCloud(),
-					audit.meringueFoam(), audit.nougatRock(),
+					audit.biomeSamples(), audit.mooncakeCrust(),
+					audit.biscuitStone(), audit.nougatRock(),
 					audit.rockCandy(), plan, brickSentinel, sentinel);
 			require(helper, audit.biomeSamples() >= 128
-							&& audit.candyflossCloud() > 0
+							&& audit.mooncakeCrust() > 0
+							&& audit.biscuitStone() > 0
 							&& audit.nougatRock() + audit.rockCandy() > 0
 							&& plan.complete(brickSentinel, false),
-					"Natural Candyfloss Cloudbanks lost terrain, geology or their complete Lookout: "
+					"Natural Mooncake Barrens lost terrain, geology or their complete Dial: "
 							+ audit + " / " + plan);
 			if (!brickSentinel) {
 				level.setBlock(sentinel, Blocks.BRICKS.defaultBlockState(), 2);
 				require(helper, level.getBlockState(sentinel).is(Blocks.BRICKS),
-						"Could not seed the Cloudstep Lookout reload sentinel");
+						"Could not seed the Crumb Moon Dial reload sentinel");
 			}
 			level.setChunkForced(foundChunk.x, foundChunk.z, false);
 			helper.succeed();
 		});
 	}
 
-	private static void assertCloud(GameTestHelper helper, ServerLevel level) {
-		CandyflossCloudBlock cloud = (CandyflossCloudBlock)
-				CakeWorldBlocks.CANDYFLOSS_CLOUD.get();
-		ArmorStand falling = new ArmorStand(level, 0.5D, 64.5D, 0.5D);
-		falling.setDeltaMovement(0.5D, -4.0D, -0.5D);
-		float health = falling.getHealth();
-		cloud.fallOn(level, cloud.defaultBlockState(), BlockPos.ZERO,
-				falling, 20.0F);
-		cloud.updateEntityAfterFallOn(level, falling);
-		cloud.stepOn(level, BlockPos.ZERO, cloud.defaultBlockState(), falling);
-		require(helper, close(falling.getHealth(), health)
-						&& close(falling.getDeltaMovement().x, 0.5D)
-						&& close(falling.getDeltaMovement().y,
-								CandyflossCloudBlock.MAXIMUM_BOUNCE)
-						&& close(falling.getDeltaMovement().z, -0.5D)
-						&& effect(falling, MobEffects.SLOW_FALLING,
-								CandyflossCloudBlock.SLOW_FALLING_TICKS)
-						&& effect(falling, MobEffects.JUMP,
-								CandyflossCloudBlock.JUMP_BOOST_TICKS),
-				"Candyfloss Cloud lost its no-damage rebound or glide effects");
+	private static void assertCrust(GameTestHelper helper, ServerLevel level) {
+		ChocolateSpongeBlock crust = (ChocolateSpongeBlock)
+				CakeWorldBlocks.MOONCAKE_CRUST.get();
+		Pig falling = EntityType.PIG.create(level);
+		require(helper, falling != null,
+				"Could not create Mooncake Crust fall fixture");
+		falling.setHealth(10.0F);
+		crust.fallOn(level, crust.defaultBlockState(), BlockPos.ZERO,
+				falling, 11.0F);
+		require(helper, close(falling.getHealth(), 8.0D),
+				"Mooncake Crust lost its forgiving quarter-fall contract");
 
 		BlockPos relative = new BlockPos(1, 2, 1);
 		BlockPos absolute = helper.absolutePos(relative);
-		helper.setBlock(relative, cloud.defaultBlockState());
+		helper.setBlock(relative, crust.defaultBlockState());
 		ServerPlayer player = new ServerPlayer(level.getServer(), level,
 				new GameProfile(UUID.fromString(
-						"1978feed-feed-4bad-babe-1978feed5002"),
-						"CakeWorldCandyflossNibbleTest"));
+						"1978feed-feed-4bad-babe-1978feed5003"),
+						"CakeWorldMooncakeNibbleTest"));
 		player.getFoodData().setFoodLevel(10);
 		player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
-		InteractionResult nibbled = cloud.use(helper.getBlockState(relative),
+		InteractionResult nibbled = crust.use(helper.getBlockState(relative),
 				level, absolute, player, InteractionHand.MAIN_HAND,
 				new BlockHitResult(Vec3.atCenterOf(absolute), Direction.UP,
 						absolute, false));
 		require(helper, nibbled.consumesAction()
 						&& player.getFoodData().getFoodLevel() == 11
 						&& helper.getBlockState(relative)
-								.getValue(MeringueFoamBlock.BITES) == 1,
-				"Candyfloss Cloud lost its visible emergency nibble contract");
+								.getValue(ChocolateSpongeBlock.BITES) == 1,
+				"Mooncake Crust lost its visible emergency nibble contract");
 	}
 
-	private static void assertFoodAndRecipes(GameTestHelper helper,
+	private static void assertMooncake(GameTestHelper helper,
 			ServerLevel level) {
-		FoodProperties food = CakeWorldItems.SKYBERRY_CANDYFLOSS.get()
-				.getFoodProperties();
-		Recipe<?> foodRecipe = level.getRecipeManager()
-				.byKey(id("skyberry_candyfloss")).orElse(null);
-		Recipe<?> blockRecipe = level.getRecipeManager()
-				.byKey(id("candyfloss_cloud")).orElse(null);
+		FoodProperties food = CakeWorldItems.MOONCAKE.get().getFoodProperties();
+		Recipe<?> recipe = level.getRecipeManager()
+				.byKey(id("mooncake")).orElse(null);
 		require(helper, food != null
-						&& food.getNutrition() == 6
-						&& close(food.getSaturationModifier(), 0.6D)
-						&& hasEffect(food, MobEffects.SLOW_FALLING, 400)
-						&& hasEffect(food, MobEffects.JUMP, 200)
-						&& foodRecipe != null
-						&& foodRecipe.getType() == RecipeType.CRAFTING
-						&& foodRecipe.getIngredients().size() == 3
-						&& ingredient(foodRecipe, new ItemStack(
-								CakeWorldBlocks.CANDYFLOSS_CLOUD.get()))
-						&& ingredient(foodRecipe, new ItemStack(
-								CakeWorldItems.GLOWING_JAM_BERRY.get()))
-						&& ingredient(foodRecipe, new ItemStack(Items.SUGAR))
-						&& foodRecipe.getResultItem().is(
-								CakeWorldItems.SKYBERRY_CANDYFLOSS.get())
-						&& foodRecipe.getResultItem().getCount() == 2
-						&& blockRecipe != null
-						&& blockRecipe.getResultItem().is(
-								CakeWorldBlocks.CANDYFLOSS_CLOUD.get().asItem())
-						&& blockRecipe.getResultItem().getCount() == 8,
-				"Skyberry Candyfloss or the low-density building recipe changed");
+						&& food.getNutrition() == 8
+						&& close(food.getSaturationModifier(), 0.8D)
+						&& recipe != null
+						&& recipe.getType() == RecipeType.CRAFTING
+						&& recipe.getIngredients().size() == 4
+						&& ingredient(recipe, new ItemStack(Items.POPPED_CHORUS_FRUIT))
+						&& recipe.getResultItem().is(CakeWorldItems.MOONCAKE.get())
+						&& recipe.getResultItem().getCount() == 2,
+				"Mooncake lost its worthwhile End-gated prepared-food contract");
 	}
 
 	private static void assertProvider(GameTestHelper helper) {
 		JsonObject provider = readProvider();
 		require(helper, provider.get("provider_revision").getAsInt() >= 42,
-				"Candyfloss Cloudbanks require provider revision 42");
+				"Mooncake Barrens require provider revision 42");
 		JsonObject firstPalette = null;
 		for (String template : List.of("cakeworld:edible_world",
 				"cakeworld:edible_world_basemetals")) {
@@ -376,16 +351,16 @@ public final class CandyflossCloudbanksGameTests {
 			JsonObject surface = placement.getAsJsonObject("surface");
 			require(helper, geomes.size() == 2
 							&& close(geomes.get("cakeworld:meringue_crust")
-									.getAsDouble(), 12.0D)
+									.getAsDouble(), 10.0D)
 							&& close(geomes.get("cakeworld:rock_candy_uplift")
-									.getAsDouble(), 4.0D)
+									.getAsDouble(), 6.0D)
 							&& "minecraft:the_end".equals(
 									end.get("dimension").getAsString())
 							&& "replace".equals(end.get("mode").getAsString())
 							&& end.getAsJsonObject("biomes").size() == 3
-							&& close(placement.get("weight").getAsDouble(), 2.0D)
+							&& close(placement.get("weight").getAsDouble(), 1.5D)
 							&& strings(placement.getAsJsonArray("similar_biomes"))
-									.equals(Set.of("minecraft:small_end_islands"))
+									.equals(Set.of("minecraft:end_barrens"))
 							&& strings(placement.getAsJsonArray(
 									"required_similar_biomes")).isEmpty()
 							&& close(placement.get("min_temperature")
@@ -396,14 +371,14 @@ public final class CandyflossCloudbanksGameTests {
 									.getAsDouble(), 0.0D)
 							&& close(placement.get("max_downfall")
 									.getAsDouble(), 1.0D)
-							&& "cakeworld:candyfloss_cloud".equals(
+							&& "cakeworld:mooncake_crust".equals(
 									surface.get("top_block").getAsString())
-							&& "cakeworld:candyfloss_cloud".equals(
+							&& "cakeworld:biscuit_stone".equals(
 									surface.get("filler_block").getAsString())
-							&& "cakeworld:meringue_foam".equals(
+							&& "cakeworld:biscuit_stone".equals(
 									surface.get("underwater_block").getAsString())
-							&& surface.get("filler_depth").getAsInt() == 4,
-					template + " lost its Candyfloss Cloudbanks contract");
+							&& surface.get("filler_depth").getAsInt() == 5,
+					template + " lost its Mooncake Barrens contract");
 			if (firstPalette == null) {
 				firstPalette = end;
 			} else {
@@ -415,14 +390,14 @@ public final class CandyflossCloudbanksGameTests {
 
 	private static void prepareSite(ServerLevel level, BlockPos centre) {
 		level.getEntitiesOfClass(Entity.class,
-				new AABB(centre.offset(-4, -1, -4), centre.offset(5, 6, 5)))
+				new AABB(centre.offset(-4, -1, -4), centre.offset(5, 7, 5)))
 				.forEach(Entity::discard);
 		for (int x = -4; x <= 4; x++) {
 			for (int z = -4; z <= 4; z++) {
 				level.setBlock(centre.offset(x, -1, z),
 						Blocks.END_STONE.defaultBlockState(), 2);
 				level.setBlock(centre.offset(x, 0, z),
-						CakeWorldBlocks.CANDYFLOSS_CLOUD.get()
+						CakeWorldBlocks.MOONCAKE_CRUST.get()
 								.defaultBlockState(), 2);
 				for (int y = 1; y <= 6; y++) {
 					level.setBlock(centre.offset(x, y, z),
@@ -435,10 +410,11 @@ public final class CandyflossCloudbanksGameTests {
 	private static PlanAudit inspectPlan(ServerLevel level, BlockPos centre,
 			Rotation rotation) {
 		int meringueBricks = 0;
-		int candyflossCloud = 0;
+		int mooncakeCrust = 0;
+		int biscuitCrumbs = 0;
+		int macaronBricks = 0;
+		int rockCandy = 0;
 		int wafer = 0;
-		int meringueFoam = 0;
-		int pillars = 0;
 		int glass = 0;
 		int endRods = 0;
 		int coolingRacks = 0;
@@ -448,18 +424,20 @@ public final class CandyflossCloudbanksGameTests {
 			for (int z = -3; z <= 3; z++) {
 				for (int y = 0; y <= 5; y++) {
 					BlockState state = level.getBlockState(
-							CloudstepLookoutFeature.local(
+							CrumbMoonDialFeature.local(
 									centre, rotation, x, y, z));
 					if (state.is(CakeWorldBlocks.MERINGUE_BRICKS.get())) {
 						meringueBricks++;
-					} else if (state.is(CakeWorldBlocks.CANDYFLOSS_CLOUD.get())) {
-						candyflossCloud++;
+					} else if (state.is(CakeWorldBlocks.MOONCAKE_CRUST.get())) {
+						mooncakeCrust++;
+					} else if (state.is(CakeWorldBlocks.BISCUIT_CRUMBS.get())) {
+						biscuitCrumbs++;
+					} else if (state.is(CakeWorldBlocks.MACARON_BRICKS.get())) {
+						macaronBricks++;
+					} else if (state.is(CakeWorldBlocks.ROCK_CANDY.get())) {
+						rockCandy++;
 					} else if (state.is(CakeWorldBlocks.WAFER_BLOCK.get())) {
 						wafer++;
-					} else if (state.is(CakeWorldBlocks.MERINGUE_FOAM.get())) {
-						meringueFoam++;
-					} else if (state.is(CakeWorldBlocks.CANDY_CANE_PILLAR.get())) {
-						pillars++;
 					} else if (state.is(CakeWorldBlocks.CANDY_GLASS.get())) {
 						glass++;
 					} else if (state.is(Blocks.END_ROD)
@@ -475,12 +453,13 @@ public final class CandyflossCloudbanksGameTests {
 				}
 			}
 		}
-		return new PlanAudit(meringueBricks, candyflossCloud, wafer,
-				meringueFoam, pillars, glass, endRods, coolingRacks,
-				mixingBowls, sentinelBricks);
+		return new PlanAudit(meringueBricks, mooncakeCrust,
+				biscuitCrumbs, macaronBricks, rockCandy, wafer,
+				glass, endRods, coolingRacks, mixingBowls,
+				sentinelBricks);
 	}
 
-	private static FoundLookout findLookout(ServerLevel level,
+	private static FoundDial findDial(ServerLevel level,
 			ChunkPos anchor, int radius) {
 		BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
 		for (int ring = 0; ring <= radius; ring++) {
@@ -507,13 +486,13 @@ public final class CandyflossCloudbanksGameTests {
 								}
 								for (Rotation rotation : ROTATIONS) {
 									BlockPos markerOffset = new BlockPos(
-											2, 2, 1).rotate(rotation);
+											2, 2, 2).rotate(rotation);
 									BlockPos centre = cursor.immutable()
 											.subtract(markerOffset);
 									PlanAudit plan = inspectPlan(level, centre,
 											rotation);
-									if (plan.identifiesLookout(false)) {
-										return new FoundLookout(centre, rotation);
+									if (plan.identifiesDial(false)) {
+										return new FoundDial(centre, rotation);
 									}
 								}
 							}
@@ -526,10 +505,10 @@ public final class CandyflossCloudbanksGameTests {
 	}
 
 	private static NaturalAudit audit(ServerLevel level, ChunkPos anchor,
-			int radius, BlockPos lookout) {
+			int radius, BlockPos dial) {
 		int biomeSamples = 0;
-		int candyflossCloud = 0;
-		int meringueFoam = 0;
+		int mooncakeCrust = 0;
+		int biscuitStone = 0;
 		int nougatRock = 0;
 		int rockCandy = 0;
 		BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
@@ -549,15 +528,14 @@ public final class CandyflossCloudbanksGameTests {
 								continue;
 							}
 							biomeSamples++;
+							if (nearDial(cursor, dial)) {
+								continue;
+							}
 							BlockState state = level.getBlockState(cursor);
-							if (state.is(CakeWorldBlocks.CANDYFLOSS_CLOUD.get())) {
-								if (!nearLookout(cursor, lookout)) {
-									candyflossCloud++;
-								}
-							} else if (state.is(CakeWorldBlocks.MERINGUE_FOAM.get())) {
-								if (!nearLookout(cursor, lookout)) {
-									meringueFoam++;
-								}
+							if (state.is(CakeWorldBlocks.MOONCAKE_CRUST.get())) {
+								mooncakeCrust++;
+							} else if (state.is(CakeWorldBlocks.BISCUIT_STONE.get())) {
+								biscuitStone++;
 							} else if (state.is(CakeWorldBlocks.NOUGAT_ROCK.get())) {
 								nougatRock++;
 							} else if (state.is(CakeWorldBlocks.ROCK_CANDY.get())) {
@@ -568,11 +546,11 @@ public final class CandyflossCloudbanksGameTests {
 				}
 			}
 		}
-		return new NaturalAudit(biomeSamples, candyflossCloud, meringueFoam,
-				nougatRock, rockCandy);
+		return new NaturalAudit(biomeSamples, mooncakeCrust,
+				biscuitStone, nougatRock, rockCandy);
 	}
 
-	private static boolean nearLookout(BlockPos position, BlockPos centre) {
+	private static boolean nearDial(BlockPos position, BlockPos centre) {
 		return Math.abs(position.getX() - centre.getX()) <= 3
 				&& position.getY() >= centre.getY()
 				&& position.getY() <= centre.getY() + 5
@@ -628,22 +606,6 @@ public final class CandyflossCloudbanksGameTests {
 				.anyMatch(ingredient -> ingredient.test(stack));
 	}
 
-	private static boolean hasEffect(FoodProperties food,
-			MobEffect effect, int duration) {
-		return food.getEffects().stream().anyMatch(entry ->
-				entry.getFirst().getEffect() == effect
-						&& entry.getFirst().getDuration() == duration);
-	}
-
-	private static boolean effect(Entity entity, MobEffect effect,
-			int duration) {
-		if (!(entity instanceof ArmorStand living)) {
-			return false;
-		}
-		return living.hasEffect(effect)
-				&& living.getEffect(effect).getDuration() == duration;
-	}
-
 	private static Set<String> strings(JsonArray array) {
 		Set<String> values = new HashSet<>();
 		array.forEach(element -> values.add(element.getAsString()));
@@ -652,7 +614,7 @@ public final class CandyflossCloudbanksGameTests {
 
 	private static JsonObject readProvider() {
 		try (InputStreamReader reader = new InputStreamReader(
-				CandyflossCloudbanksGameTests.class.getResourceAsStream(
+				MooncakeBarrensGameTests.class.getResourceAsStream(
 						"/data/cakeworld/orespawn/provider.json"),
 				StandardCharsets.UTF_8)) {
 			return JsonParser.parseReader(reader).getAsJsonObject();
@@ -678,31 +640,32 @@ public final class CandyflossCloudbanksGameTests {
 		return new ResourceLocation(CakeWorld.MODID, path);
 	}
 
-	private record PlanAudit(int meringueBricks, int candyflossCloud,
-			int wafer, int meringueFoam, int pillars, int glass,
-			int endRods, int coolingRacks, int mixingBowls,
-			int sentinelBricks) {
-		private boolean identifiesLookout(boolean exactFoundation) {
+	private record PlanAudit(int meringueBricks, int mooncakeCrust,
+			int biscuitCrumbs, int macaronBricks, int rockCandy,
+			int wafer, int glass, int endRods, int coolingRacks,
+			int mixingBowls, int sentinelBricks) {
+		private boolean identifiesDial(boolean exactFoundation) {
 			return (exactFoundation ? meringueBricks == 49
 					: meringueBricks >= 49)
-					&& candyflossCloud == 24 && wafer == 13
-					&& meringueFoam == 16 && pillars == 4 && glass == 4
+					&& mooncakeCrust == 24 && biscuitCrumbs == 9
+					&& macaronBricks == 16 && rockCandy == 9
+					&& wafer == 2 && glass == 4
 					&& endRods + sentinelBricks == 4
 					&& coolingRacks == 1 && mixingBowls == 1;
 		}
 
 		private boolean complete(boolean brickSentinel,
 				boolean exactFoundation) {
-			return identifiesLookout(exactFoundation)
+			return identifiesDial(exactFoundation)
 					&& endRods == (brickSentinel ? 3 : 4)
 					&& sentinelBricks == (brickSentinel ? 1 : 0);
 		}
 	}
 
-	private record FoundLookout(BlockPos centre, Rotation rotation) {
+	private record FoundDial(BlockPos centre, Rotation rotation) {
 	}
 
-	private record NaturalAudit(int biomeSamples, int candyflossCloud,
-			int meringueFoam, int nougatRock, int rockCandy) {
+	private record NaturalAudit(int biomeSamples, int mooncakeCrust,
+			int biscuitStone, int nougatRock, int rockCandy) {
 	}
 }

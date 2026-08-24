@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "provider_modid": "cakeworld",
-  "provider_revision": 41,
+  "provider_revision": 42,
   "templates": {
     "cakeworld:edible_world": {
       "name_key": "template.cakeworld.edible_world",
@@ -326,6 +326,10 @@
           "cakeworld:candyfloss_cloudbanks": {
             "cakeworld:meringue_crust": 12.0,
             "cakeworld:rock_candy_uplift": 4.0
+          },
+          "cakeworld:mooncake_barrens": {
+            "cakeworld:meringue_crust": 10.0,
+            "cakeworld:rock_candy_uplift": 6.0
           }
         },
         "biome_dictionary": {
@@ -1336,6 +1340,22 @@
                   "filler_block": "cakeworld:candyfloss_cloud",
                   "underwater_block": "cakeworld:meringue_foam",
                   "filler_depth": 4
+                }
+              },
+              "cakeworld:mooncake_barrens": {
+                "enabled": true,
+                "weight": 1.5,
+                "similar_biomes": ["minecraft:end_barrens"],
+                "required_similar_biomes": [],
+                "min_temperature": -2.0,
+                "max_temperature": 2.0,
+                "min_downfall": 0.0,
+                "max_downfall": 1.0,
+                "surface": {
+                  "top_block": "cakeworld:mooncake_crust",
+                  "filler_block": "cakeworld:biscuit_stone",
+                  "underwater_block": "cakeworld:biscuit_stone",
+                  "filler_depth": 5
                 }
               }
             }

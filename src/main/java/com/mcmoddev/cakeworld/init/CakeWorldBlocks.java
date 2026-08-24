@@ -102,6 +102,12 @@ public final class CakeWorldBlocks {
 							BlockBehaviour.Properties.of(Material.WOOL)
 									.strength(0.15F, 0.1F)
 									.sound(SoundType.WOOL)));
+	public static final RegistryObject<Block> MOONCAKE_CRUST =
+			block("mooncake_crust",
+					() -> new ChocolateSpongeBlock(
+							BlockBehaviour.Properties.of(Material.CLAY)
+									.strength(0.6F)
+									.sound(SoundType.SAND)));
 	public static final RegistryObject<Block> GUMMY_BLOCK = gummy("gummy_block");
 	public static final RegistryObject<Block> RASPBERRY_GUMMY_BLOCK =
 			gummy("raspberry_gummy_block");

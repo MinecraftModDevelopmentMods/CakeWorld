@@ -268,5 +268,14 @@
         "type": "event"
       }
     ]
+  },
+  "mooncake_barrens_whisper": {
+    "subtitle": "subtitles.cakeworld.mooncake_barrens.whisper",
+    "sounds": [
+      {
+        "name": "minecraft:block.amethyst_block.chime",
+        "type": "event"
+      }
+    ]
   }
 }

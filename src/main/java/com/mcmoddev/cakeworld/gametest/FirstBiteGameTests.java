@@ -41929,7 +41929,7 @@ public final class FirstBiteGameTests {
 				hasPlacedFeature(
 						level,
 						CakeWorldBiomes
-								.MERINGUE_ISLANDS
+								.MOONCAKE_BARRENS
 								.getId(),
 						GenerationStep.Decoration
 								.TOP_LAYER_MODIFICATION,
@@ -41954,12 +41954,12 @@ public final class FirstBiteGameTests {
 						&& ownTag
 						&& eligibleBiomes.equals(Set.of(
 								CakeWorldBiomes
-										.MERINGUE_ISLANDS
+										.MOONCAKE_BARRENS
 										.getId()))
 						&& CraterKitchenRepairFeature
 								.placedFeature() != null
 						&& repairInstalled,
-				"Crater Kitchen lost its dedicated structure, Meringue-Islands prototype boundary, no-spawn contract or late repair: eligible="
+				"Crater Kitchen lost its dedicated structure, Mooncake-Barrens boundary, no-spawn contract or late repair: eligible="
 						+ eligibleBiomes
 						+ ", ownTag=" + ownTag
 						+ ", repair="
@@ -42069,8 +42069,12 @@ public final class FirstBiteGameTests {
 		require(helper,
 				palette.getOrDefault(
 						CakeWorldBlocks
-								.MERINGUE_BRICKS
+								.MOONCAKE_CRUST
 								.get(), 0) >= 900
+						&& palette.getOrDefault(
+						CakeWorldBlocks
+								.MERINGUE_BRICKS
+								.get(), 0) >= 80
 						&& palette.getOrDefault(
 								CakeWorldBlocks
 										.MACARON_BRICKS
@@ -42172,7 +42176,7 @@ public final class FirstBiteGameTests {
 						&& level.getBlockState(
 								midSlope)
 								.is(CakeWorldBlocks
-										.MERINGUE_BRICKS
+										.MOONCAKE_CRUST
 										.get())
 						&& level.getBlockState(
 								midSlope.above())
