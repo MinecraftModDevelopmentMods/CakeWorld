@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "provider_modid": "cakeworld",
-  "provider_revision": 51,
+  "provider_revision": 52,
   "templates": {
     "cakeworld:edible_world": {
       "name_key": "template.cakeworld.edible_world",
@@ -1495,6 +1495,18 @@
             "edge_octaves": 8,
             "continuity": 0.0
           }
+        },
+        "worldgen_aliases": {
+          "cakeworld:burnt_sugar_rock": "cakeworld:sprinkle_cluster"
+        },
+        "flat_bedrock": {
+          "enabled": true,
+          "retrogen": false,
+          "layers": 3,
+          "dimensions": [
+            "minecraft:overworld",
+            "minecraft:the_nether"
+          ]
         },
         "biome_palettes": {
           "cakeworld:sampler_overworld_augment": {

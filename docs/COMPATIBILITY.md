@@ -122,7 +122,7 @@ update deliberately and test both behaviors.
 
 ### Current implementation
 
-Provider revision 51 builds both adventure templates from
+Provider revision 52 builds both adventure templates from
 `src/main/orespawn/provider.json` and the small
 `src/main/orespawn/basemetals-overlay.json`. The compatibility overlay keeps
 the ten currently enabled BaseMetals resources enabled, keeps Copper,

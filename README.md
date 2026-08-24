@@ -78,8 +78,9 @@ contains the normal adventure, its conditional BaseMetals overlay, and the
 optional `cakeworld:sampler_platter` developer template. The Sampler is never
 auto-selected.
 
-To run the currently implemented Sampler biome plots and its profile-wide
-extreme `sky_v1` formation comparison against a fresh fixed-seed world:
+To run the currently implemented Sampler biome plots, profile-wide extreme
+`sky_v1` formation comparison, installed-output alias and three-layer
+flat-bedrock proof against a fresh fixed-seed world:
 
 ```powershell
 ./gradlew runGameTestServer -PcakeworldSamplerRuntime=true -PcakeworldSamplerRunDirectory=run-sampler-platter-local '-PcakeworldGameTestNamespaces=cakeworld_sampler,cakeworld_formation' -PcakeworldExpectedFormationAlgorithm=sky_v1

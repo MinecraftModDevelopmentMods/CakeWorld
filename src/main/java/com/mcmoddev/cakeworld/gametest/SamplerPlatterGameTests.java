@@ -2,6 +2,7 @@ package com.mcmoddev.cakeworld.gametest;
 
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -9,6 +10,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.logging.LogUtils;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.QuartPos;
 import net.minecraft.core.Registry;
@@ -16,15 +18,20 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
 import org.slf4j.Logger;
 
+import zone.moddev.mc.orespawn.api.GeologyColumn;
 import zone.moddev.mc.orespawn.api.GeologyProfileView;
+import zone.moddev.mc.orespawn.api.GeologySampler;
 import zone.moddev.mc.orespawn.api.OreSpawnApi;
 
 /** Focused contract proof for the explicitly selected Slice 7 sampler. */
@@ -61,8 +68,8 @@ public final class SamplerPlatterGameTests {
 	public static void packagedSamplerIsOptionalAndBounded(
 			GameTestHelper helper) {
 		JsonObject provider = packagedProvider(helper);
-		require(helper, provider.get("provider_revision").getAsInt() >= 51,
-				"Sampler formation comparison requires provider revision 51");
+		require(helper, provider.get("provider_revision").getAsInt() >= 52,
+				"Sampler alias/bedrock comparison requires provider revision 52");
 		JsonObject templates = provider.getAsJsonObject("templates");
 		require(helper, templates.size() == 3,
 				"Generated provider must contain two adventures and one sampler");
@@ -82,6 +89,7 @@ public final class SamplerPlatterGameTests {
 				"Sampler foundation must not take over vanilla ores");
 		requireExtremeFormationProfile(helper,
 				profile.getAsJsonObject("formations"));
+		requireAliasAndFlatBedrockProfile(helper, profile);
 		requireSharedAdventureGeology(helper,
 				templates.getAsJsonObject("cakeworld:edible_world")
 						.getAsJsonObject("profile"), profile);
@@ -124,6 +132,7 @@ public final class SamplerPlatterGameTests {
 				.getAsJsonObject("biome_palettes");
 		requireExtremeFormationProfile(helper,
 				profile.toJson().getAsJsonObject("formations"));
+		requireAliasAndFlatBedrockProfile(helper, profile.toJson());
 		JsonObject palette = palettes
 				.getAsJsonObject("cakeworld:sampler_overworld_augment");
 		requireSamplerPalette(helper, palette);
@@ -288,6 +297,97 @@ public final class SamplerPlatterGameTests {
 				netherCounts.size(), endTotal, endMinecraft,
 				endCounts.size());
 		helper.succeed();
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 1200)
+	public static void samplerAliasAndFlatBedrockAreLive(
+			GameTestHelper helper) {
+		require(helper, Boolean.getBoolean(
+				"cakeworld.samplerPlatterEvidence"),
+				"Sampler test namespace ran without the explicit evidence switch");
+		GeologyProfileView profile = OreSpawnApi.getActiveProfile(
+				helper.getLevel().getServer()).orElseThrow();
+		require(helper, profile.selectedTemplate()
+				.filter(SAMPLER_TEMPLATE::equals).isPresent(),
+				"Alias/bedrock proof did not select the Sampler Platter");
+		requireAliasAndFlatBedrockProfile(helper, profile.toJson());
+
+		ServerLevel overworld = helper.getLevel();
+		ServerLevel nether = overworld.getServer().getLevel(Level.NETHER);
+		require(helper, nether != null,
+				"Sampler alias/bedrock proof requires the Nether");
+		GeologySampler sampler = OreSpawnApi.createSampler(nether)
+				.orElseThrow(() -> new AssertionError(
+						"OreSpawn did not expose the Nether geology sampler"));
+		int aliasedSprinkles = 0;
+		int originalBurntSugar = 0;
+		int fudgeRock = 0;
+		for (int x = -512; x <= 512; x += 32) {
+			for (int z = -512; z <= 512; z += 32) {
+				GeologyColumn column = sampler.sampleColumn(x, z, 120);
+				for (int y = 4; y <= 120; y += 4) {
+					ResourceLocation rock = Registry.BLOCK.getKey(
+							column.rockAt(y).getBlock());
+					if ("cakeworld:sprinkle_cluster".equals(
+							rock.toString())) aliasedSprinkles++;
+					if ("cakeworld:burnt_sugar_rock".equals(
+							rock.toString())) originalBurntSugar++;
+					if ("cakeworld:fudge_rock".equals(
+							rock.toString())) fudgeRock++;
+				}
+			}
+		}
+		require(helper, aliasedSprinkles > 0 && originalBurntSugar == 0
+				&& fudgeRock > 0,
+				"Sampler output alias was not baked into live Nether geology: "
+						+ aliasedSprinkles + "/" + originalBurntSugar
+						+ "/" + fudgeRock);
+
+		BedrockSurvey overworldBedrock = surveyBedrock(overworld,
+				new ChunkPos(480, 480), false);
+		BedrockSurvey netherBedrock = surveyBedrock(nether,
+				new ChunkPos(320, 320), true);
+		int[] expected = new int[] { 256, 256, 256, 0, 0 };
+		require(helper, Arrays.equals(expected, overworldBedrock.bottom)
+				&& Arrays.equals(expected, netherBedrock.bottom)
+				&& Arrays.equals(expected, netherBedrock.top),
+				"Sampler three-layer bedrock boundaries drifted: overworld="
+						+ overworldBedrock + ", nether=" + netherBedrock);
+		LOGGER.info("Sampler alias/bedrock audit: aliasedSprinkles={}, originalBurntSugar={}, fudgeRock={}, overworldBottom={}, netherBottom={}, netherTop={}",
+				aliasedSprinkles, originalBurntSugar, fudgeRock,
+				Arrays.toString(overworldBedrock.bottom),
+				Arrays.toString(netherBedrock.bottom),
+				Arrays.toString(netherBedrock.top));
+		helper.succeed();
+	}
+
+	private static BedrockSurvey surveyBedrock(ServerLevel level,
+			ChunkPos chunkPos, boolean ceiling) {
+		ChunkAccess chunk = level.getChunk(chunkPos.x, chunkPos.z);
+		int[] bottom = new int[5];
+		int[] top = new int[5];
+		BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+		for (int x = 0; x < 16; x++) {
+			for (int z = 0; z < 16; z++) {
+				for (int offset = 0; offset < 5; offset++) {
+					cursor.set(chunkPos.getBlockX(x),
+							chunk.getMinBuildHeight() + offset,
+							chunkPos.getBlockZ(z));
+					if (chunk.getBlockState(cursor).is(Blocks.BEDROCK)) {
+						bottom[offset]++;
+					}
+					if (ceiling) {
+						cursor.set(chunkPos.getBlockX(x),
+								chunk.getMaxBuildHeight() - 1 - offset,
+								chunkPos.getBlockZ(z));
+						if (chunk.getBlockState(cursor).is(Blocks.BEDROCK)) {
+							top[offset]++;
+						}
+					}
+				}
+			}
+		}
+		return new BedrockSurvey(bottom, top);
 	}
 
 	private static Map<ResourceLocation, Integer> sampleBiomes(
@@ -563,6 +663,26 @@ public final class SamplerPlatterGameTests {
 				"Sampler bounded custom formation values drifted");
 	}
 
+	private static void requireAliasAndFlatBedrockProfile(
+			GameTestHelper helper, JsonObject profile) {
+		JsonObject aliases = profile.getAsJsonObject("worldgen_aliases");
+		require(helper, aliases != null && aliases.size() == 1
+				&& "cakeworld:sprinkle_cluster".equals(aliases.get(
+						"cakeworld:burnt_sugar_rock").getAsString()),
+				"Sampler worldgen output alias drifted");
+		JsonObject bedrock = profile.getAsJsonObject("flat_bedrock");
+		require(helper, bedrock != null
+				&& bedrock.get("enabled").getAsBoolean()
+				&& !bedrock.get("retrogen").getAsBoolean()
+				&& bedrock.get("layers").getAsInt() == 3
+				&& bedrock.getAsJsonArray("dimensions").size() == 2
+				&& "minecraft:overworld".equals(bedrock
+						.getAsJsonArray("dimensions").get(0).getAsString())
+				&& "minecraft:the_nether".equals(bedrock
+						.getAsJsonArray("dimensions").get(1).getAsString()),
+				"Sampler flat-bedrock controls drifted");
+	}
+
 	private static JsonObject packagedProvider(GameTestHelper helper) {
 		try (InputStreamReader reader = new InputStreamReader(
 				SamplerPlatterGameTests.class.getResourceAsStream(
@@ -573,6 +693,22 @@ public final class SamplerPlatterGameTests {
 			helper.fail("Could not read generated CakeWorld provider: "
 					+ exception.getMessage());
 			throw new IllegalStateException(exception);
+		}
+	}
+
+	private static final class BedrockSurvey {
+		private final int[] bottom;
+		private final int[] top;
+
+		private BedrockSurvey(int[] bottom, int[] top) {
+			this.bottom = bottom;
+			this.top = top;
+		}
+
+		@Override
+		public String toString() {
+			return "BedrockSurvey[bottom=" + Arrays.toString(bottom)
+					+ ", top=" + Arrays.toString(top) + "]";
 		}
 	}
 

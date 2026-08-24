@@ -21,13 +21,14 @@ provider definition.
 ## Showcase Profiles
 
 CakeWorld defines three templates around one canonical profile model so common
-settings cannot drift. Provider revision 51 packages two adventure templates
+settings cannot drift. Provider revision 52 packages two adventure templates
 and the explicitly selected diagnostic Sampler. The build gives the Sampler an
 exact copy of the adventure's rocks, geomes, biome rules, dictionary rules, and
 terrain dimensions before applying its diagnostic-only settings. Its augment,
 namespace-filter, optional/required similarity, five-size region boundaries,
-and alternate extreme formation profile are verified; the remaining labelled
-Slice 7 plots are still wishlist work.
+alternate extreme formation profile, output alias, and three-layer flat-bedrock
+profile are verified; the remaining labelled Slice 7 plots are still wishlist
+work.
 
 The current integration target is the published Minecraft 1.18.2 OreSpawn
 `4.0.6.118021` release from CurseForge project `245586`, file `8688546`.
@@ -38,7 +39,7 @@ The pinned raw artifact has SHA-256
 |---|---|---|---|
 | OS-001 | `cakeworld:edible_world` | Automatically selected for a fresh world when CakeWorld is installed and no higher-priority compatible template or explicit global default wins. | The normal adventure. Uses only features that improve the playable total conversion. |
 | OS-002 | `cakeworld:edible_world_basemetals` | Higher priority than `edible_world`, requires both `cakeworld` and `basemetals`, and is eligible only for fresh-world automatic selection. | The same adventure with CakeWorld counterparts for every supported BaseMetals resource. |
-| OS-003 | `cakeworld:sampler_platter` | Never auto-selected; chosen explicitly by developers or pack makers. | **In progress:** revision 51 retains all eight verified biome plots and adds the profile-wide `sky_v1` extreme-formation comparison while inheriting the adventure geology exactly at build time. Fresh and same-save reload retained the established three-realm biome results and the exact `36,515/1,176/7/14/2,804,912,711,855,593,311` vertical transitions/horizontal transitions/distinct rocks/distinct geomes/signature formation result. Aliases, retrogen, flat bedrock, remaining intrusive test rules, and compact hands-on inspection remain later plots. |
+| OS-003 | `cakeworld:sampler_platter` | Never auto-selected; chosen explicitly by developers or pack makers. | **In progress:** revision 52 retains all eight verified biome plots, the profile-wide `sky_v1` extreme-formation comparison, an installed-output alias and three-layer flat bedrock while inheriting the adventure geology definitions exactly at build time. Fresh and same-save reload retained the established biome/formation results, baked 512 aliased Sprinkle samples with zero original Burnt-Sugar samples, and retained exact `256/256/256/0/0` floor/ceiling layer counts. Retrogen, remaining intrusive test rules, and compact hands-on inspection remain later plots. |
 
 An automatically selected template applies only during fresh-world creation.
 It never silently rewrites an existing world's self-contained profile.
@@ -207,10 +208,10 @@ they are not reclassified as spring evidence.
 
 | ID | OreSpawn capability | CakeWorld example | Placement | Slice | Verification expectation |
 |---|---|---|---|---|---|
-| OS-098 | Aliases and renamed IDs | Include a controlled old-to-new CakeWorld rule-ID migration. | Sampler | 7 | Old snapshot resolves to the new stable owner without duplicating generation. |
+| OS-098 | Aliases and renamed IDs | **Verified:** map the still-installed diagnostic source output `cakeworld:burnt_sugar_rock` to `cakeworld:sprinkle_cluster` only in the explicitly selected Sampler. The adventure definitions remain unchanged. | Sampler | 7 | Packaged and active profiles retain the one-to-one alias. Public Nether sampling on fresh/reload returns exactly 512 Sprinkle cells, zero original Burnt-Sugar cells and 1,057 independent Fudge-Rock cells, proving bake-time substitution without a duplicate output. |
 | OS-099 | Retrogen | Add one brightly identifiable diagnostic sprinkle rule to already-generated test chunks. | Sampler | 7 | Copied test world changes only eligible old chunks/rule IDs; normal adventure keeps retrogen off by default. |
-| OS-100 | Flat bedrock | Use a labelled sampler quadrant/dimension to prove floor and ceiling controls. | Sampler | 7 | Boundary scan confirms the configured flat layers and no adventure profile changes. |
-| OS-101 | Extreme formations | **In progress:** revision 51 provides the maximum-style bounded custom case beside the separately verified normal adventure profile. A minimum-style profile and hands-on visual section remain. | Sampler | 7 | The current same-seed API survey distinguishes normal and extreme signatures and both fresh generation runs complete safely; completion still requires the minimum case and visual inspection. |
+| OS-100 | Flat bedrock | **Verified:** enable exactly three layers in the Sampler Overworld and Nether, with bedrock retrogen deliberately off. | Sampler | 7 | Fresh/reload scans of one generated Overworld chunk and one generated Nether chunk each return exact bottom `256/256/256/0/0` counts; the Nether ceiling returns the same boundary. A separate ordinary fresh world still selects the unchanged adventure. |
+| OS-101 | Extreme formations | **In progress:** revision 52 retains the maximum-style bounded custom case beside the separately verified normal adventure profile. A minimum-style profile and hands-on visual section remain. | Sampler | 7 | The current same-seed API survey distinguishes normal and extreme signatures and both fresh generation runs complete safely; completion still requires the minimum case and visual inspection. |
 
 ## Main-World Feature Map
 
@@ -241,7 +242,7 @@ primarily useful to OreSpawn developers belong in `sampler_platter`.
 | OS-TEST-001 | CakeWorld + supported OreSpawn only | Dependency load, packaged provider bake, automatic `edible_world` selection, fresh-world generation, and no BaseMetals registry warnings. |
 | OS-TEST-002 | CakeWorld + OreSpawn + BaseMetals | Automatic `edible_world_basemetals` selection, all thirteen compatibility blocks present, enabled source ores converted once, and BaseMetals recipes/tags functional. |
 | OS-TEST-003 | CakeWorld absent | OreSpawn and BaseMetals retain their independent behavior; no CakeWorld template or blocks are referenced. |
-| OS-TEST-004 | `sampler_platter` explicit selection | **In progress:** packaged and active-profile tests prove explicit selection, non-automatic metadata, canonical shared geology, custom `sky_v1` formations, augment, namespace filters, optional/required similarity, exact three-realm fresh/reload distributions, and independent automatic selection of `edible_world`. Completion still requires every remaining labelled diagnostic plot. |
+| OS-TEST-004 | `sampler_platter` explicit selection | **In progress:** packaged and active-profile tests prove explicit selection, non-automatic metadata, canonical shared geology definitions, custom `sky_v1` formations, augment, namespace filters, optional/required similarity, output aliases, flat bedrock, exact three-realm fresh/reload distributions, and independent automatic selection of `edible_world`. Completion still requires every remaining labelled diagnostic plot. |
 | OS-TEST-005 | Dedicated multiplayer server | Two players keep separate Cookbook discoveries; chunks, profiles, entities, and effects synchronize; reconnect preserves state. |
 
 ### Required evidence classes

@@ -82,7 +82,7 @@ saved profile is never silently rewritten.
 `cakeworld:edible_world_basemetals` is generated from that same canonical
 profile with the optional thirteen-resource compatibility overlay. The third
 template, `cakeworld:sampler_platter`, is deliberately non-automatic and must
-be selected explicitly. Provider revision 51 retains its first bounded
+be selected explicitly. Provider revision 52 retains its first bounded
 diagnostic plot—Candy Plains augmenting the delegated vanilla source with
 `minecraft_only` scope, tiny regions, partial coverage, and a positive
 fallback weight—and adds two namespace-filter plots. Five labelled Overworld
@@ -102,9 +102,12 @@ adventure's rocks, geomes, biome rules, dictionary rules and terrain dimensions
 exactly. It then selects the profile-wide legacy `sky_v1` algorithm with
 deliberately extreme but schema-bounded custom values. This makes the
 fixed-seed comparison meaningful while leaving both automatically selected
-adventures on average `stable_layers` settings.
+adventures on average `stable_layers` settings. The same explicit Sampler maps
+its installed Burnt-Sugar geology output to Sprinkle Cluster at bake time and
+enables exactly three flat bedrock layers in the Overworld and Nether. Its
+bedrock retrogen switch remains off.
 
-Run its isolated three-test fresh-world proof, including the formation survey,
+Run its isolated four-test fresh-world proof, including the formation survey,
 with:
 
 ```powershell
@@ -220,6 +223,7 @@ remain ignored.
   `minecraft_only` declaration, `selected_namespaces`, namespace include and
   exclude lists, optional/required similar-biome behavior, and all five live
   region settings with fixed 128/256/512/1,024/2,048-block boundary evidence.
-  An unrelated mod-biome pass-through fixture, extreme formations, aliases,
-  retrogen, flat bedrock, and the remaining labelled plots are still Slice 7
-  work.
+  Its extreme formation, registered-output alias and three-layer flat-bedrock
+  cases are also automated. An unrelated mod-biome pass-through fixture,
+  retrogen, the minimum-style formation case and the remaining labelled plots
+  are still Slice 7 work.
