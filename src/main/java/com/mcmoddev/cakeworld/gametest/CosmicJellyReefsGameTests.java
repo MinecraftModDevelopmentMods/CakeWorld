@@ -5,22 +5,22 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.logging.LogUtils;
 import com.mcmoddev.cakeworld.CakeWorld;
-import com.mcmoddev.cakeworld.block.ChocolateSpongeBlock;
+import com.mcmoddev.cakeworld.block.GummyBlock;
+import com.mcmoddev.cakeworld.entity.GlowJelly;
 import com.mcmoddev.cakeworld.init.CakeWorldBiomes;
 import com.mcmoddev.cakeworld.init.CakeWorldBlocks;
 import com.mcmoddev.cakeworld.init.CakeWorldEntities;
+import com.mcmoddev.cakeworld.init.CakeWorldFluids;
 import com.mcmoddev.cakeworld.init.CakeWorldItems;
 import com.mcmoddev.cakeworld.init.CakeWorldSounds;
-import com.mcmoddev.cakeworld.world.MacaronWayfinderFeature;
+import com.mcmoddev.cakeworld.world.CosmicJellyNurseryFeature;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -31,10 +31,6 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.tags.TagKey;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -56,28 +52,27 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.GenerationStep;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.placement.BiomeFilter;
 import net.minecraft.world.level.levelgen.placement.HeightmapPlacement;
 import net.minecraft.world.level.levelgen.placement.InSquarePlacement;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.minecraft.world.level.levelgen.placement.RarityFilter;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.BiomeDictionary;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
 import org.slf4j.Logger;
 
-/** Contract proof for the complete BIO-END-005 ecosystem slice. */
+/** Contract proof for the complete BIO-END-006 ecosystem slice. */
 @PrefixGameTestTemplate(false)
 @GameTestHolder(CakeWorld.MODID)
-public final class MacaronArchipelagoGameTests {
+public final class CosmicJellyReefsGameTests {
 	private static final String EMPTY = "empty";
 	private static final Logger LOGGER = LogUtils.getLogger();
 	private static final ResourceLocation BIOME_ID = id(
-			"macaron_archipelago");
+			"cosmic_jelly_reefs");
 	private static final ResourceKey<Biome> BIOME_KEY =
 			ResourceKey.create(Registry.BIOME_REGISTRY, BIOME_ID);
 	private static final Rotation[] ROTATIONS = {
@@ -87,11 +82,11 @@ public final class MacaronArchipelagoGameTests {
 			Rotation.COUNTERCLOCKWISE_90
 	};
 
-	private MacaronArchipelagoGameTests() {
+	private CosmicJellyReefsGameTests() {
 	}
 
-	@GameTest(template = EMPTY, batch = "bioend005")
-	public static void archipelagoHasLayeredEcologyFoodAndProfile(
+	@GameTest(template = EMPTY, batch = "bioend006")
+	public static void reefsHaveBioluminescentEcologyFoodAndProfile(
 			GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		Registry<Biome> registry = level.registryAccess()
@@ -101,14 +96,14 @@ public final class MacaronArchipelagoGameTests {
 		require(helper, archipelago != null
 						&& close(archipelago.getBaseTemperature(), 0.5D)
 						&& close(archipelago.getDownfall(), 0.0D),
-				"Macaron Archipelago lost its cool, dry End climate");
+				"Cosmic Jelly Reefs lost its cool, dry End climate");
 		for (BiomeDictionary.Type type : List.of(
 				BiomeDictionary.Type.END,
 				BiomeDictionary.Type.VOID,
 				BiomeDictionary.Type.MAGICAL,
 				BiomeDictionary.Type.RARE)) {
 			require(helper, BiomeDictionary.hasType(BIOME_KEY, type),
-					"Macaron Archipelago lost dictionary type " + type);
+					"Cosmic Jelly Reefs lost dictionary type " + type);
 		}
 
 		AmbientAdditionsSettings ambience =
@@ -117,18 +112,20 @@ public final class MacaronArchipelagoGameTests {
 				archipelago.getAmbientParticle().orElse(null);
 		require(helper, ambience != null
 						&& ambience.getSoundEvent().getLocation().equals(
-								CakeWorldSounds.MACARON_ARCHIPELAGO_CHIME
+								CakeWorldSounds.COSMIC_JELLY_REEF_PULSE
 										.getId())
 						&& close(ambience.getTickChance(), 0.0012D)
 						&& particle != null
 						&& particle.getOptions().getType()
-								== ParticleTypes.WAX_ON,
-				"Macaron Archipelago lost its pastel shell atmosphere");
+								== ParticleTypes.GLOW,
+				"Cosmic Jelly Reefs lost its luminous void atmosphere");
 
 		MobSpawnSettings.SpawnerData tallwalker = findSpawn(archipelago,
 				CakeWorldEntities.TAFFY_TALLWALKER.get());
-		MobSpawnSettings.SpawnerData llama = findSpawn(archipelago,
-				CakeWorldEntities.MERINGUE_LLAMA.get());
+		MobSpawnSettings.SpawnerData mite = findSpawn(archipelago,
+				CakeWorldEntities.SUGAR_MITE.get());
+		MobSpawnSettings.SpawnerData glowJelly = findSpawn(archipelago,
+				CakeWorldEntities.GLOW_JELLY.get());
 		int totalSpawns = 0;
 		for (MobCategory category : MobCategory.values()) {
 			totalSpawns += archipelago.getMobSettings().getMobs(category)
@@ -138,38 +135,36 @@ public final class MacaronArchipelagoGameTests {
 						&& tallwalker.getWeight().asInt() == 10
 						&& tallwalker.minCount == 4
 						&& tallwalker.maxCount == 4
-						&& llama != null
-						&& llama.getWeight().asInt() == 4
-						&& llama.minCount == 2
-						&& llama.maxCount == 4
+						&& mite != null
+						&& mite.getWeight().asInt() == 5
+						&& mite.minCount == 1
+						&& mite.maxCount == 3
+						&& glowJelly != null
+						&& glowJelly.getWeight().asInt() == 4
+						&& glowJelly.minCount == 2
+						&& glowJelly.maxCount == 4
 						&& findSpawn(archipelago, EntityType.ENDERMAN) == null
-						&& totalSpawns == 2,
-				"Macaron Archipelago lost its exact Tallwalker/Llama ecology: "
+						&& findSpawn(archipelago, EntityType.ENDERMITE) == null
+						&& findSpawn(archipelago, EntityType.GLOW_SQUID) == null
+						&& GlowJelly.isCosmicReef(holder)
+						&& totalSpawns == 3,
+				"Cosmic Jelly Reefs lost its exact Tallwalker/Mite/Glow-Jelly ecology: "
 						+ totalSpawns);
-
-		for (String tag : List.of(
-				"minecraft:has_structure/end_city",
-				"cakeworld:has_structure/macaron_citadel")) {
-			require(helper, holder.is(TagKey.create(Registry.BIOME_REGISTRY,
-					new ResourceLocation(tag))),
-					"Macaron Archipelago lost structure progression role "
-							+ tag);
-		}
-		assertShellAndFood(helper, level);
+		assertJellyAndFood(helper, level);
 		assertProvider(helper);
 		helper.succeed();
 	}
 
-	@GameTest(template = EMPTY, batch = "bioend005")
-	public static void wayfinderIsBoundedSafeAndCardinal(
+	@GameTest(template = EMPTY, batch = "bioend006")
+	public static void nurseryIsBoundedSafeAndSealed(
 			GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		Holder<PlacedFeature> placed = MacaronWayfinderFeature.placedFeature();
+		Holder<PlacedFeature> placed = CosmicJellyNurseryFeature.placedFeature();
 		Biome archipelago = level.registryAccess()
 				.registryOrThrow(Registry.BIOME_REGISTRY).get(BIOME_ID);
 		require(helper, placed != null
 						&& placed.value().feature().value().feature()
-								== MacaronWayfinderFeature.FEATURE
+								== CosmicJellyNurseryFeature.FEATURE
 						&& placed.value().placement().size() == 4
 						&& placed.value().placement().get(0)
 								instanceof RarityFilter
@@ -179,11 +174,11 @@ public final class MacaronArchipelagoGameTests {
 								instanceof HeightmapPlacement
 						&& placed.value().placement().get(3)
 								instanceof BiomeFilter
-						&& MacaronWayfinderFeature
+						&& CosmicJellyNurseryFeature
 								.AVERAGE_CHUNKS_PER_ATTEMPT == 2
-						&& MacaronWayfinderFeature.MAX_TERRAIN_RELIEF == 6
+						&& CosmicJellyNurseryFeature.MAX_TERRAIN_RELIEF == 6
 						&& hasPlacedFeature(archipelago, placed),
-				"Macaron Wayfinder lost its bounded placement chain");
+				"Cosmic Jelly Nursery lost its bounded placement chain");
 
 		ChunkPos helperChunk = new ChunkPos(helper.absolutePos(
 				new BlockPos(8, 5, 8)));
@@ -193,48 +188,48 @@ public final class MacaronArchipelagoGameTests {
 			prepareSite(level, centre);
 			Set<Integer> entitiesBefore = entityIds(level, centre);
 			require(helper,
-					MacaronWayfinderFeature.hasSafeFootprint(
+					CosmicJellyNurseryFeature.hasSafeFootprint(
 							level, centre, rotation)
-							&& MacaronWayfinderFeature.buildAt(
+							&& CosmicJellyNurseryFeature.buildAt(
 									level, centre, rotation),
-					"Macaron Wayfinder rejected safe rotation " + rotation);
+					"Cosmic Jelly Nursery rejected safe rotation " + rotation);
 			PlanAudit plan = inspectPlan(level, centre, rotation);
 			require(helper, plan.complete(false),
-					"Macaron Wayfinder plan changed for " + rotation
+					"Cosmic Jelly Nursery plan changed for " + rotation
 							+ ": " + plan);
 			require(helper, entitiesBefore.equals(entityIds(level, centre))
 						&& countBlockEntities(level, centre) == 0,
-					"Macaron Wayfinder created an entity or block entity");
+					"Cosmic Jelly Nursery created an entity or block entity");
 		}
 
 		prepareSite(level, centre);
 		level.setBlock(centre.offset(3, 1, 3),
 				Blocks.WATER.defaultBlockState(), 2);
-		require(helper, !MacaronWayfinderFeature.hasSafeFootprint(
+		require(helper, !CosmicJellyNurseryFeature.hasSafeFootprint(
 				level, centre, Rotation.NONE),
-				"Macaron Wayfinder replaced an existing fluid");
+				"Cosmic Jelly Nursery replaced an existing fluid");
 		prepareSite(level, centre);
 		level.setBlock(centre.offset(-3, 1, -3),
 				Blocks.CHEST.defaultBlockState(), 2);
-		require(helper, !MacaronWayfinderFeature.hasSafeFootprint(
+		require(helper, !CosmicJellyNurseryFeature.hasSafeFootprint(
 				level, centre, Rotation.NONE),
-				"Macaron Wayfinder replaced a block entity");
+				"Cosmic Jelly Nursery replaced a block entity");
 		prepareSite(level, centre);
 		level.setBlock(centre.offset(1, 1, 1),
 				Blocks.BRICKS.defaultBlockState(), 2);
-		require(helper, !MacaronWayfinderFeature.hasSafeFootprint(
+		require(helper, !CosmicJellyNurseryFeature.hasSafeFootprint(
 				level, centre, Rotation.NONE),
-				"Macaron Wayfinder replaced an authored solid");
-		require(helper, !MacaronWayfinderFeature.fitsWithinChunk(
+				"Cosmic Jelly Nursery replaced an authored solid");
+		require(helper, !CosmicJellyNurseryFeature.fitsWithinChunk(
 				new BlockPos(helperChunk.getMinBlockX(), centre.getY(),
 						helperChunk.getMinBlockZ()), Rotation.NONE, helperChunk),
-				"Macaron Wayfinder crossed its generating chunk");
+				"Cosmic Jelly Nursery crossed its generating chunk");
 		helper.succeed();
 	}
 
-	@GameTest(template = EMPTY, batch = "bioend005world",
+	@GameTest(template = EMPTY, batch = "bioend006world",
 			timeoutTicks = 24000)
-	public static void focusedNaturalMacaronArchipelagoAudit(
+	public static void focusedNaturalCosmicJellyReefsAudit(
 			GameTestHelper helper) {
 		if (!Boolean.getBoolean("cakeworld.fixedWorldgenEvidence")) {
 			helper.succeed();
@@ -247,11 +242,11 @@ public final class MacaronArchipelagoGameTests {
 				biome -> biome.is(BIOME_KEY), new BlockPos(0, 64, 0),
 				32768, 8);
 		require(helper, match != null,
-				"Could not locate Macaron Archipelago within 32,768 blocks");
+				"Could not locate Cosmic Jelly Reefs within 32,768 blocks");
 		ChunkPos anchor = new ChunkPos(match.getFirst());
-		FoundWayfinder found = findWayfinder(level, anchor, 16);
+		FoundNursery found = findNursery(level, anchor, 16);
 		require(helper, found != null,
-				"Could not find a natural Macaron Wayfinder within 1,089 chunks of "
+				"Could not find a natural Cosmic Jelly Nursery within 1,089 chunks of "
 						+ anchor);
 		ChunkPos foundChunk = new ChunkPos(found.centre());
 		for (int chunkX = foundChunk.x - 4;
@@ -264,107 +259,95 @@ public final class MacaronArchipelagoGameTests {
 		level.setChunkForced(foundChunk.x, foundChunk.z, true);
 		helper.runAfterDelay(40, () -> {
 			PlanAudit plan = inspectPlan(level, found.centre(), found.rotation());
-			int[] lamp = MacaronWayfinderFeature.cornerLamps()[0];
-			BlockPos sentinel = MacaronWayfinderFeature.local(
-					found.centre(), found.rotation(), lamp[0], 4, lamp[1]);
+			BlockPos sentinel = CosmicJellyNurseryFeature.local(
+					found.centre(), found.rotation(), -2, 5, -2);
 			boolean brickSentinel = level.getBlockState(sentinel)
 					.is(Blocks.BRICKS);
 			NaturalAudit audit = audit(level, foundChunk, 4, found.centre());
-			LOGGER.info("Macaron Archipelago audit: anchorChunk={}, centre={}, rotation={}, biomeSamples={}, macaronShell={}, marshmallow={}, rockCandy={}, nougatRock={}, plan={}, brickSentinel={}, sentinel={}",
+			LOGGER.info("Cosmic Jelly Reefs audit: anchorChunk={}, centre={}, rotation={}, biomeSamples={}, cosmicJelly={}, surfaceJelly={}, biscuitStone={}, waferRock={}, rockCandy={}, nougatRock={}, plan={}, brickSentinel={}, sentinel={}",
 					anchor, found.centre(), found.rotation(),
-					audit.biomeSamples(), audit.macaronShell(),
-					audit.marshmallow(), audit.rockCandy(),
-					audit.nougatRock(), plan, brickSentinel, sentinel);
+					audit.biomeSamples(), audit.cosmicJelly(),
+					audit.surfaceJelly(), audit.biscuitStone(),
+					audit.waferRock(), audit.rockCandy(),
+					audit.nougatRock(), plan,
+					brickSentinel, sentinel);
 			require(helper, audit.biomeSamples() >= 128
-							&& audit.macaronShell() > 0
-							&& audit.marshmallow() > 0
-							&& audit.rockCandy() + audit.nougatRock() > 0
+							&& audit.cosmicJelly() > 0
+							&& audit.surfaceJelly() > 0
+							&& audit.biscuitStone() + audit.waferRock()
+									+ audit.rockCandy()
+									+ audit.nougatRock() > 0
 							&& plan.complete(brickSentinel),
-					"Natural Macaron Archipelago lost layered terrain, geology or its complete Wayfinder: "
+					"Natural Cosmic Jelly Reefs lost layered terrain, geology or its complete Nursery: "
 							+ audit + " / " + plan);
 			if (!brickSentinel) {
 				level.setBlock(sentinel, Blocks.BRICKS.defaultBlockState(), 2);
 				require(helper, level.getBlockState(sentinel).is(Blocks.BRICKS),
-						"Could not seed the Wayfinder reload sentinel");
+						"Could not seed the Nursery reload sentinel");
 			}
 			level.setChunkForced(foundChunk.x, foundChunk.z, false);
 			helper.succeed();
 		});
 	}
 
-	private static void assertShellAndFood(
+	private static void assertJellyAndFood(
 			GameTestHelper helper, ServerLevel level) {
-		ChocolateSpongeBlock shell = (ChocolateSpongeBlock)
-				CakeWorldBlocks.MACARON_SHELL.get();
+		GummyBlock jelly = (GummyBlock)
+				CakeWorldBlocks.COSMIC_JELLY.get();
 		Pig falling = EntityType.PIG.create(level);
 		require(helper, falling != null,
-				"Could not create Macaron Shell fall fixture");
+				"Could not create Cosmic Jelly fall fixture");
 		falling.setHealth(10.0F);
-		shell.fallOn(level, shell.defaultBlockState(), BlockPos.ZERO,
+		falling.setDeltaMovement(0.0D, -1.0D, 0.0D);
+		jelly.fallOn(level, jelly.defaultBlockState(), BlockPos.ZERO,
 				falling, 11.0F);
-		require(helper, close(falling.getHealth(), 8.0D),
-				"Macaron Shell lost its forgiving quarter-fall contract");
+		jelly.updateEntityAfterFallOn(level, falling);
+		require(helper, close(falling.getHealth(), 10.0D)
+						&& close(falling.getDeltaMovement().y, 0.9D)
+						&& jelly.defaultBlockState().getLightEmission() == 10,
+				"Cosmic Jelly lost its luminous elastic safety contract");
 
-		BlockPos relative = new BlockPos(1, 2, 1);
-		BlockPos absolute = helper.absolutePos(relative);
-		helper.setBlock(relative, shell.defaultBlockState());
-		ServerPlayer player = new ServerPlayer(level.getServer(), level,
-				new GameProfile(UUID.fromString(
-						"1978feed-feed-4bad-babe-1978feed5005"),
-						"CakeWorldMacaronNibbleTest"));
-		player.getFoodData().setFoodLevel(10);
-		player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
-		InteractionResult nibbled = shell.use(helper.getBlockState(relative),
-				level, absolute, player, InteractionHand.MAIN_HAND,
-				new BlockHitResult(Vec3.atCenterOf(absolute),
-						net.minecraft.core.Direction.UP, absolute, false));
-		require(helper, nibbled.consumesAction()
-						&& player.getFoodData().getFoodLevel() == 11
-						&& helper.getBlockState(relative)
-								.getValue(ChocolateSpongeBlock.BITES) == 1,
-				"Macaron Shell lost its visible emergency nibble contract");
-
-		FoodProperties raw = CakeWorldItems.MACARON_SHELL_PIECE.get()
+		FoodProperties raw = CakeWorldItems.STAR_JELLY_DROPLET.get()
 				.getFoodProperties();
-		FoodProperties prepared = CakeWorldItems.RAINBOW_SKY_MACARON.get()
+		FoodProperties prepared = CakeWorldItems.NEBULA_JELLY_CUP.get()
 				.getFoodProperties();
 		Recipe<?> pieces = level.getRecipeManager()
-				.byKey(id("macaron_shell_piece")).orElse(null);
+				.byKey(id("star_jelly_droplet")).orElse(null);
 		Recipe<?> rainbow = level.getRecipeManager()
-				.byKey(id("rainbow_sky_macaron")).orElse(null);
+				.byKey(id("nebula_jelly_cup")).orElse(null);
 		require(helper, raw != null && raw.getNutrition() == 1
 						&& close(raw.getSaturationModifier(), 0.1D)
-						&& prepared != null && prepared.getNutrition() == 7
-						&& close(prepared.getSaturationModifier(), 0.75D)
+						&& prepared != null && prepared.getNutrition() == 8
+						&& close(prepared.getSaturationModifier(), 0.8D)
+						&& hasEffect(prepared, MobEffects.NIGHT_VISION, 400)
 						&& hasEffect(prepared, MobEffects.SLOW_FALLING, 300)
-						&& hasEffect(prepared, MobEffects.ABSORPTION, 160)
 						&& pieces != null
 						&& pieces.getType() == RecipeType.CRAFTING
 						&& pieces.getIngredients().size() == 1
 						&& ingredient(pieces, new ItemStack(
-								CakeWorldBlocks.MACARON_SHELL.get()))
+								CakeWorldBlocks.COSMIC_JELLY.get()))
 						&& pieces.getResultItem().is(
-								CakeWorldItems.MACARON_SHELL_PIECE.get())
+								CakeWorldItems.STAR_JELLY_DROPLET.get())
 						&& pieces.getResultItem().getCount() == 4
 						&& rainbow != null
 						&& rainbow.getType() == RecipeType.CRAFTING
 						&& rainbow.getIngredients().size() == 4
 						&& ingredientCount(rainbow, new ItemStack(
-								CakeWorldItems.MACARON_SHELL_PIECE.get())) == 2
+								CakeWorldItems.STAR_JELLY_DROPLET.get())) == 2
 						&& ingredient(rainbow, new ItemStack(
 								CakeWorldItems.GLOWING_JAM_BERRY.get()))
 						&& ingredient(rainbow, new ItemStack(
-								CakeWorldItems.ICING_SPOONFUL.get()))
+								CakeWorldItems.STAR_SUGAR_CRYSTALS.get()))
 						&& rainbow.getResultItem().is(
-								CakeWorldItems.RAINBOW_SKY_MACARON.get())
+								CakeWorldItems.NEBULA_JELLY_CUP.get())
 						&& rainbow.getResultItem().getCount() == 2,
-				"Macaron Shell or Rainbow Sky Macaron lost its raw/prepared contract");
+				"Cosmic Jelly or Nebula Jelly Cup lost its raw/prepared contract");
 	}
 
 	private static void assertProvider(GameTestHelper helper) {
 		JsonObject provider = readProvider();
-		require(helper, provider.get("provider_revision").getAsInt() >= 44,
-				"Macaron Archipelago requires provider revision 44");
+		require(helper, provider.get("provider_revision").getAsInt() >= 45,
+				"Cosmic Jelly Reefs requires provider revision 45");
 		JsonObject templates = provider.getAsJsonObject("templates");
 		JsonObject normal = templates.getAsJsonObject("cakeworld:edible_world")
 				.getAsJsonObject("profile");
@@ -384,12 +367,12 @@ public final class MacaronArchipelagoGameTests {
 						&& normalEnd.getAsJsonObject("biomes").size() == 6
 						&& geomes.size() == 2
 						&& close(geomes.get("cakeworld:meringue_crust")
-								.getAsDouble(), 6.0D)
+								.getAsDouble(), 4.0D)
 						&& close(geomes.get("cakeworld:rock_candy_uplift")
-								.getAsDouble(), 14.0D)
-						&& close(placement.get("weight").getAsDouble(), 0.75D)
+								.getAsDouble(), 16.0D)
+						&& close(placement.get("weight").getAsDouble(), 0.6D)
 						&& strings(placement.getAsJsonArray("similar_biomes"))
-								.equals(Set.of("minecraft:end_highlands"))
+								.equals(Set.of("minecraft:end_midlands"))
 						&& strings(placement.getAsJsonArray(
 								"required_similar_biomes")).isEmpty()
 						&& close(placement.get("min_temperature")
@@ -400,14 +383,14 @@ public final class MacaronArchipelagoGameTests {
 								.getAsDouble(), 0.0D)
 						&& close(placement.get("max_downfall")
 								.getAsDouble(), 1.0D)
-						&& "cakeworld:macaron_shell".equals(
+						&& "cakeworld:cosmic_jelly".equals(
 								surface.get("top_block").getAsString())
-						&& "cakeworld:marshmallow".equals(
-								surface.get("filler_block").getAsString())
 						&& "cakeworld:rock_candy".equals(
+								surface.get("filler_block").getAsString())
+						&& "cakeworld:candy_glass".equals(
 								surface.get("underwater_block").getAsString())
-						&& surface.get("filler_depth").getAsInt() == 3,
-				"Adventure profiles lost their Macaron Archipelago contract");
+						&& surface.get("filler_depth").getAsInt() == 4,
+				"Adventure profiles lost their Cosmic Jelly Reefs contract");
 	}
 
 	private static void prepareSite(ServerLevel level, BlockPos centre) {
@@ -419,7 +402,7 @@ public final class MacaronArchipelagoGameTests {
 				level.setBlock(centre.offset(x, -1, z),
 						Blocks.END_STONE.defaultBlockState(), 2);
 				level.setBlock(centre.offset(x, 0, z),
-						CakeWorldBlocks.MACARON_SHELL.get()
+						CakeWorldBlocks.COSMIC_JELLY.get()
 								.defaultBlockState(), 2);
 				for (int y = 1; y <= 6; y++) {
 					level.setBlock(centre.offset(x, y, z),
@@ -432,15 +415,12 @@ public final class MacaronArchipelagoGameTests {
 	private static PlanAudit inspectPlan(ServerLevel level, BlockPos centre,
 			Rotation rotation) {
 		int meringueBricks = 0;
-		int shell = 0;
+		int cosmicJelly = 0;
+		int lemonade = 0;
 		int raspberry = 0;
 		int blueberry = 0;
 		int grape = 0;
 		int lime = 0;
-		int rockCandy = 0;
-		int marshmallow = 0;
-		int wafer = 0;
-		int macaronBricks = 0;
 		int glass = 0;
 		int endRods = 0;
 		int racks = 0;
@@ -448,14 +428,16 @@ public final class MacaronArchipelagoGameTests {
 		int sentinelBricks = 0;
 		for (int x = -3; x <= 3; x++) {
 			for (int z = -3; z <= 3; z++) {
-				for (int y = 0; y <= 4; y++) {
+				for (int y = 0; y <= 5; y++) {
 					BlockState state = level.getBlockState(
-							MacaronWayfinderFeature.local(
+							CosmicJellyNurseryFeature.local(
 									centre, rotation, x, y, z));
 					if (state.is(CakeWorldBlocks.MERINGUE_BRICKS.get())) {
 						meringueBricks++;
-					} else if (state.is(CakeWorldBlocks.MACARON_SHELL.get())) {
-						shell++;
+					} else if (state.is(CakeWorldBlocks.COSMIC_JELLY.get())) {
+						cosmicJelly++;
+					} else if (state.is(CakeWorldFluids.LEMONADE_BLOCK.get())) {
+						lemonade++;
 					} else if (state.is(
 							CakeWorldBlocks.RASPBERRY_GUMMY_BLOCK.get())) {
 						raspberry++;
@@ -466,14 +448,6 @@ public final class MacaronArchipelagoGameTests {
 						grape++;
 					} else if (state.is(CakeWorldBlocks.GUMMY_BLOCK.get())) {
 						lime++;
-					} else if (state.is(CakeWorldBlocks.ROCK_CANDY.get())) {
-						rockCandy++;
-					} else if (state.is(CakeWorldBlocks.MARSHMALLOW.get())) {
-						marshmallow++;
-					} else if (state.is(CakeWorldBlocks.WAFER_BLOCK.get())) {
-						wafer++;
-					} else if (state.is(CakeWorldBlocks.MACARON_BRICKS.get())) {
-						macaronBricks++;
 					} else if (state.is(CakeWorldBlocks.CANDY_GLASS.get())) {
 						glass++;
 					} else if (state.is(Blocks.END_ROD)) {
@@ -488,29 +462,16 @@ public final class MacaronArchipelagoGameTests {
 				}
 			}
 		}
-		boolean cardinal = true;
-		for (int distance = 1; distance <= 3; distance++) {
-			cardinal &= level.getBlockState(
-					centre.offset(0, 1, -distance)).is(
-							CakeWorldBlocks.RASPBERRY_GUMMY_BLOCK.get());
-			cardinal &= level.getBlockState(
-					centre.offset(distance, 1, 0)).is(
-							CakeWorldBlocks.BLUEBERRY_GUMMY_BLOCK.get());
-			cardinal &= level.getBlockState(
-					centre.offset(0, 1, distance)).is(
-							CakeWorldBlocks.GRAPE_GUMMY_BLOCK.get());
-			cardinal &= level.getBlockState(
-					centre.offset(-distance, 1, 0)).is(
-							CakeWorldBlocks.GUMMY_BLOCK.get());
-		}
-		return new PlanAudit(meringueBricks, shell, raspberry, blueberry,
-				grape, lime, rockCandy, marshmallow, wafer, macaronBricks,
-				glass, endRods, racks, bowls, sentinelBricks, cardinal);
+		return new PlanAudit(meringueBricks, cosmicJelly, lemonade,
+				raspberry, blueberry, grape, lime, glass, endRods,
+				racks, bowls, sentinelBricks);
 	}
 
-	private static FoundWayfinder findWayfinder(ServerLevel level,
+	private static FoundNursery findNursery(ServerLevel level,
 			ChunkPos anchor, int radius) {
 		BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+		int reefColumns = 0;
+		int mixingBowls = 0;
 		for (int ring = 0; ring <= radius; ring++) {
 			for (int chunkX = anchor.x - ring;
 					chunkX <= anchor.x + ring; chunkX++) {
@@ -527,21 +488,30 @@ public final class MacaronArchipelagoGameTests {
 							x <= chunk.getMaxBlockX(); x++) {
 						for (int z = chunk.getMinBlockZ();
 								z <= chunk.getMaxBlockZ(); z++) {
+							cursor.set(x, 64, z);
+							if (level.getBiome(cursor).is(BIOME_KEY)) {
+								reefColumns++;
+							}
 							for (int y = 0; y <= 127; y++) {
 								cursor.set(x, y, z);
 								if (!level.getBlockState(cursor).is(
 										CakeWorldBlocks.MIXING_BOWL.get())) {
 									continue;
 								}
+								mixingBowls++;
 								for (Rotation rotation : ROTATIONS) {
 									BlockPos offset = new BlockPos(
-											-1, 2, 2).rotate(rotation);
+											-1, 1, 3).rotate(rotation);
 									BlockPos centre = cursor.immutable()
 											.subtract(offset);
 									PlanAudit plan = inspectPlan(level, centre,
 											rotation);
 									if (plan.identifies(false)) {
-										return new FoundWayfinder(centre, rotation);
+										return new FoundNursery(centre, rotation);
+									}
+									if (level.getBiome(cursor).is(BIOME_KEY)) {
+										LOGGER.info("Rejected Cosmic Jelly Nursery candidate: bowl={}, centre={}, rotation={}, plan={}",
+												cursor.immutable(), centre, rotation, plan);
 									}
 								}
 							}
@@ -550,14 +520,73 @@ public final class MacaronArchipelagoGameTests {
 				}
 			}
 		}
+		LOGGER.info("Cosmic Jelly Nursery search found no complete plan: anchorChunk={}, radius={}, reefColumnsAtY64={}, mixingBowls={}",
+				anchor, radius, reefColumns, mixingBowls);
+		LOGGER.info("Cosmic Jelly Nursery safe-site diagnostic: {}",
+				diagnoseSafeSites(level, anchor, radius));
 		return null;
 	}
 
+	private static SafeSiteAudit diagnoseSafeSites(ServerLevel level,
+			ChunkPos anchor, int radius) {
+		int reefCentres = 0;
+		int safeSites = 0;
+		int reliefProblems = 0;
+		int groundProblems = 0;
+		int obstacleProblems = 0;
+		BlockPos firstSafe = null;
+		for (int chunkX = anchor.x - radius;
+				chunkX <= anchor.x + radius; chunkX++) {
+			for (int chunkZ = anchor.z - radius;
+					chunkZ <= anchor.z + radius; chunkZ++) {
+				ChunkPos chunk = new ChunkPos(chunkX, chunkZ);
+				level.getChunk(chunkX, chunkZ);
+				for (int x = chunk.getMinBlockX() + 4;
+						x <= chunk.getMinBlockX() + 11; x++) {
+					for (int z = chunk.getMinBlockZ() + 4;
+							z <= chunk.getMinBlockZ() + 11; z++) {
+						int highest = Integer.MIN_VALUE;
+						for (int offsetX = -4; offsetX <= 4; offsetX++) {
+							for (int offsetZ = -4; offsetZ <= 4; offsetZ++) {
+								highest = Math.max(highest, level.getHeight(
+										Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+										x + offsetX, z + offsetZ) - 1);
+							}
+						}
+						BlockPos centre = new BlockPos(x, highest, z);
+						if (!level.getBiome(centre).is(BIOME_KEY)) {
+							continue;
+						}
+						reefCentres++;
+						String problem = CosmicJellyNurseryFeature
+								.footprintProblem(level, centre, Rotation.NONE);
+						if (problem == null) {
+							safeSites++;
+							if (firstSafe == null) {
+								firstSafe = centre;
+							}
+						} else if (problem.startsWith("relief")) {
+							reliefProblems++;
+						} else if (problem.startsWith("ground")) {
+							groundProblems++;
+						} else {
+							obstacleProblems++;
+						}
+					}
+				}
+			}
+		}
+		return new SafeSiteAudit(reefCentres, safeSites, firstSafe,
+				reliefProblems, groundProblems, obstacleProblems);
+	}
+
 	private static NaturalAudit audit(ServerLevel level, ChunkPos anchor,
-			int radius, BlockPos wayfinder) {
+			int radius, BlockPos nursery) {
 		int biomeSamples = 0;
-		int shell = 0;
-		int marshmallow = 0;
+		int cosmicJelly = 0;
+		int surfaceJelly = 0;
+		int biscuitStone = 0;
+		int waferRock = 0;
 		int rockCandy = 0;
 		int nougatRock = 0;
 		BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
@@ -577,14 +606,21 @@ public final class MacaronArchipelagoGameTests {
 								continue;
 							}
 							biomeSamples++;
-							if (nearWayfinder(cursor, wayfinder)) {
+							if (nearNursery(cursor, nursery)) {
 								continue;
 							}
 							BlockState state = level.getBlockState(cursor);
-							if (state.is(CakeWorldBlocks.MACARON_SHELL.get())) {
-								shell++;
-							} else if (state.is(CakeWorldBlocks.MARSHMALLOW.get())) {
-								marshmallow++;
+							if (state.is(CakeWorldBlocks.COSMIC_JELLY.get())) {
+								cosmicJelly++;
+								BlockState below = level.getBlockState(cursor.below());
+								if (below.is(CakeWorldBlocks.ROCK_CANDY.get())) {
+									surfaceJelly++;
+								}
+							} else if (state.is(
+									CakeWorldBlocks.BISCUIT_STONE.get())) {
+								biscuitStone++;
+							} else if (state.is(CakeWorldBlocks.WAFER_ROCK.get())) {
+								waferRock++;
 							} else if (state.is(CakeWorldBlocks.ROCK_CANDY.get())) {
 								rockCandy++;
 							} else if (state.is(CakeWorldBlocks.NOUGAT_ROCK.get())) {
@@ -595,14 +631,14 @@ public final class MacaronArchipelagoGameTests {
 				}
 			}
 		}
-		return new NaturalAudit(biomeSamples, shell, marshmallow,
-				rockCandy, nougatRock);
+		return new NaturalAudit(biomeSamples, cosmicJelly, surfaceJelly,
+				biscuitStone, waferRock, rockCandy, nougatRock);
 	}
 
-	private static boolean nearWayfinder(BlockPos position, BlockPos centre) {
+	private static boolean nearNursery(BlockPos position, BlockPos centre) {
 		return Math.abs(position.getX() - centre.getX()) <= 3
 				&& position.getY() >= centre.getY()
-				&& position.getY() <= centre.getY() + 4
+				&& position.getY() <= centre.getY() + 5
 				&& Math.abs(position.getZ() - centre.getZ()) <= 3;
 	}
 
@@ -680,7 +716,7 @@ public final class MacaronArchipelagoGameTests {
 
 	private static JsonObject readProvider() {
 		try (InputStreamReader reader = new InputStreamReader(
-				MacaronArchipelagoGameTests.class.getResourceAsStream(
+				CosmicJellyReefsGameTests.class.getResourceAsStream(
 						"/data/cakeworld/orespawn/provider.json"),
 				StandardCharsets.UTF_8)) {
 			return JsonParser.parseReader(reader).getAsJsonObject();
@@ -706,20 +742,18 @@ public final class MacaronArchipelagoGameTests {
 		return new ResourceLocation(CakeWorld.MODID, path);
 	}
 
-	private record PlanAudit(int meringueBricks, int shell,
-			int raspberry, int blueberry, int grape, int lime,
-			int rockCandy, int marshmallow, int wafer, int macaronBricks,
+	private record PlanAudit(int meringueBricks, int cosmicJelly,
+			int lemonade, int raspberry, int blueberry, int grape, int lime,
 			int glass, int endRods, int racks, int bowls,
-			int sentinelBricks, boolean cardinal) {
+			int sentinelBricks) {
 		private boolean identifies(boolean exactFoundation) {
 			return (exactFoundation ? meringueBricks == 49
 					: meringueBricks >= 49)
-					&& shell == 36 && raspberry == 3 && blueberry == 3
-					&& grape == 3 && lime == 3 && rockCandy == 1
-					&& marshmallow == 4 && wafer == 4
-					&& macaronBricks == 4 && glass == 4
+					&& cosmicJelly == 52 && lemonade == 27
+					&& raspberry == 1 && blueberry == 1
+					&& grape == 1 && lime == 1 && glass == 25
 					&& endRods + sentinelBricks == 4
-					&& racks == 1 && bowls == 1 && cardinal;
+					&& racks == 1 && bowls == 1;
 		}
 
 		private boolean complete(boolean brickSentinel) {
@@ -729,10 +763,16 @@ public final class MacaronArchipelagoGameTests {
 		}
 	}
 
-	private record FoundWayfinder(BlockPos centre, Rotation rotation) {
+	private record FoundNursery(BlockPos centre, Rotation rotation) {
 	}
 
-	private record NaturalAudit(int biomeSamples, int macaronShell,
-			int marshmallow, int rockCandy, int nougatRock) {
+	private record NaturalAudit(int biomeSamples, int cosmicJelly,
+			int surfaceJelly, int biscuitStone, int waferRock,
+			int rockCandy, int nougatRock) {
+	}
+
+	private record SafeSiteAudit(int reefCentres, int safeSites,
+			BlockPos firstSafe, int reliefProblems, int groundProblems,
+			int obstacleProblems) {
 	}
 }

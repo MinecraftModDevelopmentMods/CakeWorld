@@ -295,5 +295,14 @@
         "type": "event"
       }
     ]
+  },
+  "cosmic_jelly_reef_pulse": {
+    "subtitle": "subtitles.cakeworld.cosmic_jelly_reefs.pulse",
+    "sounds": [
+      {
+        "name": "minecraft:block.respawn_anchor.ambient",
+        "type": "event"
+      }
+    ]
   }
 }

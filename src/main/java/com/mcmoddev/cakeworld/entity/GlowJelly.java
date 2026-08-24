@@ -2,13 +2,17 @@ package com.mcmoddev.cakeworld.entity;
 
 import java.util.Random;
 
+import com.mcmoddev.cakeworld.CakeWorld;
+
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.GlowSquid;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.biome.Biome;
 
 /**
  * The luminous Glow Squid role for Soda Ocean.
@@ -27,8 +31,18 @@ public final class GlowJelly extends GlowSquid {
 			EntityType<? extends GlowJelly> type,
 			ServerLevelAccessor level, MobSpawnType reason,
 			BlockPos pos, Random random) {
-		return pos.getY() <= level.getSeaLevel() - 33
+		boolean cosmicReef = isCosmicReef(level.getBiome(pos));
+		return (cosmicReef || pos.getY() <= level.getSeaLevel() - 33)
 				&& level.getRawBrightness(pos, 0) == 0
 				&& level.getFluidState(pos).is(FluidTags.WATER);
+	}
+
+	public static boolean isCosmicReef(Holder<Biome> biome) {
+		return biome.unwrapKey()
+				.map(key -> CakeWorld.MODID.equals(
+						key.location().getNamespace())
+						&& "cosmic_jelly_reefs".equals(
+								key.location().getPath()))
+				.orElse(false);
 	}
 }

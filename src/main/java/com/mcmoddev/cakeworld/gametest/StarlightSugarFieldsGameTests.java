@@ -358,7 +358,7 @@ public final class StarlightSugarFieldsGameTests {
 				.getAsJsonObject(BIOME_ID.toString());
 		JsonObject surface = placement.getAsJsonObject("surface");
 		require(helper, normalEnd.equals(baseEnd)
-						&& normalEnd.getAsJsonObject("biomes").size() == 5
+						&& normalEnd.getAsJsonObject("biomes").size() == 6
 						&& geomes.size() == 2
 						&& close(geomes.get("cakeworld:meringue_crust")
 								.getAsDouble(), 8.0D)

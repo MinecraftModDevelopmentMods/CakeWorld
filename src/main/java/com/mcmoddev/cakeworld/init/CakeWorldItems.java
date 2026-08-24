@@ -398,6 +398,22 @@ public final class CakeWorldItems {
 											MobEffects.ABSORPTION,
 											160), 1.0F)
 									.build())));
+	public static final RegistryObject<Item> STAR_JELLY_DROPLET =
+			food("star_jelly_droplet", 1, 0.1F);
+	public static final RegistryObject<Item> NEBULA_JELLY_CUP =
+			ITEMS.register("nebula_jelly_cup",
+					() -> new Item(new Item.Properties()
+							.tab(CreativeModeTab.TAB_FOOD)
+							.food(new FoodProperties.Builder()
+									.nutrition(8)
+									.saturationMod(0.8F)
+									.effect(() -> new MobEffectInstance(
+											MobEffects.NIGHT_VISION,
+											400), 1.0F)
+									.effect(() -> new MobEffectInstance(
+											MobEffects.SLOW_FALLING,
+											300), 1.0F)
+									.build())));
 	public static final RegistryObject<Item> CINNAMON_STICK =
 			ITEMS.register("cinnamon_stick",
 					() -> new Item(new Item.Properties()

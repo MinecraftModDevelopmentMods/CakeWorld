@@ -464,6 +464,16 @@ public final class CakeWorldLandmarks {
 					GenerationStep.Decoration.TOP_LAYER_MODIFICATION)
 					.add(macaronWayfinder);
 		}
+		Holder<PlacedFeature> cosmicJellyNursery =
+				CosmicJellyNurseryFeature.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(biome.getNamespace())
+				&& "cosmic_jelly_reefs".equals(biome.getPath())
+				&& cosmicJellyNursery != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration.TOP_LAYER_MODIFICATION)
+					.add(cosmicJellyNursery);
+		}
 		Holder<PlacedFeature> manorRepair =
 				GrandGingerbreadManorRepairFeature
 						.placedFeature();

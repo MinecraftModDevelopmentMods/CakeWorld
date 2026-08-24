@@ -110,6 +110,8 @@ public final class CakeWorldBiomes {
 			starlightSugarFields();
 	public static final RegistryObject<Biome> MACARON_ARCHIPELAGO =
 			macaronArchipelago();
+	public static final RegistryObject<Biome> COSMIC_JELLY_REEFS =
+			cosmicJellyReefs();
 
 	private CakeWorldBiomes() {
 	}
@@ -300,6 +302,11 @@ public final class CakeWorldBiomes {
 					BiomeDictionary.Type.MAGICAL,
 					BiomeDictionary.Type.PLAINS);
 			BiomeDictionary.addTypes(key(MACARON_ARCHIPELAGO),
+					BiomeDictionary.Type.END,
+					BiomeDictionary.Type.VOID,
+					BiomeDictionary.Type.MAGICAL,
+					BiomeDictionary.Type.RARE);
+			BiomeDictionary.addTypes(key(COSMIC_JELLY_REEFS),
 					BiomeDictionary.Type.END,
 					BiomeDictionary.Type.VOID,
 					BiomeDictionary.Type.MAGICAL,
@@ -869,6 +876,32 @@ public final class CakeWorldBiomes {
 												new AmbientAdditionsSettings(
 														CakeWorldSounds
 																.MACARON_ARCHIPELAGO_CHIME
+																.get(),
+														0.0012D))
+										.build()));
+	}
+
+	private static RegistryObject<Biome> cosmicJellyReefs() {
+		return OreSpawnBiomes.copyAndRegister(BIOMES,
+				"cosmic_jelly_reefs",
+				() -> vanilla("end_midlands"),
+				builder -> builder
+						.temperature(0.5F)
+						.downfall(0.0F)
+						.specialEffects(
+								effectsBuilder(
+										vanilla("end_midlands")
+												.getSpecialEffects())
+										.fogColor(0x4B2B78)
+										.skyColor(0x25153F)
+										.ambientParticle(
+												new AmbientParticleSettings(
+														ParticleTypes.GLOW,
+														0.002F))
+										.ambientAdditionsSound(
+												new AmbientAdditionsSettings(
+														CakeWorldSounds
+																.COSMIC_JELLY_REEF_PULSE
 																.get(),
 														0.0012D))
 										.build()));

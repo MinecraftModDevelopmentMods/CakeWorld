@@ -123,6 +123,14 @@ public final class CakeWorldBlocks {
 							BlockBehaviour.Properties.of(Material.CLAY)
 									.strength(0.5F)
 									.sound(SoundType.CALCITE)));
+	public static final RegistryObject<Block> COSMIC_JELLY =
+			block("cosmic_jelly",
+					() -> new GummyBlock(
+							BlockBehaviour.Properties.of(Material.CLAY)
+									.strength(0.55F)
+									.sound(SoundType.SLIME_BLOCK)
+									.lightLevel(state -> 10)
+									.noOcclusion()));
 	public static final RegistryObject<Block> GUMMY_BLOCK = gummy("gummy_block");
 	public static final RegistryObject<Block> RASPBERRY_GUMMY_BLOCK =
 			gummy("raspberry_gummy_block");

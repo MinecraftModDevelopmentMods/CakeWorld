@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "cakeworld:star_jelly_droplet" },
+    { "item": "cakeworld:star_jelly_droplet" },
+    { "item": "cakeworld:glowing_jam_berry" },
+    { "item": "cakeworld:star_sugar_crystals" }
+  ],
+  "result": {
+    "item": "cakeworld:nebula_jelly_cup",
+    "count": 2
+  }
+}

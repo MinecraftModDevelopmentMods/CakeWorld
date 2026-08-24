@@ -209,6 +209,11 @@ public final class CakeWorldSounds {
 					() -> new SoundEvent(new ResourceLocation(
 							CakeWorld.MODID,
 							"macaron_archipelago_chime")));
+	public static final RegistryObject<SoundEvent> COSMIC_JELLY_REEF_PULSE =
+			SOUNDS.register("cosmic_jelly_reef_pulse",
+					() -> new SoundEvent(new ResourceLocation(
+							CakeWorld.MODID,
+							"cosmic_jelly_reef_pulse")));
 
 	private CakeWorldSounds() {
 	}
