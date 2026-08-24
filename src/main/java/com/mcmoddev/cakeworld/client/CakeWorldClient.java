@@ -34,6 +34,9 @@ public final class CakeWorldClient {
 					CakeWorldBlocks.GUMMY_VINE.get(),
 					RenderType.cutout());
 			ItemBlockRenderTypes.setRenderLayer(
+					CakeWorldBlocks.FONDANT_CHORUS_BLOOM.get(),
+					RenderType.cutout());
+			ItemBlockRenderTypes.setRenderLayer(
 					CakeWorldBlocks.TREACLE_REED.get(),
 					RenderType.cutout());
 			ItemBlockRenderTypes.setRenderLayer(

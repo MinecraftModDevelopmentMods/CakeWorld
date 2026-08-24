@@ -407,6 +407,12 @@ public final class CakeWorldCreatureSpawns {
 					CakeWorldEntities.GLOW_JELLY,
 					4, 2, 4);
 		}
+		if ("fondant_chorus_gardens".equals(
+				biome.getPath())) {
+			addIfAbsent(event, MobCategory.MONSTER,
+					CakeWorldEntities.SUGAR_MITE,
+					6, 1, 3);
+		}
 		if ("soda_ocean".equals(biome.getPath())) {
 			replace(event, MobCategory.MONSTER, EntityType.DROWNED,
 					CakeWorldEntities.SOGGY_BISCUIT, 5, 1, 1);

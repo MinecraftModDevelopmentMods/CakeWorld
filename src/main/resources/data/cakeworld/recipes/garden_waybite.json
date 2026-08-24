@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "cakeworld:fondant_chorus_berry" },
+    { "item": "cakeworld:fondant_chorus_berry" },
+    { "item": "cakeworld:star_sugar_crystals" },
+    { "item": "cakeworld:simple_biscuit" }
+  ],
+  "result": {
+    "item": "cakeworld:garden_waybite",
+    "count": 2
+  }
+}

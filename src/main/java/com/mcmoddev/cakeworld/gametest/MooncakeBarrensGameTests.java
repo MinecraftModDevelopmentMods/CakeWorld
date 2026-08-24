@@ -357,7 +357,7 @@ public final class MooncakeBarrensGameTests {
 							&& "minecraft:the_end".equals(
 									end.get("dimension").getAsString())
 							&& "replace".equals(end.get("mode").getAsString())
-							&& end.getAsJsonObject("biomes").size() == 6
+							&& end.getAsJsonObject("biomes").size() == 7
 							&& close(placement.get("weight").getAsDouble(), 1.5D)
 							&& strings(placement.getAsJsonArray("similar_biomes"))
 									.equals(Set.of("minecraft:end_barrens"))

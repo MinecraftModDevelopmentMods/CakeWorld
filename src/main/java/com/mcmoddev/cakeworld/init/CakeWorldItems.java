@@ -4,6 +4,7 @@ import java.util.function.Supplier;
 
 import com.mcmoddev.cakeworld.CakeWorld;
 import com.mcmoddev.cakeworld.item.ExplorersCookbookItem;
+import com.mcmoddev.cakeworld.item.GuidedChorusFoodItem;
 import com.mcmoddev.cakeworld.item.JellybeanFishBucketItem;
 import com.mcmoddev.cakeworld.item.JellylotlBucketItem;
 import com.mcmoddev.cakeworld.item.LemonadeBottleItem;
@@ -16,6 +17,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.BowlFoodItem;
 import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.ChorusFruitItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemNameBlockItem;
 import net.minecraft.world.item.Items;
@@ -413,6 +415,28 @@ public final class CakeWorldItems {
 									.effect(() -> new MobEffectInstance(
 											MobEffects.SLOW_FALLING,
 											300), 1.0F)
+									.build())));
+	public static final RegistryObject<Item> FONDANT_CHORUS_BERRY =
+			ITEMS.register("fondant_chorus_berry",
+					() -> new ChorusFruitItem(new Item.Properties()
+							.tab(CreativeModeTab.TAB_FOOD)
+							.food(new FoodProperties.Builder()
+									.nutrition(4)
+									.saturationMod(0.3F)
+									.effect(() -> new MobEffectInstance(
+											MobEffects.SLOW_FALLING,
+											100), 1.0F)
+									.build())));
+	public static final RegistryObject<Item> GARDEN_WAYBITE =
+			ITEMS.register("garden_waybite",
+					() -> new GuidedChorusFoodItem(new Item.Properties()
+							.tab(CreativeModeTab.TAB_FOOD)
+							.food(new FoodProperties.Builder()
+									.nutrition(7)
+									.saturationMod(0.75F)
+									.effect(() -> new MobEffectInstance(
+											MobEffects.SLOW_FALLING,
+											160), 1.0F)
 									.build())));
 	public static final RegistryObject<Item> CINNAMON_STICK =
 			ITEMS.register("cinnamon_stick",

@@ -214,6 +214,11 @@ public final class CakeWorldSounds {
 					() -> new SoundEvent(new ResourceLocation(
 							CakeWorld.MODID,
 							"cosmic_jelly_reef_pulse")));
+	public static final RegistryObject<SoundEvent> FONDANT_CHORUS_GARDEN_BELL =
+			SOUNDS.register("fondant_chorus_garden_bell",
+					() -> new SoundEvent(new ResourceLocation(
+							CakeWorld.MODID,
+							"fondant_chorus_garden_bell")));
 
 	private CakeWorldSounds() {
 	}

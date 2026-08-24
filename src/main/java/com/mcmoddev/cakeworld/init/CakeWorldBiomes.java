@@ -112,6 +112,8 @@ public final class CakeWorldBiomes {
 			macaronArchipelago();
 	public static final RegistryObject<Biome> COSMIC_JELLY_REEFS =
 			cosmicJellyReefs();
+	public static final RegistryObject<Biome> FONDANT_CHORUS_GARDENS =
+			fondantChorusGardens();
 
 	private CakeWorldBiomes() {
 	}
@@ -311,6 +313,11 @@ public final class CakeWorldBiomes {
 					BiomeDictionary.Type.VOID,
 					BiomeDictionary.Type.MAGICAL,
 					BiomeDictionary.Type.RARE);
+			BiomeDictionary.addTypes(key(FONDANT_CHORUS_GARDENS),
+					BiomeDictionary.Type.END,
+					BiomeDictionary.Type.VOID,
+					BiomeDictionary.Type.MAGICAL,
+					BiomeDictionary.Type.LUSH);
 		});
 	}
 
@@ -902,6 +909,32 @@ public final class CakeWorldBiomes {
 												new AmbientAdditionsSettings(
 														CakeWorldSounds
 																.COSMIC_JELLY_REEF_PULSE
+																.get(),
+														0.0012D))
+										.build()));
+	}
+
+	private static RegistryObject<Biome> fondantChorusGardens() {
+		return OreSpawnBiomes.copyAndRegister(BIOMES,
+				"fondant_chorus_gardens",
+				() -> vanilla("end_highlands"),
+				builder -> builder
+						.temperature(0.5F)
+						.downfall(0.0F)
+						.specialEffects(
+								effectsBuilder(
+										vanilla("end_highlands")
+												.getSpecialEffects())
+										.fogColor(0xD68BC4)
+										.skyColor(0x8A5B9E)
+										.ambientParticle(
+												new AmbientParticleSettings(
+														ParticleTypes.END_ROD,
+														0.0015F))
+										.ambientAdditionsSound(
+												new AmbientAdditionsSettings(
+														CakeWorldSounds
+																.FONDANT_CHORUS_GARDEN_BELL
 																.get(),
 														0.0012D))
 										.build()));

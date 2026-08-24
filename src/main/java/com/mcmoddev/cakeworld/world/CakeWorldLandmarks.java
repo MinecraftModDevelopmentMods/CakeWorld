@@ -3,6 +3,7 @@ package com.mcmoddev.cakeworld.world;
 import com.mcmoddev.cakeworld.CakeWorld;
 
 import net.minecraft.core.Holder;
+import net.minecraft.data.worldgen.placement.EndPlacements;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
@@ -473,6 +474,28 @@ public final class CakeWorldLandmarks {
 			event.getGeneration().getFeatures(
 					GenerationStep.Decoration.TOP_LAYER_MODIFICATION)
 					.add(cosmicJellyNursery);
+		}
+		Holder<PlacedFeature> fondantChorusSculptures =
+				FondantChorusSculptureFeature.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(biome.getNamespace())
+				&& "fondant_chorus_gardens".equals(biome.getPath())
+				&& fondantChorusSculptures != null) {
+			var vegetation = event.getGeneration().getFeatures(
+					GenerationStep.Decoration.VEGETAL_DECORATION);
+			vegetation.removeIf(feature ->
+					feature.equals(EndPlacements.CHORUS_PLANT));
+			vegetation.add(fondantChorusSculptures);
+		}
+		Holder<PlacedFeature> fondantChorusCarousel =
+				FondantChorusCarouselFeature.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(biome.getNamespace())
+				&& "fondant_chorus_gardens".equals(biome.getPath())
+				&& fondantChorusCarousel != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration.TOP_LAYER_MODIFICATION)
+					.add(fondantChorusCarousel);
 		}
 		Holder<PlacedFeature> manorRepair =
 				GrandGingerbreadManorRepairFeature

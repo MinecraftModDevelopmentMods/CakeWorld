@@ -462,5 +462,12 @@
   "block.cakeworld.starlight_sugar_grass": "Starlight Sugar Grass",
   "item.cakeworld.star_sugar_crystals": "Star Sugar Crystals",
   "item.cakeworld.constellation_candy": "Constellation Candy",
-  "subtitles.cakeworld.starlight_sugar_fields.twinkle": "Sugar stars twinkle in the quiet"
+  "subtitles.cakeworld.starlight_sugar_fields.twinkle": "Sugar stars twinkle in the quiet",
+  "biome.cakeworld.fondant_chorus_gardens": "Fondant Chorus Gardens",
+  "block.cakeworld.pastel_fondant": "Pastel Fondant",
+  "block.cakeworld.fondant_chorus_stem": "Fondant Chorus Stem",
+  "block.cakeworld.fondant_chorus_bloom": "Fondant Chorus Bloom",
+  "item.cakeworld.fondant_chorus_berry": "Fondant Chorus Berry",
+  "item.cakeworld.garden_waybite": "Garden Waybite",
+  "subtitles.cakeworld.fondant_chorus_gardens.bell": "Fondant chorus bells answer one another"
 }

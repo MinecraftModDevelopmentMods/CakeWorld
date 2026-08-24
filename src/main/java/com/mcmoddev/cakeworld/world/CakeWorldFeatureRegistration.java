@@ -86,6 +86,10 @@ public final class CakeWorldFeatureRegistration {
 		event.getRegistry().register(
 				CosmicJellyNurseryFeature.FEATURE);
 		event.getRegistry().register(
+				FondantChorusSculptureFeature.FEATURE);
+		event.getRegistry().register(
+				FondantChorusCarouselFeature.FEATURE);
+		event.getRegistry().register(
 				BurntToffeeColumnsFeature.FEATURE);
 		event.getRegistry().register(GingerbreadVillageFeature.FEATURE);
 		event.getRegistry().register(
@@ -253,6 +257,10 @@ public final class CakeWorldFeatureRegistration {
 			MacaronWayfinderFeature
 					.registerConfiguredFeature();
 			CosmicJellyNurseryFeature
+					.registerConfiguredFeature();
+			FondantChorusSculptureFeature
+					.registerConfiguredFeature();
+			FondantChorusCarouselFeature
 					.registerConfiguredFeature();
 			BurntToffeeColumnsFeature
 					.registerConfiguredFeatures();

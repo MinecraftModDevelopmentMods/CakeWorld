@@ -304,5 +304,14 @@
         "type": "event"
       }
     ]
+  },
+  "fondant_chorus_garden_bell": {
+    "subtitle": "subtitles.cakeworld.fondant_chorus_gardens.bell",
+    "sounds": [
+      {
+        "name": "minecraft:block.amethyst_cluster.hit",
+        "type": "event"
+      }
+    ]
   }
 }

@@ -390,7 +390,7 @@ public final class MeringueIslandsGameTests {
 							&& "all".equals(end.get("scope").getAsString())
 							&& close(end.get("coverage").getAsDouble(), 1.0D)
 							&& close(end.get("fallback_weight").getAsDouble(), 0.0D)
-							&& end.getAsJsonObject("biomes").size() == 6
+							&& end.getAsJsonObject("biomes").size() == 7
 							&& close(placement.get("weight").getAsDouble(), 1.0D)
 							&& strings(placement.getAsJsonArray("similar_biomes"))
 									.isEmpty()

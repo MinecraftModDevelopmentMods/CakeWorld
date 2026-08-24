@@ -17,6 +17,7 @@ import com.mcmoddev.cakeworld.block.CoolingRackBlock;
 import com.mcmoddev.cakeworld.block.CrunchyToffeeAshBlock;
 import com.mcmoddev.cakeworld.block.CustardPuddingBlock;
 import com.mcmoddev.cakeworld.block.FizzyKelpBlock;
+import com.mcmoddev.cakeworld.block.FondantChorusBloomBlock;
 import com.mcmoddev.cakeworld.block.GummyBlock;
 import com.mcmoddev.cakeworld.block.GummyVineBlock;
 import com.mcmoddev.cakeworld.block.IcingLayerBlock;
@@ -130,6 +131,29 @@ public final class CakeWorldBlocks {
 									.strength(0.55F)
 									.sound(SoundType.SLIME_BLOCK)
 									.lightLevel(state -> 10)
+									.noOcclusion()));
+	public static final RegistryObject<Block> PASTEL_FONDANT =
+			block("pastel_fondant",
+					() -> new ChocolateSpongeBlock(
+							BlockBehaviour.Properties.of(Material.CLAY)
+									.strength(0.5F)
+									.sound(SoundType.HONEY_BLOCK)));
+	public static final RegistryObject<Block> FONDANT_CHORUS_STEM =
+			block("fondant_chorus_stem",
+					() -> new RotatedPillarBlock(
+							BlockBehaviour.Properties.of(Material.WOOD)
+									.strength(0.45F)
+									.sound(SoundType.WOOD)
+									.noOcclusion()));
+	public static final RegistryObject<Block> FONDANT_CHORUS_BLOOM =
+			block("fondant_chorus_bloom",
+					() -> new FondantChorusBloomBlock(
+							BlockBehaviour.Properties.of(Material.PLANT)
+									.randomTicks()
+									.strength(0.25F)
+									.sound(SoundType.CROP)
+									.lightLevel(state -> 6)
+									.noCollission()
 									.noOcclusion()));
 	public static final RegistryObject<Block> GUMMY_BLOCK = gummy("gummy_block");
 	public static final RegistryObject<Block> RASPBERRY_GUMMY_BLOCK =
