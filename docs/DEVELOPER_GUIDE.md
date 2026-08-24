@@ -79,6 +79,26 @@ uses deterministic priority and ID ordering if multiple providers offer
 automatic templates. An explicit pack default wins, and an existing world's
 saved profile is never silently rewritten.
 
+`cakeworld:edible_world_basemetals` is generated from that same canonical
+profile with the optional thirteen-resource compatibility overlay. The third
+template, `cakeworld:sampler_platter`, is deliberately non-automatic and must
+be selected explicitly. Provider revision 47 implements its first bounded
+diagnostic plot: one Candy Plains output augments the delegated vanilla biome
+source with `minecraft_only` scope, tiny regions, partial coverage, and a
+positive fallback weight. Later Slice 7 plots remain separate wishlist work.
+
+Run its isolated two-test fresh-world proof with:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldSamplerRuntime=true -PcakeworldSamplerRunDirectory=run-sampler-platter-local
+```
+
+The preparation task refuses to reuse a directory that already contains a
+world-owned OreSpawn profile. To prove persistence against the same save, run
+the same command again with `-PcakeworldSamplerReuseWorld=true`. This reuse
+flag is intentionally opt-in so an ordinary diagnostic run cannot silently
+turn into reload evidence.
+
 ## Adding Content
 
 For a new rock:
@@ -127,7 +147,10 @@ remain ignored.
 ## Current Proof Limits
 
 - Textures and sounds are placeholders borrowed from vanilla.
-- Copied biomes retain vanilla feature lists, mobs, structures, and effects.
-- There is no finished food, recipe, vegetation, structure, or progression
-  design yet.
-- The provider needs generated-world inspection and tuning before release.
+- Visual, audio, balance, accessibility, multiplayer, and family-play review
+  remain incomplete even where automated gameplay contracts are verified.
+- A few OreSpawn capabilities are explicitly shelved with evidence in the
+  showcase contract; they must not be presented as working examples.
+- The Sampler Platter currently proves its explicit-selection and augment
+  foundation only. Extreme formations, aliases, retrogen, flat bedrock, and
+  the remaining labelled diagnostic plots are still Slice 7 work.

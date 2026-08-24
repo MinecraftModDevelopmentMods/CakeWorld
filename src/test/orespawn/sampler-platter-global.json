@@ -1,0 +1,114 @@
+{
+  "schema_version": 6,
+  "geology_mode": "geome",
+  "place_fluid_deposits": true,
+  "manage_vanilla_ores": false,
+  "suppress_all_ore_features": false,
+  "default_template": "cakeworld:sampler_platter",
+  "formations": {
+    "algorithm": "stable_layers",
+    "horizontal_size": "average",
+    "vertical_thickness": "average",
+    "waviness": "average",
+    "edge_irregularity": "average",
+    "formation_continuity": "average",
+    "custom": {}
+  },
+  "geomes": {
+    "stable_craton": {
+      "base": 1.0,
+      "families": {
+        "sedimentary": 0.9,
+        "metamorphic": 1.0,
+        "igneous_intrusive": 1.4,
+        "igneous_volcanic": 0.25
+      }
+    },
+    "mountain_belt": {
+      "base": 1.0,
+      "families": {
+        "sedimentary": 0.55,
+        "metamorphic": 2.8,
+        "igneous_intrusive": 1.35,
+        "igneous_volcanic": 0.55
+      }
+    },
+    "volcanic_arc": {
+      "base": 0.9,
+      "families": {
+        "sedimentary": 0.35,
+        "metamorphic": 0.75,
+        "igneous_intrusive": 1.25,
+        "igneous_volcanic": 3.6
+      }
+    },
+    "sedimentary_basin": {
+      "base": 1.0,
+      "families": {
+        "sedimentary": 3.2,
+        "metamorphic": 0.45,
+        "igneous_intrusive": 0.35,
+        "igneous_volcanic": 0.15
+      }
+    },
+    "coastal_shelf": {
+      "base": 0.9,
+      "families": {
+        "sedimentary": 3.0,
+        "metamorphic": 0.35,
+        "igneous_intrusive": 0.25,
+        "igneous_volcanic": 0.25
+      }
+    },
+    "arid_basin": {
+      "base": 0.9,
+      "families": {
+        "sedimentary": 2.8,
+        "metamorphic": 0.35,
+        "igneous_intrusive": 0.45,
+        "igneous_volcanic": 0.35
+      }
+    },
+    "wetland_basin": {
+      "base": 0.8,
+      "families": {
+        "sedimentary": 2.5,
+        "metamorphic": 0.45,
+        "igneous_intrusive": 0.25,
+        "igneous_volcanic": 0.15
+      }
+    },
+    "glacial_highland": {
+      "base": 0.8,
+      "families": {
+        "sedimentary": 0.75,
+        "metamorphic": 2.0,
+        "igneous_intrusive": 1.25,
+        "igneous_volcanic": 0.35
+      }
+    }
+  },
+  "biomes": {},
+  "biome_dictionary": {},
+  "rocks": {},
+  "terrain_dimensions": {},
+  "biome_palettes": {},
+  "dimension_materials": {},
+  "ores": {},
+  "fluid_deposits": {},
+  "retrogen": {
+    "enabled": false,
+    "force": false,
+    "revision": 0,
+    "chunks_per_tick": 1
+  },
+  "flat_bedrock": {
+    "enabled": false,
+    "retrogen": false,
+    "layers": 1,
+    "dimensions": ["minecraft:overworld", "minecraft:the_nether"]
+  },
+  "worldgen_aliases": {},
+  "providers": {},
+  "ore_providers": {}
+}

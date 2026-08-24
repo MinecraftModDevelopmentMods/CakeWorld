@@ -73,7 +73,21 @@ The packaged declaration is
 `src/main/orespawn/provider.json`. The build packages its generated result at
 `data/cakeworld/orespawn/provider.json`. It uses provider
 schema 4 and selects `cakeworld:edible_world` for fresh worlds unless a pack
-author has explicitly chosen another default template.
+author has explicitly chosen another default template. The generated provider
+contains the normal adventure, its conditional BaseMetals overlay, and the
+optional `cakeworld:sampler_platter` developer template. The Sampler is never
+auto-selected.
+
+To run the currently implemented Sampler foundation against a fresh fixed-seed
+world:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldSamplerRuntime=true -PcakeworldSamplerRunDirectory=run-sampler-platter-local
+```
+
+The task refuses a directory that already owns a saved world profile. Pass
+`-PcakeworldSamplerReuseWorld=true` as an additional, explicit flag only when
+collecting same-save reload evidence.
 
 The design documents describe target behavior. They do not imply that the
 current alpha already implements the full wishlist.

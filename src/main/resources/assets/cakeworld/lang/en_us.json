@@ -405,6 +405,8 @@
   "template.cakeworld.edible_world.description": "Turns the Overworld, Nether, and End into edible worlds.",
   "template.cakeworld.edible_world_basemetals": "Cake World with Base Metals",
   "template.cakeworld.edible_world_basemetals.description": "The edible adventure with confectionery counterparts for Base Metals ores.",
+  "template.cakeworld.sampler_platter": "CakeWorld Sampler Platter",
+  "template.cakeworld.sampler_platter.description": "An optional developer world mixing vanilla and CakeWorld biomes for compact OreSpawn diagnostics.",
   "filled_map.cakeworld.wafer_wreck": "Lost Cargo Map",
   "filled_map.cakeworld.buried_sweet_tin": "Buried Sweet Tin Map",
   "container.cakeworld.buried_sweet_tin": "Buried Sweet Tin",

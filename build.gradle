@@ -25,6 +25,15 @@ def freshWorldgenIntegration = providers.gradleProperty(
 def freshWorldgenRunDirectory = providers.gradleProperty(
         'cakeworldFreshWorldgenRunDirectory')
         .getOrElse('run-fresh-worldgen-current')
+def samplerPlatterRuntime = providers.gradleProperty(
+        'cakeworldSamplerRuntime').map { it.toBoolean() }.getOrElse(false)
+def samplerPlatterRunDirectory = providers.gradleProperty(
+        'cakeworldSamplerRunDirectory').getOrElse('run-sampler-platter')
+def samplerPlatterReuseWorld = providers.gradleProperty(
+        'cakeworldSamplerReuseWorld').map { it.toBoolean() }.getOrElse(false)
+def cakeworldGameTestNamespaces = providers.gradleProperty(
+        'cakeworldGameTestNamespaces').getOrElse(
+        samplerPlatterRuntime ? 'cakeworld_sampler' : mod_id)
 minecraft {
     // The mappings can be changed at any time and must be in the following format.
     // Channel:   Version:
@@ -110,12 +119,18 @@ minecraft {
         // By default, the server will crash when no gametests are provided.
         // The gametest system is also enabled by default for other run configs under the /test command.
         gameTestServer {
-            if (baseMetalsIntegration) {
+            if (samplerPlatterRuntime) {
+                workingDirectory project.file(samplerPlatterRunDirectory)
+            } else if (baseMetalsIntegration) {
                 workingDirectory project.file(baseMetalsRunDirectory)
             } else if (freshWorldgenIntegration) {
                 workingDirectory project.file(freshWorldgenRunDirectory)
             }
-            property 'forge.enabledGameTestNamespaces', mod_id
+            property 'forge.enabledGameTestNamespaces',
+                    cakeworldGameTestNamespaces
+            if (samplerPlatterRuntime) {
+                property 'cakeworld.samplerPlatterEvidence', 'true'
+            }
             if (freshWorldgenIntegration) {
                 property 'cakeworld.fixedWorldgenEvidence', 'true'
             }
@@ -160,6 +175,49 @@ def generatedOreSpawnResources =
 def generatedOreSpawnProvider = generatedOreSpawnResources.map {
     it.file('data/cakeworld/orespawn/provider.json')
 }
+def samplerPlatterGlobalConfig =
+        layout.projectDirectory.file(
+                'src/test/orespawn/sampler-platter-global.json')
+def samplerPlatterServerProperties =
+        layout.projectDirectory.file(
+                'src/test/orespawn/sampler-platter-server.properties')
+def samplerPlatterRunRoot =
+        layout.projectDirectory.dir(samplerPlatterRunDirectory)
+
+def prepareSamplerPlatterRun = tasks.register('prepareSamplerPlatterRun') {
+    group = 'verification'
+    description = 'Prepares a fresh, explicitly selected Sampler Platter GameTest run.'
+    inputs.files(samplerPlatterGlobalConfig, samplerPlatterServerProperties)
+    outputs.files(
+            samplerPlatterRunRoot.file('config/orespawn-worldgen.json'),
+            samplerPlatterRunRoot.file('server.properties'))
+    outputs.upToDateWhen { false }
+
+    doLast {
+        def runRoot = samplerPlatterRunRoot.asFile
+        def savedProfile = new File(runRoot,
+                'world/serverconfig/orespawn-worldgen.json')
+        if (savedProfile.isFile() && !samplerPlatterReuseWorld) {
+            throw new GradleException(
+                    "Sampler run directory already contains a saved world profile: ${savedProfile}. Use a new -PcakeworldSamplerRunDirectory value, or explicitly pass -PcakeworldSamplerReuseWorld=true for reload evidence.")
+        }
+        if (savedProfile.isFile()) {
+            logger.lifecycle(
+                    "Reusing Sampler world-owned profile without rewriting its global selection fixture: ${savedProfile}")
+            return
+        }
+        copy {
+            from samplerPlatterGlobalConfig
+            into new File(runRoot, 'config')
+            rename { 'orespawn-worldgen.json' }
+        }
+        copy {
+            from samplerPlatterServerProperties
+            into runRoot
+            rename { 'server.properties' }
+        }
+    }
+}
 
 def generateCakeWorldOreSpawnProvider =
         tasks.register('generateCakeWorldOreSpawnProvider') {
@@ -199,6 +257,12 @@ def generateCakeWorldOreSpawnProvider =
 }
 
 sourceSets.main.resources { srcDir generatedOreSpawnResources }
+
+tasks.configureEach {
+    if (samplerPlatterRuntime && name == 'runGameTestServer') {
+        dependsOn prepareSamplerPlatterRun
+    }
+}
 
 repositories {
     // Put repositories for dependencies here
@@ -330,7 +394,9 @@ def prepareGameTestStructures = tasks.register('prepareGameTestStructures', Copy
     group = 'verification'
     description = 'Copies tracked SNBT fixtures into the GameTest working directory.'
     from layout.projectDirectory.dir('src/gametest/resources/gameteststructures')
-    into layout.projectDirectory.dir(baseMetalsIntegration
+    into layout.projectDirectory.dir(samplerPlatterRuntime
+            ? "${samplerPlatterRunDirectory}/gameteststructures"
+            : baseMetalsIntegration
             ? "${baseMetalsRunDirectory}/gameteststructures"
             : freshWorldgenIntegration
                     ? "${freshWorldgenRunDirectory}/gameteststructures"

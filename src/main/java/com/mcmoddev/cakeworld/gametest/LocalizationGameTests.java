@@ -64,6 +64,8 @@ public final class LocalizationGameTests {
 			"template.cakeworld.edible_world.description",
 			"template.cakeworld.edible_world_basemetals",
 			"template.cakeworld.edible_world_basemetals.description",
+			"template.cakeworld.sampler_platter",
+			"template.cakeworld.sampler_platter.description",
 			"filled_map.cakeworld.wafer_wreck",
 			"filled_map.cakeworld.buried_sweet_tin",
 			"container.cakeworld.buried_sweet_tin");
