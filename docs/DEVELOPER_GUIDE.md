@@ -82,14 +82,17 @@ saved profile is never silently rewritten.
 `cakeworld:edible_world_basemetals` is generated from that same canonical
 profile with the optional thirteen-resource compatibility overlay. The third
 template, `cakeworld:sampler_platter`, is deliberately non-automatic and must
-be selected explicitly. Provider revision 48 retains its first bounded
+be selected explicitly. Provider revision 49 retains its first bounded
 diagnostic plot—Candy Plains augmenting the delegated vanilla source with
 `minecraft_only` scope, tiny regions, partial coverage, and a positive
-fallback weight—and adds two namespace-filter plots. The Nether converts an
-explicit `minecraft` allow-list with `selected_namespaces`; the End declares a
+fallback weight—and adds two namespace-filter plots. The Nether uses an
+explicit `minecraft` allow-list with `selected_namespaces`; its Fudge output
+lists one installed and one missing optional similar biome, while a competing
+Crags output requires a deliberately missing biome. The End declares a
 Meringue output under `all` scope but excludes `minecraft`, so vanilla End
-sources must delegate unchanged. Together they demonstrate include and
-exclude lists without adding callbacks or affecting either adventure.
+sources must delegate unchanged. Together they demonstrate include/exclude
+lists and optional/required dependency behavior without callbacks or effects
+on either adventure.
 
 Run its isolated two-test fresh-world proof with:
 
@@ -194,7 +197,7 @@ remain ignored.
   showcase contract; they must not be presented as working examples.
 - The Sampler Platter currently proves explicit selection, augment mode,
   `minecraft_only` declaration, `selected_namespaces`, namespace include and
-  exclude lists, and live tiny/small/average region settings. An unrelated
-  mod-biome pass-through fixture, large/huge regions, extreme formations,
-  aliases, retrogen, flat bedrock, and the remaining labelled plots are still
-  Slice 7 work.
+  exclude lists, optional/required similar-biome behavior, and live
+  tiny/small/average region settings. An unrelated mod-biome pass-through
+  fixture, large/huge regions, extreme formations, aliases, retrogen, flat
+  bedrock, and the remaining labelled plots are still Slice 7 work.

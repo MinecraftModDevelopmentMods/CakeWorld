@@ -38,6 +38,8 @@ public final class SamplerPlatterGameTests {
 			new ResourceLocation("cakeworld", "candy_plains");
 	private static final ResourceLocation FUDGE_WASTES =
 			new ResourceLocation("cakeworld", "fudge_wastes");
+	private static final ResourceLocation CHILLI_CHOCOLATE_CRAGS =
+			new ResourceLocation("cakeworld", "chilli_chocolate_crags");
 	private static final ResourceLocation MERINGUE_ISLANDS =
 			new ResourceLocation("cakeworld", "meringue_islands");
 	private static final Logger LOGGER = LogUtils.getLogger();
@@ -49,8 +51,8 @@ public final class SamplerPlatterGameTests {
 	public static void packagedSamplerIsOptionalAndBounded(
 			GameTestHelper helper) {
 		JsonObject provider = packagedProvider(helper);
-		require(helper, provider.get("provider_revision").getAsInt() >= 48,
-				"Sampler namespace plots require provider revision 48");
+		require(helper, provider.get("provider_revision").getAsInt() >= 49,
+				"Sampler similarity plots require provider revision 49");
 		JsonObject templates = provider.getAsJsonObject("templates");
 		require(helper, templates.size() == 3,
 				"Generated provider must contain two adventures and one sampler");
@@ -151,18 +153,24 @@ public final class SamplerPlatterGameTests {
 		Map<ResourceLocation, Integer> endCounts = sampleBiomes(end, 64, 1024);
 		int netherTotal = total(netherCounts);
 		int fudge = netherCounts.getOrDefault(FUDGE_WASTES, 0);
+		int strict = netherCounts.getOrDefault(CHILLI_CHOCOLATE_CRAGS, 0);
+		int netherMinecraft = namespaceTotal(netherCounts, "minecraft");
 		int endTotal = total(endCounts);
 		int endMinecraft = namespaceTotal(endCounts, "minecraft");
-		require(helper, netherTotal == 4225 && fudge == netherTotal
-					&& netherCounts.size() == 1,
-				"Selected minecraft namespace was not fully converted in the Nether: "
+		require(helper, netherTotal == 4225 && fudge == 1511
+					&& strict == 0
+					&& netherMinecraft == 2714
+					&& netherCounts.size() == 5,
+				"Optional/required similarity outputs were not isolated in the Nether: "
 						+ netherCounts);
 		require(helper, endTotal == 4225 && endMinecraft == endTotal
 					&& !endCounts.containsKey(MERINGUE_ISLANDS),
 				"Excluded minecraft namespace did not delegate unchanged in the End: "
 						+ endCounts);
-		LOGGER.info("Sampler namespace audit: netherSamples={}, fudgeWastes={}, endSamples={}, endMinecraft={}, endDistinct={}",
-				netherTotal, fudge, endTotal, endMinecraft, endCounts.size());
+		LOGGER.info("Sampler namespace/similarity audit: netherSamples={}, fudgeWastes={}, strictOutput={}, netherMinecraft={}, netherDistinct={}, endSamples={}, endMinecraft={}, endDistinct={}",
+				netherTotal, fudge, strict, netherMinecraft,
+				netherCounts.size(), endTotal, endMinecraft,
+				endCounts.size());
 		helper.succeed();
 	}
 
@@ -267,10 +275,32 @@ public final class SamplerPlatterGameTests {
 							.getAsString())
 					&& palette.getAsJsonArray("exclude_namespaces").size() == 0,
 				"Sampler selected-namespace allow-list drifted");
-		require(helper, palette.getAsJsonObject("biomes").size() == 1
-					&& palette.getAsJsonObject("biomes")
-							.has("cakeworld:fudge_wastes"),
-				"Sampler selected-namespace output drifted");
+		JsonObject biomes = palette.getAsJsonObject("biomes");
+		require(helper, biomes.size() == 2
+					&& biomes.has("cakeworld:fudge_wastes")
+					&& biomes.has("cakeworld:chilli_chocolate_crags"),
+				"Sampler selected-namespace similarity pair drifted");
+		JsonObject optional = biomes.getAsJsonObject(
+				"cakeworld:fudge_wastes");
+		JsonObject strict = biomes.getAsJsonObject(
+				"cakeworld:chilli_chocolate_crags");
+		require(helper, optional.getAsJsonArray("similar_biomes").size() == 2
+					&& "minecraft:nether_wastes".equals(
+							optional.getAsJsonArray("similar_biomes").get(0)
+									.getAsString())
+					&& "cakeworld:missing_optional_sampler_source".equals(
+							optional.getAsJsonArray("similar_biomes").get(1)
+									.getAsString())
+					&& optional.getAsJsonArray("required_similar_biomes")
+							.size() == 0,
+				"Sampler optional similarity fixture drifted");
+		require(helper, strict.getAsJsonArray("similar_biomes").size() == 0
+					&& strict.getAsJsonArray("required_similar_biomes")
+							.size() == 1
+					&& "cakeworld:missing_required_sampler_source".equals(
+							strict.getAsJsonArray("required_similar_biomes")
+									.get(0).getAsString()),
+				"Sampler required similarity fixture drifted");
 	}
 
 	private static void requireExcludedNamespacePalette(
