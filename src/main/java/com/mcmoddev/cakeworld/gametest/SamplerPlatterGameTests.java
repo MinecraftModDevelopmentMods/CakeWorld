@@ -61,8 +61,8 @@ public final class SamplerPlatterGameTests {
 	public static void packagedSamplerIsOptionalAndBounded(
 			GameTestHelper helper) {
 		JsonObject provider = packagedProvider(helper);
-		require(helper, provider.get("provider_revision").getAsInt() >= 50,
-				"Sampler five-size plots require provider revision 50");
+		require(helper, provider.get("provider_revision").getAsInt() >= 51,
+				"Sampler formation comparison requires provider revision 51");
 		JsonObject templates = provider.getAsJsonObject("templates");
 		require(helper, templates.size() == 3,
 				"Generated provider must contain two adventures and one sampler");
@@ -80,6 +80,11 @@ public final class SamplerPlatterGameTests {
 					&& !profile.get("suppress_all_ore_features")
 							.getAsBoolean(),
 				"Sampler foundation must not take over vanilla ores");
+		requireExtremeFormationProfile(helper,
+				profile.getAsJsonObject("formations"));
+		requireSharedAdventureGeology(helper,
+				templates.getAsJsonObject("cakeworld:edible_world")
+						.getAsJsonObject("profile"), profile);
 		JsonObject palettes = profile.getAsJsonObject("biome_palettes");
 		require(helper, palettes.size() == 8,
 				"Sampler region checkpoint must expose eight plots");
@@ -117,6 +122,8 @@ public final class SamplerPlatterGameTests {
 						+ SAMPLER_TEMPLATE);
 		JsonObject palettes = profile.toJson()
 				.getAsJsonObject("biome_palettes");
+		requireExtremeFormationProfile(helper,
+				profile.toJson().getAsJsonObject("formations"));
 		JsonObject palette = palettes
 				.getAsJsonObject("cakeworld:sampler_overworld_augment");
 		requireSamplerPalette(helper, palette);
@@ -514,6 +521,46 @@ public final class SamplerPlatterGameTests {
 					&& biome.getAsJsonObject("surface")
 							.get("filler_depth").getAsInt() == fillerDepth,
 				message);
+	}
+
+	private static void requireSharedAdventureGeology(GameTestHelper helper,
+			JsonObject adventure, JsonObject sampler) {
+		for (String section : new String[] { "rocks", "geomes", "biomes",
+				"biome_dictionary", "terrain_dimensions" }) {
+			require(helper, adventure.get(section).equals(sampler.get(section)),
+					"Sampler did not inherit the canonical adventure "
+							+ section + " section");
+		}
+	}
+
+	private static void requireExtremeFormationProfile(GameTestHelper helper,
+			JsonObject formations) {
+		require(helper, formations != null
+					&& "sky_v1".equals(
+							formations.get("algorithm").getAsString()),
+				"Sampler alternate formation algorithm drifted");
+		for (String key : new String[] { "horizontal_size",
+				"vertical_thickness", "waviness", "edge_irregularity",
+				"formation_continuity" }) {
+			require(helper, "custom".equals(
+					formations.get(key).getAsString()),
+					"Sampler formation preset drifted for " + key);
+		}
+		JsonObject custom = formations.getAsJsonObject("custom");
+		require(helper,
+				custom.get("stratum_wavelength").getAsDouble() == 32.0
+						&& custom.get("family_region_wavelength")
+								.getAsDouble() == 8192.0
+						&& custom.get("vertical_thickness").getAsInt() == 1
+						&& custom.get("waviness_wavelength")
+								.getAsDouble() == 32.0
+						&& custom.get("waviness_amplitude")
+								.getAsDouble() == 512.0
+						&& custom.get("edge_wavelength").getAsDouble() == 8.0
+						&& custom.get("edge_amplitude").getAsDouble() == 256.0
+						&& custom.get("edge_octaves").getAsInt() == 8
+						&& custom.get("continuity").getAsDouble() == 0.0,
+				"Sampler bounded custom formation values drifted");
 	}
 
 	private static JsonObject packagedProvider(GameTestHelper helper) {

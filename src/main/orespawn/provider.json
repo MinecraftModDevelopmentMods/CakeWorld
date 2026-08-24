@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "provider_modid": "cakeworld",
-  "provider_revision": 50,
+  "provider_revision": 51,
   "templates": {
     "cakeworld:edible_world": {
       "name_key": "template.cakeworld.edible_world",
@@ -1477,6 +1477,25 @@
         "geology_mode": "geome",
         "manage_vanilla_ores": false,
         "suppress_all_ore_features": false,
+        "formations": {
+          "algorithm": "sky_v1",
+          "horizontal_size": "custom",
+          "vertical_thickness": "custom",
+          "waviness": "custom",
+          "edge_irregularity": "custom",
+          "formation_continuity": "custom",
+          "custom": {
+            "stratum_wavelength": 32.0,
+            "family_region_wavelength": 8192.0,
+            "vertical_thickness": 1,
+            "waviness_wavelength": 32.0,
+            "waviness_amplitude": 512.0,
+            "edge_wavelength": 8.0,
+            "edge_amplitude": 256.0,
+            "edge_octaves": 8,
+            "continuity": 0.0
+          }
+        },
         "biome_palettes": {
           "cakeworld:sampler_overworld_augment": {
             "dimension": "minecraft:overworld",

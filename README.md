@@ -78,17 +78,21 @@ contains the normal adventure, its conditional BaseMetals overlay, and the
 optional `cakeworld:sampler_platter` developer template. The Sampler is never
 auto-selected.
 
-To run the currently implemented Sampler augment, namespace-filter,
-similar-biome dependency, and five-size region-boundary plots against a fresh
-fixed-seed world:
+To run the currently implemented Sampler biome plots and its profile-wide
+extreme `sky_v1` formation comparison against a fresh fixed-seed world:
 
 ```powershell
-./gradlew runGameTestServer -PcakeworldSamplerRuntime=true -PcakeworldSamplerRunDirectory=run-sampler-platter-local
+./gradlew runGameTestServer -PcakeworldSamplerRuntime=true -PcakeworldSamplerRunDirectory=run-sampler-platter-local '-PcakeworldGameTestNamespaces=cakeworld_sampler,cakeworld_formation' -PcakeworldExpectedFormationAlgorithm=sky_v1
 ```
 
 The task refuses a directory that already owns a saved world profile. Pass
 `-PcakeworldSamplerReuseWorld=true` as an additional, explicit flag only when
 collecting same-save reload evidence.
+
+The adventure remains on average `stable_layers`. The developer guide gives
+the separate same-seed baseline command; OreSpawn formations are profile-wide,
+so CakeWorld does not claim two algorithms can occupy adjacent plots in one
+world.
 
 Pack authors can replace CakeWorld's packaged declaration with
 `config/cakeworld-orespawn.json`. Valid precedence, same-save persistence after

@@ -82,7 +82,7 @@ saved profile is never silently rewritten.
 `cakeworld:edible_world_basemetals` is generated from that same canonical
 profile with the optional thirteen-resource compatibility overlay. The third
 template, `cakeworld:sampler_platter`, is deliberately non-automatic and must
-be selected explicitly. Provider revision 50 retains its first bounded
+be selected explicitly. Provider revision 51 retains its first bounded
 diagnostic plot—Candy Plains augmenting the delegated vanilla source with
 `minecraft_only` scope, tiny regions, partial coverage, and a positive
 fallback weight—and adds two namespace-filter plots. Five labelled Overworld
@@ -97,12 +97,18 @@ Crags output requires a deliberately missing biome. The End declares a
 Meringue output under `all` scope but excludes `minecraft`, so vanilla End
 sources must delegate unchanged. Together they demonstrate include/exclude
 lists and optional/required dependency behavior without callbacks or effects
-on either adventure.
+on either adventure. During provider generation the Sampler inherits the
+adventure's rocks, geomes, biome rules, dictionary rules and terrain dimensions
+exactly. It then selects the profile-wide legacy `sky_v1` algorithm with
+deliberately extreme but schema-bounded custom values. This makes the
+fixed-seed comparison meaningful while leaving both automatically selected
+adventures on average `stable_layers` settings.
 
-Run its isolated two-test fresh-world proof with:
+Run its isolated three-test fresh-world proof, including the formation survey,
+with:
 
 ```powershell
-./gradlew runGameTestServer -PcakeworldSamplerRuntime=true -PcakeworldSamplerRunDirectory=run-sampler-platter-local
+./gradlew runGameTestServer -PcakeworldSamplerRuntime=true -PcakeworldSamplerRunDirectory=run-sampler-platter-local '-PcakeworldGameTestNamespaces=cakeworld_sampler,cakeworld_formation' -PcakeworldExpectedFormationAlgorithm=sky_v1
 ```
 
 The preparation task refuses to reuse a directory that already contains a
@@ -110,6 +116,16 @@ world-owned OreSpawn profile. To prove persistence against the same save, run
 the same command again with `-PcakeworldSamplerReuseWorld=true`. This reuse
 flag is intentionally opt-in so an ordinary diagnostic run cannot silently
 turn into reload evidence.
+
+The same-seed stable baseline uses a separate world because OreSpawn formation
+settings are profile-wide:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldFreshWorldgenRuntime=true -PcakeworldFreshWorldgenRunDirectory=run-formation-stable-local -PcakeworldGameTestNamespaces=cakeworld_formation -PcakeworldExpectedFormationAlgorithm=stable_layers
+```
+
+Do not describe these as two adjacent algorithms inside one world. Per-geome
+formation presets are not part of the released contract.
 
 ## Provider Overrides
 

@@ -45,6 +45,8 @@ def cakeworldGameTestNamespaces = providers.gradleProperty(
         providerOverrideRuntime
                 ? 'cakeworld_provider_override'
                 : samplerPlatterRuntime ? 'cakeworld_sampler' : mod_id)
+def expectedFormationAlgorithm = providers.gradleProperty(
+        'cakeworldExpectedFormationAlgorithm').orNull
 minecraft {
     // The mappings can be changed at any time and must be in the following format.
     // Channel:   Version:
@@ -150,6 +152,10 @@ minecraft {
             }
             if (freshWorldgenIntegration) {
                 property 'cakeworld.fixedWorldgenEvidence', 'true'
+            }
+            if (expectedFormationAlgorithm != null) {
+                property 'cakeworld.expectedFormationAlgorithm',
+                        expectedFormationAlgorithm
             }
             if (providers.gradleProperty('orespawnBenchmarkMode').isPresent()) {
                 property 'orespawn.worldgenBenchmarkMode',
@@ -300,7 +306,7 @@ def prepareProviderOverrideRun = tasks.register(
 def generateCakeWorldOreSpawnProvider =
         tasks.register('generateCakeWorldOreSpawnProvider') {
     group = 'build'
-    description = 'Builds normal and BaseMetals CakeWorld templates from one canonical profile.'
+    description = 'Builds normal, shared-geology Sampler, and BaseMetals CakeWorld templates from one canonical profile.'
     inputs.files(canonicalOreSpawnProvider, baseMetalsOreSpawnOverlay)
     outputs.file(generatedOreSpawnProvider)
 
@@ -325,6 +331,16 @@ def generateCakeWorldOreSpawnProvider =
         merge(compatibilityTemplate as Map, compatibilityOverlay as Map)
         provider.templates['cakeworld:edible_world_basemetals'] =
                 compatibilityTemplate
+
+        def samplerTemplate =
+                provider.templates['cakeworld:sampler_platter'] as Map
+        def samplerProfile = samplerTemplate.profile as Map
+        ['rocks', 'geomes', 'biomes', 'biome_dictionary',
+                'terrain_dimensions'].each { section ->
+            samplerProfile[section] = parser.parseText(
+                    groovy.json.JsonOutput.toJson(
+                            (baseTemplate.profile as Map)[section]))
+        }
 
         def output = generatedOreSpawnProvider.get().asFile
         output.parentFile.mkdirs()
