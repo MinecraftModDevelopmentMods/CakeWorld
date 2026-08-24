@@ -1,5 +1,7 @@
 package com.mcmoddev.cakeworld;
 
+import com.mcmoddev.cakeworld.command.CakeWorldCommands;
+import com.mcmoddev.cakeworld.gametest.SamplerThirdPartyBiomeFixture;
 import com.mcmoddev.cakeworld.init.CakeWorldBiomes;
 import com.mcmoddev.cakeworld.init.CakeWorldBlocks;
 import com.mcmoddev.cakeworld.init.CakeWorldEffects;
@@ -7,9 +9,9 @@ import com.mcmoddev.cakeworld.init.CakeWorldEntities;
 import com.mcmoddev.cakeworld.init.CakeWorldFluids;
 import com.mcmoddev.cakeworld.init.CakeWorldItems;
 import com.mcmoddev.cakeworld.init.CakeWorldSounds;
-import com.mcmoddev.cakeworld.gametest.SamplerThirdPartyBiomeFixture;
 import com.mcmoddev.cakeworld.network.CakeWorldNetwork;
 
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -32,5 +34,6 @@ public final class CakeWorld {
 		}
 		modBus.addListener(CakeWorldBiomes::commonSetup);
 		CakeWorldNetwork.register();
+		MinecraftForge.EVENT_BUS.addListener(CakeWorldCommands::register);
 	}
 }

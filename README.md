@@ -118,6 +118,13 @@ production dependency:
 Use the normal explicit reuse flag for same-save reload. Without the dedicated
 switch, neither the fixture biome nor its source owner is registered.
 
+In any running CakeWorld server, `/cakeworld orespawn` gives players and pack
+makers a read-only summary of the world-owned OreSpawn profile: selected
+template, geology mode, and the counts of rocks, geomes, ores, fluid deposits,
+biome palettes and terrain dimensions. It uses only OreSpawn's public active-
+profile view, requires no operator permission and cannot reload or mutate the
+world.
+
 The copied-world retrogen proof is deliberately three-phase and uses one
 ignored test directory. Never point these commands at a player world:
 

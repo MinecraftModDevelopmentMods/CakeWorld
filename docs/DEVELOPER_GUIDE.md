@@ -179,6 +179,17 @@ that the six earlier `minecraft_only` Overworld plots delegated the unrelated
 source unchanged before the explicit fixture plot. Fresh/reload reproduce the
 counts. An ordinary Sampler asserts the fixture registry ID is absent.
 
+### Read-only active-profile status
+
+Run `/cakeworld orespawn` in a dedicated or integrated server to inspect the
+world-owned OreSpawn profile without opening its snapshot or invoking a
+maintenance command. CakeWorld calls only
+`OreSpawnApi.getActiveProfile(server)` and reports the selected template,
+geology mode and typed-view counts for rocks, geomes, ores, fluid deposits,
+biome palettes and terrain dimensions. The command is available at ordinary
+player permission, performs no file/config/registry lookup in a generation
+loop, and cannot reload, retrogen or otherwise mutate the active profile.
+
 The same-seed stable baseline uses a separate world because OreSpawn formation
 settings are profile-wide:
 
