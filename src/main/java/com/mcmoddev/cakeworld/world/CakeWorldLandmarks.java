@@ -454,6 +454,16 @@ public final class CakeWorldLandmarks {
 					GenerationStep.Decoration.TOP_LAYER_MODIFICATION)
 					.add(sugarStarObservatory);
 		}
+		Holder<PlacedFeature> macaronWayfinder =
+				MacaronWayfinderFeature.placedFeature();
+		if (biome != null
+				&& CakeWorld.MODID.equals(biome.getNamespace())
+				&& "macaron_archipelago".equals(biome.getPath())
+				&& macaronWayfinder != null) {
+			event.getGeneration().getFeatures(
+					GenerationStep.Decoration.TOP_LAYER_MODIFICATION)
+					.add(macaronWayfinder);
+		}
 		Holder<PlacedFeature> manorRepair =
 				GrandGingerbreadManorRepairFeature
 						.placedFeature();

@@ -117,6 +117,12 @@ public final class CakeWorldBlocks {
 									.strength(1.2F, 3.0F)
 									.sound(SoundType.AMETHYST)
 									.lightLevel(state -> 7)));
+	public static final RegistryObject<Block> MACARON_SHELL =
+			block("macaron_shell",
+					() -> new ChocolateSpongeBlock(
+							BlockBehaviour.Properties.of(Material.CLAY)
+									.strength(0.5F)
+									.sound(SoundType.CALCITE)));
 	public static final RegistryObject<Block> GUMMY_BLOCK = gummy("gummy_block");
 	public static final RegistryObject<Block> RASPBERRY_GUMMY_BLOCK =
 			gummy("raspberry_gummy_block");

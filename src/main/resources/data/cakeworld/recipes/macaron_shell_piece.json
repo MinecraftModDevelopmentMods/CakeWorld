@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "cakeworld:macaron_shell" }
+  ],
+  "result": {
+    "item": "cakeworld:macaron_shell_piece",
+    "count": 4
+  }
+}

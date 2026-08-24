@@ -4733,12 +4733,15 @@ public final class DeepPantryGameTests {
 							? "reloaded"
 							: "seeded");
 			require(helper,
-					CakeWorldBiomes.MERINGUE_ISLANDS
+					(CakeWorldBiomes.MERINGUE_ISLANDS
 							.getId().equals(
 									audit.biome())
+							|| CakeWorldBiomes.MACARON_ARCHIPELAGO
+									.getId().equals(
+											audit.biome()))
 							&& audit
 									.literalEligible(),
-					"Natural Macaron Citadel left Meringue Islands or lost native/CakeWorld biome eligibility: biome="
+					"Natural Macaron Citadel left its Meringue Islands or Macaron Archipelago homes, or lost native/CakeWorld biome eligibility: biome="
 							+ audit.biome()
 							+ ", eligible="
 							+ audit

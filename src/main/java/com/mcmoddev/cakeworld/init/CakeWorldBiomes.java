@@ -108,6 +108,8 @@ public final class CakeWorldBiomes {
 			mooncakeBarrens();
 	public static final RegistryObject<Biome> STARLIGHT_SUGAR_FIELDS =
 			starlightSugarFields();
+	public static final RegistryObject<Biome> MACARON_ARCHIPELAGO =
+			macaronArchipelago();
 
 	private CakeWorldBiomes() {
 	}
@@ -297,6 +299,11 @@ public final class CakeWorldBiomes {
 					BiomeDictionary.Type.VOID,
 					BiomeDictionary.Type.MAGICAL,
 					BiomeDictionary.Type.PLAINS);
+			BiomeDictionary.addTypes(key(MACARON_ARCHIPELAGO),
+					BiomeDictionary.Type.END,
+					BiomeDictionary.Type.VOID,
+					BiomeDictionary.Type.MAGICAL,
+					BiomeDictionary.Type.RARE);
 		});
 	}
 
@@ -836,6 +843,32 @@ public final class CakeWorldBiomes {
 												new AmbientAdditionsSettings(
 														CakeWorldSounds
 																.STARLIGHT_SUGAR_FIELDS_TWINKLE
+																.get(),
+														0.0012D))
+										.build()));
+	}
+
+	private static RegistryObject<Biome> macaronArchipelago() {
+		return OreSpawnBiomes.copyAndRegister(BIOMES,
+				"macaron_archipelago",
+				() -> vanilla("end_highlands"),
+				builder -> builder
+						.temperature(0.5F)
+						.downfall(0.0F)
+						.specialEffects(
+								effectsBuilder(
+										vanilla("end_highlands")
+												.getSpecialEffects())
+										.fogColor(0xE8A4C8)
+										.skyColor(0x77518E)
+										.ambientParticle(
+												new AmbientParticleSettings(
+														ParticleTypes.WAX_ON,
+														0.0015F))
+										.ambientAdditionsSound(
+												new AmbientAdditionsSettings(
+														CakeWorldSounds
+																.MACARON_ARCHIPELAGO_CHIME
 																.get(),
 														0.0012D))
 										.build()));

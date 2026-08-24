@@ -204,6 +204,11 @@ public final class CakeWorldSounds {
 					() -> new SoundEvent(new ResourceLocation(
 							CakeWorld.MODID,
 							"starlight_sugar_fields_twinkle")));
+	public static final RegistryObject<SoundEvent> MACARON_ARCHIPELAGO_CHIME =
+			SOUNDS.register("macaron_archipelago_chime",
+					() -> new SoundEvent(new ResourceLocation(
+							CakeWorld.MODID,
+							"macaron_archipelago_chime")));
 
 	private CakeWorldSounds() {
 	}

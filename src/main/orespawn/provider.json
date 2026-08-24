@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "provider_modid": "cakeworld",
-  "provider_revision": 43,
+  "provider_revision": 44,
   "templates": {
     "cakeworld:edible_world": {
       "name_key": "template.cakeworld.edible_world",
@@ -334,6 +334,10 @@
           "cakeworld:starlight_sugar_fields": {
             "cakeworld:meringue_crust": 8.0,
             "cakeworld:rock_candy_uplift": 12.0
+          },
+          "cakeworld:macaron_archipelago": {
+            "cakeworld:meringue_crust": 6.0,
+            "cakeworld:rock_candy_uplift": 14.0
           }
         },
         "biome_dictionary": {
@@ -1376,6 +1380,22 @@
                   "filler_block": "cakeworld:rock_candy",
                   "underwater_block": "cakeworld:rock_candy",
                   "filler_depth": 4
+                }
+              },
+              "cakeworld:macaron_archipelago": {
+                "enabled": true,
+                "weight": 0.75,
+                "similar_biomes": ["minecraft:end_highlands"],
+                "required_similar_biomes": [],
+                "min_temperature": -2.0,
+                "max_temperature": 2.0,
+                "min_downfall": 0.0,
+                "max_downfall": 1.0,
+                "surface": {
+                  "top_block": "cakeworld:macaron_shell",
+                  "filler_block": "cakeworld:marshmallow",
+                  "underwater_block": "cakeworld:rock_candy",
+                  "filler_depth": 3
                 }
               }
             }

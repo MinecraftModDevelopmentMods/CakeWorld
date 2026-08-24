@@ -286,5 +286,14 @@
         "type": "event"
       }
     ]
+  },
+  "macaron_archipelago_chime": {
+    "subtitle": "subtitles.cakeworld.macaron_archipelago.chime",
+    "sounds": [
+      {
+        "name": "minecraft:block.amethyst_block.chime",
+        "type": "event"
+      }
+    ]
   }
 }

@@ -82,6 +82,8 @@ public final class CakeWorldFeatureRegistration {
 		event.getRegistry().register(
 				SugarStarObservatoryFeature.FEATURE);
 		event.getRegistry().register(
+				MacaronWayfinderFeature.FEATURE);
+		event.getRegistry().register(
 				BurntToffeeColumnsFeature.FEATURE);
 		event.getRegistry().register(GingerbreadVillageFeature.FEATURE);
 		event.getRegistry().register(
@@ -245,6 +247,8 @@ public final class CakeWorldFeatureRegistration {
 			CrumbMoonDialFeature
 					.registerConfiguredFeature();
 			SugarStarObservatoryFeature
+					.registerConfiguredFeature();
+			MacaronWayfinderFeature
 					.registerConfiguredFeature();
 			BurntToffeeColumnsFeature
 					.registerConfiguredFeatures();

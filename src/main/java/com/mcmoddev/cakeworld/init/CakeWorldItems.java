@@ -382,6 +382,22 @@ public final class CakeWorldItems {
 											MobEffects.LUCK,
 											200), 1.0F)
 									.build())));
+	public static final RegistryObject<Item> MACARON_SHELL_PIECE =
+			food("macaron_shell_piece", 1, 0.1F);
+	public static final RegistryObject<Item> RAINBOW_SKY_MACARON =
+			ITEMS.register("rainbow_sky_macaron",
+					() -> new Item(new Item.Properties()
+							.tab(CreativeModeTab.TAB_FOOD)
+							.food(new FoodProperties.Builder()
+									.nutrition(7)
+									.saturationMod(0.75F)
+									.effect(() -> new MobEffectInstance(
+											MobEffects.SLOW_FALLING,
+											300), 1.0F)
+									.effect(() -> new MobEffectInstance(
+											MobEffects.ABSORPTION,
+											160), 1.0F)
+									.build())));
 	public static final RegistryObject<Item> CINNAMON_STICK =
 			ITEMS.register("cinnamon_stick",
 					() -> new Item(new Item.Properties()
