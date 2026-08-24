@@ -230,7 +230,7 @@ public final class IceCreamTundraGameTests {
 							&& close(palette
 									.get("max_downfall")
 									.getAsDouble(), 0.8D)
-							&& "cakeworld:icing_layer"
+							&& "cakeworld:icing"
 									.equals(surface
 											.get("top_block")
 											.getAsString())
@@ -458,9 +458,8 @@ public final class IceCreamTundraGameTests {
 					BIOME_ID.equals(biome)
 							&& blockEntities == 0
 							&& surface.tundraColumns() >= 64
-							&& surface.icingLayers() >= 16
 							&& surface.solidIcing() >= 64,
-					"Natural Ice-Cream Tundra lost its biome, edible snow surface, solid-Icing body or block-entity-free Sundae Rink: "
+					"Natural Ice-Cream Tundra lost its biome, solid-Icing surface or block-entity-free Sundae Rink: "
 							+ surface);
 			if (!brickSentinel) {
 				level.setBlock(sentinel,

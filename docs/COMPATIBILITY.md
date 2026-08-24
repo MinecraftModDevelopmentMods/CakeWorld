@@ -85,7 +85,7 @@ placement changes. The normal template must nevertheless leave
 - the CakeWorld block a managed rule places; and
 - the vanilla source block whose native placed features that rule replaces.
 
-OreSpawn 4.0.2 currently keys its vanilla feature gate from the managed
+OreSpawn 4.0.6.118021 currently keys its vanilla feature gate from the managed
 rule's output block. A rule that outputs `cakeworld:rock_candy_diamond`
 therefore cannot suppress the gates for `minecraft:diamond_ore`. Enabling both
 would duplicate resources. Enabling `suppress_all_ore_features` would also
@@ -122,7 +122,7 @@ update deliberately and test both behaviors.
 
 ### Current implementation
 
-Provider revision 36 builds both adventure templates from
+Provider revision 37 builds both adventure templates from
 `src/main/orespawn/provider.json` and the small
 `src/main/orespawn/basemetals-overlay.json`. The compatibility overlay keeps
 the ten currently enabled BaseMetals resources enabled, keeps Copper,

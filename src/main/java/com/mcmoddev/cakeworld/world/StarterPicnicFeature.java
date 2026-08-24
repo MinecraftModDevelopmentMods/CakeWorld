@@ -5,15 +5,21 @@ import java.util.Random;
 
 import com.mcmoddev.cakeworld.CakeWorld;
 import com.mcmoddev.cakeworld.entity.CustardCat;
+import com.mcmoddev.cakeworld.init.CakeWorldBiomes;
 import com.mcmoddev.cakeworld.init.CakeWorldBlocks;
 import com.mcmoddev.cakeworld.init.CakeWorldEntities;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
 import net.minecraft.data.BuiltinRegistries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.WorldGenLevel;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -35,7 +41,12 @@ import net.minecraft.world.level.levelgen.placement.RarityFilter;
 public final class StarterPicnicFeature extends Feature<NoneFeatureConfiguration> {
 	public static final ResourceLocation ID =
 			new ResourceLocation(CakeWorld.MODID, "first_bite_picnic");
+	public static final int MAX_TERRAIN_RELIEF = 4;
+	public static final int SAFE_SITE_SEARCH_RADIUS = 7;
 	public static final StarterPicnicFeature FEATURE = new StarterPicnicFeature();
+	private static final ResourceKey<Biome> CANDY_PLAINS_KEY =
+			ResourceKey.create(Registry.BIOME_REGISTRY,
+					CakeWorldBiomes.CANDY_PLAINS.getId());
 	private static Holder<PlacedFeature> placedFeature;
 
 	private StarterPicnicFeature() {
@@ -64,11 +75,41 @@ public final class StarterPicnicFeature extends Feature<NoneFeatureConfiguration
 	@Override
 	public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
 		WorldGenLevel world = context.level();
-		BlockPos origin = context.origin();
-		int surfaceY = world.getHeight(Heightmap.Types.WORLD_SURFACE_WG,
-				origin.getX(), origin.getZ()) - 1;
-		return buildAt(world, context.random(),
-				new BlockPos(origin.getX(), surfaceY, origin.getZ()));
+		BlockPos origin = surfaceAt(world,
+				context.origin().getX(), context.origin().getZ());
+		if (!world.getBiome(origin).is(CANDY_PLAINS_KEY)) {
+			return false;
+		}
+		ChunkPos placementChunk = new ChunkPos(context.origin());
+		for (int radius = 0;
+				radius <= SAFE_SITE_SEARCH_RADIUS; radius++) {
+			for (int x = -radius; x <= radius; x++) {
+				for (int z = -radius; z <= radius; z++) {
+					if (radius > 0
+							&& Math.abs(x) != radius
+							&& Math.abs(z) != radius) {
+						continue;
+					}
+					BlockPos around = surfaceAt(world,
+							origin.getX() + x,
+							origin.getZ() + z);
+					if (!world.getBiome(around)
+							.is(CANDY_PLAINS_KEY)) {
+						continue;
+					}
+					BlockPos centre = new BlockPos(
+							around.getX(),
+							highestSurfaceY(world, around),
+							around.getZ());
+					if (fitsWithinChunk(centre, placementChunk)
+							&& buildAt(world, context.random(),
+									centre)) {
+						return true;
+					}
+				}
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -80,6 +121,7 @@ public final class StarterPicnicFeature extends Feature<NoneFeatureConfiguration
 		if (!hasSafeFootprint(world, floorCentre)) {
 			return false;
 		}
+		clearInheritedVegetation(world, floorCentre);
 
 		BlockState biscuit = CakeWorldBlocks.BISCUIT_STONE.get().defaultBlockState();
 		BlockState crumbs = CakeWorldBlocks.BISCUIT_CRUMBS.get().defaultBlockState();
@@ -96,7 +138,9 @@ public final class StarterPicnicFeature extends Feature<NoneFeatureConfiguration
 				if (x == 0 && z >= 0) {
 					floor = crumbs;
 				}
-				world.setBlock(floorCentre.offset(x, 0, z), floor, 2);
+				BlockPos floorBlock = floorCentre.offset(x, 0, z);
+				world.setBlock(floorBlock, floor, 2);
+				supportDown(world, floorBlock.below());
 			}
 		}
 
@@ -141,21 +185,136 @@ public final class StarterPicnicFeature extends Feature<NoneFeatureConfiguration
 			BlockPos floorCentre) {
 		for (int x = -4; x <= 4; x++) {
 			for (int z = -4; z <= 4; z++) {
-				BlockPos ground = floorCentre.offset(x, 0, z);
-				BlockState groundState = world.getBlockState(ground);
-				if (!groundState.isFaceSturdy(world, ground, Direction.UP)
-						|| !world.getFluidState(ground).isEmpty()) {
+				BlockPos horizontal = floorCentre.offset(x, 0, z);
+				int surfaceY = terrainSurfaceYAtOrBelow(
+						world, horizontal.getX(),
+						horizontal.getZ(), floorCentre.getY());
+				if (surfaceY > floorCentre.getY()
+						|| floorCentre.getY() - surfaceY
+								> MAX_TERRAIN_RELIEF) {
 					return false;
 				}
-				for (int y = 1; y <= 4; y++) {
-					BlockState state = world.getBlockState(ground.above(y));
-					if (!state.isAir() && !state.getMaterial().isReplaceable()) {
+				BlockPos ground = new BlockPos(
+						horizontal.getX(), surfaceY,
+						horizontal.getZ());
+				BlockState groundState = world.getBlockState(ground);
+				if (!groundState.isFaceSturdy(world, ground, Direction.UP)
+						|| !world.getFluidState(ground).isEmpty()
+						|| groundState.hasBlockEntity()) {
+					return false;
+				}
+				for (int y = surfaceY + 1;
+						y <= floorCentre.getY() + 4; y++) {
+					BlockState state = world.getBlockState(
+							new BlockPos(horizontal.getX(), y,
+									horizontal.getZ()));
+					if (state.hasBlockEntity() || !canClear(state)) {
 						return false;
 					}
 				}
 			}
 		}
 		return true;
+	}
+
+	public static boolean fitsWithinChunk(
+			BlockPos centre, ChunkPos chunk) {
+		for (int x : new int[] {-4, 4}) {
+			for (int z : new int[] {-4, 4}) {
+				BlockPos corner = centre.offset(x, 0, z);
+				if (Math.floorDiv(corner.getX(), 16) != chunk.x
+						|| Math.floorDiv(corner.getZ(), 16)
+								!= chunk.z) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
+	private static void supportDown(
+			WorldGenLevel world, BlockPos start) {
+		BlockPos.MutableBlockPos cursor = start.mutable();
+		int remaining = MAX_TERRAIN_RELIEF;
+		while (remaining-- > 0
+				&& cursor.getY() > world.getMinBuildHeight()
+				&& canClear(world.getBlockState(cursor))) {
+			world.setBlock(cursor,
+					CakeWorldBlocks.BISCUIT_STONE.get()
+							.defaultBlockState(), 2);
+			cursor.move(0, -1, 0);
+		}
+	}
+
+	private static void clearInheritedVegetation(
+			WorldGenLevel world, BlockPos centre) {
+		for (int x = -4; x <= 4; x++) {
+			for (int z = -4; z <= 4; z++) {
+				BlockPos horizontal = centre.offset(x, 0, z);
+				int surfaceY = terrainSurfaceYAtOrBelow(
+						world, horizontal.getX(),
+						horizontal.getZ(), centre.getY());
+				for (int y = surfaceY + 1;
+						y <= centre.getY() + 4; y++) {
+					BlockPos position = new BlockPos(
+							horizontal.getX(), y,
+							horizontal.getZ());
+					if (canClear(world.getBlockState(position))) {
+						world.setBlock(position,
+								Blocks.AIR.defaultBlockState(), 2);
+					}
+				}
+			}
+		}
+	}
+
+	private static int highestSurfaceY(
+			WorldGenLevel world, BlockPos around) {
+		int highest = Integer.MIN_VALUE;
+		for (int x = -4; x <= 4; x++) {
+			for (int z = -4; z <= 4; z++) {
+				highest = Math.max(highest,
+						terrainSurfaceY(world,
+								around.getX() + x,
+								around.getZ() + z));
+			}
+		}
+		return highest;
+	}
+
+	private static BlockPos surfaceAt(
+			WorldGenLevel world, int x, int z) {
+		return new BlockPos(x, terrainSurfaceY(world, x, z), z);
+	}
+
+	private static int terrainSurfaceY(
+			WorldGenLevel world, int x, int z) {
+		int y = world.getHeight(Heightmap.Types.WORLD_SURFACE_WG,
+				x, z) - 1;
+		return terrainSurfaceYAtOrBelow(world, x, z, y);
+	}
+
+	private static int terrainSurfaceYAtOrBelow(
+			WorldGenLevel world, int x, int z, int maximumY) {
+		int y = maximumY;
+		BlockPos.MutableBlockPos cursor =
+				new BlockPos.MutableBlockPos(x, y, z);
+		while (y > world.getMinBuildHeight()
+				&& world.getFluidState(cursor).isEmpty()
+				&& canClear(world.getBlockState(cursor))) {
+			y--;
+			cursor.setY(y);
+		}
+		return y;
+	}
+
+	private static boolean canClear(BlockState state) {
+		return state.isAir()
+				|| state.getMaterial().isReplaceable()
+				|| state.is(BlockTags.LEAVES)
+				|| state.is(BlockTags.LOGS)
+				|| state.is(Blocks.SNOW)
+				|| state.is(Blocks.POWDER_SNOW);
 	}
 
 	private static void buildShelter(WorldGenLevel world, BlockPos centre,

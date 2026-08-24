@@ -63,10 +63,10 @@ import org.slf4j.Logger;
 /**
  * Contract proof for BIO-OW-021 and STRUCT-037.
  *
- * <p>OreSpawn 4.0.2 cannot restrict a biome-palette output by Y. These tests
+ * <p>OreSpawn 4.0.6.118021 cannot restrict a biome-palette output by Y. These tests
  * therefore prove a weighted Dripstone-Caves replacement plus genuinely deep
  * geology and landmark behaviour; they do not claim a depth-only selector.
- * OS-104 separately proves the repaired 4.0.2 spring path.</p>
+ * OS-104 separately proves the spring path on the current release.</p>
  */
 @PrefixGameTestTemplate(false)
 @GameTestHolder(CakeWorld.MODID)

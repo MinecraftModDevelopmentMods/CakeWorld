@@ -220,7 +220,7 @@ public final class PeppermintPinewoodsGameTests {
 			JsonObject surface =
 					palette.getAsJsonObject("surface");
 			require(helper,
-					"cakeworld:icing_layer".equals(
+					"cakeworld:icing".equals(
 							surface.get("top_block")
 									.getAsString())
 							&& "cakeworld:peppermint_rock"

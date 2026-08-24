@@ -96,12 +96,7 @@ public final class CinnamonHearthGroveFeature
 		ChunkPos chunk = new ChunkPos(context.origin());
 		int minY = Math.max(world.getMinBuildHeight() + 2, MIN_Y);
 		int maxY = Math.min(world.getMaxBuildHeight() - 7, MAX_Y);
-		int[][] centres = {
-			{chunk.getMinBlockX() + 7, chunk.getMinBlockZ() + 7},
-			{chunk.getMinBlockX() + 8, chunk.getMinBlockZ() + 8},
-			{chunk.getMinBlockX() + 7, chunk.getMinBlockZ() + 8},
-			{chunk.getMinBlockX() + 8, chunk.getMinBlockZ() + 7}
-		};
+		int[] offsets = {4, 6, 9, 11};
 		int startY = Math.max(minY,
 				Math.min(maxY, context.origin().getY()));
 		for (int offset = 0; offset <= maxY - minY; offset++) {
@@ -111,16 +106,24 @@ public final class CinnamonHearthGroveFeature
 				if (y < minY || y > maxY) {
 					continue;
 				}
-				for (int[] horizontal : centres) {
-					BlockPos centre = new BlockPos(
-							horizontal[0], y, horizontal[1]);
-					if (!world.getBiome(centre).is(GROVE_KEY)) {
-						continue;
-					}
-					Rotation rotation = orientation(world.getSeed(), centre);
-					if (fitsWithinChunk(centre, rotation, chunk)
-							&& buildAt(world, centre, rotation)) {
-						return true;
+				for (int offsetX : offsets) {
+					for (int offsetZ : offsets) {
+						BlockPos centre = new BlockPos(
+								chunk.getMinBlockX() + offsetX,
+								y,
+								chunk.getMinBlockZ() + offsetZ);
+						if (!world.getBiome(centre).is(GROVE_KEY)
+								|| !canOccupy(world, centre)
+								|| !isNaturalSupport(
+										world, centre.below())) {
+							continue;
+						}
+						Rotation rotation = orientation(
+								world.getSeed(), centre);
+						if (fitsWithinChunk(centre, rotation, chunk)
+								&& buildAt(world, centre, rotation)) {
+							return true;
+						}
 					}
 				}
 			}

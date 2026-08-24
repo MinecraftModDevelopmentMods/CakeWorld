@@ -68,7 +68,7 @@ import org.slf4j.Logger;
  *
  * <p>Hot Fudge in this historical slice remains terrain/aquifer/deposit
  * material, never spring evidence. OS-104 separately proves the repaired
- * OreSpawn 4.0.2 spring path.</p>
+ * current OreSpawn spring path.</p>
  */
 @PrefixGameTestTemplate(false)
 @GameTestHolder(CakeWorld.MODID)

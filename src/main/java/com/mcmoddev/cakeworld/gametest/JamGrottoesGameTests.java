@@ -73,7 +73,7 @@ import org.slf4j.Logger;
  *
  * <p>The integrated fluid evidence targets the covered-deposit feature, and
  * authored landmark Jam is excluded from that count. OS-104 separately proves
- * the repaired OreSpawn 4.0.2 spring path.</p>
+ * the current released OreSpawn spring path.</p>
  */
 @PrefixGameTestTemplate(false)
 @GameTestHolder(CakeWorld.MODID)

@@ -43,7 +43,8 @@ and many visual and audio assets deliberately reuse vanilla placeholders.
 - Minecraft 1.18.2
 - Forge 40.3.0 or compatible Forge 40 build
 - Java 17
-- MMD OreSpawn 4.0.2 or a newer compatible 4.x release for Minecraft 1.18.2
+- MMD OreSpawn 4.0.6.118021 or a newer compatible 4.x release for Minecraft
+  1.18.2
 
 ## Installation
 
@@ -54,8 +55,8 @@ and many visual and audio assets deliberately reuse vanilla placeholders.
 
 ## Build
 
-CakeWorld pins the published MMD OreSpawn beta through CurseMaven using
-CurseForge project `245586`, file `8536302`. A sibling OreSpawn checkout or
+CakeWorld pins the published MMD OreSpawn release through CurseMaven using
+CurseForge project `245586`, file `8688546`. A sibling OreSpawn checkout or
 locally built JAR is not required.
 
 ```powershell

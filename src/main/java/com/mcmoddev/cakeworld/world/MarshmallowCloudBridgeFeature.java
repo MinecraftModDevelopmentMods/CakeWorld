@@ -43,7 +43,7 @@ public final class MarshmallowCloudBridgeFeature
 	public static final ResourceLocation ID =
 			id("marshmallow_cloud_bridge");
 	public static final int AVERAGE_CHUNKS_PER_ATTEMPT = 10;
-	public static final int MAX_TERRAIN_RELIEF = 10;
+	public static final int MAX_TERRAIN_RELIEF = 24;
 	public static final int SAFE_SITE_SEARCH_RADIUS = 8;
 	public static final int PLACEMENT_SALT = 1978072;
 	public static final int BRIDGE_Y = 3;
@@ -351,6 +351,7 @@ public final class MarshmallowCloudBridgeFeature
 				|| state.is(CakeWorldBlocks.PEPPERMINT_ROCK.get())
 				|| state.is(CakeWorldBlocks.ROCK_CANDY.get())
 				|| state.is(CakeWorldBlocks.WAFER_ROCK.get())
+				|| state.is(CakeWorldBlocks.ICING.get())
 				|| state.is(CakeWorldBlocks.ICING_LAYER.get())
 				|| state.is(BlockTags.BASE_STONE_OVERWORLD)
 				|| state.is(BlockTags.DIRT)

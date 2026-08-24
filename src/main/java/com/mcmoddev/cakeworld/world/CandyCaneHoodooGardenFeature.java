@@ -43,8 +43,9 @@ public final class CandyCaneHoodooGardenFeature
 	public static final ResourceLocation ID =
 			id("candy_cane_hoodoo_garden");
 	public static final int AVERAGE_CHUNKS_PER_ATTEMPT = 14;
-	public static final int MAX_TERRAIN_RELIEF = 5;
-	public static final int SAFE_SITE_SEARCH_RADIUS = 6;
+	public static final int MAX_TERRAIN_RELIEF = 12;
+	private static final int SAFE_SITE_MIN_OFFSET = 5;
+	private static final int SAFE_SITE_WIDTH = 6;
 	public static final int PLACEMENT_SALT = 1978071;
 	public static final CandyCaneHoodooGardenFeature FEATURE =
 			new CandyCaneHoodooGardenFeature();
@@ -109,18 +110,23 @@ public final class CandyCaneHoodooGardenFeature
 			return false;
 		}
 		ChunkPos placementChunk = new ChunkPos(context.origin());
-		for (int radius = 0;
-				radius <= SAFE_SITE_SEARCH_RADIUS; radius++) {
-			for (int x = -radius; x <= radius; x++) {
-				for (int z = -radius; z <= radius; z++) {
-					if (radius > 0
-							&& Math.abs(x) != radius
-							&& Math.abs(z) != radius) {
-						continue;
-					}
+		int startX = context.random().nextInt(SAFE_SITE_WIDTH);
+		int startZ = context.random().nextInt(SAFE_SITE_WIDTH);
+		for (int xIndex = 0;
+				xIndex < SAFE_SITE_WIDTH; xIndex++) {
+			for (int zIndex = 0;
+					zIndex < SAFE_SITE_WIDTH; zIndex++) {
+					int localX = SAFE_SITE_MIN_OFFSET
+							+ Math.floorMod(startX + xIndex,
+									SAFE_SITE_WIDTH);
+					int localZ = SAFE_SITE_MIN_OFFSET
+							+ Math.floorMod(startZ + zIndex,
+									SAFE_SITE_WIDTH);
 					BlockPos around = surfaceAt(world,
-							origin.getX() + x,
-							origin.getZ() + z);
+							placementChunk.getMinBlockX()
+									+ localX,
+							placementChunk.getMinBlockZ()
+									+ localZ);
 					if (!world.getBiome(around)
 							.is(BADLANDS_KEY)) {
 						continue;
@@ -138,7 +144,6 @@ public final class CandyCaneHoodooGardenFeature
 									centre, rotation)) {
 						return true;
 					}
-				}
 			}
 		}
 		return false;

@@ -21,7 +21,7 @@ import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import org.slf4j.Logger;
 
 /**
- * Behavioural proof for OS-104 and the released OreSpawn 4.0.2 spring fix.
+ * Behavioural proof for OS-104 on the released OreSpawn 4.0.6.118021 baseline.
  *
  * <p>The tests use Minecraft's real configured water-spring feature. They do
  * not access OreSpawn implementation packages or mutate its configuration.
@@ -52,8 +52,8 @@ public final class OreSpawnSpringGameTests {
 				.map(container -> container.getModInfo()
 						.getVersion().toString())
 				.orElse("missing");
-		require(helper, "4.0.2".equals(version),
-				"OS-104 requires the released OreSpawn 4.0.2 artifact, loaded="
+		require(helper, "4.0.6.118021".equals(version),
+				"OS-104 requires the released OreSpawn 4.0.6.118021 artifact, loaded="
 						+ version);
 
 		BlockPos edible = helper.absolutePos(new BlockPos(3, 3, 3));
@@ -117,8 +117,8 @@ public final class OreSpawnSpringGameTests {
 								.is(CakeWorldBlocks.WAFER_ROCK.get())
 						&& level.getBlockState(PERSISTED_SENTINEL)
 								.is(Blocks.BRICKS),
-				"The OreSpawn 4.0.2 spring fixture or player sentinel did not survive reload");
-		LOGGER.info("OreSpawn 4.0.2 spring audit: spring={}, reload={}, source={}, sentinel={}",
+				"The OreSpawn 4.0.6.118021 spring fixture or player sentinel did not survive reload");
+		LOGGER.info("OreSpawn 4.0.6.118021 spring audit: spring={}, reload={}, source={}, sentinel={}",
 				PERSISTED_SPRING, reload,
 				isWaterSource(level, PERSISTED_SPRING),
 				level.getBlockState(PERSISTED_SENTINEL)

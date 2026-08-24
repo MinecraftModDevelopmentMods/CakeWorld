@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "provider_modid": "cakeworld",
-  "provider_revision": 36,
+  "provider_revision": 37,
   "templates": {
     "cakeworld:edible_world": {
       "name_key": "template.cakeworld.edible_world",
@@ -803,7 +803,7 @@
                 "min_downfall": 0.0,
                 "max_downfall": 0.65,
                 "surface": {
-                  "top_block": "cakeworld:icing_layer",
+                  "top_block": "cakeworld:icing",
                   "filler_block": "cakeworld:chocolate_sponge",
                   "underwater_block": "cakeworld:biscuit_crumbs",
                   "filler_depth": 4
@@ -863,7 +863,7 @@
                 "min_downfall": 0.35,
                 "max_downfall": 1.0,
                 "surface": {
-                  "top_block": "cakeworld:icing_layer",
+                  "top_block": "cakeworld:icing",
                   "filler_block": "cakeworld:peppermint_rock",
                   "underwater_block": "cakeworld:biscuit_crumbs",
                   "filler_depth": 5
@@ -961,7 +961,7 @@
                 "min_downfall": 0.0,
                 "max_downfall": 1.0,
                 "surface": {
-                  "top_block": "cakeworld:icing_layer",
+                  "top_block": "cakeworld:icing",
                   "filler_block": "cakeworld:marshmallow",
                   "underwater_block": "cakeworld:biscuit_crumbs",
                   "filler_depth": 5
@@ -981,7 +981,7 @@
                 "min_downfall": 0.0,
                 "max_downfall": 0.8,
                 "surface": {
-                  "top_block": "cakeworld:icing_layer",
+                  "top_block": "cakeworld:icing",
                   "filler_block": "cakeworld:icing",
                   "underwater_block": "cakeworld:frozen_lemonade",
                   "filler_depth": 5
@@ -1244,7 +1244,7 @@
                 "min_downfall": 0.0,
                 "max_downfall": 1.0,
                 "surface": {
-                  "top_block": "cakeworld:icing_layer",
+                  "top_block": "cakeworld:icing",
                   "filler_block": "cakeworld:biscuit_stone",
                   "underwater_block": "cakeworld:biscuit_stone",
                   "filler_depth": 5

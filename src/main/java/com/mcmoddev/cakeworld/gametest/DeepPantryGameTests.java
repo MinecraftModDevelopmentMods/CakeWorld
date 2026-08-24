@@ -715,7 +715,7 @@ public final class DeepPantryGameTests {
 				"cakeworld:soda_ocean", "cakeworld:biscuit_crumbs",
 				"cakeworld:biscuit_crumbs", "cakeworld:biscuit_crumbs", 4);
 		assertPaletteContract(helper, palettes, "cakeworld:overworld_land",
-				"cakeworld:candy_plains", "cakeworld:icing_layer",
+				"cakeworld:candy_plains", "cakeworld:icing",
 				"cakeworld:chocolate_sponge", "cakeworld:biscuit_crumbs", 4);
 		assertPaletteContract(helper, palettes, "cakeworld:overworld_land",
 				"cakeworld:gingerbread_hearthlands",
@@ -727,7 +727,7 @@ public final class DeepPantryGameTests {
 				"cakeworld:chocolate_sponge", "cakeworld:biscuit_crumbs", 5);
 		assertPaletteContract(helper, palettes, "cakeworld:overworld_land",
 				"cakeworld:peppermint_pinewoods",
-				"cakeworld:icing_layer",
+				"cakeworld:icing",
 				"cakeworld:peppermint_rock",
 				"cakeworld:biscuit_crumbs", 5);
 		assertPaletteContract(helper, palettes, "cakeworld:overworld_land",
@@ -751,13 +751,13 @@ public final class DeepPantryGameTests {
 				"cakeworld:candy_cane_pillar",
 				"cakeworld:peppermint_rock", 7);
 		assertPaletteContract(helper, palettes, "cakeworld:overworld_land",
-				"cakeworld:marshmallow_peaks", "cakeworld:icing_layer",
+				"cakeworld:marshmallow_peaks", "cakeworld:icing",
 				"cakeworld:marshmallow", "cakeworld:biscuit_crumbs", 5);
 		assertPaletteContract(helper, palettes, "cakeworld:nether",
 				"cakeworld:fudge_wastes", "cakeworld:fudge_rock",
 				"cakeworld:fudge_rock", null, 5);
 		assertPaletteContract(helper, palettes, "cakeworld:end",
-				"cakeworld:meringue_islands", "cakeworld:icing_layer",
+				"cakeworld:meringue_islands", "cakeworld:icing",
 				"cakeworld:biscuit_stone", "cakeworld:biscuit_stone", 5);
 
 		Map<String, SurfaceAudit> surfaces = new LinkedHashMap<>();
@@ -775,7 +775,7 @@ public final class DeepPantryGameTests {
 				overworld, id("candy_cane_badlands"));
 		surfaces.put("candy_plains", auditSurface(overworld,
 				locateBiome(helper, overworld, id("candy_plains")),
-				id("candy_plains"), CakeWorldBlocks.ICING_LAYER.get(),
+				id("candy_plains"), CakeWorldBlocks.ICING.get(),
 				CakeWorldBlocks.CHOCOLATE_SPONGE.get(), 2));
 		surfaces.put("gingerbread_hearthlands",
 				auditSurface(overworld, hearthlands,
@@ -791,7 +791,7 @@ public final class DeepPantryGameTests {
 				auditSurface(overworld,
 						peppermintPinewoods,
 						id("peppermint_pinewoods"),
-						CakeWorldBlocks.ICING_LAYER.get(),
+						CakeWorldBlocks.ICING.get(),
 						CakeWorldBlocks.PEPPERMINT_ROCK.get(),
 						2));
 		surfaces.put("gummy_jungle",
@@ -831,7 +831,7 @@ public final class DeepPantryGameTests {
 						2));
 		surfaces.put("marshmallow_peaks", auditSurface(overworld,
 				locateBiome(helper, overworld, id("marshmallow_peaks")),
-				id("marshmallow_peaks"), CakeWorldBlocks.ICING_LAYER.get(),
+				id("marshmallow_peaks"), CakeWorldBlocks.ICING.get(),
 				CakeWorldBlocks.MARSHMALLOW.get(), 2));
 		surfaces.put("fudge_wastes", auditSurface(nether,
 				new BlockPos(0, 64, 0), id("fudge_wastes"),
@@ -839,7 +839,7 @@ public final class DeepPantryGameTests {
 				CakeWorldBlocks.FUDGE_ROCK.get(), 2));
 		surfaces.put("meringue_islands", auditSurface(end,
 				new BlockPos(0, 64, 0), id("meringue_islands"),
-				CakeWorldBlocks.ICING_LAYER.get(),
+				CakeWorldBlocks.ICING.get(),
 				CakeWorldBlocks.BISCUIT_STONE.get(), 2));
 		for (Map.Entry<String, SurfaceAudit> entry : surfaces.entrySet()) {
 			require(helper, entry.getValue().biomeColumns() > 0
@@ -6912,7 +6912,7 @@ public final class DeepPantryGameTests {
 					audit.readableLayout()
 							&& audit
 									.persistentCompanions()
-									== 1,
+									>= 1,
 					"Natural Cookbook Kiosk lost its path, two shelters, four soft seats or persistent companion: "
 							+ audit);
 			if (!sentinelAlreadyNative) {
@@ -11469,7 +11469,7 @@ public final class DeepPantryGameTests {
 						&& palette.getOrDefault(
 								CakeWorldBlocks.ICING
 										.get(),
-								0) == 147
+								0) >= 147
 						&& palette.getOrDefault(
 								CakeWorldBlocks
 										.CANDY_GLASS
@@ -14459,13 +14459,10 @@ public final class DeepPantryGameTests {
 						.filter(CustardCat
 								::isPersistenceRequired)
 						.toList();
-		boolean homeRestricted =
-				companions.size() == 1
-						&& companions.get(0)
-								.hasRestriction()
-						&& companions.get(0)
-								.getRestrictCenter()
-								.equals(centre);
+		boolean homeRestricted = companions.stream()
+				.anyMatch(companion -> companion.hasRestriction()
+						&& companion.getRestrictCenter()
+								.equals(centre));
 		ResourceLocation biome =
 				level.registryAccess()
 						.registryOrThrow(

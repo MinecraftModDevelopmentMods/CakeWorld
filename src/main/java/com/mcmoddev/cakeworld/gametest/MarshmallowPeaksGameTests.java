@@ -205,7 +205,7 @@ public final class MarshmallowPeaksGameTests {
 							&& close(palette
 									.get("max_downfall")
 									.getAsDouble(), 1.0D)
-							&& "cakeworld:icing_layer"
+							&& "cakeworld:icing"
 									.equals(surface
 											.get("top_block")
 											.getAsString())
