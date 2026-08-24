@@ -25,8 +25,12 @@ def freshWorldgenIntegration = providers.gradleProperty(
 def freshWorldgenRunDirectory = providers.gradleProperty(
         'cakeworldFreshWorldgenRunDirectory')
         .getOrElse('run-fresh-worldgen-current')
+def samplerThirdPartyRuntime = providers.gradleProperty(
+        'cakeworldSamplerThirdPartyRuntime')
+        .map { it.toBoolean() }.getOrElse(false)
 def samplerPlatterRuntime = providers.gradleProperty(
         'cakeworldSamplerRuntime').map { it.toBoolean() }.getOrElse(false)
+        || samplerThirdPartyRuntime
 def samplerPlatterRunDirectory = providers.gradleProperty(
         'cakeworldSamplerRunDirectory').getOrElse('run-sampler-platter')
 def samplerPlatterReuseWorld = providers.gradleProperty(
@@ -48,6 +52,8 @@ def cakeworldGameTestNamespaces = providers.gradleProperty(
         'cakeworldGameTestNamespaces').getOrElse(
         providerOverrideRuntime
                 ? 'cakeworld_provider_override'
+                : samplerThirdPartyRuntime
+                        ? 'cakeworld_sampler_third_party'
                 : samplerPlatterRuntime ? 'cakeworld_sampler' : mod_id)
 def expectedFormationAlgorithm = providers.gradleProperty(
         'cakeworldExpectedFormationAlgorithm').orNull
@@ -157,6 +163,9 @@ minecraft {
             if (samplerFormationCase != null) {
                 property 'cakeworld.samplerFormationCase',
                         samplerFormationCase
+            }
+            if (samplerThirdPartyRuntime) {
+                property 'cakeworld.samplerThirdPartyFixture', 'true'
             }
             if (providerOverrideRuntime) {
                 property 'cakeworld.providerOverrideMode',

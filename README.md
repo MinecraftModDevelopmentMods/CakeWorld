@@ -78,6 +78,9 @@ contains the normal adventure, its conditional BaseMetals overlay, and the
 optional `cakeworld:sampler_platter` developer template. The Sampler is never
 auto-selected. Its packaged retrogen rules are disabled fixtures; the build
 harness enables them only inside an explicitly reused, disposable test save.
+Its ninth biome plot targets only the dormant `cakeworld_fixture` namespace;
+that namespace is registered and installed as a source only when the explicit
+third-party GameTest switch is present.
 
 To run the currently implemented Sampler biome plots, profile-wide extreme
 `sky_v1` formation comparison, installed-output alias and three-layer
@@ -103,6 +106,17 @@ formation controls:
 Add `-PcakeworldSamplerReuseWorld=true` to the same command for reload proof.
 The override and save stay under the ignored run directory and never alter the
 packaged Sampler or an ordinary adventure.
+
+The unrelated-source composition proof installs a fixed test-only biome source
+before OreSpawn's released wrapper and never adds TerraBlender or another
+production dependency:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldSamplerThirdPartyRuntime=true -PcakeworldSamplerRunDirectory=run-sampler-third-party-local
+```
+
+Use the normal explicit reuse flag for same-save reload. Without the dedicated
+switch, neither the fixture biome nor its source owner is registered.
 
 The copied-world retrogen proof is deliberately three-phase and uses one
 ignored test directory. Never point these commands at a player world:

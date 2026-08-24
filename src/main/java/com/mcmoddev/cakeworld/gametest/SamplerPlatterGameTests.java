@@ -68,8 +68,8 @@ public final class SamplerPlatterGameTests {
 	public static void packagedSamplerIsOptionalAndBounded(
 			GameTestHelper helper) {
 		JsonObject provider = packagedProvider(helper);
-		require(helper, provider.get("provider_revision").getAsInt() >= 53,
-				"Sampler retrogen fixture requires provider revision 53");
+		require(helper, provider.get("provider_revision").getAsInt() >= 54,
+				"Sampler third-party fixture requires provider revision 54");
 		JsonObject templates = provider.getAsJsonObject("templates");
 		require(helper, templates.size() == 3,
 				"Generated provider must contain two adventures and one sampler");
@@ -95,8 +95,12 @@ public final class SamplerPlatterGameTests {
 				templates.getAsJsonObject("cakeworld:edible_world")
 						.getAsJsonObject("profile"), profile);
 		JsonObject palettes = profile.getAsJsonObject("biome_palettes");
-		require(helper, palettes.size() == 8,
-				"Sampler region checkpoint must expose eight plots");
+		require(helper, palettes.size() == 9,
+				"Sampler compatibility checkpoint must expose nine plots");
+		require(helper, !helper.getLevel().registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY)
+				.containsKey(SamplerThirdPartyBiomeFixture.BIOME_ID),
+				"GameTest-only third-party biome leaked into an ordinary Sampler");
 		JsonObject palette = palettes
 				.getAsJsonObject("cakeworld:sampler_overworld_augment");
 		requireSamplerPalette(helper, palette);

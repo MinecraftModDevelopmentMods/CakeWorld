@@ -82,7 +82,7 @@ saved profile is never silently rewritten.
 `cakeworld:edible_world_basemetals` is generated from that same canonical
 profile with the optional thirteen-resource compatibility overlay. The third
 template, `cakeworld:sampler_platter`, is deliberately non-automatic and must
-be selected explicitly. Provider revision 53 retains its first bounded
+be selected explicitly. Provider revision 54 retains its first bounded
 diagnostic plot—Candy Plains augmenting the delegated vanilla source with
 `minecraft_only` scope, tiny regions, partial coverage, and a positive
 fallback weight—and adds two namespace-filter plots. Five labelled Overworld
@@ -97,7 +97,10 @@ Crags output requires a deliberately missing biome. The End declares a
 Meringue output under `all` scope but excludes `minecraft`, so vanilla End
 sources must delegate unchanged. Together they demonstrate include/exclude
 lists and optional/required dependency behavior without callbacks or effects
-on either adventure. During provider generation the Sampler inherits the
+on either adventure. A ninth selected-namespace plot targets only an opt-in
+`cakeworld_fixture` source. The fixture registers a Plains-derived biome and
+installs a fixed source at the final level-load boundary before OreSpawn wraps
+it; normal CakeWorld never registers either. During provider generation the Sampler inherits the
 adventure's rocks, geomes, biome rules, dictionary rules and terrain dimensions
 exactly. It then selects the profile-wide legacy `sky_v1` algorithm with
 deliberately extreme but schema-bounded custom values. This makes the
@@ -159,6 +162,22 @@ transitions, horizontal transitions, distinct rocks and distinct geomes, with
 unsigned signature `12,479,179,277,466,877,779`. This is a labelled minimum
 named-preset case, not a claim that it minimises every observed transition
 count or that presets can vary per geome.
+
+The unrelated-source proof is also isolated. It uses no TerraBlender and no
+production biome-source hook:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldSamplerThirdPartyRuntime=true -PcakeworldSamplerRunDirectory=run-sampler-third-party-local
+```
+
+The dedicated switch conditionally registers
+`cakeworld_fixture:delegated_meadow`, installs a fixed Overworld source at
+highest-priority level load, and then lets released OreSpawn perform its normal
+wrap. Across 4,225 samples, the final selected-namespace plot yields exactly
+1,736 untouched fixture results and 2,489 Candy-Plains selections. This proves
+that the six earlier `minecraft_only` Overworld plots delegated the unrelated
+source unchanged before the explicit fixture plot. Fresh/reload reproduce the
+counts. An ordinary Sampler asserts the fixture registry ID is absent.
 
 The same-seed stable baseline uses a separate world because OreSpawn formation
 settings are profile-wide:
@@ -265,5 +284,6 @@ remain ignored.
   region settings with fixed 128/256/512/1,024/2,048-block boundary evidence.
   Its extreme formation, registered-output alias, three-layer flat-bedrock and
   copied-world retrogen and minimum-preset formation cases are also automated.
-  An unrelated mod-biome pass-through fixture, hands-on formation readability
-  review and the remaining labelled plots are still Slice 7 work.
+  The unrelated mod-biome pass-through fixture is automated as well. Hands-on
+  formation readability review and the remaining labelled plots are still
+  Slice 7 work.

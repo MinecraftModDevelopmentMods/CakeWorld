@@ -7,6 +7,7 @@ import com.mcmoddev.cakeworld.init.CakeWorldEntities;
 import com.mcmoddev.cakeworld.init.CakeWorldFluids;
 import com.mcmoddev.cakeworld.init.CakeWorldItems;
 import com.mcmoddev.cakeworld.init.CakeWorldSounds;
+import com.mcmoddev.cakeworld.gametest.SamplerThirdPartyBiomeFixture;
 import com.mcmoddev.cakeworld.network.CakeWorldNetwork;
 
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -26,6 +27,9 @@ public final class CakeWorld {
 		CakeWorldSounds.register(modBus);
 		CakeWorldItems.register(modBus);
 		CakeWorldBiomes.register(modBus);
+		if (Boolean.getBoolean("cakeworld.samplerThirdPartyFixture")) {
+			SamplerThirdPartyBiomeFixture.register(modBus);
+		}
 		modBus.addListener(CakeWorldBiomes::commonSetup);
 		CakeWorldNetwork.register();
 	}
