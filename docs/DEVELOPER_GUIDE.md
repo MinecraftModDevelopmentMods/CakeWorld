@@ -144,6 +144,22 @@ the revision marker prevents a second pass. A public operator-command probe in
 the apply phase returns zero for both already auto-queued chunks; it is
 diagnostic and does not perform the proof itself.
 
+The minimum-style formation comparison uses a separate ignored world and a
+test-only provider override generated from the exact packaged declaration. It
+changes only the Sampler's five profile-wide formation controls to the released
+`tiny` preset; it does not add a fourth packaged template:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldSamplerRuntime=true -PcakeworldSamplerFormationCase=minimum -PcakeworldSamplerRunDirectory=run-sampler-formation-minimum-local -PcakeworldGameTestNamespaces=cakeworld_formation -PcakeworldExpectedFormationAlgorithm=sky_v1
+```
+
+Repeat with `-PcakeworldSamplerReuseWorld=true` to verify the saved profile.
+Fixed seed `5059928472718672684` produces exact `32,350/1,627/8/14` vertical
+transitions, horizontal transitions, distinct rocks and distinct geomes, with
+unsigned signature `12,479,179,277,466,877,779`. This is a labelled minimum
+named-preset case, not a claim that it minimises every observed transition
+count or that presets can vary per geome.
+
 The same-seed stable baseline uses a separate world because OreSpawn formation
 settings are profile-wide:
 
@@ -248,6 +264,6 @@ remain ignored.
   exclude lists, optional/required similar-biome behavior, and all five live
   region settings with fixed 128/256/512/1,024/2,048-block boundary evidence.
   Its extreme formation, registered-output alias, three-layer flat-bedrock and
-  copied-world retrogen cases are also automated. An unrelated mod-biome
-  pass-through fixture, the minimum-style formation case and the remaining
-  labelled plots are still Slice 7 work.
+  copied-world retrogen and minimum-preset formation cases are also automated.
+  An unrelated mod-biome pass-through fixture, hands-on formation readability
+  review and the remaining labelled plots are still Slice 7 work.

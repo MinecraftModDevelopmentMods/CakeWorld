@@ -39,9 +39,17 @@ public final class FormationProfileGameTests {
 	public static void fixedSeedFormationProfileIsLive(GameTestHelper helper) {
 		String expected = System.getProperty(
 				"cakeworld.expectedFormationAlgorithm", "").trim();
+		String formationCase = System.getProperty(
+				"cakeworld.samplerFormationCase",
+				"sky_v1".equals(expected) ? "extreme" : "baseline").trim();
 		require(helper, "stable_layers".equals(expected)
 					|| "sky_v1".equals(expected),
 				"Formation evidence requires an explicit expected algorithm");
+		require(helper, "stable_layers".equals(expected)
+					? "baseline".equals(formationCase)
+					: "extreme".equals(formationCase)
+							|| "minimum".equals(formationCase),
+				"Formation evidence received an incompatible profile case");
 
 		GeologyProfileView profile = OreSpawnApi.getActiveProfile(
 				helper.getLevel().getServer()).orElseThrow();
@@ -56,7 +64,9 @@ public final class FormationProfileGameTests {
 				.filter(expectedTemplate::equals).isPresent(),
 				"Formation evidence selected the wrong world template");
 
-		if ("sky_v1".equals(expected)) {
+		if ("minimum".equals(formationCase)) {
+			requireMinimumSettings(helper, formations);
+		} else if ("sky_v1".equals(expected)) {
 			requireExtremeSettings(helper, formations);
 		} else {
 			require(helper,
@@ -88,7 +98,15 @@ public final class FormationProfileGameTests {
 					&& survey.horizontalTransitions > 0,
 				"Active formation profile did not produce varied live geology: "
 						+ survey);
-		if ("sky_v1".equals(expected)) {
+		if ("minimum".equals(formationCase)) {
+			require(helper, survey.verticalTransitions == 32350
+						&& survey.horizontalTransitions == 1627
+						&& survey.rockCounts.size() == 8
+						&& survey.geomeCounts.size() == 14
+						&& survey.signature == -5967564796242673837L,
+					"Fixed-seed minimum-preset sky_v1 signature drifted: "
+							+ survey);
+		} else if ("sky_v1".equals(expected)) {
 			require(helper, survey.verticalTransitions == 36515
 						&& survey.horizontalTransitions == 1176
 						&& survey.rockCounts.size() == 7
@@ -103,8 +121,8 @@ public final class FormationProfileGameTests {
 						&& survey.signature == 6720209891956171365L,
 					"Fixed-seed stable_layers signature drifted: " + survey);
 		}
-		LOGGER.info("CakeWorld formation survey algorithm={} template={} columns={} samples={} verticalTransitions={} horizontalTransitions={} distinctRocks={} distinctGeomes={} rockCounts={} geomeCounts={} familyCounts={} signature={} elapsedMs={}",
-				expected, expectedTemplate, survey.columns, survey.samplePoints,
+		LOGGER.info("CakeWorld formation survey algorithm={} case={} template={} columns={} samples={} verticalTransitions={} horizontalTransitions={} distinctRocks={} distinctGeomes={} rockCounts={} geomeCounts={} familyCounts={} signature={} elapsedMs={}",
+				expected, formationCase, expectedTemplate, survey.columns, survey.samplePoints,
 				survey.verticalTransitions, survey.horizontalTransitions,
 				survey.rockCounts.size(), survey.geomeCounts.size(),
 				survey.rockCounts, survey.geomeCounts, survey.familyCounts,
@@ -183,6 +201,16 @@ public final class FormationProfileGameTests {
 						&& custom.get("edge_octaves").getAsInt() == 8
 						&& custom.get("continuity").getAsDouble() == 0.0,
 				"Extreme formation values did not survive profile serialization");
+	}
+
+	private static void requireMinimumSettings(GameTestHelper helper,
+			JsonObject formations) {
+		for (String key : new String[] { "horizontal_size",
+				"vertical_thickness", "waviness", "edge_irregularity",
+				"formation_continuity" }) {
+			require(helper, "tiny".equals(formations.get(key).getAsString()),
+					"Minimum formation profile lost tiny preset " + key);
+		}
 	}
 
 	private static void require(GameTestHelper helper, boolean condition,

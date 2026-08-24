@@ -33,6 +33,8 @@ def samplerPlatterReuseWorld = providers.gradleProperty(
         'cakeworldSamplerReuseWorld').map { it.toBoolean() }.getOrElse(false)
 def samplerRetrogenPhase = providers.gradleProperty(
         'cakeworldSamplerRetrogenPhase').orNull
+def samplerFormationCase = providers.gradleProperty(
+        'cakeworldSamplerFormationCase').orNull
 def providerOverrideMode = providers.gradleProperty(
         'cakeworldProviderOverrideMode').orNull
 def providerOverrideRuntime = providerOverrideMode != null
@@ -152,6 +154,10 @@ minecraft {
                 property 'cakeworld.samplerRetrogenPhase',
                         samplerRetrogenPhase
             }
+            if (samplerFormationCase != null) {
+                property 'cakeworld.samplerFormationCase',
+                        samplerFormationCase
+            }
             if (providerOverrideRuntime) {
                 property 'cakeworld.providerOverrideMode',
                         providerOverrideMode
@@ -224,7 +230,9 @@ def providerOverrideRunRoot =
 def prepareSamplerPlatterRun = tasks.register('prepareSamplerPlatterRun') {
     group = 'verification'
     description = 'Prepares a fresh, explicitly selected Sampler Platter GameTest run.'
-    inputs.files(samplerPlatterGlobalConfig, samplerPlatterServerProperties)
+    dependsOn 'generateCakeWorldOreSpawnProvider'
+    inputs.files(samplerPlatterGlobalConfig, samplerPlatterServerProperties,
+            generatedOreSpawnProvider)
     outputs.files(
             samplerPlatterRunRoot.file('config/orespawn-worldgen.json'),
             samplerPlatterRunRoot.file('server.properties'))
@@ -234,6 +242,12 @@ def prepareSamplerPlatterRun = tasks.register('prepareSamplerPlatterRun') {
         def runRoot = samplerPlatterRunRoot.asFile
         def savedProfile = new File(runRoot,
                 'world/serverconfig/orespawn-worldgen.json')
+        def formationCase = samplerFormationCase == null
+                ? 'extreme' : samplerFormationCase
+        if (!(formationCase in ['extreme', 'minimum'])) {
+            throw new GradleException(
+                    "cakeworldSamplerFormationCase must be extreme or minimum; got '${formationCase}'.")
+        }
         if (samplerRetrogenPhase != null
                 && !(samplerRetrogenPhase in ['baseline', 'apply', 'reload'])) {
             throw new GradleException(
@@ -283,6 +297,38 @@ def prepareSamplerPlatterRun = tasks.register('prepareSamplerPlatterRun') {
             logger.lifecycle(
                     "Reusing Sampler world-owned profile without rewriting its global selection fixture: ${savedProfile}")
             return
+        }
+        def providerOverride = new File(runRoot,
+                'config/cakeworld-orespawn.json')
+        if (formationCase == 'minimum') {
+            def parser = new groovy.json.JsonSlurper()
+            def provider = parser.parse(
+                    generatedOreSpawnProvider.get().asFile) as Map
+            def sampler = provider.templates['cakeworld:sampler_platter'] as Map
+            def profile = sampler == null ? null : sampler.profile as Map
+            if (profile == null) {
+                throw new GradleException(
+                        'Generated provider does not contain the Sampler profile.')
+            }
+            profile.formations = [
+                    algorithm: 'sky_v1',
+                    horizontal_size: 'tiny',
+                    vertical_thickness: 'tiny',
+                    waviness: 'tiny',
+                    edge_irregularity: 'tiny',
+                    formation_continuity: 'tiny',
+                    custom: [:]
+            ]
+            providerOverride.parentFile.mkdirs()
+            providerOverride.setText(groovy.json.JsonOutput.prettyPrint(
+                    groovy.json.JsonOutput.toJson(provider))
+                    + System.lineSeparator(), 'UTF-8')
+            logger.lifecycle(
+                    "Prepared minimum-preset Sampler provider override: ${providerOverride}")
+        } else if (providerOverride.isFile()
+                && !providerOverride.delete()) {
+            throw new GradleException(
+                    "Could not remove stale Sampler provider override: ${providerOverride}")
         }
         copy {
             from samplerPlatterGlobalConfig

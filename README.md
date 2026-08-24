@@ -91,6 +91,19 @@ The task refuses a directory that already owns a saved world profile. Pass
 `-PcakeworldSamplerReuseWorld=true` as an additional, explicit flag only when
 collecting same-save reload evidence.
 
+The separate minimum-preset formation case is generated as an isolated
+test-only provider override from the exact packaged declaration. It keeps the
+same Sampler template and geology but selects `tiny` for all five profile-wide
+formation controls:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldSamplerRuntime=true -PcakeworldSamplerFormationCase=minimum -PcakeworldSamplerRunDirectory=run-sampler-formation-minimum-local -PcakeworldGameTestNamespaces=cakeworld_formation -PcakeworldExpectedFormationAlgorithm=sky_v1
+```
+
+Add `-PcakeworldSamplerReuseWorld=true` to the same command for reload proof.
+The override and save stay under the ignored run directory and never alter the
+packaged Sampler or an ordinary adventure.
+
 The copied-world retrogen proof is deliberately three-phase and uses one
 ignored test directory. Never point these commands at a player world:
 
