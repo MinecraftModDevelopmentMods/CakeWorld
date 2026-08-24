@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "provider_modid": "cakeworld",
-  "provider_revision": 54,
+  "provider_revision": 55,
   "templates": {
     "cakeworld:edible_world": {
       "name_key": "template.cakeworld.edible_world",
@@ -1566,6 +1566,53 @@
                 "height_distribution": "uniform",
                 "discard_chance_on_air_exposure": 0.0,
                 "host_blocks": ["cakeworld:biscuit_stone"]
+              }
+            }
+          },
+          "cakeworld:ore/layer_cake": {
+            "block": "cakeworld:mint_crystal",
+            "outputs": [
+              {
+                "block": "cakeworld:mint_crystal",
+                "weight": 3.0
+              },
+              {
+                "block": "cakeworld:fizzy_pearl",
+                "weight": 2.0
+              },
+              {
+                "block": "cakeworld:rich_sprinkle_cluster",
+                "weight": 1.0
+              }
+            ],
+            "deep_output_max_y": -64,
+            "enabled": true,
+            "source_mod": "cakeworld",
+            "retrogen": false,
+            "dimensions": {
+              "minecraft:overworld": {
+                "enabled": true,
+                "min_y": -40,
+                "max_y": -20,
+                "frequency": 4.0,
+                "quantity": 39,
+                "pattern": {
+                  "type": "cakeworld:layer_cake",
+                  "settings": {
+                    "layers": 3,
+                    "radius": 2,
+                    "thickness": 1,
+                    "layer_gap": 1
+                  }
+                },
+                "height_distribution": "uniform",
+                "discard_chance_on_air_exposure": 0.0,
+                "host_families": [
+                  "sedimentary",
+                  "metamorphic",
+                  "igneous_intrusive",
+                  "igneous_volcanic"
+                ]
               }
             }
           }

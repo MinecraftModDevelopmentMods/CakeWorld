@@ -82,7 +82,7 @@ saved profile is never silently rewritten.
 `cakeworld:edible_world_basemetals` is generated from that same canonical
 profile with the optional thirteen-resource compatibility overlay. The third
 template, `cakeworld:sampler_platter`, is deliberately non-automatic and must
-be selected explicitly. Provider revision 54 retains its first bounded
+be selected explicitly. Provider revision 55 retains its bounded
 diagnostic plot—Candy Plains augmenting the delegated vanilla source with
 `minecraft_only` scope, tiny regions, partial coverage, and a positive
 fallback weight—and adds two namespace-filter plots. Five labelled Overworld
@@ -100,9 +100,10 @@ lists and optional/required dependency behavior without callbacks or effects
 on either adventure. A ninth selected-namespace plot targets only an opt-in
 `cakeworld_fixture` source. The fixture registers a Plains-derived biome and
 installs a fixed source at the final level-load boundary before OreSpawn wraps
-it; normal CakeWorld never registers either. During provider generation the Sampler inherits the
-adventure's rocks, geomes, biome rules, dictionary rules and terrain dimensions
-exactly. It then selects the profile-wide legacy `sky_v1` algorithm with
+it; normal CakeWorld never registers either. During provider generation the
+Sampler inherits the adventure's rocks, geomes, biome rules, dictionary rules
+and terrain dimensions exactly. It then selects the profile-wide legacy
+`sky_v1` algorithm with
 deliberately extreme but schema-bounded custom values. This makes the
 fixed-seed comparison meaningful while leaving both automatically selected
 adventures on average `stable_layers` settings. The same explicit Sampler maps
@@ -112,12 +113,18 @@ bedrock retrogen switch remains off. Two additional ore rules are packaged
 disabled beside a disabled profile-wide retrogen control. They are inert in an
 ordinary Sampler and exist solely so a copied test save can activate one
 retrogen-enabled Sprinkle rule beside one non-retrogen Fizzy-Pearl control.
+It also enables one public `cakeworld:layer_cake` ore rule in the Overworld.
+The pattern decodes bounded layer, radius, thickness and gap settings once,
+then places allocation-free horizontal discs through OreSpawn's compiled
+hot-path contract. Standard OreSpawn weighted outputs give the deposit cells a
+`3:2:1` Mint-Crystal, Fizzy-Pearl and Rich-Sprinkle flavour mix.
 
-Run its isolated four-test fresh-world proof, including the formation survey,
+Run its isolated five-test fresh-world proof, including the formation survey
+and custom-pattern contract,
 with:
 
 ```powershell
-./gradlew runGameTestServer -PcakeworldSamplerRuntime=true -PcakeworldSamplerRunDirectory=run-sampler-platter-local '-PcakeworldGameTestNamespaces=cakeworld_sampler,cakeworld_formation' -PcakeworldExpectedFormationAlgorithm=sky_v1
+./gradlew runGameTestServer -PcakeworldSamplerRuntime=true -PcakeworldSamplerRunDirectory=run-sampler-platter-local '-PcakeworldGameTestNamespaces=cakeworld_sampler,cakeworld_formation,cakeworld_layer_cake' -PcakeworldExpectedFormationAlgorithm=sky_v1
 ```
 
 The preparation task refuses to reuse a directory that already contains a

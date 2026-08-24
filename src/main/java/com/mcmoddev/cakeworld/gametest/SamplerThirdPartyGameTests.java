@@ -47,8 +47,8 @@ public final class SamplerThirdPartyGameTests {
 				"cakeworld.samplerThirdPartyFixture"),
 				"Third-party biome fixture was not explicitly enabled");
 		JsonObject provider = packagedProvider(helper);
-		require(helper, provider.get("provider_revision").getAsInt() == 54,
-				"Third-party proof requires provider revision 54");
+		require(helper, provider.get("provider_revision").getAsInt() == 55,
+				"Third-party proof requires provider revision 55");
 		JsonObject profile = provider.getAsJsonObject("templates")
 				.getAsJsonObject("cakeworld:sampler_platter")
 				.getAsJsonObject("profile");
