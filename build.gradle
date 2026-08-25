@@ -1177,8 +1177,116 @@ def auditCakeWorldOreSpawnApiUsage = tasks.register(
     }
 }
 
+def auditCakeWorldThirdPartyIsolation = tasks.register(
+        'auditCakeWorldThirdPartyIsolation') {
+    group = 'verification'
+    description = 'Rejects broad mob, structure, or resource mutation boundaries that could capture unknown mods.'
+    inputs.files(fileTree('src/main/java/com/mcmoddev/cakeworld/world') {
+        include 'CakeWorld*Replacement.java'
+        include '*Palette.java'
+    })
+    inputs.files('src/main/orespawn/provider.json',
+            'src/main/orespawn/basemetals-overlay.json')
+
+    doLast {
+        def worldSources = fileTree(
+                'src/main/java/com/mcmoddev/cakeworld/world')
+        def converters = worldSources.matching {
+            include 'CakeWorld*Replacement.java'
+        }.files.findAll { source ->
+            source.getText('UTF-8').contains('EntityJoinWorldEvent')
+        }
+        if (converters.isEmpty()) {
+            throw new GradleException(
+                    'Third-party isolation audit found no entity converters.')
+        }
+        def broadConverters = converters.findAll { source ->
+            !(source.getText('UTF-8') =~
+                    /getType\(\)\s*!=\s*EntityType\./).find()
+        }
+        if (!broadConverters.isEmpty()) {
+            throw new GradleException(
+                    'Entity converters lost their exact literal-type guard:\n'
+                            + broadConverters*.path.sort().join('\n'))
+        }
+
+        def palettes = worldSources.matching {
+            include '*Palette.java'
+        }.files.findAll { source ->
+            source.getText('UTF-8').contains('ChunkEvent.Load')
+        }
+        if (palettes.isEmpty()) {
+            throw new GradleException(
+                    'Third-party isolation audit found no structure palettes.')
+        }
+        def broadPalettes = palettes.findAll { source ->
+            def text = source.getText('UTF-8')
+            !(text =~ /Registry\s*\.\s*CONFIGURED_STRUCTURE_FEATURE_REGISTRY/)
+                    .find()
+                    || !text.contains('getStartForFeature')
+        }
+        if (!broadPalettes.isEmpty()) {
+            throw new GradleException(
+                    'Structure palettes lost their exact configured-structure lookup:\n'
+                            + broadPalettes*.path.sort().join('\n'))
+        }
+
+        def allowedNamespaces = [
+                'minecraft', 'cakeworld', 'orespawn', 'basemetals'
+        ] as Set
+        def allowedScopeNamespaces = (allowedNamespaces
+                + ['cakeworld_fixture']) as Set
+        def resourceNamespaces = [] as Set
+        def scopeNamespaces = [] as Set
+        def walk
+        walk = { node ->
+            if (node instanceof Map) {
+                node.each { key, value ->
+                    def keyText = key.toString()
+                    def keyMatch = keyText =~
+                            /^#?([a-z0-9_.-]+):[a-z0-9_.\/-]+$/
+                    if (keyMatch.matches()) {
+                        resourceNamespaces << keyMatch.group(1)
+                    }
+                    if (keyText == 'include_namespaces'
+                            || keyText == 'exclude_namespaces') {
+                        def members = value instanceof Collection
+                                ? value : [value]
+                        members.findAll { it != null && !it.toString().isEmpty() }
+                                .each { scopeNamespaces << it.toString() }
+                    }
+                    walk(value)
+                }
+            } else if (node instanceof Collection) {
+                node.each { walk(it) }
+            } else if (node instanceof String) {
+                def match = node =~
+                        /^#?([a-z0-9_.-]+):[a-z0-9_.\/-]+$/
+                if (match.matches()) {
+                    resourceNamespaces << match.group(1)
+                }
+            }
+        }
+        ['src/main/orespawn/provider.json',
+                'src/main/orespawn/basemetals-overlay.json'].each { path ->
+            walk(new groovy.json.JsonSlurper().parse(file(path)))
+        }
+        def unexpectedResources = resourceNamespaces - allowedNamespaces
+        def unexpectedScopes = scopeNamespaces - allowedScopeNamespaces
+        if (!unexpectedResources.isEmpty() || !unexpectedScopes.isEmpty()) {
+            throw new GradleException(
+                    'OreSpawn provider introduced an undeclared compatibility namespace: resources='
+                            + unexpectedResources.sort()
+                            + ', scopes=' + unexpectedScopes.sort())
+        }
+        logger.lifecycle(
+                "Third-party isolation audit passed: ${converters.size()} exact entity converters, ${palettes.size()} exact structure palettes, resource namespaces ${resourceNamespaces.sort()}, scope namespaces ${scopeNamespaces.sort()}")
+    }
+}
+
 tasks.named('check').configure {
-    dependsOn auditCakeWorldOreSpawnApiUsage
+    dependsOn auditCakeWorldOreSpawnApiUsage,
+            auditCakeWorldThirdPartyIsolation
 }
 
 def prepareGameTestStructures = tasks.register('prepareGameTestStructures', Copy) {
