@@ -69,15 +69,18 @@ compatibility overlay, and “Sampler” means the optional diagnostic template.
 | OS-007 | Immutable definitions and bake-time registry resolution | Store registry IDs declaratively and let OreSpawn validate and bake holders, tags, fluids, settings, and weights. The public active-profile view rejects collection mutation and returns detached diagnostic JSON. | Main | 1 | A dedicated-server test cannot mutate ID collections or the active profile through returned JSON; the unchanged profile then generates its expected rocks, ores, fluids, surfaces, and biomes. Missing optional and required similarity IDs are isolated under OS-045/046. |
 | OS-008 | Active-profile query | **Verified:** `/cakeworld orespawn` calls only `OreSpawnApi.getActiveProfile(server)` and renders the selected template, geology mode and typed-view counts for rocks, geomes, ores, fluid deposits, biome palettes and terrain dimensions. | Sampler | 7 | A permission-zero focused fresh-world GameTest compared every rendered argument to the released immutable view, executed the registered command successfully and saved all dimensions. The command has no reload, retrogen or mutation path. |
 | OS-009 | Production geology sampler | Use `OreSpawnApi.createSampler` for Cookbook geology clues or a developer tasting probe. | Main | 2 | One sampled column reports its biome, geome, and rocks at several Y levels; sampling remains read-only. |
-| OS-010 | Ore-takeover state | Suppress a child mod's native generation only when `isOreTakeoverActive(modid)` is active; pending and inactive are fail-safe. | BaseMetals | 2 | No duplicate generation when takeover is active and no lost native ores when discovery is pending or inactive. |
+| OS-010 | Ore-takeover state | **Shelved against released 4.0.6.118021:** CakeWorld's eleven themed vanilla-resource blocks keep verified drops, tags, mining and processing contracts, but the adventure does not take over vanilla placement. OreSpawn bakes takeover from each managed rule's output block while its vanilla feature gate compares the vanilla output block, so a themed output cannot claim its different source feature. | Main | 2/4 | Re-enter after a published OreSpawn release provides a declarative, bake-time source-block or exact source-feature mapping. Prove dimension-specific suppression, no duplicate or missing resources, copied-world retention and coexistence with unknown third-party ores before enabling takeover. |
 | OS-011 | Legacy schema reading | **Verified:** keep packaged CakeWorld on schema 4 and install a tracked schema-3 authoritative override only in an isolated harness. Its auto-selected legacy template deliberately has an empty profile. | Sampler | 7 | Fresh and same-save reload selected `cakeworld:legacy_schema_probe`; released OreSpawn retained provider revision `1101` and normalized the world snapshot to schema 5, `geome`, `stable_layers`, all five `average` presets and the fluid-deposit default. Both focused runs passed and saved every dimension; the fixture is absent from the JAR. |
 | OS-012 | Deprecated migration adapters | **Verified non-use:** CakeWorld uses neither `OilDefinition` nor `OreSpawnOreIntegration`, and does not import implementation packages. The schema-3 JSON fixture exercises released legacy reading without adding a deprecated Java dependency. | Sampler | 7 | `auditCakeWorldOreSpawnApiUsage` is part of `check` and fails on either deprecated type or any import outside `zone.moddev.mc.orespawn.api`. Clean/exact builds and a separate repository source audit passed. |
 
 CakeWorld's themed vanilla blocks currently expose their mining and processing
-contracts without taking over placement. OS-010 needs an OreSpawn rule field
-that separately names the vanilla source block to suppress when a managed rule
-places a different CakeWorld output. The existing global suppression switch is
-not an acceptable substitute because it would remove unknown third-party ore
+contracts without taking over placement. Released OreSpawn 4.0.6.118021 builds
+each takeover set from the managed `BakedOreRule.output`, while each vanilla
+`GateFeature` asks about its own vanilla output. OS-010 therefore needs an
+OreSpawn rule field that separately names the source block or exact vanilla
+feature to suppress when a managed rule places a different CakeWorld output.
+The existing profile-wide `suppress_all_ore_features` switch is not an
+acceptable substitute because it would remove unknown third-party ore
 features. `docs/COMPATIBILITY.md` records the full boundary and re-entry
 condition.
 
@@ -148,8 +151,8 @@ top-column material as cave-surface support.
 | OS-052 | Delegated-source composition | **Verified:** conditionally install a fixed test-only Overworld source under the unrelated `cakeworld_fixture` namespace at highest-priority level load, then let released OreSpawn wrap the final source normally. CakeWorld adds no TerraBlender or production source hook. | Sampler | 7 | Fresh/reload each retained exact 1,736 delegated fixture and 2,489 selected Candy-Plains results across 4,225 samples. The fixture source installed before OreSpawn's wrap, while ordinary Sampler and normal adventure runs kept the fixture registry ID absent and retained their established outputs. |
 | OS-053 | Default aquifer fluid | Use lemonade aquifers where water would normally form in the Overworld. | Main | 2 | New aquifer cavities contain the registered lemonade fluid block. |
 | OS-054 | Deep aquifer fluid and threshold | Use deep hot fudge below the configured Y threshold. | Main | 2 | Samples immediately above and below the threshold use the correct fluids. |
-| OS-055 | Snow material | **Shelved at runtime:** the profile retains `snow_block=cakeworld:icing_layer`, but neither the public chunk-load/world-tick routes nor a temporary direct handler diagnostic converted a top-of-column vanilla snow fixture. | Main | 1/3 | Re-enter after OreSpawn exposes/fixes the baked weather-material conversion and a real load/tick changes snow to icing across save/reload. |
-| OS-056 | Ice material | **Shelved at runtime:** the profile retains `ice_block=cakeworld:frozen_lemonade`, but the same public and direct-handler diagnostics left a top-of-column vanilla ice fixture unchanged. | Main | 1/3 | Re-enter with OS-055 after CakeWorld and other integrated mods prove the uncommitted OreSpawn repair stable. |
+| OS-055 | Snow material | **Shelved against released 4.0.6.118021:** the profile retains `snow_block=cakeworld:icing_layer`, but the permanent opt-in black-box regression posted Forge's ordinary `ChunkEvent.Load` for a loaded ServerLevel fixture and OreSpawn left top-of-column `minecraft:snow` unchanged. CakeWorld imports no OreSpawn implementation package. | Main | 1/3 | Re-enter after a published OreSpawn release fixes or exposes a supported fixture for baked weather-material conversion. Require the expected-red regression to turn green, then prove naturally formed snow converts to icing across fresh generation and same-save reload. |
+| OS-056 | Ice material | **Shelved against released 4.0.6.118021:** the same current-release black-box event test left top-of-column `minecraft:ice` unchanged instead of producing `cakeworld:frozen_lemonade`. | Main | 1/3 | Re-enter with OS-055 only after the published fix passes CakeWorld fresh/reload proof and integrated-world tests with other OreSpawn consumers. |
 
 ### Ore placement
 
@@ -319,13 +322,15 @@ same-seed adventure and diagnostic profiles; they do not require an OreSpawn
 change and do not unshelve the per-geome OS-028 goal.
 
 `OS-055` and `OS-056` remain valid declarative profile examples but are not
-working runtime examples under the tested OreSpawn build. CakeWorld placed
-vanilla snow and ice at the live motion-blocking top of a loaded player chunk.
-A public chunk-load event, a public end-of-world tick, and one temporary
-diagnostic invocation of OreSpawn's own handler all left both blocks
-unchanged. The internal call was removed immediately; CakeWorld must not
-publish it as an integration pattern. Re-enter only after OreSpawn's baked
-weather materials are fixed or exposed through a supported test fixture.
+working runtime examples under released OreSpawn 4.0.6.118021. CakeWorld's
+permanent, opt-in `cakeworld_weather_materials` regression places literal
+vanilla snow and ice at live motion-blocking column tops, verifies that Forge's
+`ChunkEvent.Load` carries the real ServerLevel, and posts that event through the
+ordinary event bus. Both blocks remain literal vanilla states. Historical
+public world-tick and temporary direct-handler diagnostics agreed; the internal
+call was removed and is not a supported integration pattern. Re-enter only
+after a published OreSpawn build makes the black-box regression green, followed
+by natural fresh/reload and multi-mod proof.
 
 `OS-061` remains useful descriptive metadata, but source inspection confirms
 that OreSpawn 4.0.1 reads `source_mod` only in configuration, editor, and

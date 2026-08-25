@@ -36,8 +36,11 @@ Names and artwork are CakeWorld's; resource identity remains recognisable.
 
 ## Vanilla Resource Conversion
 
-The ordinary `cakeworld:edible_world` template replaces vanilla ore placement
-with CakeWorld outputs while preserving the vanilla resource economy.
+The ordinary `cakeworld:edible_world` template is designed to replace vanilla
+ore presentation with CakeWorld outputs while preserving the vanilla resource
+economy. That placement step is currently shelved at OS-010 against released
+OreSpawn 4.0.6.118021; the eleven genuine blocks and their data contracts remain
+available and verified while native vanilla placement deliberately stays on.
 
 | ID | Vanilla resource and source blocks | CakeWorld identity | Compatibility contract |
 |---|---|---|---|
@@ -78,25 +81,28 @@ vanilla resource.
 ### Current vanilla-takeover limitation
 
 The themed blocks, loot, tags, processing recipes, mining tiers, piglin gold
-identity, and Ancient Nougat advancement bridge can exist safely before world
-placement changes. The normal template must nevertheless leave
+identity, and Ancient Nougat advancement bridge are implemented and verified.
+World-placement takeover is shelved, and the normal template must leave
 `manage_vanilla_ores` disabled until OreSpawn can distinguish:
 
 - the CakeWorld block a managed rule places; and
 - the vanilla source block whose native placed features that rule replaces.
 
-OreSpawn 4.0.6.118021 currently keys its vanilla feature gate from the managed
-rule's output block. A rule that outputs `cakeworld:rock_candy_diamond`
-therefore cannot suppress the gates for `minecraft:diamond_ore`. Enabling both
-would duplicate resources. Enabling `suppress_all_ore_features` would also
-remove unknown third-party ore features, which violates this compatibility
-contract.
+OreSpawn 4.0.6.118021 currently adds each managed rule's output block to the
+dimension takeover set; the wrapped vanilla feature then queries that set with
+its own vanilla output block. A rule that outputs
+`cakeworld:rock_candy_diamond` therefore cannot suppress the gates for
+`minecraft:diamond_ore`. Enabling both would duplicate resources. Enabling
+`suppress_all_ore_features` would also remove unknown third-party ore features,
+which violates this compatibility contract.
 
 The required OreSpawn capability is a declarative, bake-time validated source
 mapping—such as a `suppresses` or `native_source_blocks` list—kept out of
 generation hot loops. Until that capability exists and copied-world tests pass,
 CakeWorld exposes the themed content but deliberately leaves vanilla placement
-unchanged. No existing-world profile is migrated implicitly.
+unchanged. All eleven `COMPAT-VAN-*` rows are therefore terminally shelved at
+the placement boundary rather than misrepresented as complete world takeover.
+No existing-world profile is migrated implicitly.
 
 ## BaseMetals Conversion
 
