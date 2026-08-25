@@ -35,6 +35,10 @@ def replaceModeRunDirectory = providers.gradleProperty(
         'cakeworldReplaceModeRunDirectory').getOrElse('run-replace-mode')
 def replaceModeReuseWorld = providers.gradleProperty(
         'cakeworldReplaceModeReuseWorld').map { it.toBoolean() }.getOrElse(false)
+def blankBiomeRuntime = providers.gradleProperty(
+        'cakeworldBlankBiomeRuntime').map { it.toBoolean() }.getOrElse(false)
+def blankBiomeRunDirectory = providers.gradleProperty(
+        'cakeworldBlankBiomeRunDirectory').getOrElse('run-blank-biome')
 def samplerThirdPartyRuntime = providers.gradleProperty(
         'cakeworldSamplerThirdPartyRuntime')
         .map { it.toBoolean() }.getOrElse(false)
@@ -76,6 +80,8 @@ def cakeworldGameTestNamespaces = providers.gradleProperty(
                 ? 'cakeworld_provider_override'
                 : imcProviderRuntime
                         ? 'cakeworld_imc_provider'
+                : blankBiomeRuntime
+                        ? 'cakeworld_blank_biome'
                 : replaceModeRuntime
                         ? 'cakeworld_replace_mode'
                 : samplerThirdPartyRuntime
@@ -176,6 +182,8 @@ minecraft {
                 workingDirectory project.file(providerOverrideRunDirectory)
             } else if (imcProviderRuntime) {
                 workingDirectory project.file(imcProviderRunDirectory)
+            } else if (blankBiomeRuntime) {
+                workingDirectory project.file(blankBiomeRunDirectory)
             } else if (replaceModeRuntime) {
                 workingDirectory project.file(replaceModeRunDirectory)
             } else if (samplerPlatterRuntime) {
@@ -203,6 +211,9 @@ minecraft {
             }
             if (replaceModeRuntime) {
                 property 'cakeworld.replaceModeFixture', 'true'
+            }
+            if (blankBiomeRuntime) {
+                property 'cakeworld.blankBiomeFixture', 'true'
             }
             if (providerOverrideRuntime) {
                 property 'cakeworld.providerOverrideMode',
@@ -295,6 +306,8 @@ def providerMergeRunRoot =
         layout.projectDirectory.dir(providerMergeRunDirectory)
 def replaceModeRunRoot =
         layout.projectDirectory.dir(replaceModeRunDirectory)
+def blankBiomeRunRoot =
+        layout.projectDirectory.dir(blankBiomeRunDirectory)
 def imcProviderRunRoot =
         layout.projectDirectory.dir(imcProviderRunDirectory)
 def runtimePackagedProvider = layout.buildDirectory.file(
@@ -438,6 +451,28 @@ def prepareReplaceModeRun = tasks.register('prepareReplaceModeRun') {
             logger.lifecycle(
                     "Reusing replace-mode world-owned profile without rewriting it: ${savedProfile}")
             return
+        }
+        copy {
+            from samplerPlatterServerProperties
+            into runRoot
+            rename { 'server.properties' }
+        }
+    }
+}
+
+def prepareBlankBiomeRun = tasks.register('prepareBlankBiomeRun') {
+    group = 'verification'
+    description = 'Prepares an isolated advanced blank-biome registration proof.'
+    inputs.file(samplerPlatterServerProperties)
+    outputs.upToDateWhen { false }
+
+    doLast {
+        def runRoot = blankBiomeRunRoot.asFile
+        def savedProfile = new File(runRoot,
+                'world/serverconfig/orespawn-worldgen.json')
+        if (savedProfile.isFile()) {
+            throw new GradleException(
+                    "Blank-biome run directory already contains a saved world profile: ${savedProfile}. Use a new -PcakeworldBlankBiomeRunDirectory value.")
         }
         copy {
             from samplerPlatterServerProperties
@@ -788,6 +823,9 @@ tasks.configureEach {
     if (replaceModeRuntime && name == 'runGameTestServer') {
         dependsOn prepareReplaceModeRun
     }
+    if (blankBiomeRuntime && name == 'runGameTestServer') {
+        dependsOn prepareBlankBiomeRun
+    }
     if (providerOverrideRuntime && name == 'runGameTestServer') {
         dependsOn prepareProviderOverrideRun
     }
@@ -973,6 +1011,8 @@ def prepareGameTestStructures = tasks.register('prepareGameTestStructures', Copy
             ? "${providerOverrideRunDirectory}/gameteststructures"
             : imcProviderRuntime
             ? "${imcProviderRunDirectory}/gameteststructures"
+            : blankBiomeRuntime
+            ? "${blankBiomeRunDirectory}/gameteststructures"
             : replaceModeRuntime
             ? "${replaceModeRunDirectory}/gameteststructures"
             : samplerPlatterRuntime

@@ -40,6 +40,24 @@ common setup. Those types are required when the geology profile uses
 `biome_dictionary` rules; copying a biome does not copy its registry-key
 dictionary membership.
 
+For an intentionally independent biome, OreSpawn also exposes
+`blankAndRegister`. CakeWorld keeps its complete example out of production:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldBlankBiomeRuntime=true -PcakeworldBlankBiomeRunDirectory=run-blank-biome-local
+```
+
+The switch alone registers `cakeworld_fixture:blank_biome_laboratory`. Its
+builder explicitly supplies precipitation, category, temperature, temperature
+modifier, downfall, special effects, empty spawn settings and empty generation
+settings. Forge's later biome-loading lifecycle then lets released OreSpawn add
+exactly `orespawn:biome_surfaces` and `orespawn:stone_replacer`; the focused
+test requires those two integrations and no others. The laboratory is never
+named by the provider, never enters possible biome-source outputs, and is not
+registered during ordinary startup. The harness refuses a directory that
+already contains a saved profile because this is a fresh registration proof,
+not a save/reload scenario.
+
 Exact `biomes` weights and matching `biome_dictionary` weights are additive.
 OreSpawn's built-in dictionary defaults may also contribute generic geology
 such as mountain belts or coastal shelves, so a total-conversion provider

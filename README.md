@@ -154,6 +154,21 @@ never leaks through, and fresh/reload signatures are identical. The first
 command refuses an existing saved profile; reuse must be explicit. Without
 `cakeworldReplaceModeRuntime`, the fixture is not registered or installed.
 
+OreSpawn's advanced `blankAndRegister` helper has a separate registry-only
+laboratory proof:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldBlankBiomeRuntime=true -PcakeworldBlankBiomeRunDirectory=run-blank-biome-local
+```
+
+The opt-in `cakeworld_fixture:blank_biome_laboratory` supplies every required
+biome-builder field itself, including deliberately empty base spawn and
+generation settings. The runtime proof requires OreSpawn's two later lifecycle
+hooks (`orespawn:biome_surfaces` and `orespawn:stone_replacer`) and rejects any
+other placed feature. It also proves the laboratory is absent from the active
+profile and biome-source outputs. A normal startup does not register it, and
+the command refuses to reuse a directory that already owns a saved profile.
+
 In any running CakeWorld server, `/cakeworld orespawn` gives players and pack
 makers a read-only summary of the world-owned OreSpawn profile: selected
 template, geology mode, and the counts of rocks, geomes, ores, fluid deposits,
