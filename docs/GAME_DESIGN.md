@@ -95,7 +95,7 @@ integrated-world, compatibility, and performance evidence remain separate.
 | ID | Priority | Slice | System contract |
 |---|---|---:|---|
 | SYS-001 | Core | 1 | CakeWorld is a fresh-world total conversion selected through OreSpawn templates. Installing or updating it never silently rewrites an existing world's saved profile. |
-| SYS-002 | Core | 1/4/5 | Realm identities remain distinct: Overworld is wonder and settlement, Nether is heat and kitchen peril, and End is dreams and starlight. |
+| SYS-002 | Core | 1/4/5 | Verified functional realm contract: the Overworld retains Gingerbread Hearthlands, biscuit-over-sponge settlement terrain, Lemonade and its Gingerbread Village home; the Nether retains Fudge Wastes, Fudge-Rock terrain, Hot Fudge and its Liquorice Fortress home; the End retains Meringue Islands, foam-over-marshmallow terrain, icing/frozen-lemonade sky materials and its Macaron Citadel home. A dedicated isolated GameTest proves all three live dimensions, exclusive realm biome tags, registered signature materials, packaged OreSpawn terrain/palette/material declarations and realm-appropriate structure homes. This objective boundary verifies distinct playable identities without pretending that final art, story, biome variety or content polish is complete. |
 | SYS-003 | Core | 1 | The Explorer's Cookbook is a player-specific discovery guide rather than a quest chain or mandatory progression gate. |
 | SYS-004 | Core | 1/2 | Most soft terrain can be nibbled in place; hard, structural, mineral-bearing, or metal-bearing blocks must be harvested, sliced, melted, or cooked. |
 | SYS-005 | Core | 1 | Raw terrain is only an emergency snack. Prepared recipes provide worthwhile nutrition, saturation, discovery, and playful effects. |
