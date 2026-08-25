@@ -1,0 +1,103 @@
+{
+  "schema_version": 4,
+  "provider_modid": "cakeworld",
+  "provider_revision": 1701,
+  "rocks": {
+    "cakeworld:merge/edited_rock": {
+      "block": "cakeworld:biscuit_stone",
+      "enabled": false,
+      "family": "sedimentary",
+      "depth_peak": 32,
+      "depth_spread": 48,
+      "min_y": -64,
+      "max_y": 128,
+      "weight": 1.0,
+      "ore_replaceable": true,
+      "dimensions": ["minecraft:overworld"]
+    }
+  },
+  "ores": {
+    "cakeworld:merge/edited_ore": {
+      "block": "cakeworld:sprinkle_cluster",
+      "enabled": false,
+      "source_mod": "cakeworld",
+      "dimensions": {
+        "minecraft:overworld": {
+          "enabled": false,
+          "min_y": -32,
+          "max_y": 64,
+          "frequency": 1.0,
+          "quantity": 4,
+          "pattern": "default",
+          "height_distribution": "uniform",
+          "host_tags": ["minecraft:stone_ore_replaceables"]
+        }
+      }
+    },
+    "cakeworld:merge/disabled_ore": {
+      "block": "cakeworld:mint_crystal",
+      "enabled": true,
+      "source_mod": "cakeworld",
+      "dimensions": {
+        "minecraft:overworld": {
+          "enabled": false,
+          "min_y": -32,
+          "max_y": 64,
+          "frequency": 2.0,
+          "quantity": 4,
+          "pattern": "default",
+          "height_distribution": "uniform",
+          "host_tags": ["minecraft:stone_ore_replaceables"]
+        }
+      }
+    },
+    "cakeworld:merge/unassigned_ore": {
+      "block": "cakeworld:liquorice_vein",
+      "enabled": false,
+      "source_mod": "cakeworld",
+      "dimensions": {
+        "minecraft:overworld": {
+          "enabled": false,
+          "min_y": -32,
+          "max_y": 64,
+          "frequency": 3.0,
+          "quantity": 4,
+          "pattern": "default",
+          "height_distribution": "uniform",
+          "host_tags": ["minecraft:stone_ore_replaceables"]
+        }
+      }
+    },
+    "cakeworld:merge/removed_ore": {
+      "block": "cakeworld:rock_candy_deposit",
+      "enabled": false,
+      "source_mod": "cakeworld",
+      "dimensions": {
+        "minecraft:overworld": {
+          "enabled": false,
+          "min_y": -32,
+          "max_y": 64,
+          "frequency": 4.0,
+          "quantity": 4,
+          "pattern": "default",
+          "height_distribution": "uniform",
+          "host_tags": ["minecraft:stone_ore_replaceables"]
+        }
+      }
+    }
+  },
+  "templates": {
+    "cakeworld:merge_probe": {
+      "name_key": "template.cakeworld.sampler_platter",
+      "description_key": "template.cakeworld.sampler_platter.description",
+      "required_mods": ["cakeworld"],
+      "auto_select": true,
+      "auto_select_priority": 1000,
+      "profile": {
+        "geology_mode": "geome",
+        "manage_vanilla_ores": false,
+        "suppress_all_ore_features": false
+      }
+    }
+  }
+}

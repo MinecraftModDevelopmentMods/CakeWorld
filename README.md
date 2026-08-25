@@ -167,6 +167,23 @@ retention with an unbundled two-template fixture. OreSpawn 4.0.6.118021 does
 not emit its documented tie warning when the lexical winner is declared first;
 `docs/ORESPAWN_SHOWCASE.md` records that released limitation as OS-105.
 
+Existing-world provider merge behavior has a separate three-phase disposable
+world proof. Never point these commands at a player world:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldProviderMergePhase=baseline -PcakeworldProviderMergeRunDirectory=run-provider-merge-local
+./gradlew runGameTestServer -PcakeworldProviderMergePhase=upgrade -PcakeworldProviderMergeRunDirectory=run-provider-merge-local
+./gradlew runGameTestServer -PcakeworldProviderMergePhase=reload -PcakeworldProviderMergeRunDirectory=run-provider-merge-local
+```
+
+The baseline installs provider revision `1701`. Before revision `1702`, the
+upgrade task edits one rock and one ore, disables another ore, removes an ore
+assignment while retaining its known-ID tombstone, and adds a world-owned rule
+and alias. Released OreSpawn must preserve all of those choices, add the new
+provider IDs, retain a removed provider rule as orphaned, and make reload a
+byte-stable no-op. The two provider declarations are test fixtures and are not
+included in the mod JAR.
+
 The packaged JSON remains CakeWorld's canonical distributable declaration. A
 separate one-shot harness demonstrates the alternative Forge IMC path without
 shipping two competing definitions:

@@ -48,13 +48,21 @@ def providerOverrideRunDirectory = providers.gradleProperty(
 def providerOverrideReuseWorld = providers.gradleProperty(
         'cakeworldProviderOverrideReuseWorld')
         .map { it.toBoolean() }.getOrElse(false)
+def providerMergePhase = providers.gradleProperty(
+        'cakeworldProviderMergePhase').orNull
+def providerMergeRuntime = providerMergePhase != null
+def providerMergeRunDirectory = providers.gradleProperty(
+        'cakeworldProviderMergeRunDirectory')
+        .getOrElse('run-provider-merge')
 def imcProviderRuntime = providers.gradleProperty(
         'cakeworldImcProviderRuntime').map { it.toBoolean() }.getOrElse(false)
 def imcProviderRunDirectory = providers.gradleProperty(
         'cakeworldImcProviderRunDirectory').getOrElse('run-imc-provider')
 def cakeworldGameTestNamespaces = providers.gradleProperty(
         'cakeworldGameTestNamespaces').getOrElse(
-        providerOverrideRuntime
+        providerMergeRuntime
+                ? 'cakeworld_provider_merge'
+                : providerOverrideRuntime
                 ? 'cakeworld_provider_override'
                 : imcProviderRuntime
                         ? 'cakeworld_imc_provider'
@@ -148,7 +156,9 @@ minecraft {
         // By default, the server will crash when no gametests are provided.
         // The gametest system is also enabled by default for other run configs under the /test command.
         gameTestServer {
-            if (providerOverrideRuntime) {
+            if (providerMergeRuntime) {
+                workingDirectory project.file(providerMergeRunDirectory)
+            } else if (providerOverrideRuntime) {
                 workingDirectory project.file(providerOverrideRunDirectory)
             } else if (imcProviderRuntime) {
                 workingDirectory project.file(imcProviderRunDirectory)
@@ -178,6 +188,10 @@ minecraft {
             if (providerOverrideRuntime) {
                 property 'cakeworld.providerOverrideMode',
                         providerOverrideMode
+            }
+            if (providerMergeRuntime) {
+                property 'cakeworld.providerMergePhase',
+                        providerMergePhase
             }
             if (imcProviderRuntime) {
                 property 'cakeworld.imcProviderFixture', 'true'
@@ -252,6 +266,14 @@ def providerOverrideEqualPriorityFixture =
                 'src/test/orespawn/provider-override-equal-priority.json')
 def providerOverrideRunRoot =
         layout.projectDirectory.dir(providerOverrideRunDirectory)
+def providerMergeBaselineFixture =
+        layout.projectDirectory.file(
+                'src/test/orespawn/provider-merge-baseline.json')
+def providerMergeUpgradeFixture =
+        layout.projectDirectory.file(
+                'src/test/orespawn/provider-merge-upgrade.json')
+def providerMergeRunRoot =
+        layout.projectDirectory.dir(providerMergeRunDirectory)
 def imcProviderRunRoot =
         layout.projectDirectory.dir(imcProviderRunDirectory)
 def runtimePackagedProvider = layout.buildDirectory.file(
@@ -448,6 +470,136 @@ def prepareProviderOverrideRun = tasks.register(
     }
 }
 
+def prepareProviderMergeRun = tasks.register('prepareProviderMergeRun') {
+    group = 'verification'
+    description = 'Prepares an isolated copied-world provider merge and tombstone phase.'
+    inputs.files(providerMergeBaselineFixture, providerMergeUpgradeFixture,
+            samplerPlatterServerProperties)
+    outputs.upToDateWhen { false }
+
+    doLast {
+        if (!(providerMergePhase in ['baseline', 'upgrade', 'reload'])) {
+            throw new GradleException(
+                    "cakeworldProviderMergePhase must be baseline, upgrade, or reload; got '${providerMergePhase}'.")
+        }
+        def runRoot = providerMergeRunRoot.asFile
+        def savedProfile = new File(runRoot,
+                'world/serverconfig/orespawn-worldgen.json')
+        def overrideFile = new File(runRoot,
+                'config/cakeworld-orespawn.json')
+        def mutationReceipt = new File(runRoot,
+                'cakeworld-provider-merge-mutated.txt')
+
+        if (providerMergePhase == 'baseline') {
+            if (savedProfile.isFile()) {
+                throw new GradleException(
+                        "Provider-merge baseline requires a fresh run directory; found ${savedProfile}.")
+            }
+            copy {
+                from providerMergeBaselineFixture
+                into overrideFile.parentFile
+                rename { 'cakeworld-orespawn.json' }
+            }
+        } else if (providerMergePhase == 'upgrade') {
+            if (!savedProfile.isFile()) {
+                throw new GradleException(
+                        'Provider-merge upgrade requires the baseline world-owned profile.')
+            }
+            if (mutationReceipt.isFile()) {
+                throw new GradleException(
+                        "Provider-merge upgrade mutation was already applied: ${mutationReceipt}")
+            }
+            def parser = new groovy.json.JsonSlurper()
+            def profile = parser.parse(savedProfile) as Map
+            def manifest = (profile.providers as Map)?.cakeworld as Map
+            if (manifest == null || manifest.provider_revision != 1701) {
+                throw new GradleException(
+                        'Provider-merge upgrade requires the revision-1701 baseline snapshot.')
+            }
+            def rocks = profile.rocks as Map
+            def ores = profile.ores as Map
+            def editedRock = rocks?.get('cakeworld:merge/edited_rock') as Map
+            def editedOre = ores?.get('cakeworld:merge/edited_ore') as Map
+            def disabledOre = ores?.get('cakeworld:merge/disabled_ore') as Map
+            if (editedRock == null || editedOre == null
+                    || disabledOre == null
+                    || !ores.containsKey('cakeworld:merge/unassigned_ore')
+                    || !ores.containsKey('cakeworld:merge/removed_ore')) {
+                throw new GradleException(
+                        'Revision-1701 snapshot is missing a provider-merge baseline rule.')
+            }
+
+            editedRock.weight = 7.25
+            editedRock.player_note = 'keep-rock-edit'
+            def editedDimensions = editedOre.dimensions as Map
+            def editedOverworld = editedDimensions['minecraft:overworld'] as Map
+            editedOverworld.frequency = 7.5
+            editedOre.player_note = 'keep-ore-edit'
+            disabledOre.enabled = false
+            ores.remove('cakeworld:merge/unassigned_ore')
+            ores['cakeworld:merge/player_custom_ore'] = [
+                    block: 'cakeworld:fizzy_pearl',
+                    enabled: false,
+                    source_mod: 'cakeworld',
+                    player_note: 'keep-custom-rule',
+                    dimensions: [
+                            'minecraft:overworld': [
+                                    enabled: false,
+                                    min_y: -16,
+                                    max_y: 48,
+                                    frequency: 0.25,
+                                    quantity: 2,
+                                    pattern: 'default',
+                                    height_distribution: 'uniform',
+                                    host_tags: ['minecraft:stone_ore_replaceables']
+                            ]
+                    ]
+            ]
+            def aliases = profile.worldgen_aliases as Map
+            if (aliases == null) {
+                aliases = [:]
+                profile.worldgen_aliases = aliases
+            }
+            aliases['cakeworld:burnt_sugar_rock'] =
+                    'cakeworld:sprinkle_cluster'
+            savedProfile.setText(groovy.json.JsonOutput.prettyPrint(
+                    groovy.json.JsonOutput.toJson(profile))
+                    + System.lineSeparator(), 'UTF-8')
+            mutationReceipt.setText(
+                    'Applied CakeWorld copied-world edits before provider revision 1702.'
+                    + System.lineSeparator(), 'UTF-8')
+            copy {
+                from providerMergeUpgradeFixture
+                into overrideFile.parentFile
+                rename { 'cakeworld-orespawn.json' }
+            }
+            logger.lifecycle(
+                    "Applied isolated world-owned edits and installed provider revision 1702: ${savedProfile}")
+        } else {
+            if (!savedProfile.isFile() || !overrideFile.isFile()
+                    || !mutationReceipt.isFile()) {
+                throw new GradleException(
+                        'Provider-merge reload requires the completed revision-1702 upgrade fixture.')
+            }
+            def profile = new groovy.json.JsonSlurper().parse(
+                    savedProfile) as Map
+            def manifest = (profile.providers as Map)?.cakeworld as Map
+            if (manifest == null || manifest.provider_revision != 1702) {
+                throw new GradleException(
+                        'Provider-merge reload requires the revision-1702 world snapshot.')
+            }
+            logger.lifecycle(
+                    "Reusing revision-1702 provider and world-owned snapshot unchanged: ${savedProfile}")
+        }
+
+        copy {
+            from samplerPlatterServerProperties
+            into runRoot
+            rename { 'server.properties' }
+        }
+    }
+}
+
 def generateCakeWorldOreSpawnProvider =
         tasks.register('generateCakeWorldOreSpawnProvider') {
     group = 'build'
@@ -572,6 +724,9 @@ tasks.configureEach {
     }
     if (providerOverrideRuntime && name == 'runGameTestServer') {
         dependsOn prepareProviderOverrideRun
+    }
+    if (providerMergeRuntime && name == 'runGameTestServer') {
+        dependsOn prepareProviderMergeRun
     }
     if (imcProviderRuntime && name == 'runGameTestServer') {
         dependsOn prepareImcProviderRun
@@ -746,7 +901,9 @@ def prepareGameTestStructures = tasks.register('prepareGameTestStructures', Copy
     group = 'verification'
     description = 'Copies tracked SNBT fixtures into the GameTest working directory.'
     from layout.projectDirectory.dir('src/gametest/resources/gameteststructures')
-    into layout.projectDirectory.dir(providerOverrideRuntime
+    into layout.projectDirectory.dir(providerMergeRuntime
+            ? "${providerMergeRunDirectory}/gameteststructures"
+            : providerOverrideRuntime
             ? "${providerOverrideRunDirectory}/gameteststructures"
             : imcProviderRuntime
             ? "${imcProviderRunDirectory}/gameteststructures"

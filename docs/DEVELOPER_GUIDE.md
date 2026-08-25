@@ -266,6 +266,33 @@ a later equal-priority candidate replaces the current winner. CakeWorld tracks
 that released limitation as OS-105 and does not disguise it by reversing the
 fixture order.
 
+## Existing-world Provider Merge Proof
+
+OS-017 uses one ignored disposable world and two unbundled provider revisions.
+Do not use a player save or reuse a directory from another scenario:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldProviderMergePhase=baseline -PcakeworldProviderMergeRunDirectory=run-provider-merge-local
+./gradlew runGameTestServer -PcakeworldProviderMergePhase=upgrade -PcakeworldProviderMergeRunDirectory=run-provider-merge-local
+./gradlew runGameTestServer -PcakeworldProviderMergePhase=reload -PcakeworldProviderMergeRunDirectory=run-provider-merge-local
+```
+
+`baseline` refuses an existing world and creates a revision-1701 snapshot.
+`upgrade` requires that exact manifest, then makes bounded edits only to the
+isolated saved profile: it changes a rock and ore, disables a rule, removes an
+assigned definition while leaving its known-ID tombstone, and adds a valid
+world-owned ore plus output alias. It installs revision 1702 only after those
+edits. The focused GameTest requires the edits to win over changed provider
+defaults, the unassigned rule to remain absent, new provider rock/ore IDs to
+appear, and a provider-removed ore to remain self-contained with
+`orphaned_provider: true`. It also compares the sorted historical manifest.
+
+`reload` requires the completed revision-1702 fixture and does not rewrite it.
+For byte-stability evidence, hash
+`world/serverconfig/orespawn-worldgen.json` before and after that command. The
+fixture declarations under `src/test/orespawn` never enter the distributable
+JAR.
+
 ## Forge IMC Provider Alternative
 
 CakeWorld intentionally distributes only the packaged JSON provider. To show
