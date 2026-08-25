@@ -636,8 +636,13 @@ tabs and visible page list to the scaled viewport, and supports mouse, arrow,
 A/D, Home/End, and number-key navigation. The selected tab has a shape marker
 as well as a colour change, earned stamps use a `+` glyph rather than colour
 alone, and narrator text reports the active category and progress. Discovery
-sounds use a dedicated subtitle. Human checks at multiple GUI scales, with
-Minecraft Narrator and subtitles enabled, remain an acceptance requirement.
+sounds use a dedicated subtitle. Hands-on acceptance at Minecraft GUI scales
+1, 2, and 3 confirmed that the complete layout stays bounded and readable,
+mouse selection and non-colour cues remain clear, Narrator works in
+`Narrates All` mode, and the live discovery event displays `Cookbook page
+rustles` with subtitles enabled. The screen has no animated presentation, so
+its accepted reduced-motion behaviour is the same static layout at every
+reviewed scale.
 
 The `SYS-013` source-language gate enumerates the live CakeWorld block, item,
 entity, effect, biome, and sound registries and checks their packaged English
