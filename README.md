@@ -82,6 +82,23 @@ Its ninth biome plot targets only the dormant `cakeworld_fixture` namespace;
 that namespace is registered and installed as a source only when the explicit
 third-party GameTest switch is present.
 
+OreSpawn's creation editor can be opened against an isolated client directory
+with:
+
+```powershell
+./gradlew runClient -PcakeworldEditorRunDirectory=run-editor-acceptance-local
+```
+
+The harness refuses to reuse an existing save unless
+`-PcakeworldEditorReuseWorld=true` is explicit. Published OreSpawn
+4.0.6.118021 currently prevents CakeWorld from completing this acceptance:
+its editor displays CakeWorld's biome/material pages, including when strata
+are disabled, but rejects the provider's valid namespaced geomes on Done (for
+example `Invalid geome: cakeworld:cocoa_basin`). OS-020 is therefore shelved
+until a published OreSpawn version makes editor validation match the provider
+schema/runtime. Do not work around the defect by renaming CakeWorld's public
+geomes or using a locally patched dependency.
+
 To run the currently implemented Sampler biome plots, profile-wide extreme
 `sky_v1` formation comparison, installed-output alias and three-layer
 flat-bedrock proof against a fresh fixed-seed world:

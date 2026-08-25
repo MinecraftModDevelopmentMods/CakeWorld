@@ -207,6 +207,44 @@ settings are profile-wide:
 Do not describe these as two adjacent algorithms inside one world. Per-geome
 formation presets are not part of the released contract.
 
+### Creation-time editor compatibility
+
+Use an unused working directory when exercising OreSpawn's client editor so a
+manual acceptance run cannot alter an ordinary development save:
+
+```powershell
+./gradlew runClient -PcakeworldEditorRunDirectory=run-editor-acceptance-local
+```
+
+The harness refuses an existing save by default. Pass
+`-PcakeworldEditorReuseWorld=true` only when deliberately reopening the same
+isolated acceptance directory.
+
+OS-020 is currently shelved against published OreSpawn 4.0.6.118021. The
+editor opens the auto-selected CakeWorld template, exposes the installed
+CakeWorld biome and material IDs, and keeps **Biomes & World Materials** plus
+**World Materials** available after switching to the no-strata **Pack
+Defaults** baseline. Applying CakeWorld or CakeWorld Sampler Platter is blocked
+before world creation, however, with:
+
+```text
+Invalid geome: cakeworld:cocoa_basin
+```
+
+This is not a provider-runtime rejection. CakeWorld's packaged templates and
+OreSpawn's own complete provider example use namespaced geome keys, and the
+same released runtime bakes and generates them successfully. The released
+editor's `GeologyEditorSession` instead validates geome keys with the
+unnamespaced-only expression `[a-z0-9_.-]+` in both its add and final-save
+paths. Do not rename CakeWorld's public geomes or substitute a locally patched
+OreSpawn JAR to make this acceptance pass.
+
+After a published OreSpawn fix, repeat the isolated UI path with seed
+`5059928472718672684`, create the world, inspect its
+`serverconfig/orespawn-worldgen.json`, and run the corresponding fixed-seed
+generation checks against a copy of that save. Until all three stages pass,
+CakeWorld must not advertise creation-editor compatibility.
+
 ## Provider Overrides
 
 Released OreSpawn 4.0.6 looks for CakeWorld's pack-author override at:
@@ -373,6 +411,9 @@ remain ignored.
   remain incomplete even where automated gameplay contracts are verified.
 - A few OreSpawn capabilities are explicitly shelved with evidence in the
   showcase contract; they must not be presented as working examples.
+- OS-020 creation-editor acceptance is blocked in released OreSpawn
+  4.0.6.118021 because its final validation rejects provider-owned namespaced
+  geome IDs that the provider schema and runtime accept.
 - The Sampler Platter currently proves explicit selection, augment mode,
   `minecraft_only` declaration, `selected_namespaces`, namespace include and
   exclude lists, optional/required similar-biome behavior, and all five live

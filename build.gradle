@@ -25,6 +25,10 @@ def freshWorldgenIntegration = providers.gradleProperty(
 def freshWorldgenRunDirectory = providers.gradleProperty(
         'cakeworldFreshWorldgenRunDirectory')
         .getOrElse('run-fresh-worldgen-current')
+def editorAcceptanceRunDirectory = providers.gradleProperty(
+        'cakeworldEditorRunDirectory').orNull
+def editorAcceptanceReuseWorld = providers.gradleProperty(
+        'cakeworldEditorReuseWorld').map { it.toBoolean() }.getOrElse(false)
 def samplerThirdPartyRuntime = providers.gradleProperty(
         'cakeworldSamplerThirdPartyRuntime')
         .map { it.toBoolean() }.getOrElse(false)
@@ -140,7 +144,9 @@ minecraft {
         }
 
         client {
-            if (baseMetalsIntegration) {
+            if (editorAcceptanceRunDirectory != null) {
+                workingDirectory project.file(editorAcceptanceRunDirectory)
+            } else if (baseMetalsIntegration) {
                 workingDirectory project.file('run-basemetals-client')
             }
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
@@ -719,6 +725,21 @@ def restorePackagedProviderAfterImc = tasks.register(
 }
 
 tasks.configureEach {
+    if (editorAcceptanceRunDirectory != null && name == 'runClient') {
+        doFirst {
+            def savesDirectory = project.file(
+                    "${editorAcceptanceRunDirectory}/saves")
+            def existingSaves = savesDirectory.isDirectory()
+                    ? savesDirectory.listFiles({ file -> file.isDirectory() } as FileFilter)
+                    : []
+            if (existingSaves && !editorAcceptanceReuseWorld) {
+                throw new GradleException(
+                        "Editor acceptance directory already contains saves: ${savesDirectory}. Use a new -PcakeworldEditorRunDirectory value, or explicitly pass -PcakeworldEditorReuseWorld=true to reopen it.")
+            }
+            logger.lifecycle(
+                    "Using isolated OreSpawn editor acceptance directory: ${project.file(editorAcceptanceRunDirectory)}")
+        }
+    }
     if (samplerPlatterRuntime && name == 'runGameTestServer') {
         dependsOn prepareSamplerPlatterRun
     }
