@@ -247,6 +247,9 @@ def providerOverrideMalformedFixture =
 def providerOverrideSchema3Fixture =
         layout.projectDirectory.file(
                 'src/test/orespawn/provider-override-schema3.json')
+def providerOverrideEqualPriorityFixture =
+        layout.projectDirectory.file(
+                'src/test/orespawn/provider-override-equal-priority.json')
 def providerOverrideRunRoot =
         layout.projectDirectory.dir(providerOverrideRunDirectory)
 def imcProviderRunRoot =
@@ -381,14 +384,15 @@ def prepareProviderOverrideRun = tasks.register(
     inputs.files(providerOverrideValidFixture,
             providerOverrideMalformedFixture,
             providerOverrideSchema3Fixture,
+            providerOverrideEqualPriorityFixture,
             samplerPlatterServerProperties)
     outputs.upToDateWhen { false }
 
     doLast {
         if (!(providerOverrideMode in ['valid', 'removed', 'malformed',
-                'schema3'])) {
+                'schema3', 'equal_priority'])) {
             throw new GradleException(
-                    "cakeworldProviderOverrideMode must be valid, removed, malformed, or schema3; got '${providerOverrideMode}'.")
+                    "cakeworldProviderOverrideMode must be valid, removed, malformed, schema3, or equal_priority; got '${providerOverrideMode}'.")
         }
         def runRoot = providerOverrideRunRoot.asFile
         def savedProfile = new File(runRoot,
@@ -410,25 +414,28 @@ def prepareProviderOverrideRun = tasks.register(
             return
         }
 
-        if (savedProfile.isFile() && providerOverrideMode == 'schema3'
+        if (savedProfile.isFile()
+                && (providerOverrideMode in ['schema3', 'equal_priority'])
                 && providerOverrideReuseWorld) {
             if (!overrideFile.isFile()) {
                 throw new GradleException(
-                        "Schema-3 reload lost its authoritative fixture: ${overrideFile}")
+                        "Provider-override reload lost its authoritative fixture: ${overrideFile}")
             }
             logger.lifecycle(
-                    "Reusing schema-3 fixture and world-owned migrated profile: ${savedProfile}")
+                    "Reusing ${providerOverrideMode} fixture and world-owned profile: ${savedProfile}")
             return
         }
         if (savedProfile.isFile()) {
             throw new GradleException(
-                    "Provider-override run directory already contains a saved world profile: ${savedProfile}. Use a new -PcakeworldProviderOverrideRunDirectory value, or use schema3 with -PcakeworldProviderOverrideReuseWorld=true for its reload proof.")
+                    "Provider-override run directory already contains a saved world profile: ${savedProfile}. Use a new -PcakeworldProviderOverrideRunDirectory value, or use schema3/equal_priority with -PcakeworldProviderOverrideReuseWorld=true for reload proof.")
         }
         copy {
             from(providerOverrideMode == 'valid'
                     ? providerOverrideValidFixture
                     : providerOverrideMode == 'schema3'
                     ? providerOverrideSchema3Fixture
+                    : providerOverrideMode == 'equal_priority'
+                    ? providerOverrideEqualPriorityFixture
                     : providerOverrideMalformedFixture)
             into new File(runRoot, 'config')
             rename { 'cakeworld-orespawn.json' }

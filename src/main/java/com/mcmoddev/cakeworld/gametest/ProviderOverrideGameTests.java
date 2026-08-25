@@ -3,6 +3,7 @@ package com.mcmoddev.cakeworld.gametest;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -24,6 +25,10 @@ public final class ProviderOverrideGameTests {
 			new ResourceLocation("cakeworld", "override_probe");
 	private static final ResourceLocation LEGACY_SCHEMA_PROBE =
 			new ResourceLocation("cakeworld", "legacy_schema_probe");
+	private static final ResourceLocation ALPHA_PRIORITY_PROBE =
+			new ResourceLocation("cakeworld", "alpha_priority_probe");
+	private static final ResourceLocation ZULU_PRIORITY_PROBE =
+			new ResourceLocation("cakeworld", "zulu_priority_probe");
 
 	private ProviderOverrideGameTests() {
 	}
@@ -34,7 +39,8 @@ public final class ProviderOverrideGameTests {
 		String mode = System.getProperty(
 				"cakeworld.providerOverrideMode", "");
 		require(helper, mode.equals("valid") || mode.equals("removed")
-					|| mode.equals("malformed") || mode.equals("schema3"),
+					|| mode.equals("malformed") || mode.equals("schema3")
+					|| mode.equals("equal_priority"),
 				"Provider-override test ran without a supported scenario");
 		JsonObject packaged = packagedProvider(helper);
 		require(helper,
@@ -51,12 +57,38 @@ public final class ProviderOverrideGameTests {
 			requireNoCakeWorldAdventureRules(helper, profile);
 		} else if (mode.equals("schema3")) {
 			requireLegacySchemaMigration(helper, profile);
+		} else if (mode.equals("equal_priority")) {
+			requireEqualPrioritySelection(helper, profile);
 		} else {
 			require(helper, profile.selectedTemplate().isEmpty(),
 					"Malformed override unexpectedly fell back to a packaged template");
 			requireNoCakeWorldAdventureRules(helper, profile);
 		}
 		helper.succeed();
+	}
+
+	private static void requireEqualPrioritySelection(GameTestHelper helper,
+			GeologyProfileView profile) {
+		require(helper, profile.selectedTemplate()
+				.filter(ALPHA_PRIORITY_PROBE::equals).isPresent(),
+				"Equal-priority auto-selection did not choose the lexical template ID");
+		requireNoCakeWorldAdventureRules(helper, profile);
+		JsonObject root = profile.toJson();
+		JsonObject manifest = root.has("providers")
+				? root.getAsJsonObject("providers")
+						.getAsJsonObject("cakeworld")
+				: null;
+		require(helper, manifest != null
+				&& manifest.get("provider_revision").getAsInt() == 1501,
+				"Equal-priority provider revision was not retained in the snapshot");
+		JsonArray templates = manifest == null
+				? null : manifest.getAsJsonArray("known_templates");
+		require(helper, templates != null && templates.size() == 2
+				&& ALPHA_PRIORITY_PROBE.toString().equals(
+						templates.get(0).getAsString())
+				&& ZULU_PRIORITY_PROBE.toString().equals(
+						templates.get(1).getAsString()),
+				"Equal-priority template manifest was not retained exactly");
 	}
 
 	private static void requireLegacySchemaMigration(GameTestHelper helper,

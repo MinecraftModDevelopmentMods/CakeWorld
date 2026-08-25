@@ -238,6 +238,8 @@ directory; the valid run creates the saved profile needed by the removal run:
 ./gradlew runGameTestServer -PcakeworldProviderOverrideMode=malformed -PcakeworldProviderOverrideRunDirectory=run-provider-override-malformed-local
 ./gradlew runGameTestServer -PcakeworldProviderOverrideMode=schema3 -PcakeworldProviderOverrideRunDirectory=run-provider-schema3-local
 ./gradlew runGameTestServer -PcakeworldProviderOverrideMode=schema3 -PcakeworldProviderOverrideRunDirectory=run-provider-schema3-local -PcakeworldProviderOverrideReuseWorld=true
+./gradlew runGameTestServer -PcakeworldProviderOverrideMode=equal_priority -PcakeworldProviderOverrideRunDirectory=run-provider-equal-priority-local
+./gradlew runGameTestServer -PcakeworldProviderOverrideMode=equal_priority -PcakeworldProviderOverrideRunDirectory=run-provider-equal-priority-local -PcakeworldProviderOverrideReuseWorld=true
 ```
 
 The preparation task refuses fresh scenarios in a directory with an existing
@@ -254,6 +256,15 @@ default and provider revision `1101`, then retain those settings on same-save
 reload. CakeWorld's `check` task separately scans all packaged Java source and
 fails on deprecated `OilDefinition`/`OreSpawnOreIntegration` use or any
 OreSpawn import outside `zone.moddev.mc.orespawn.api`.
+
+The equal-priority pair installs two available auto-selection templates at
+priority `777`, declared in lexical order. Released OreSpawn 4.0.6.118021
+selects `cakeworld:alpha_priority_probe` on fresh creation and retains that
+choice on reload. The same release documents a setup warning for the tie but
+does not emit one in this declaration order: its warning branch runs only when
+a later equal-priority candidate replaces the current winner. CakeWorld tracks
+that released limitation as OS-105 and does not disguise it by reversing the
+fixture order.
 
 ## Forge IMC Provider Alternative
 

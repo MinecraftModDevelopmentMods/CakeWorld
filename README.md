@@ -153,12 +153,19 @@ That harness also has an unbundled schema-3 compatibility case:
 ```powershell
 ./gradlew runGameTestServer -PcakeworldProviderOverrideMode=schema3 -PcakeworldProviderOverrideRunDirectory=run-provider-schema3-local
 ./gradlew runGameTestServer -PcakeworldProviderOverrideMode=schema3 -PcakeworldProviderOverrideRunDirectory=run-provider-schema3-local -PcakeworldProviderOverrideReuseWorld=true
+./gradlew runGameTestServer -PcakeworldProviderOverrideMode=equal_priority -PcakeworldProviderOverrideRunDirectory=run-provider-equal-priority-local
+./gradlew runGameTestServer -PcakeworldProviderOverrideMode=equal_priority -PcakeworldProviderOverrideRunDirectory=run-provider-equal-priority-local -PcakeworldProviderOverrideReuseWorld=true
 ```
 
 The pair proves legacy declaration reading, current snapshot normalization and
 same-save retention. `check` also rejects deprecated
 `OilDefinition`/`OreSpawnOreIntegration` use and imports outside OreSpawn's
 public `zone.moddev.mc.orespawn.api` package.
+
+The equal-priority case proves lexical fresh-world selection and same-save
+retention with an unbundled two-template fixture. OreSpawn 4.0.6.118021 does
+not emit its documented tie warning when the lexical winner is declared first;
+`docs/ORESPAWN_SHOWCASE.md` records that released limitation as OS-105.
 
 The packaged JSON remains CakeWorld's canonical distributable declaration. A
 separate one-shot harness demonstrates the alternative Forge IMC path without

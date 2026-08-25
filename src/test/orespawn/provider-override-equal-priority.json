@@ -1,0 +1,31 @@
+{
+  "schema_version": 4,
+  "provider_modid": "cakeworld",
+  "provider_revision": 1501,
+  "templates": {
+    "cakeworld:alpha_priority_probe": {
+      "name_key": "template.cakeworld.sampler_platter",
+      "description_key": "template.cakeworld.sampler_platter.description",
+      "required_mods": ["cakeworld"],
+      "auto_select": true,
+      "auto_select_priority": 777,
+      "profile": {
+        "geology_mode": "geome",
+        "manage_vanilla_ores": false,
+        "suppress_all_ore_features": false
+      }
+    },
+    "cakeworld:zulu_priority_probe": {
+      "name_key": "template.cakeworld.sampler_platter",
+      "description_key": "template.cakeworld.sampler_platter.description",
+      "required_mods": ["cakeworld"],
+      "auto_select": true,
+      "auto_select_priority": 777,
+      "profile": {
+        "geology_mode": "geome",
+        "manage_vanilla_ores": false,
+        "suppress_all_ore_features": false
+      }
+    }
+  }
+}
