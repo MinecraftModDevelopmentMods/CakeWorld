@@ -367,7 +367,13 @@ that declaration into a current schema-5 world snapshot with `geome` mode,
 default and provider revision `1101`, then retain those settings on same-save
 reload. CakeWorld's `check` task separately scans all packaged Java source and
 fails on deprecated `OilDefinition`/`OreSpawnOreIntegration` use or any
-OreSpawn import outside `zone.moddev.mc.orespawn.api`.
+OreSpawn import outside `zone.moddev.mc.orespawn.api`. The same gate runs
+`auditCakeWorldOriginalIdentity`, which rejects distinctive protected-story
+names and phrases across source, resources and public documentation. It also
+reports the current count of CakeWorld PNGs, explicit Minecraft model-texture
+references and design rows that still defer original presentation. That
+report is an honest production boundary, not a substitute for human art and
+audio review.
 
 The equal-priority pair installs two available auto-selection templates at
 priority `777`, declared in lexical order. Released OreSpawn 4.0.6.118021

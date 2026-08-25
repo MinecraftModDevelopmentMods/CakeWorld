@@ -1284,9 +1284,93 @@ def auditCakeWorldThirdPartyIsolation = tasks.register(
     }
 }
 
+def auditCakeWorldOriginalIdentity = tasks.register(
+        'auditCakeWorldOriginalIdentity') {
+    group = 'verification'
+    description = 'Rejects distinctive story-IP names and reports the remaining original-art boundary.'
+    inputs.files('README.md')
+    inputs.files(fileTree('docs') { include '**/*.md' })
+    inputs.files(fileTree('src/main/java') { include '**/*.java' })
+    inputs.files(fileTree('src/main/resources') {
+        include '**/*.json'
+        include '**/*.mcmeta'
+        include '**/*.toml'
+    })
+
+    doLast {
+        def protectedFiles = [file('README.md')]
+        protectedFiles.addAll(fileTree('docs') {
+            include '**/*.md'
+        }.files)
+        protectedFiles.addAll(fileTree('src/main/java') {
+            include '**/*.java'
+        }.files)
+        protectedFiles.addAll(fileTree('src/main/resources') {
+            include '**/*.json'
+            include '**/*.mcmeta'
+            include '**/*.toml'
+        }.files)
+
+        def protectedPhrases = [
+                'author name': ~/(?i)(?<![a-z0-9])roald[ -]+dahl(?![a-z0-9])/,
+                'factory owner': ~/(?i)(?<![a-z0-9])(?:willy[ -]+)?wonka(?![a-z0-9])/,
+                'factory workers': ~/(?i)(?<![a-z0-9])oompa[ -]+loompa(?![a-z0-9])/,
+                'book title': ~/(?i)(?<![a-z0-9])charlie[ -]+(?:and[ -]+the[ -]+)?chocolate[ -]+factory(?![a-z0-9])/,
+                'distinctive sweet': ~/(?i)(?<![a-z0-9])everlasting[ -]+gobstopper(?![a-z0-9])/,
+                'distinctive invitation': ~/(?i)(?<![a-z0-9])golden[ -]+ticket(?![a-z0-9])/,
+                'distinctive drink': ~/(?i)(?<![a-z0-9])fizzy[ -]+lifting[ -]+drink(?![a-z0-9])/,
+                'distinctive berry': ~/(?i)(?<![a-z0-9])snozzberr(?:y|ies)(?![a-z0-9])/,
+                'distinctive adjective': ~/(?i)(?<![a-z0-9])scrumdiddlyumptious(?![a-z0-9])/,
+                'child character': ~/(?i)(?<![a-z0-9])(?:veruca[ -]+salt|violet[ -]+beauregarde|augustus[ -]+gloop|mike[ -]+teevee)(?![a-z0-9])/,
+                'grandparent character': ~/(?i)(?<![a-z0-9])grandpa[ -]+joe(?![a-z0-9])/,
+                'distinctive bar name': ~/(?i)(?<![a-z0-9])whipple[ -]+scrumptious(?![a-z0-9])/
+        ]
+        def violations = []
+        protectedFiles.sort { left, right -> left.path <=> right.path }
+                .each { source ->
+            def text = source.getText('UTF-8')
+            protectedPhrases.each { label, pattern ->
+                def matcher = pattern.matcher(text)
+                while (matcher.find()) {
+                    def line = text.substring(0, matcher.start())
+                            .count('\n') + 1
+                    violations << "${source}:${line}: ${label}: ${matcher.group()}"
+                }
+            }
+        }
+        if (!violations.isEmpty()) {
+            throw new GradleException(
+                    'CakeWorld introduced a protected story identity:\n'
+                            + violations.join('\n'))
+        }
+
+        def language = new groovy.json.JsonSlurper().parse(
+                file('src/main/resources/assets/cakeworld/lang/en_us.json'))
+        def cakeWorldPngs = fileTree(
+                'src/main/resources/assets/cakeworld') {
+            include '**/*.png'
+        }.files
+        def minecraftTextureReferences = 0
+        fileTree('src/main/resources/assets/cakeworld/models') {
+            include '**/*.json'
+        }.files.each { model ->
+            def matcher = (model.getText('UTF-8') =~
+                    /"(?:parent|layer[0-9]+|particle|up|down|north|south|east|west|side|top|bottom|all|end|texture)"\s*:\s*"minecraft:[a-z0-9_.\/-]+"/)
+            minecraftTextureReferences += matcher.count
+        }
+        def deferredArtRows = file('docs/GAME_DESIGN.md')
+                .readLines('UTF-8').count { line ->
+            line =~ /(?i)(original (?:art|textures|presentation)|dedicated .* art|temporary vanilla|inherited renderer|vanilla texture)/
+        }
+        logger.lifecycle(
+                "Original-identity audit passed: ${language.size()} English entries, zero protected story terms; current art boundary is ${cakeWorldPngs.size()} CakeWorld PNGs, ${minecraftTextureReferences} Minecraft model-texture references, and ${deferredArtRows} explicitly deferred design rows")
+    }
+}
+
 tasks.named('check').configure {
     dependsOn auditCakeWorldOreSpawnApiUsage,
-            auditCakeWorldThirdPartyIsolation
+            auditCakeWorldThirdPartyIsolation,
+            auditCakeWorldOriginalIdentity
 }
 
 def prepareGameTestStructures = tasks.register('prepareGameTestStructures', Copy) {

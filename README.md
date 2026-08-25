@@ -66,6 +66,10 @@ locally built JAR is not required.
 ```
 
 The reobfuscated mod JAR is written under `build/libs/`.
+The `build`/`check` gate also rejects distinctive protected-story names and
+phrases from CakeWorld source, resources, and public documentation, while
+reporting the vanilla-placeholder art still awaiting a dedicated original
+asset pass.
 
 ## Integration
 
