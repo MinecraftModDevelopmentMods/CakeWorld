@@ -268,6 +268,16 @@ settings are profile-wide:
 ./gradlew runGameTestServer -PcakeworldFreshWorldgenRuntime=true -PcakeworldFreshWorldgenRunDirectory=run-formation-stable-local -PcakeworldGameTestNamespaces=cakeworld_formation -PcakeworldExpectedFormationAlgorithm=stable_layers
 ```
 
+Append `-PcakeworldFormationVisualEvidence=true` to this command or either
+Sampler formation command to write a labelled PNG and text manifest under the
+isolated run directory's `formation-visual/` folder. The export samples only
+the released public `GeologySampler`: it renders every X/Y cell in a fixed
+vertical section, an eight-block top-down grid, the observed rock legend, seed
+and the same metrics asserted by the test. It is ignored by Git and never
+packaged. Use it to distinguish the normal broad coherent strata from the
+intentionally shredded extreme case and the dense all-`tiny` case; do not
+recommend the diagnostic extreme profile as the adventure default.
+
 Do not describe these as two adjacent algorithms inside one world. Per-geome
 formation presets are not part of the released contract.
 

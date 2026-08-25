@@ -95,6 +95,9 @@ def cakeworldGameTestNamespaces = providers.gradleProperty(
                 : samplerPlatterRuntime ? 'cakeworld_sampler' : mod_id)
 def expectedFormationAlgorithm = providers.gradleProperty(
         'cakeworldExpectedFormationAlgorithm').orNull
+def formationVisualEvidence = providers.gradleProperty(
+        'cakeworldFormationVisualEvidence')
+        .map { it.toBoolean() }.getOrElse(false)
 minecraft {
     // The mappings can be changed at any time and must be in the following format.
     // Channel:   Version:
@@ -243,6 +246,9 @@ minecraft {
             if (expectedFormationAlgorithm != null) {
                 property 'cakeworld.expectedFormationAlgorithm',
                         expectedFormationAlgorithm
+            }
+            if (formationVisualEvidence) {
+                property 'cakeworld.formationVisualEvidence', 'true'
             }
             if (providers.gradleProperty('orespawnBenchmarkMode').isPresent()) {
                 property 'orespawn.worldgenBenchmarkMode',

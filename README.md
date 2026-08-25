@@ -124,6 +124,15 @@ Add `-PcakeworldSamplerReuseWorld=true` to the same command for reload proof.
 The override and save stay under the ignored run directory and never alter the
 packaged Sampler or an ordinary adventure.
 
+Append `-PcakeworldFormationVisualEvidence=true` to the stable, extreme or
+minimum formation command to render reproducible human-review evidence from
+OreSpawn's public sampler. The successful test writes a labelled PNG and text
+manifest under `<isolated-run-directory>/formation-visual/`; neither file is
+packaged. The fixed-seed comparison should show broad coherent adventure
+strata, intentionally shredded extreme output, and dense but recognizable
+all-`tiny` beds. The extreme case is a diagnostic stress example rather than a
+recommended gameplay profile.
+
 The unrelated-source composition proof installs a fixed test-only biome source
 before OreSpawn's released wrapper and never adds TerraBlender or another
 production dependency:
