@@ -58,6 +58,21 @@ registered during ordinary startup. The harness refuses a directory that
 already contains a saved profile because this is a fresh registration proof,
 not a save/reload scenario.
 
+To verify the inclusive climate comparison used by all production outputs:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldClimateBoundaryRuntime=true -PcakeworldClimateBoundaryRunDirectory=run-climate-boundaries-local
+```
+
+The task reads the generated adventure profile and refuses to proceed unless it
+finds all 35 unique outputs covered by the expected 17 distinct ranges. It then
+generates an ignored, explicit diagnostic profile with one isolated palette per
+range and conditionally registers a 102-biome vanilla checkerboard source. For
+each range, the minimum/minimum and maximum/maximum corners must select; the
+nearest float below or above each individual temperature/downfall limit must
+delegate unchanged. The fixture never changes the packaged provider and is not
+registered during ordinary startup. Always use a fresh ignored directory.
+
 Exact `biomes` weights and matching `biome_dictionary` weights are additive.
 OreSpawn's built-in dictionary defaults may also contribute generic geology
 such as mountain belts or coastal shelves, so a total-conversion provider

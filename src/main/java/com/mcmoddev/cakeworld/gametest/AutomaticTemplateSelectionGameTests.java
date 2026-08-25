@@ -45,6 +45,9 @@ public final class AutomaticTemplateSelectionGameTests {
 		require(helper, !biomes.containsKey(
 				BlankBiomeRegistrationFixture.BIOME_ID),
 				"GameTest-only blank biome leaked into an ordinary runtime");
+		require(helper, !biomes.containsKey(
+				ClimateBoundaryFixture.FIRST_BIOME_ID),
+				"GameTest-only climate biome leaked into an ordinary runtime");
 
 		JsonObject templates = packagedProvider(helper)
 				.getAsJsonObject("templates");

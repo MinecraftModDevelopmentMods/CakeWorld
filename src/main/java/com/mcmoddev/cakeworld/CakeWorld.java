@@ -3,6 +3,7 @@ package com.mcmoddev.cakeworld;
 import com.mcmoddev.cakeworld.command.CakeWorldCommands;
 import com.mcmoddev.cakeworld.gametest.BlankBiomeRegistrationFixture;
 import com.mcmoddev.cakeworld.gametest.CakeWorldImcProviderFixture;
+import com.mcmoddev.cakeworld.gametest.ClimateBoundaryFixture;
 import com.mcmoddev.cakeworld.gametest.SamplerThirdPartyBiomeFixture;
 import com.mcmoddev.cakeworld.init.CakeWorldBiomes;
 import com.mcmoddev.cakeworld.init.CakeWorldBlocks;
@@ -39,6 +40,9 @@ public final class CakeWorld {
 		}
 		if (Boolean.getBoolean("cakeworld.blankBiomeFixture")) {
 			BlankBiomeRegistrationFixture.register(modBus);
+		}
+		if (Boolean.getBoolean("cakeworld.climateBoundaryFixture")) {
+			ClimateBoundaryFixture.register(modBus);
 		}
 		if (Boolean.getBoolean("cakeworld.imcProviderFixture")) {
 			CakeWorldImcProviderFixture.register(modBus);

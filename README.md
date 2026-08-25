@@ -169,6 +169,20 @@ other placed feature. It also proves the laboratory is absent from the active
 profile and biome-source outputs. A normal startup does not register it, and
 the command refuses to reuse a directory that already owns a saved profile.
 
+The complete production climate-range boundary matrix is exercised separately:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldClimateBoundaryRuntime=true -PcakeworldClimateBoundaryRunDirectory=run-climate-boundaries-local
+```
+
+The preparation task derives all 35 packaged biome outputs into their 17
+distinct temperature/downfall ranges, then builds an ignored diagnostic
+provider. A test-only 102-biome checkerboard gives every range two exact corner
+cases plus the closest representable source climate beyond each of its four
+limits. Released OreSpawn must select both inclusive corners and delegate all
+four outside cases. The diagnostic provider and source biomes are absent from
+ordinary startup, and an existing saved profile is always refused.
+
 In any running CakeWorld server, `/cakeworld orespawn` gives players and pack
 makers a read-only summary of the world-owned OreSpawn profile: selected
 template, geology mode, and the counts of rocks, geomes, ores, fluid deposits,

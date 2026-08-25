@@ -39,6 +39,10 @@ def blankBiomeRuntime = providers.gradleProperty(
         'cakeworldBlankBiomeRuntime').map { it.toBoolean() }.getOrElse(false)
 def blankBiomeRunDirectory = providers.gradleProperty(
         'cakeworldBlankBiomeRunDirectory').getOrElse('run-blank-biome')
+def climateBoundaryRuntime = providers.gradleProperty(
+        'cakeworldClimateBoundaryRuntime').map { it.toBoolean() }.getOrElse(false)
+def climateBoundaryRunDirectory = providers.gradleProperty(
+        'cakeworldClimateBoundaryRunDirectory').getOrElse('run-climate-boundaries')
 def samplerThirdPartyRuntime = providers.gradleProperty(
         'cakeworldSamplerThirdPartyRuntime')
         .map { it.toBoolean() }.getOrElse(false)
@@ -80,6 +84,8 @@ def cakeworldGameTestNamespaces = providers.gradleProperty(
                 ? 'cakeworld_provider_override'
                 : imcProviderRuntime
                         ? 'cakeworld_imc_provider'
+                : climateBoundaryRuntime
+                        ? 'cakeworld_climate_boundaries'
                 : blankBiomeRuntime
                         ? 'cakeworld_blank_biome'
                 : replaceModeRuntime
@@ -182,6 +188,8 @@ minecraft {
                 workingDirectory project.file(providerOverrideRunDirectory)
             } else if (imcProviderRuntime) {
                 workingDirectory project.file(imcProviderRunDirectory)
+            } else if (climateBoundaryRuntime) {
+                workingDirectory project.file(climateBoundaryRunDirectory)
             } else if (blankBiomeRuntime) {
                 workingDirectory project.file(blankBiomeRunDirectory)
             } else if (replaceModeRuntime) {
@@ -214,6 +222,9 @@ minecraft {
             }
             if (blankBiomeRuntime) {
                 property 'cakeworld.blankBiomeFixture', 'true'
+            }
+            if (climateBoundaryRuntime) {
+                property 'cakeworld.climateBoundaryFixture', 'true'
             }
             if (providerOverrideRuntime) {
                 property 'cakeworld.providerOverrideMode',
@@ -308,6 +319,8 @@ def replaceModeRunRoot =
         layout.projectDirectory.dir(replaceModeRunDirectory)
 def blankBiomeRunRoot =
         layout.projectDirectory.dir(blankBiomeRunDirectory)
+def climateBoundaryRunRoot =
+        layout.projectDirectory.dir(climateBoundaryRunDirectory)
 def imcProviderRunRoot =
         layout.projectDirectory.dir(imcProviderRunDirectory)
 def runtimePackagedProvider = layout.buildDirectory.file(
@@ -479,6 +492,164 @@ def prepareBlankBiomeRun = tasks.register('prepareBlankBiomeRun') {
             into runRoot
             rename { 'server.properties' }
         }
+    }
+}
+
+def prepareClimateBoundaryRun = tasks.register('prepareClimateBoundaryRun') {
+    group = 'verification'
+    description = 'Prepares an isolated all-range biome climate boundary proof.'
+    dependsOn 'generateCakeWorldOreSpawnProvider'
+    inputs.files(generatedOreSpawnProvider, samplerPlatterGlobalConfig,
+            samplerPlatterServerProperties)
+    outputs.upToDateWhen { false }
+
+    doLast {
+        def runRoot = climateBoundaryRunRoot.asFile
+        def savedProfile = new File(runRoot,
+                'world/serverconfig/orespawn-worldgen.json')
+        if (savedProfile.isFile()) {
+            throw new GradleException(
+                    "Climate-boundary run directory already contains a saved world profile: ${savedProfile}. Use a new -PcakeworldClimateBoundaryRunDirectory value.")
+        }
+
+        def parser = new groovy.json.JsonSlurper()
+        def packaged = parser.parse(
+                generatedOreSpawnProvider.get().asFile) as Map
+        def adventure = packaged.templates['cakeworld:edible_world'] as Map
+        def productionProfile = adventure == null
+                ? null : adventure.profile as Map
+        def productionPalettes = productionProfile == null
+                ? null : productionProfile.biome_palettes as Map
+        if (productionPalettes == null) {
+            throw new GradleException(
+                    'Generated provider does not contain the adventure biome palettes.')
+        }
+
+        def ranges = [
+                [-2.0D, 2.0D, 0.0D, 1.0D],
+                [0.25D, 2.0D, 0.0D, 0.65D],
+                [0.4D, 1.2D, 0.25D, 0.8D],
+                [0.15D, 1.5D, 0.55D, 1.0D],
+                [-2.0D, 0.3D, 0.35D, 1.0D],
+                [0.7D, 2.0D, 0.7D, 1.0D],
+                [0.5D, 1.2D, 0.75D, 1.0D],
+                [1.5D, 2.0D, 0.0D, 0.2D],
+                [-2.0D, 0.35D, 0.0D, 1.0D],
+                [-2.0D, 0.2D, 0.0D, 0.8D],
+                [0.5D, 2.0D, 0.0D, 0.35D],
+                [0.3D, 1.2D, 0.35D, 1.0D],
+                [0.4D, 1.0D, 0.6D, 1.0D],
+                [0.3D, 1.0D, 0.4D, 0.9D],
+                [0.5D, 1.2D, 0.2D, 0.6D],
+                [-1.0D, 2.0D, 0.0D, 1.0D],
+                [0.5D, 1.2D, 0.8D, 1.0D]
+        ]
+        def production = []
+        productionPalettes.each { paletteId, paletteValue ->
+            def palette = paletteValue as Map
+            (palette.biomes as Map).each { outputId, placementValue ->
+                def placement = placementValue as Map
+                production << [
+                        palette: paletteId,
+                        output: outputId,
+                        range: [
+                                (placement.min_temperature as Number).doubleValue(),
+                                (placement.max_temperature as Number).doubleValue(),
+                                (placement.min_downfall as Number).doubleValue(),
+                                (placement.max_downfall as Number).doubleValue()
+                        ]
+                ]
+            }
+        }
+        if (production.size() != 35
+                || production.collect { it.output }.toSet().size() != 35) {
+            throw new GradleException(
+                    "Expected 35 unique production biome outputs; got ${production.size()} rows and ${production.collect { it.output }.toSet().size()} IDs.")
+        }
+
+        def suffixes = [
+                'minimum', 'maximum', 'temperature_below',
+                'temperature_above', 'downfall_below', 'downfall_above'
+        ]
+        def assigned = []
+        def testPalettes = new LinkedHashMap()
+        ranges.eachWithIndex { range, index ->
+            def matches = production.findAll { it.range == range }
+            if (matches.isEmpty()) {
+                throw new GradleException(
+                        "No production biome uses climate range ${range}.")
+            }
+            assigned.addAll(matches.collect { it.output })
+            def pathPrefix = String.format('range_%02d_', index)
+            def requiredSources = suffixes.collect {
+                "cakeworld_climate_fixture:${pathPrefix}${it}"
+            }
+            def output = matches[0].output
+            testPalettes["cakeworld_fixture:climate_range_${String.format('%02d', index)}"] = [
+                    dimension: 'minecraft:overworld',
+                    enabled: true,
+                    mode: 'replace',
+                    scope: 'selected_namespaces',
+                    region_size: 'tiny',
+                    coverage: 1.0D,
+                    fallback_weight: 0.0D,
+                    include_namespaces: ['cakeworld_climate_fixture'],
+                    exclude_namespaces: [],
+                    biomes: [
+                            (output): [
+                                    enabled: true,
+                                    weight: 1.0D,
+                                    similar_biomes: requiredSources,
+                                    required_similar_biomes: requiredSources,
+                                    min_temperature: range[0],
+                                    max_temperature: range[1],
+                                    min_downfall: range[2],
+                                    max_downfall: range[3]
+                            ]
+                    ]
+            ]
+        }
+        if (assigned.size() != 35 || assigned.toSet().size() != 35) {
+            throw new GradleException(
+                    "The 17 expected climate ranges cover ${assigned.size()} rows and ${assigned.toSet().size()} unique outputs, not all 35.")
+        }
+
+        def provider = [
+                schema_version: 4,
+                provider_modid: 'cakeworld',
+                provider_revision: 4701,
+                templates: [
+                        'cakeworld:climate_boundaries': [
+                                name_key: 'template.cakeworld.climate_boundaries',
+                                description_key: 'template.cakeworld.climate_boundaries.description',
+                                required_mods: ['cakeworld'],
+                                auto_select: false,
+                                auto_select_priority: 0,
+                                profile: [biome_palettes: testPalettes]
+                        ]
+                ]
+        ]
+        def configRoot = new File(runRoot, 'config')
+        configRoot.mkdirs()
+        def providerOverride = new File(configRoot, 'cakeworld-orespawn.json')
+        providerOverride.setText(groovy.json.JsonOutput.prettyPrint(
+                groovy.json.JsonOutput.toJson(provider))
+                + System.lineSeparator(), 'UTF-8')
+
+        def globalConfig = parser.parse(
+                samplerPlatterGlobalConfig.asFile) as Map
+        globalConfig.default_template = 'cakeworld:climate_boundaries'
+        new File(configRoot, 'orespawn-worldgen.json').setText(
+                groovy.json.JsonOutput.prettyPrint(
+                        groovy.json.JsonOutput.toJson(globalConfig))
+                        + System.lineSeparator(), 'UTF-8')
+        copy {
+            from samplerPlatterServerProperties
+            into runRoot
+            rename { 'server.properties' }
+        }
+        logger.lifecycle(
+                "Prepared 17-range/35-output climate boundary provider: ${providerOverride}")
     }
 }
 
@@ -826,6 +997,9 @@ tasks.configureEach {
     if (blankBiomeRuntime && name == 'runGameTestServer') {
         dependsOn prepareBlankBiomeRun
     }
+    if (climateBoundaryRuntime && name == 'runGameTestServer') {
+        dependsOn prepareClimateBoundaryRun
+    }
     if (providerOverrideRuntime && name == 'runGameTestServer') {
         dependsOn prepareProviderOverrideRun
     }
@@ -1011,6 +1185,8 @@ def prepareGameTestStructures = tasks.register('prepareGameTestStructures', Copy
             ? "${providerOverrideRunDirectory}/gameteststructures"
             : imcProviderRuntime
             ? "${imcProviderRunDirectory}/gameteststructures"
+            : climateBoundaryRuntime
+            ? "${climateBoundaryRunDirectory}/gameteststructures"
             : blankBiomeRuntime
             ? "${blankBiomeRunDirectory}/gameteststructures"
             : replaceModeRuntime
