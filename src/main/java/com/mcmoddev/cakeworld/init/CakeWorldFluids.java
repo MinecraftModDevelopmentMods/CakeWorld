@@ -2,6 +2,7 @@ package com.mcmoddev.cakeworld.init;
 
 import com.mcmoddev.cakeworld.CakeWorld;
 import com.mcmoddev.cakeworld.block.CakeLiquidBlock;
+import com.mcmoddev.cakeworld.block.HotFudgeLiquidBlock;
 import com.mcmoddev.cakeworld.block.MoltenMallowLiquidBlock;
 import com.mcmoddev.cakeworld.item.CakeBucketItem;
 
@@ -162,9 +163,9 @@ public final class CakeWorldFluids {
 			FLUIDS.register("flowing_hot_fudge",
 					() -> new ForgeFlowingFluid.Flowing(HOT_FUDGE_PROPERTIES));
 	public static final RegistryObject<LiquidBlock> HOT_FUDGE_BLOCK = BLOCKS.register("hot_fudge",
-			() -> new CakeLiquidBlock(CakeWorldFluids::hotFudgeFlowing,
+			() -> new HotFudgeLiquidBlock(CakeWorldFluids::hotFudgeFlowing,
 					BlockBehaviour.Properties.of(Material.LAVA).noCollission().strength(100.0F)
-							.lightLevel(state -> 8).noDrops()));
+							.lightLevel(state -> HotFudgeLiquidBlock.WARNING_LIGHT).noDrops()));
 	public static final RegistryObject<Item> HOT_FUDGE_BUCKET = ITEMS.register("hot_fudge_bucket",
 			() -> new CakeBucketItem(CakeWorldFluids::hotFudge,
 					new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)
