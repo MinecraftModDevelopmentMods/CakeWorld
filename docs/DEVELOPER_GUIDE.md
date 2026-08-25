@@ -494,6 +494,8 @@ remain ignored.
   region settings with fixed 128/256/512/1,024/2,048-block boundary evidence.
   Its extreme formation, registered-output alias, three-layer flat-bedrock and
   copied-world retrogen and minimum-preset formation cases are also automated.
-  The unrelated mod-biome pass-through fixture is automated as well. Hands-on
-  formation readability review and the remaining labelled plots are still
-  Slice 7 work.
+  The unrelated mod-biome pass-through fixture and deterministic formation
+  readability export are automated as well. Every labelled OreSpawn capability
+  has been attempted, so the Sampler umbrella is verified; cases the published
+  contract cannot support remain separately shelved with evidence and revisit
+  conditions.
