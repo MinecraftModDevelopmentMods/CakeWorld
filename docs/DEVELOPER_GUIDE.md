@@ -186,6 +186,37 @@ that the six earlier `minecraft_only` Overworld plots delegated the unrelated
 source unchanged before the explicit fixture plot. Fresh/reload reproduce the
 counts. An ordinary Sampler asserts the fixture registry ID is absent.
 
+### Main replace-mode composition
+
+Use a separate disposable directory to prove the automatically selected main
+adventure replaces even an unrelated source under `scope=all`:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldReplaceModeRuntime=true -PcakeworldReplaceModeRunDirectory=run-replace-mode-local
+./gradlew runGameTestServer -PcakeworldReplaceModeRuntime=true -PcakeworldReplaceModeRunDirectory=run-replace-mode-local -PcakeworldReplaceModeReuseWorld=true
+```
+
+The harness conditionally installs the same fixed
+`cakeworld_fixture:delegated_meadow` owner before OreSpawn wraps the Overworld,
+but it selects the normal `cakeworld:edible_world` template rather than the
+Sampler. It checks all five saved palettes for `mode=replace`, `scope=all`,
+`coverage=1.0`, `fallback_weight=0.0` and `exclude_namespaces=[cakeworld]`.
+It then samples 66,049 positions at Overworld Y 64 and -32, Nether Y 64 and End
+Y 64. Because the fixture ID matches none of the vanilla similarity hints, the
+only eligible Overworld entry is the deliberately generic Candy Plains rule;
+all 132,098 Overworld samples therefore select it. The vanilla-backed Nether
+and End planes each expose all seven current outputs, and every one of the
+264,196 final results is in the CakeWorld namespace.
+
+The fixed-seed per-position signatures are asserted as
+`671217176651623588` for each Overworld plane,
+`14305352832125438259` for Nether and `10797345351901494849` for End. Repeat
+with explicit reuse to prove the world-owned profile and signatures survive a
+reload. The preparation task refuses accidental reuse, and an ordinary
+selection test proves the fixture ID is absent without the dedicated runtime
+switch. This reflection-based source owner is test scaffolding only; it is not
+a child-mod integration pattern and adds no TerraBlender dependency.
+
 ### Read-only active-profile status
 
 Run `/cakeworld orespawn` in a dedicated or integrated server to inspect the

@@ -6,9 +6,11 @@ import java.nio.charset.StandardCharsets;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import net.minecraft.core.Registry;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
@@ -35,6 +37,11 @@ public final class AutomaticTemplateSelectionGameTests {
 				.filter(EDIBLE_WORLD::equals).isPresent(),
 				"Ordinary CakeWorld-only fresh world did not select "
 						+ EDIBLE_WORLD);
+		Registry<Biome> biomes = helper.getLevel().registryAccess()
+				.registryOrThrow(Registry.BIOME_REGISTRY);
+		require(helper, !biomes.containsKey(
+				SamplerThirdPartyBiomeFixture.BIOME_ID),
+				"GameTest-only unrelated biome leaked into an ordinary runtime");
 
 		JsonObject templates = packagedProvider(helper)
 				.getAsJsonObject("templates");

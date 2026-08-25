@@ -32,7 +32,8 @@ public final class CakeWorld {
 		CakeWorldItems.register(modBus);
 		CakeWorldBiomes.register(modBus);
 		CakeWorldOrePatterns.register(modBus);
-		if (Boolean.getBoolean("cakeworld.samplerThirdPartyFixture")) {
+		if (Boolean.getBoolean("cakeworld.samplerThirdPartyFixture")
+				|| Boolean.getBoolean("cakeworld.replaceModeFixture")) {
 			SamplerThirdPartyBiomeFixture.register(modBus);
 		}
 		if (Boolean.getBoolean("cakeworld.imcProviderFixture")) {

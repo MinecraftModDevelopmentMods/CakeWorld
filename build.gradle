@@ -29,6 +29,12 @@ def editorAcceptanceRunDirectory = providers.gradleProperty(
         'cakeworldEditorRunDirectory').orNull
 def editorAcceptanceReuseWorld = providers.gradleProperty(
         'cakeworldEditorReuseWorld').map { it.toBoolean() }.getOrElse(false)
+def replaceModeRuntime = providers.gradleProperty(
+        'cakeworldReplaceModeRuntime').map { it.toBoolean() }.getOrElse(false)
+def replaceModeRunDirectory = providers.gradleProperty(
+        'cakeworldReplaceModeRunDirectory').getOrElse('run-replace-mode')
+def replaceModeReuseWorld = providers.gradleProperty(
+        'cakeworldReplaceModeReuseWorld').map { it.toBoolean() }.getOrElse(false)
 def samplerThirdPartyRuntime = providers.gradleProperty(
         'cakeworldSamplerThirdPartyRuntime')
         .map { it.toBoolean() }.getOrElse(false)
@@ -70,6 +76,8 @@ def cakeworldGameTestNamespaces = providers.gradleProperty(
                 ? 'cakeworld_provider_override'
                 : imcProviderRuntime
                         ? 'cakeworld_imc_provider'
+                : replaceModeRuntime
+                        ? 'cakeworld_replace_mode'
                 : samplerThirdPartyRuntime
                         ? 'cakeworld_sampler_third_party'
                 : samplerPlatterRuntime ? 'cakeworld_sampler' : mod_id)
@@ -168,6 +176,8 @@ minecraft {
                 workingDirectory project.file(providerOverrideRunDirectory)
             } else if (imcProviderRuntime) {
                 workingDirectory project.file(imcProviderRunDirectory)
+            } else if (replaceModeRuntime) {
+                workingDirectory project.file(replaceModeRunDirectory)
             } else if (samplerPlatterRuntime) {
                 workingDirectory project.file(samplerPlatterRunDirectory)
             } else if (baseMetalsIntegration) {
@@ -190,6 +200,9 @@ minecraft {
             }
             if (samplerThirdPartyRuntime) {
                 property 'cakeworld.samplerThirdPartyFixture', 'true'
+            }
+            if (replaceModeRuntime) {
+                property 'cakeworld.replaceModeFixture', 'true'
             }
             if (providerOverrideRuntime) {
                 property 'cakeworld.providerOverrideMode',
@@ -280,6 +293,8 @@ def providerMergeUpgradeFixture =
                 'src/test/orespawn/provider-merge-upgrade.json')
 def providerMergeRunRoot =
         layout.projectDirectory.dir(providerMergeRunDirectory)
+def replaceModeRunRoot =
+        layout.projectDirectory.dir(replaceModeRunDirectory)
 def imcProviderRunRoot =
         layout.projectDirectory.dir(imcProviderRunDirectory)
 def runtimePackagedProvider = layout.buildDirectory.file(
@@ -396,6 +411,33 @@ def prepareSamplerPlatterRun = tasks.register('prepareSamplerPlatterRun') {
             from samplerPlatterGlobalConfig
             into new File(runRoot, 'config')
             rename { 'orespawn-worldgen.json' }
+        }
+        copy {
+            from samplerPlatterServerProperties
+            into runRoot
+            rename { 'server.properties' }
+        }
+    }
+}
+
+def prepareReplaceModeRun = tasks.register('prepareReplaceModeRun') {
+    group = 'verification'
+    description = 'Prepares an isolated main-adventure replace-mode biome-source proof.'
+    inputs.file(samplerPlatterServerProperties)
+    outputs.upToDateWhen { false }
+
+    doLast {
+        def runRoot = replaceModeRunRoot.asFile
+        def savedProfile = new File(runRoot,
+                'world/serverconfig/orespawn-worldgen.json')
+        if (savedProfile.isFile() && !replaceModeReuseWorld) {
+            throw new GradleException(
+                    "Replace-mode run directory already contains a saved world profile: ${savedProfile}. Use a new -PcakeworldReplaceModeRunDirectory value, or explicitly pass -PcakeworldReplaceModeReuseWorld=true for reload evidence.")
+        }
+        if (savedProfile.isFile()) {
+            logger.lifecycle(
+                    "Reusing replace-mode world-owned profile without rewriting it: ${savedProfile}")
+            return
         }
         copy {
             from samplerPlatterServerProperties
@@ -743,6 +785,9 @@ tasks.configureEach {
     if (samplerPlatterRuntime && name == 'runGameTestServer') {
         dependsOn prepareSamplerPlatterRun
     }
+    if (replaceModeRuntime && name == 'runGameTestServer') {
+        dependsOn prepareReplaceModeRun
+    }
     if (providerOverrideRuntime && name == 'runGameTestServer') {
         dependsOn prepareProviderOverrideRun
     }
@@ -928,6 +973,8 @@ def prepareGameTestStructures = tasks.register('prepareGameTestStructures', Copy
             ? "${providerOverrideRunDirectory}/gameteststructures"
             : imcProviderRuntime
             ? "${imcProviderRunDirectory}/gameteststructures"
+            : replaceModeRuntime
+            ? "${replaceModeRunDirectory}/gameteststructures"
             : samplerPlatterRuntime
             ? "${samplerPlatterRunDirectory}/gameteststructures"
             : baseMetalsIntegration

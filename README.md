@@ -135,6 +135,25 @@ production dependency:
 Use the normal explicit reuse flag for same-save reload. Without the dedicated
 switch, neither the fixture biome nor its source owner is registered.
 
+The main adventure's full replace-mode proof reuses that dormant source owner
+in a separate disposable world. It asserts all five production palettes use
+`replace`, `scope=all`, full coverage, zero fallback and a CakeWorld namespace
+exclusion, then surveys 66,049 fixed-seed positions on each of four planes:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldReplaceModeRuntime=true -PcakeworldReplaceModeRunDirectory=run-replace-mode-local
+./gradlew runGameTestServer -PcakeworldReplaceModeRuntime=true -PcakeworldReplaceModeRunDirectory=run-replace-mode-local -PcakeworldReplaceModeReuseWorld=true
+```
+
+The unrelated constant Overworld source maps every sampled surface and cave
+position to the adventure's generic `cakeworld:candy_plains` output; outputs
+with vanilla similarity restrictions remain ineligible for that unknown ID.
+Vanilla-backed Nether and End samples retain exact seven-biome fixed-seed
+distributions. All 264,196 results are CakeWorld biomes, the unrelated source
+never leaks through, and fresh/reload signatures are identical. The first
+command refuses an existing saved profile; reuse must be explicit. Without
+`cakeworldReplaceModeRuntime`, the fixture is not registered or installed.
+
 In any running CakeWorld server, `/cakeworld orespawn` gives players and pack
 makers a read-only summary of the world-owned OreSpawn profile: selected
 template, geology mode, and the counts of rocks, geomes, ores, fluid deposits,

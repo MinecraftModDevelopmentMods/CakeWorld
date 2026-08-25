@@ -25,8 +25,9 @@ import org.slf4j.Logger;
 import zone.moddev.mc.orespawn.api.OreSpawnBiomes;
 
 /**
- * Opt-in GameTest-only owner for an unrelated biome namespace. Production
- * CakeWorld never registers or installs this fixture.
+ * Opt-in GameTest-only owner for an unrelated biome namespace. Sampler
+ * pass-through and main-adventure replace-mode proofs share this fixture;
+ * production CakeWorld never registers or installs it.
  */
 public final class SamplerThirdPartyBiomeFixture {
 	public static final String NAMESPACE = "cakeworld_fixture";
@@ -43,6 +44,7 @@ public final class SamplerThirdPartyBiomeFixture {
 					builder -> builder.temperature(0.8F).downfall(0.4F));
 	private static final Logger LOGGER = LogUtils.getLogger();
 	private static boolean registered;
+	private static volatile boolean installed;
 
 	private SamplerThirdPartyBiomeFixture() {
 	}
@@ -70,11 +72,16 @@ public final class SamplerThirdPartyBiomeFixture {
 				generator, source, "f_62137_");
 		ObfuscationReflectionHelper.setPrivateValue(ChunkGenerator.class,
 				generator, source, "f_62138_");
+		installed = true;
 		LOGGER.info("Installed GameTest-only biome source owner for '{}' before OreSpawn wrapping",
 				BIOME_ID);
 	}
 
 	public static RegistryObject<Biome> delegatedMeadow() {
 		return DELEGATED_MEADOW;
+	}
+
+	public static boolean wasInstalled() {
+		return installed;
 	}
 }
