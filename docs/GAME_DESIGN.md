@@ -642,7 +642,11 @@ mouse selection and non-colour cues remain clear, Narrator works in
 `Narrates All` mode, and the live discovery event displays `Cookbook page
 rustles` with subtitles enabled. The screen has no animated presentation, so
 its accepted reduced-motion behaviour is the same static layout at every
-reviewed scale.
+reviewed scale. This also verifies the current `BOOK-003` six-tab presentation:
+all six named categories remained visible, selectable, and readable at every
+reviewed scale. The `BOOK-006` First Edition page totals and discovery-method
+stamps were likewise readable, but they remain a foundation for the eventual
+biome-stamp and full-catalogue completion system rather than its completion.
 
 The `SYS-013` source-language gate enumerates the live CakeWorld block, item,
 entity, effect, biome, and sound registries and checks their packaged English
