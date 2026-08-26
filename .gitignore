@@ -12,6 +12,8 @@ out
 *.iws
 *.iml
 .idea
+.vscode
+.vs
 
 # gradle
 build
@@ -24,11 +26,47 @@ run-*/
 run-data
 logs
 .eclipse
+crash-reports
+test-results
+test-output
+test-reports
+/screenshots/
+/evidence/
+/release/
+/dist/
+
+# Local logs, diagnostics, temporary files, and OS metadata
+*.log
+*.log.*
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej
+*.jfr
+*.dmp
+hs_err_pid*
+replay_pid*
+.DS_Store
+Thumbs.db
+Desktop.ini
+.env
+.env.*
+!.env.example
 
 # Files from Forge MDK
 forge*changelog.txt
 
 # Local coding-agent handover context (at any repository depth)
+AGENT.md
 AGENTS.md
+CLAUDE.md
+CODEX.md
+GEMINI.md
 agent-notes/
+agent_notes/
 .codex/
+.claude/
+.cursor/
+*agent-handover*.md
+codex-*.md
