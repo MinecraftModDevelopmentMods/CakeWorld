@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "cakeworld:custard_bucket"
+    },
+    {
+      "item": "cakeworld:simple_biscuit"
+    },
+    {
+      "item": "cakeworld:simple_biscuit"
+    },
+    {
+      "item": "minecraft:sugar"
+    }
+  ],
+  "result": {
+    "item": "cakeworld:custard_tart",
+    "count": 2
+  }
+}

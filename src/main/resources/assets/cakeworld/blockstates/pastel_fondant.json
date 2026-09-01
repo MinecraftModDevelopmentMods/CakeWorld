@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "bites=0": { "model": "cakeworld:block/pastel_fondant" },
+    "bites=1": { "model": "cakeworld:block/pastel_fondant_bites_1" },
+    "bites=2": { "model": "cakeworld:block/pastel_fondant_bites_2" },
+    "bites=3": { "model": "cakeworld:block/pastel_fondant_bites_3" }
+  }
+}

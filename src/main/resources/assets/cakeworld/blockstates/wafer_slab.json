@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "cakeworld:block/wafer_slab"
+    },
+    "type=double": {
+      "model": "cakeworld:block/wafer_block"
+    },
+    "type=top": {
+      "model": "cakeworld:block/wafer_slab_top"
+    }
+  }
+}

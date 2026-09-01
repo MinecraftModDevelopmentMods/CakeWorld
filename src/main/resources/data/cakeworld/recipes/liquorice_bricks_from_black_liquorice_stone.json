@@ -1,0 +1,6 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["##", "##"],
+  "key": {"#": {"item": "cakeworld:black_liquorice_stone"}},
+  "result": {"item": "cakeworld:liquorice_bricks", "count": 4}
+}

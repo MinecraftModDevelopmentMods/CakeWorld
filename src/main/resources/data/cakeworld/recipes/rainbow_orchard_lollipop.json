@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "BBB",
+    " B ",
+    " S "
+  ],
+  "key": {
+    "B": {
+      "item": "cakeworld:boiled_sweet"
+    },
+    "S": {
+      "item": "minecraft:stick"
+    }
+  },
+  "result": {
+    "item": "cakeworld:rainbow_orchard_lollipop",
+    "count": 2
+  }
+}

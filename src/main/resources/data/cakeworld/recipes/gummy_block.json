@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SSS",
+    "SLS",
+    "SSS"
+  ],
+  "key": {
+    "S": {
+      "item": "minecraft:sugar"
+    },
+    "L": {
+      "item": "cakeworld:lemonade_bottle"
+    }
+  },
+  "result": {
+    "item": "cakeworld:gummy_block"
+  }
+}

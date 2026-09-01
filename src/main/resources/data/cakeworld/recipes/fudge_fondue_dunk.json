@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "cakeworld:fudge_square"
+    },
+    {
+      "item": "cakeworld:simple_biscuit"
+    },
+    {
+      "item": "cakeworld:marshmallow"
+    }
+  ],
+  "result": {
+    "item": "cakeworld:fudge_fondue_dunk"
+  }
+}

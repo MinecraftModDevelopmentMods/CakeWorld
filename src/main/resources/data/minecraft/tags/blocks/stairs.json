@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "cakeworld:liquorice_stairs",
+    "cakeworld:macaron_stairs",
+    "cakeworld:wafer_stairs"
+    ,"cakeworld:burnt_toffee_stairs"
+  ]
+}

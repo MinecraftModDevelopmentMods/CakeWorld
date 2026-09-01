@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "cakeworld:block/macaron_slab"
+    },
+    "type=double": {
+      "model": "cakeworld:block/macaron_bricks"
+    },
+    "type=top": {
+      "model": "cakeworld:block/macaron_slab_top"
+    }
+  }
+}

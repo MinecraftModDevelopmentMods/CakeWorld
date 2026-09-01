@@ -1,0 +1,11 @@
+{
+  "replace": false,
+  "values": [
+    "cakeworld:sour_sorcerer",
+    "cakeworld:mirage_confectioner",
+    "cakeworld:biscuit_bandit",
+    "cakeworld:rolling_pin_raider",
+    "cakeworld:bitter_baker",
+    "cakeworld:gingerbread_stomper"
+  ]
+}

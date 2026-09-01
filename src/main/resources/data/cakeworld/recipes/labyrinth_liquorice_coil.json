@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {"item": "cakeworld:liquorice_twist"},
+    {"item": "cakeworld:cinnamon_stick"},
+    {"item": "cakeworld:fudge_square"}
+  ],
+  "result": {"item": "cakeworld:labyrinth_liquorice_coil", "count": 2}
+}

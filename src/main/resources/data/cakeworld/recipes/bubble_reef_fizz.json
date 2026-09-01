@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "cakeworld:fizzy_kelp_frond"
+    },
+    {
+      "item": "cakeworld:fizzy_kelp_frond"
+    },
+    {
+      "item": "minecraft:sugar"
+    },
+    {
+      "item": "cakeworld:lemonade_bottle"
+    }
+  ],
+  "result": {
+    "item": "cakeworld:bubble_reef_fizz",
+    "count": 2
+  }
+}

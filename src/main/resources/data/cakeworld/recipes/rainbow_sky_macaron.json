@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "cakeworld:macaron_shell_piece" },
+    { "item": "cakeworld:macaron_shell_piece" },
+    { "item": "cakeworld:glowing_jam_berry" },
+    { "item": "cakeworld:icing_spoonful" }
+  ],
+  "result": {
+    "item": "cakeworld:rainbow_sky_macaron",
+    "count": 2
+  }
+}

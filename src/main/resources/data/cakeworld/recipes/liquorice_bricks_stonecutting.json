@@ -1,0 +1,6 @@
+{
+  "type": "minecraft:stonecutting",
+  "ingredient": {"item": "cakeworld:black_liquorice_stone"},
+  "result": "cakeworld:liquorice_bricks",
+  "count": 1
+}

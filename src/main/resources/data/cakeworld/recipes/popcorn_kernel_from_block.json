@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "cakeworld:popcorn_block"
+    }
+  ],
+  "result": {
+    "item": "cakeworld:popcorn_kernel",
+    "count": 9
+  }
+}

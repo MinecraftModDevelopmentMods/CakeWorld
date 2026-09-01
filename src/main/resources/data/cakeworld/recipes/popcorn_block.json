@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "KKK",
+    "KKK",
+    "KKK"
+  ],
+  "key": {
+    "K": {
+      "item": "cakeworld:popcorn_kernel"
+    }
+  },
+  "result": {
+    "item": "cakeworld:popcorn_block"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "III",
+    " W "
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_bars"
+    },
+    "W": {
+      "item": "cakeworld:wafer_block"
+    }
+  },
+  "result": {
+    "item": "cakeworld:cooling_rack"
+  }
+}

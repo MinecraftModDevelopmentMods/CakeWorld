@@ -1,0 +1,19 @@
+{
+  "schema_version": 4,
+  "provider_modid": "cakeworld",
+  "provider_revision": 4701,
+  "templates": {
+    "cakeworld:override_probe": {
+      "name_key": "template.cakeworld.sampler_platter",
+      "description_key": "template.cakeworld.sampler_platter.description",
+      "required_mods": ["cakeworld"],
+      "auto_select": true,
+      "auto_select_priority": 1000,
+      "profile": {
+        "geology_mode": "geome",
+        "manage_vanilla_ores": false,
+        "suppress_all_ore_features": false
+      }
+    }
+  }
+}

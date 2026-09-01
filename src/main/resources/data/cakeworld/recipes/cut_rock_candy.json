@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:stonecutting",
+  "ingredient": {
+    "item": "cakeworld:rock_candy"
+  },
+  "result": "cakeworld:cut_rock_candy",
+  "count": 1
+}

@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SIS",
+    "ISI",
+    "SIS"
+  ],
+  "key": {
+    "S": {
+      "item": "minecraft:sugar"
+    },
+    "I": {
+      "item": "cakeworld:icing_spoonful"
+    }
+  },
+  "result": {
+    "item": "cakeworld:marshmallow",
+    "count": 2
+  }
+}

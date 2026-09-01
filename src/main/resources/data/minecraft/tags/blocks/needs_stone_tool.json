@@ -1,7 +1,31 @@
 {
   "replace": false,
   "values": [
-    "cakeworld:biscuit_stone",
-    "cakeworld:fudge_rock"
+    "cakeworld:nougat_rock",
+    "cakeworld:toasted_nougat_tiles",
+    "cakeworld:peppermint_rock",
+    "cakeworld:rock_candy",
+    "cakeworld:candy_glass",
+    "cakeworld:burnt_sugar_rock",
+    "cakeworld:rock_candy_deposit",
+    "cakeworld:liquorice_vein",
+    "cakeworld:cocoa_cloud",
+    "cakeworld:mint_crystal",
+    "cakeworld:sprinkle_cluster",
+    "cakeworld:rich_sprinkle_cluster",
+    "cakeworld:fizzy_pearl",
+    "cakeworld:iron_wafer",
+    "cakeworld:copper_caramel",
+    "cakeworld:blueberry_lapis",
+    "cakeworld:silver_leaf_silver",
+    "cakeworld:mint_wafer_nickel",
+    "cakeworld:liquorice_bricks",
+    "cakeworld:liquorice_stairs",
+    "cakeworld:liquorice_fence",
+    "cakeworld:macaron_bricks",
+    "cakeworld:macaron_pillar",
+    "cakeworld:macaron_stairs",
+    "cakeworld:macaron_slab",
+    "cakeworld:meringue_bricks"
   ]
 }

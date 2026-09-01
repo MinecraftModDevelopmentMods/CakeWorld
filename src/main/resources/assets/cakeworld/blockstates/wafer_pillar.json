@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "cakeworld:block/wafer_pillar_horizontal",
+      "x": 90,
+      "y": 90
+    },
+    "axis=y": {
+      "model": "cakeworld:block/wafer_pillar"
+    },
+    "axis=z": {
+      "model": "cakeworld:block/wafer_pillar_horizontal",
+      "x": 90
+    }
+  }
+}

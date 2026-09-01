@@ -1,0 +1,4 @@
+{
+  "parent": "forge:item/bucket",
+  "fluid": "cakeworld:molten_mallow"
+}

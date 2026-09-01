@@ -1,0 +1,16 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:grass_block",
+    "#minecraft:leaves",
+    "cakeworld:chocolate_sponge",
+    "cakeworld:gummy_block",
+    "cakeworld:raspberry_gummy_block",
+    "cakeworld:blueberry_gummy_block",
+    "cakeworld:grape_gummy_block",
+    "cakeworld:raspberry_sherbet_powder",
+    "cakeworld:orange_sherbet_powder",
+    "cakeworld:lemon_sherbet_powder",
+    "cakeworld:lime_sherbet_powder"
+  ]
+}

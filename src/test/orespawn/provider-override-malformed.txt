@@ -1,0 +1,4 @@
+{
+  "schema_version": 4,
+  "provider_modid": "cakeworld",
+  "provider_revision":

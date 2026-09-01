@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "BMB",
+    "MBM",
+    "BMB"
+  ],
+  "key": {
+    "B": {
+      "item": "cakeworld:simple_biscuit"
+    },
+    "M": {
+      "item": "cakeworld:frosting_mortar"
+    }
+  },
+  "result": {
+    "item": "cakeworld:gingerbread_bricks",
+    "count": 4
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "cakeworld:star_sugar_crystals" },
+    { "item": "cakeworld:star_sugar_crystals" },
+    { "item": "cakeworld:glowing_jam_berry" },
+    { "item": "cakeworld:simple_biscuit" }
+  ],
+  "result": {
+    "item": "cakeworld:constellation_candy",
+    "count": 2
+  }
+}

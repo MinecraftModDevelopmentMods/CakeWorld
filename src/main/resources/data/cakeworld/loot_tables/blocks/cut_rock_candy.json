@@ -1,0 +1,1 @@
+{"type":"minecraft:block","pools":[{"rolls":1,"entries":[{"type":"minecraft:item","name":"cakeworld:cut_rock_candy"}],"conditions":[{"condition":"minecraft:survives_explosion"}]}]}

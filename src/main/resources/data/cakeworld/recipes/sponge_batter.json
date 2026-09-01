@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "cakeworld:mixing_bowl"
+    },
+    {
+      "item": "cakeworld:chocolate_sponge_slice"
+    },
+    {
+      "item": "cakeworld:icing_spoonful"
+    }
+  ],
+  "result": {
+    "item": "cakeworld:sponge_batter"
+  }
+}

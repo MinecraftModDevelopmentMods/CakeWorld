@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "cakeworld:liquorice_vein"
+    },
+    {
+      "item": "cakeworld:simple_biscuit"
+    },
+    {
+      "item": "minecraft:sugar"
+    }
+  ],
+  "result": {
+    "item": "cakeworld:liquorice_twist",
+    "count": 2
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "cakeworld:candy_plains",
+    "cakeworld:gingerbread_hearthlands",
+    "cakeworld:cookie_forest",
+    "cakeworld:marshmallow_peaks"
+  ]
+}

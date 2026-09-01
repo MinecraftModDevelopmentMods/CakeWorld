@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "BBB",
+    "BKB",
+    "BBB"
+  ],
+  "key": {
+    "B": {
+      "item": "minecraft:bookshelf"
+    },
+    "K": {
+      "item": "cakeworld:cookbook_kiosk"
+    }
+  },
+  "result": {
+    "item": "cakeworld:cookbook_library"
+  }
+}

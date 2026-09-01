@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "cakeworld:rolled_biscuit_dough"
+    },
+    {
+      "item": "cakeworld:syrup_bucket"
+    },
+    {
+      "item": "minecraft:sugar"
+    }
+  ],
+  "result": {
+    "item": "cakeworld:syrup_waffle",
+    "count": 2
+  }
+}

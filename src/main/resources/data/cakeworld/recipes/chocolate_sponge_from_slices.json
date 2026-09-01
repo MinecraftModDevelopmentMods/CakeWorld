@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SS",
+    "SS"
+  ],
+  "key": {
+    "S": {
+      "item": "cakeworld:chocolate_sponge_slice"
+    }
+  },
+  "result": {
+    "item": "cakeworld:chocolate_sponge"
+  }
+}

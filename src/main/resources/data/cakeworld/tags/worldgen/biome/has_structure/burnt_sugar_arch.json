@@ -1,0 +1,17 @@
+{
+  "replace": false,
+  "values": [
+    "cakeworld:candy_plains",
+    "cakeworld:gingerbread_hearthlands",
+    "cakeworld:cookie_forest",
+    "cakeworld:marshmallow_peaks",
+    "cakeworld:soda_ocean",
+    "cakeworld:custard_coast",
+    "cakeworld:fudge_wastes",
+    "cakeworld:cinnamon_ember_groves",
+    "cakeworld:black_liquorice_labyrinths",
+    "cakeworld:treacle_soul_valleys",
+		"cakeworld:chilli_chocolate_crags",
+		"cakeworld:molten_marshmallow_calderas"
+  ]
+}

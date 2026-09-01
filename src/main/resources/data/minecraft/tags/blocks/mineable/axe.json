@@ -1,0 +1,16 @@
+{
+  "replace": false,
+  "values": [
+    "cakeworld:mixing_bowl",
+    "cakeworld:candy_cane_pillar",
+    "cakeworld:lollipop_fruit",
+    "cakeworld:liquorice_root",
+    "cakeworld:wafer_block",
+    "cakeworld:wafer_pillar",
+    "cakeworld:wafer_stairs",
+    "cakeworld:wafer_slab",
+    "cakeworld:cinnamon_log",
+    "cakeworld:ember_spice_leaves",
+    "cakeworld:fondant_chorus_stem"
+  ]
+}

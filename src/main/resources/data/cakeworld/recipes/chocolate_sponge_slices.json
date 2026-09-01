@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "cakeworld:chocolate_sponge"
+    }
+  ],
+  "result": {
+    "item": "cakeworld:chocolate_sponge_slice",
+    "count": 4
+  }
+}

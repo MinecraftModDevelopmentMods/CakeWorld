@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "cakeworld:cocoa_cow",
+    "cakeworld:mallow_chick",
+    "cakeworld:truffle_pig",
+    "cakeworld:candyfloss_sheep",
+    "cakeworld:stale_crumbler"
+  ]
+}

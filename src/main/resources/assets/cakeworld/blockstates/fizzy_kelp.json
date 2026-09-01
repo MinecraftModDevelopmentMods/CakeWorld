@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "age=0": {
+      "model": "cakeworld:block/fizzy_kelp_0"
+    },
+    "age=1": {
+      "model": "cakeworld:block/fizzy_kelp_1"
+    },
+    "age=2": {
+      "model": "cakeworld:block/fizzy_kelp_2"
+    },
+    "age=3": {
+      "model": "cakeworld:block/fizzy_kelp_3"
+    }
+  }
+}

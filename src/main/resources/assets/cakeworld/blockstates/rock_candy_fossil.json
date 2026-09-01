@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "cakeworld:block/rock_candy_fossil_horizontal",
+      "x": 90,
+      "y": 90
+    },
+    "axis=y": {
+      "model": "cakeworld:block/rock_candy_fossil"
+    },
+    "axis=z": {
+      "model": "cakeworld:block/rock_candy_fossil_horizontal",
+      "x": 90
+    }
+  }
+}

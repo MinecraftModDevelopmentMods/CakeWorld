@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "axis=x": { "model": "cakeworld:block/fondant_chorus_stem", "x": 90, "y": 90 },
+    "axis=y": { "model": "cakeworld:block/fondant_chorus_stem" },
+    "axis=z": { "model": "cakeworld:block/fondant_chorus_stem", "x": 90 }
+  }
+}

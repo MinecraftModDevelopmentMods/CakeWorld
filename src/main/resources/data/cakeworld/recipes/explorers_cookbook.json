@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "minecraft:book"
+    },
+    {
+      "item": "minecraft:sugar"
+    },
+    {
+      "item": "cakeworld:chocolate_sponge_slice"
+    }
+  ],
+  "result": {
+    "item": "cakeworld:explorers_cookbook"
+  }
+}

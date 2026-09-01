@@ -1,0 +1,317 @@
+{
+  "cookbook_discovery": {
+    "subtitle": "subtitles.cakeworld.cookbook.discovery",
+    "sounds": [
+      {
+        "name": "minecraft:item.book.page_turn",
+        "type": "event"
+      }
+    ]
+  },
+  "hearthlands_chime": {
+    "subtitle": "subtitles.cakeworld.hearthlands.chime",
+    "sounds": [
+      {
+        "name": "minecraft:block.amethyst_block.chime",
+        "type": "event"
+      }
+    ]
+  },
+  "cookie_forest_rustle": {
+    "subtitle": "subtitles.cakeworld.cookie_forest.rustle",
+    "sounds": [
+      {
+        "name": "minecraft:block.grass.step",
+        "type": "event"
+      }
+    ]
+  },
+  "peppermint_pinewoods_chime": {
+    "subtitle": "subtitles.cakeworld.peppermint_pinewoods.chime",
+    "sounds": [
+      {
+        "name": "minecraft:block.amethyst_block.chime",
+        "type": "event"
+      }
+    ]
+  },
+  "gummy_jungle_wobble": {
+    "subtitle": "subtitles.cakeworld.gummy_jungle.wobble",
+    "sounds": [
+      {
+        "name": "minecraft:block.slime_block.place",
+        "type": "event"
+      }
+    ]
+  },
+  "caramel_bogs_bubble": {
+    "subtitle": "subtitles.cakeworld.caramel_bogs.bubble",
+    "sounds": [
+      {
+        "name": "minecraft:block.bubble_column.upwards_ambient",
+        "type": "event"
+      }
+    ]
+  },
+  "sherbet_dunes_fizz": {
+    "subtitle": "subtitles.cakeworld.sherbet_dunes.fizz",
+    "sounds": [
+      {
+        "name": "minecraft:block.sand.step",
+        "type": "event"
+      }
+    ]
+  },
+  "candy_cane_badlands_chime": {
+    "subtitle": "subtitles.cakeworld.candy_cane_badlands.chime",
+    "sounds": [
+      {
+        "name": "minecraft:block.amethyst_block.chime",
+        "type": "event"
+      }
+    ]
+  },
+  "marshmallow_peaks_breeze": {
+    "subtitle": "subtitles.cakeworld.marshmallow_peaks.breeze",
+    "sounds": [
+      {
+        "name": "minecraft:block.wool.step",
+        "type": "event"
+      }
+    ]
+  },
+  "ice_cream_tundra_chill": {
+    "subtitle": "subtitles.cakeworld.ice_cream_tundra.chill",
+    "sounds": [
+      {
+        "name": "minecraft:block.glass.hit",
+        "type": "event"
+      }
+    ]
+  },
+  "waffle_plateaus_breeze": {
+    "subtitle": "subtitles.cakeworld.waffle_plateaus.breeze",
+    "sounds": [
+      {
+        "name": "minecraft:block.wood.step",
+        "type": "event"
+      }
+    ]
+  },
+  "cupcake_gardens_hum": {
+    "subtitle": "subtitles.cakeworld.cupcake_gardens.hum",
+    "sounds": [
+      {
+        "name": "minecraft:entity.bee.pollinate",
+        "type": "event"
+      }
+    ]
+  },
+  "liquorice_darkwood_rustle": {
+    "subtitle": "subtitles.cakeworld.liquorice_darkwood.rustle",
+    "sounds": [
+      {
+        "name": "minecraft:block.roots.step",
+        "type": "event"
+      }
+    ]
+  },
+  "lollipop_orchards_chime": {
+    "subtitle": "subtitles.cakeworld.lollipop_orchards.chime",
+    "sounds": [
+      {
+        "name": "minecraft:block.amethyst_block.chime",
+        "type": "event"
+      }
+    ]
+  },
+  "popcorn_prairie_rustle": {
+    "subtitle": "subtitles.cakeworld.popcorn_prairie.rustle",
+    "sounds": [
+      {
+        "name": "minecraft:block.crop.break",
+        "type": "event"
+      }
+    ]
+  },
+  "soda_ocean_fizz": {
+    "subtitle": "subtitles.cakeworld.soda_ocean.fizz",
+    "sounds": [
+      {
+        "name": "minecraft:block.bubble_column.bubble_pop",
+        "type": "event"
+      }
+    ]
+  },
+  "custard_coast_lap": {
+    "subtitle": "subtitles.cakeworld.custard_coast.lap",
+    "sounds": [
+      {
+        "name": "minecraft:block.honey_block.slide",
+        "type": "event"
+      }
+    ]
+  },
+  "jellybean_archipelago_chimes": {
+    "subtitle": "subtitles.cakeworld.jellybean_archipelago.chimes",
+    "sounds": [
+      {
+        "name": "minecraft:block.amethyst_block.chime",
+        "type": "event"
+      }
+    ]
+  },
+  "rock_candy_caverns_chime": {
+    "subtitle": "subtitles.cakeworld.rock_candy_caverns.chime",
+    "sounds": [
+      {
+        "name": "minecraft:block.amethyst_cluster.hit",
+        "type": "event"
+      }
+    ]
+  },
+  "jam_grottoes_drip": {
+    "subtitle": "subtitles.cakeworld.jam_grottoes.drip",
+    "sounds": [
+      {
+        "name": "minecraft:block.pointed_dripstone.drip_water",
+        "type": "event"
+      }
+    ]
+  },
+  "nougat_depths_settle": {
+    "subtitle": "subtitles.cakeworld.nougat_depths.settle",
+    "sounds": [
+      {
+        "name": "minecraft:block.honey_block.place",
+        "type": "event"
+      }
+    ]
+  },
+  "burnt_toffee_deltas_snap": {
+    "subtitle": "subtitles.cakeworld.burnt_toffee_deltas.snap",
+    "sounds": [
+      {
+        "name": "minecraft:ambient.basalt_deltas.additions",
+        "type": "event"
+      }
+    ]
+  },
+  "fudge_wastes_bubble": {
+    "subtitle": "subtitles.cakeworld.fudge_wastes.bubble",
+    "sounds": [
+      {
+        "name": "minecraft:block.lava.pop",
+        "type": "event"
+      }
+    ]
+  },
+  "cinnamon_ember_groves_crackle": {
+    "subtitle": "subtitles.cakeworld.cinnamon_ember_groves.crackle",
+    "sounds": [
+      {
+        "name": "minecraft:block.fire.ambient",
+        "type": "event"
+      }
+    ]
+  },
+  "black_liquorice_labyrinths_creak": {
+    "subtitle": "subtitles.cakeworld.black_liquorice_labyrinths.creak",
+    "sounds": [
+      {
+        "name": "minecraft:block.roots.break",
+        "type": "event"
+      }
+    ]
+  },
+  "treacle_soul_valleys_murmur": {
+    "subtitle": "subtitles.cakeworld.treacle_soul_valleys.murmur",
+    "sounds": [
+      {
+        "name": "minecraft:ambient.soul_sand_valley.additions",
+        "type": "event"
+      }
+    ]
+  },
+  "chilli_chocolate_crags_rumble": {
+    "subtitle": "subtitles.cakeworld.chilli_chocolate_crags.rumble",
+    "sounds": [
+      {
+        "name": "minecraft:ambient.nether_wastes.additions",
+        "type": "event"
+      }
+    ]
+  },
+  "molten_marshmallow_calderas_hiss": {
+    "subtitle": "subtitles.cakeworld.molten_marshmallow_calderas.hiss",
+    "sounds": [
+      {
+        "name": "minecraft:block.fire.extinguish",
+        "type": "event"
+      }
+    ]
+  },
+  "meringue_islands_chime": {
+    "subtitle": "subtitles.cakeworld.meringue_islands.chime",
+    "sounds": [
+      {
+        "name": "minecraft:block.amethyst_block.chime",
+        "type": "event"
+      }
+    ]
+  },
+  "candyfloss_cloudbanks_flutter": {
+    "subtitle": "subtitles.cakeworld.candyfloss_cloudbanks.flutter",
+    "sounds": [
+      {
+        "name": "minecraft:entity.parrot.fly",
+        "type": "event"
+      }
+    ]
+  },
+  "mooncake_barrens_whisper": {
+    "subtitle": "subtitles.cakeworld.mooncake_barrens.whisper",
+    "sounds": [
+      {
+        "name": "minecraft:block.amethyst_block.chime",
+        "type": "event"
+      }
+    ]
+  },
+  "starlight_sugar_fields_twinkle": {
+    "subtitle": "subtitles.cakeworld.starlight_sugar_fields.twinkle",
+    "sounds": [
+      {
+        "name": "minecraft:block.beacon.ambient",
+        "type": "event"
+      }
+    ]
+  },
+  "macaron_archipelago_chime": {
+    "subtitle": "subtitles.cakeworld.macaron_archipelago.chime",
+    "sounds": [
+      {
+        "name": "minecraft:block.amethyst_block.chime",
+        "type": "event"
+      }
+    ]
+  },
+  "cosmic_jelly_reef_pulse": {
+    "subtitle": "subtitles.cakeworld.cosmic_jelly_reefs.pulse",
+    "sounds": [
+      {
+        "name": "minecraft:block.respawn_anchor.ambient",
+        "type": "event"
+      }
+    ]
+  },
+  "fondant_chorus_garden_bell": {
+    "subtitle": "subtitles.cakeworld.fondant_chorus_gardens.bell",
+    "sounds": [
+      {
+        "name": "minecraft:block.amethyst_cluster.hit",
+        "type": "event"
+      }
+    ]
+  }
+}

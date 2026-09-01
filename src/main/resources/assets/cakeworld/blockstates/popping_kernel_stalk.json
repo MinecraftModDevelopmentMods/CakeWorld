@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "age=0": {
+      "model": "cakeworld:block/popping_kernel_stalk_0"
+    },
+    "age=1": {
+      "model": "cakeworld:block/popping_kernel_stalk_0"
+    },
+    "age=2": {
+      "model": "cakeworld:block/popping_kernel_stalk_1"
+    },
+    "age=3": {
+      "model": "cakeworld:block/popping_kernel_stalk_1"
+    },
+    "age=4": {
+      "model": "cakeworld:block/popping_kernel_stalk_2"
+    },
+    "age=5": {
+      "model": "cakeworld:block/popping_kernel_stalk_2"
+    },
+    "age=6": {
+      "model": "cakeworld:block/popping_kernel_stalk_3"
+    },
+    "age=7": {
+      "model": "cakeworld:block/popping_kernel_stalk_3"
+    }
+  }
+}

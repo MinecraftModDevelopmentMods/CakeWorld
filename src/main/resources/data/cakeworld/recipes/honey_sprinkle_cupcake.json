@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "cakeworld:warm_sponge_cake"
+    },
+    {
+      "item": "minecraft:honey_bottle"
+    },
+    {
+      "item": "cakeworld:icing_spoonful"
+    },
+    {
+      "item": "cakeworld:sprinkle_seeds"
+    }
+  ],
+  "result": {
+    "item": "cakeworld:honey_sprinkle_cupcake",
+    "count": 2
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    "cakeworld:chocolate_sponge",
+    "cakeworld:candied_soil",
+    "cakeworld:icing_layer",
+    "cakeworld:frozen_lemonade",
+    "cakeworld:gummy_block",
+    "cakeworld:raspberry_gummy_block",
+    "cakeworld:blueberry_gummy_block",
+    "cakeworld:grape_gummy_block"
+  ]
+}

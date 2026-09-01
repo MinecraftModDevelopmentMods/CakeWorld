@@ -16,6 +16,100 @@ base {
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
 println "Java: ${System.getProperty 'java.version'}, JVM: ${System.getProperty 'java.vm.version'} (${System.getProperty 'java.vendor'}), Arch: ${System.getProperty 'os.arch'}"
+def localOreSpawnJarPath = providers.gradleProperty(
+        'cakeworldLocalOreSpawnJar').orNull
+def localOreSpawnJar = localOreSpawnJarPath == null
+        ? null : rootProject.file(localOreSpawnJarPath)
+if (localOreSpawnJar != null && !localOreSpawnJar.isFile()) {
+    throw new GradleException(
+            "Local OreSpawn candidate does not exist: ${localOreSpawnJar}")
+}
+def localOreSpawnVersion = localOreSpawnJar == null ? null
+        : localOreSpawnJar.name
+                .replaceFirst(/^OreSpawn-/, '')
+                .replaceFirst(/\.jar$/, '')
+def baseMetalsIntegration = providers.gradleProperty('cakeworldBaseMetalsRuntime')
+        .map { it.toBoolean() }.getOrElse(false)
+def baseMetalsRunDirectory = providers.gradleProperty(
+        'cakeworldBaseMetalsRunDirectory').getOrElse('run-basemetals')
+def freshWorldgenIntegration = providers.gradleProperty(
+        'cakeworldFreshWorldgenRuntime').map { it.toBoolean() }.getOrElse(false)
+def freshWorldgenRunDirectory = providers.gradleProperty(
+        'cakeworldFreshWorldgenRunDirectory')
+        .getOrElse('run-fresh-worldgen-current')
+def editorAcceptanceRunDirectory = providers.gradleProperty(
+        'cakeworldEditorRunDirectory').orNull
+def editorAcceptanceReuseWorld = providers.gradleProperty(
+        'cakeworldEditorReuseWorld').map { it.toBoolean() }.getOrElse(false)
+def replaceModeRuntime = providers.gradleProperty(
+        'cakeworldReplaceModeRuntime').map { it.toBoolean() }.getOrElse(false)
+def replaceModeRunDirectory = providers.gradleProperty(
+        'cakeworldReplaceModeRunDirectory').getOrElse('run-replace-mode')
+def replaceModeReuseWorld = providers.gradleProperty(
+        'cakeworldReplaceModeReuseWorld').map { it.toBoolean() }.getOrElse(false)
+def blankBiomeRuntime = providers.gradleProperty(
+        'cakeworldBlankBiomeRuntime').map { it.toBoolean() }.getOrElse(false)
+def blankBiomeRunDirectory = providers.gradleProperty(
+        'cakeworldBlankBiomeRunDirectory').getOrElse('run-blank-biome')
+def climateBoundaryRuntime = providers.gradleProperty(
+        'cakeworldClimateBoundaryRuntime').map { it.toBoolean() }.getOrElse(false)
+def climateBoundaryRunDirectory = providers.gradleProperty(
+        'cakeworldClimateBoundaryRunDirectory').getOrElse('run-climate-boundaries')
+def samplerThirdPartyRuntime = providers.gradleProperty(
+        'cakeworldSamplerThirdPartyRuntime')
+        .map { it.toBoolean() }.getOrElse(false)
+def samplerPlatterRuntime = providers.gradleProperty(
+        'cakeworldSamplerRuntime').map { it.toBoolean() }.getOrElse(false)
+        || samplerThirdPartyRuntime
+def samplerPlatterRunDirectory = providers.gradleProperty(
+        'cakeworldSamplerRunDirectory').getOrElse('run-sampler-platter')
+def samplerPlatterReuseWorld = providers.gradleProperty(
+        'cakeworldSamplerReuseWorld').map { it.toBoolean() }.getOrElse(false)
+def samplerRetrogenPhase = providers.gradleProperty(
+        'cakeworldSamplerRetrogenPhase').orNull
+def samplerFormationCase = providers.gradleProperty(
+        'cakeworldSamplerFormationCase').orNull
+def providerOverrideMode = providers.gradleProperty(
+        'cakeworldProviderOverrideMode').orNull
+def providerOverrideRuntime = providerOverrideMode != null
+def providerOverrideRunDirectory = providers.gradleProperty(
+        'cakeworldProviderOverrideRunDirectory')
+        .getOrElse('run-provider-override')
+def providerOverrideReuseWorld = providers.gradleProperty(
+        'cakeworldProviderOverrideReuseWorld')
+        .map { it.toBoolean() }.getOrElse(false)
+def providerMergePhase = providers.gradleProperty(
+        'cakeworldProviderMergePhase').orNull
+def providerMergeRuntime = providerMergePhase != null
+def providerMergeRunDirectory = providers.gradleProperty(
+        'cakeworldProviderMergeRunDirectory')
+        .getOrElse('run-provider-merge')
+def imcProviderRuntime = providers.gradleProperty(
+        'cakeworldImcProviderRuntime').map { it.toBoolean() }.getOrElse(false)
+def imcProviderRunDirectory = providers.gradleProperty(
+        'cakeworldImcProviderRunDirectory').getOrElse('run-imc-provider')
+def cakeworldGameTestNamespaces = providers.gradleProperty(
+        'cakeworldGameTestNamespaces').getOrElse(
+        providerMergeRuntime
+                ? 'cakeworld_provider_merge'
+                : providerOverrideRuntime
+                ? 'cakeworld_provider_override'
+                : imcProviderRuntime
+                        ? 'cakeworld_imc_provider'
+                : climateBoundaryRuntime
+                        ? 'cakeworld_climate_boundaries'
+                : blankBiomeRuntime
+                        ? 'cakeworld_blank_biome'
+                : replaceModeRuntime
+                        ? 'cakeworld_replace_mode'
+                : samplerThirdPartyRuntime
+                        ? 'cakeworld_sampler_third_party'
+                : samplerPlatterRuntime ? 'cakeworld_sampler' : mod_id)
+def expectedFormationAlgorithm = providers.gradleProperty(
+        'cakeworldExpectedFormationAlgorithm').orNull
+def formationVisualEvidence = providers.gradleProperty(
+        'cakeworldFormationVisualEvidence')
+        .map { it.toBoolean() }.getOrElse(false)
 minecraft {
     // The mappings can be changed at any time and must be in the following format.
     // Channel:   Version:
@@ -53,7 +147,7 @@ minecraft {
     // However, it must be at "META-INF/accesstransformer.cfg" in the final mod jar to be loaded by Forge.
     // This default location is a best practice to automatically put the file in the right place in the final jar.
     // See https://docs.minecraftforge.net/en/latest/advanced/accesstransformers/ for more information.
-    // accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
+    accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
 
     // Default run configurations.
     // These can be tweaked, removed, or duplicated as needed.
@@ -85,6 +179,11 @@ minecraft {
         }
 
         client {
+            if (editorAcceptanceRunDirectory != null) {
+                workingDirectory project.file(editorAcceptanceRunDirectory)
+            } else if (baseMetalsIntegration) {
+                workingDirectory project.file('run-basemetals-client')
+            }
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             property 'forge.enabledGameTestNamespaces', mod_id
         }
@@ -98,7 +197,71 @@ minecraft {
         // By default, the server will crash when no gametests are provided.
         // The gametest system is also enabled by default for other run configs under the /test command.
         gameTestServer {
-            property 'forge.enabledGameTestNamespaces', mod_id
+            if (providerMergeRuntime) {
+                workingDirectory project.file(providerMergeRunDirectory)
+            } else if (providerOverrideRuntime) {
+                workingDirectory project.file(providerOverrideRunDirectory)
+            } else if (imcProviderRuntime) {
+                workingDirectory project.file(imcProviderRunDirectory)
+            } else if (climateBoundaryRuntime) {
+                workingDirectory project.file(climateBoundaryRunDirectory)
+            } else if (blankBiomeRuntime) {
+                workingDirectory project.file(blankBiomeRunDirectory)
+            } else if (replaceModeRuntime) {
+                workingDirectory project.file(replaceModeRunDirectory)
+            } else if (samplerPlatterRuntime) {
+                workingDirectory project.file(samplerPlatterRunDirectory)
+            } else if (baseMetalsIntegration) {
+                workingDirectory project.file(baseMetalsRunDirectory)
+            } else if (freshWorldgenIntegration) {
+                workingDirectory project.file(freshWorldgenRunDirectory)
+            }
+            property 'forge.enabledGameTestNamespaces',
+                    cakeworldGameTestNamespaces
+            if (samplerPlatterRuntime) {
+                property 'cakeworld.samplerPlatterEvidence', 'true'
+            }
+            if (samplerRetrogenPhase != null) {
+                property 'cakeworld.samplerRetrogenPhase',
+                        samplerRetrogenPhase
+            }
+            if (samplerFormationCase != null) {
+                property 'cakeworld.samplerFormationCase',
+                        samplerFormationCase
+            }
+            if (samplerThirdPartyRuntime) {
+                property 'cakeworld.samplerThirdPartyFixture', 'true'
+            }
+            if (replaceModeRuntime) {
+                property 'cakeworld.replaceModeFixture', 'true'
+            }
+            if (blankBiomeRuntime) {
+                property 'cakeworld.blankBiomeFixture', 'true'
+            }
+            if (climateBoundaryRuntime) {
+                property 'cakeworld.climateBoundaryFixture', 'true'
+            }
+            if (providerOverrideRuntime) {
+                property 'cakeworld.providerOverrideMode',
+                        providerOverrideMode
+            }
+            if (providerMergeRuntime) {
+                property 'cakeworld.providerMergePhase',
+                        providerMergePhase
+            }
+            if (imcProviderRuntime) {
+                property 'cakeworld.imcProviderFixture', 'true'
+            }
+            if (freshWorldgenIntegration) {
+                property 'cakeworld.fixedWorldgenEvidence', 'true'
+            }
+            if (expectedFormationAlgorithm != null) {
+                property 'cakeworld.expectedFormationAlgorithm',
+                        expectedFormationAlgorithm
+            }
+            if (formationVisualEvidence) {
+                property 'cakeworld.formationVisualEvidence', 'true'
+            }
             if (providers.gradleProperty('orespawnBenchmarkMode').isPresent()) {
                 property 'orespawn.worldgenBenchmarkMode',
                         providers.gradleProperty('orespawnBenchmarkMode').get()
@@ -131,13 +294,760 @@ minecraft {
 // Include resources generated by data generators.
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
+def canonicalOreSpawnProvider =
+        layout.projectDirectory.file('src/main/orespawn/provider.json')
+def baseMetalsOreSpawnOverlay =
+        layout.projectDirectory.file('src/main/orespawn/basemetals-overlay.json')
+def generatedOreSpawnResources =
+        layout.buildDirectory.dir('generated/cakeworldResources')
+def generatedOreSpawnProvider = generatedOreSpawnResources.map {
+    it.file('data/cakeworld/orespawn/provider.json')
+}
+def samplerPlatterGlobalConfig =
+        layout.projectDirectory.file(
+                'src/test/orespawn/sampler-platter-global.json')
+def samplerPlatterServerProperties =
+        layout.projectDirectory.file(
+                'src/test/orespawn/sampler-platter-server.properties')
+def samplerPlatterRunRoot =
+        layout.projectDirectory.dir(samplerPlatterRunDirectory)
+def providerOverrideValidFixture =
+        layout.projectDirectory.file(
+                'src/test/orespawn/provider-override-valid.json')
+def providerOverrideMalformedFixture =
+        layout.projectDirectory.file(
+                'src/test/orespawn/provider-override-malformed.txt')
+def providerOverrideSchema3Fixture =
+        layout.projectDirectory.file(
+                'src/test/orespawn/provider-override-schema3.json')
+def providerOverrideEqualPriorityFixture =
+        layout.projectDirectory.file(
+                'src/test/orespawn/provider-override-equal-priority.json')
+def providerOverrideRunRoot =
+        layout.projectDirectory.dir(providerOverrideRunDirectory)
+def providerMergeBaselineFixture =
+        layout.projectDirectory.file(
+                'src/test/orespawn/provider-merge-baseline.json')
+def providerMergeUpgradeFixture =
+        layout.projectDirectory.file(
+                'src/test/orespawn/provider-merge-upgrade.json')
+def providerMergeRunRoot =
+        layout.projectDirectory.dir(providerMergeRunDirectory)
+def replaceModeRunRoot =
+        layout.projectDirectory.dir(replaceModeRunDirectory)
+def blankBiomeRunRoot =
+        layout.projectDirectory.dir(blankBiomeRunDirectory)
+def climateBoundaryRunRoot =
+        layout.projectDirectory.dir(climateBoundaryRunDirectory)
+def imcProviderRunRoot =
+        layout.projectDirectory.dir(imcProviderRunDirectory)
+def runtimePackagedProvider = layout.buildDirectory.file(
+        'resources/main/data/cakeworld/orespawn/provider.json')
+def imcSamplerDimensionFixture = layout.projectDirectory.file(
+        'src/test/orespawn/imc-sampler-dimension.json')
+def runtimeImcSamplerDimension = layout.buildDirectory.file(
+        'resources/main/data/cakeworld/dimension/sampler_pantry.json')
+
+def prepareSamplerPlatterRun = tasks.register('prepareSamplerPlatterRun') {
+    group = 'verification'
+    description = 'Prepares a fresh, explicitly selected Sampler Platter GameTest run.'
+    dependsOn 'generateCakeWorldOreSpawnProvider'
+    inputs.files(samplerPlatterGlobalConfig, samplerPlatterServerProperties,
+            generatedOreSpawnProvider)
+    outputs.files(
+            samplerPlatterRunRoot.file('config/orespawn-worldgen.json'),
+            samplerPlatterRunRoot.file('server.properties'))
+    outputs.upToDateWhen { false }
+
+    doLast {
+        def runRoot = samplerPlatterRunRoot.asFile
+        def savedProfile = new File(runRoot,
+                'world/serverconfig/orespawn-worldgen.json')
+        def formationCase = samplerFormationCase == null
+                ? 'extreme' : samplerFormationCase
+        if (!(formationCase in ['extreme', 'minimum'])) {
+            throw new GradleException(
+                    "cakeworldSamplerFormationCase must be extreme or minimum; got '${formationCase}'.")
+        }
+        if (samplerRetrogenPhase != null
+                && !(samplerRetrogenPhase in ['baseline', 'apply', 'reload'])) {
+            throw new GradleException(
+                    "cakeworldSamplerRetrogenPhase must be baseline, apply, or reload; got '${samplerRetrogenPhase}'.")
+        }
+        if (samplerRetrogenPhase == 'reload'
+                && (!samplerPlatterReuseWorld || !savedProfile.isFile())) {
+            throw new GradleException(
+                    'Sampler retrogen reload requires an existing saved profile and -PcakeworldSamplerReuseWorld=true.')
+        }
+        if (samplerRetrogenPhase == 'apply') {
+            if (!samplerPlatterReuseWorld || !savedProfile.isFile()) {
+                throw new GradleException(
+                        'Sampler retrogen apply requires an existing saved profile and -PcakeworldSamplerReuseWorld=true.')
+            }
+            def parser = new groovy.json.JsonSlurper()
+            def profile = parser.parse(savedProfile) as Map
+            def ores = profile.ores as Map
+            def sprinkle = ores == null
+                    ? null : ores['cakeworld:ore/retrogen_sprinkles']
+            def control = ores == null
+                    ? null : ores['cakeworld:ore/retrogen_control']
+            if (!(sprinkle instanceof Map) || !(control instanceof Map)) {
+                throw new GradleException(
+                        'Saved Sampler profile does not contain both disabled retrogen fixtures.')
+            }
+            sprinkle.enabled = true
+            control.enabled = true
+            profile.retrogen = [
+                    enabled: true,
+                    force: false,
+                    revision: 5301,
+                    chunks_per_tick: 4
+            ]
+            savedProfile.setText(groovy.json.JsonOutput.prettyPrint(
+                    groovy.json.JsonOutput.toJson(profile))
+                    + System.lineSeparator(), 'UTF-8')
+            logger.lifecycle(
+                    "Enabled bounded retrogen revision 5301 only in copied Sampler profile: ${savedProfile}")
+            return
+        }
+        if (savedProfile.isFile() && !samplerPlatterReuseWorld) {
+            throw new GradleException(
+                    "Sampler run directory already contains a saved world profile: ${savedProfile}. Use a new -PcakeworldSamplerRunDirectory value, or explicitly pass -PcakeworldSamplerReuseWorld=true for reload evidence.")
+        }
+        if (savedProfile.isFile()) {
+            logger.lifecycle(
+                    "Reusing Sampler world-owned profile without rewriting its global selection fixture: ${savedProfile}")
+            return
+        }
+        def providerOverride = new File(runRoot,
+                'config/cakeworld-orespawn.json')
+        if (formationCase == 'minimum') {
+            def parser = new groovy.json.JsonSlurper()
+            def provider = parser.parse(
+                    generatedOreSpawnProvider.get().asFile) as Map
+            def sampler = provider.templates['cakeworld:sampler_platter'] as Map
+            def profile = sampler == null ? null : sampler.profile as Map
+            if (profile == null) {
+                throw new GradleException(
+                        'Generated provider does not contain the Sampler profile.')
+            }
+            profile.formations = [
+                    algorithm: 'sky_v1',
+                    horizontal_size: 'tiny',
+                    vertical_thickness: 'tiny',
+                    waviness: 'tiny',
+                    edge_irregularity: 'tiny',
+                    formation_continuity: 'tiny',
+                    custom: [:]
+            ]
+            providerOverride.parentFile.mkdirs()
+            providerOverride.setText(groovy.json.JsonOutput.prettyPrint(
+                    groovy.json.JsonOutput.toJson(provider))
+                    + System.lineSeparator(), 'UTF-8')
+            logger.lifecycle(
+                    "Prepared minimum-preset Sampler provider override: ${providerOverride}")
+        } else if (providerOverride.isFile()
+                && !providerOverride.delete()) {
+            throw new GradleException(
+                    "Could not remove stale Sampler provider override: ${providerOverride}")
+        }
+        copy {
+            from samplerPlatterGlobalConfig
+            into new File(runRoot, 'config')
+            rename { 'orespawn-worldgen.json' }
+        }
+        copy {
+            from samplerPlatterServerProperties
+            into runRoot
+            rename { 'server.properties' }
+        }
+    }
+}
+
+def prepareReplaceModeRun = tasks.register('prepareReplaceModeRun') {
+    group = 'verification'
+    description = 'Prepares an isolated main-adventure replace-mode biome-source proof.'
+    inputs.file(samplerPlatterServerProperties)
+    outputs.upToDateWhen { false }
+
+    doLast {
+        def runRoot = replaceModeRunRoot.asFile
+        def savedProfile = new File(runRoot,
+                'world/serverconfig/orespawn-worldgen.json')
+        if (savedProfile.isFile() && !replaceModeReuseWorld) {
+            throw new GradleException(
+                    "Replace-mode run directory already contains a saved world profile: ${savedProfile}. Use a new -PcakeworldReplaceModeRunDirectory value, or explicitly pass -PcakeworldReplaceModeReuseWorld=true for reload evidence.")
+        }
+        if (savedProfile.isFile()) {
+            logger.lifecycle(
+                    "Reusing replace-mode world-owned profile without rewriting it: ${savedProfile}")
+            return
+        }
+        copy {
+            from samplerPlatterServerProperties
+            into runRoot
+            rename { 'server.properties' }
+        }
+    }
+}
+
+def prepareBlankBiomeRun = tasks.register('prepareBlankBiomeRun') {
+    group = 'verification'
+    description = 'Prepares an isolated advanced blank-biome registration proof.'
+    inputs.file(samplerPlatterServerProperties)
+    outputs.upToDateWhen { false }
+
+    doLast {
+        def runRoot = blankBiomeRunRoot.asFile
+        def savedProfile = new File(runRoot,
+                'world/serverconfig/orespawn-worldgen.json')
+        if (savedProfile.isFile()) {
+            throw new GradleException(
+                    "Blank-biome run directory already contains a saved world profile: ${savedProfile}. Use a new -PcakeworldBlankBiomeRunDirectory value.")
+        }
+        copy {
+            from samplerPlatterServerProperties
+            into runRoot
+            rename { 'server.properties' }
+        }
+    }
+}
+
+def prepareClimateBoundaryRun = tasks.register('prepareClimateBoundaryRun') {
+    group = 'verification'
+    description = 'Prepares an isolated all-range biome climate boundary proof.'
+    dependsOn 'generateCakeWorldOreSpawnProvider'
+    inputs.files(generatedOreSpawnProvider, samplerPlatterGlobalConfig,
+            samplerPlatterServerProperties)
+    outputs.upToDateWhen { false }
+
+    doLast {
+        def runRoot = climateBoundaryRunRoot.asFile
+        def savedProfile = new File(runRoot,
+                'world/serverconfig/orespawn-worldgen.json')
+        if (savedProfile.isFile()) {
+            throw new GradleException(
+                    "Climate-boundary run directory already contains a saved world profile: ${savedProfile}. Use a new -PcakeworldClimateBoundaryRunDirectory value.")
+        }
+
+        def parser = new groovy.json.JsonSlurper()
+        def packaged = parser.parse(
+                generatedOreSpawnProvider.get().asFile) as Map
+        def adventure = packaged.templates['cakeworld:edible_world'] as Map
+        def productionProfile = adventure == null
+                ? null : adventure.profile as Map
+        def productionPalettes = productionProfile == null
+                ? null : productionProfile.biome_palettes as Map
+        if (productionPalettes == null) {
+            throw new GradleException(
+                    'Generated provider does not contain the adventure biome palettes.')
+        }
+
+        def ranges = [
+                [-2.0D, 2.0D, 0.0D, 1.0D],
+                [0.25D, 2.0D, 0.0D, 0.65D],
+                [0.4D, 1.2D, 0.25D, 0.8D],
+                [0.15D, 1.5D, 0.55D, 1.0D],
+                [-2.0D, 0.3D, 0.35D, 1.0D],
+                [0.7D, 2.0D, 0.7D, 1.0D],
+                [0.5D, 1.2D, 0.75D, 1.0D],
+                [1.5D, 2.0D, 0.0D, 0.2D],
+                [-2.0D, 0.35D, 0.0D, 1.0D],
+                [-2.0D, 0.2D, 0.0D, 0.8D],
+                [0.5D, 2.0D, 0.0D, 0.35D],
+                [0.3D, 1.2D, 0.35D, 1.0D],
+                [0.4D, 1.0D, 0.6D, 1.0D],
+                [0.3D, 1.0D, 0.4D, 0.9D],
+                [0.5D, 1.2D, 0.2D, 0.6D],
+                [-1.0D, 2.0D, 0.0D, 1.0D],
+                [0.5D, 1.2D, 0.8D, 1.0D]
+        ]
+        def production = []
+        productionPalettes.each { paletteId, paletteValue ->
+            def palette = paletteValue as Map
+            (palette.biomes as Map).each { outputId, placementValue ->
+                def placement = placementValue as Map
+                production << [
+                        palette: paletteId,
+                        output: outputId,
+                        range: [
+                                (placement.min_temperature as Number).doubleValue(),
+                                (placement.max_temperature as Number).doubleValue(),
+                                (placement.min_downfall as Number).doubleValue(),
+                                (placement.max_downfall as Number).doubleValue()
+                        ]
+                ]
+            }
+        }
+        if (production.size() != 35
+                || production.collect { it.output }.toSet().size() != 35) {
+            throw new GradleException(
+                    "Expected 35 unique production biome outputs; got ${production.size()} rows and ${production.collect { it.output }.toSet().size()} IDs.")
+        }
+
+        def suffixes = [
+                'minimum', 'maximum', 'temperature_below',
+                'temperature_above', 'downfall_below', 'downfall_above'
+        ]
+        def assigned = []
+        def testPalettes = new LinkedHashMap()
+        ranges.eachWithIndex { range, index ->
+            def matches = production.findAll { it.range == range }
+            if (matches.isEmpty()) {
+                throw new GradleException(
+                        "No production biome uses climate range ${range}.")
+            }
+            assigned.addAll(matches.collect { it.output })
+            def pathPrefix = String.format('range_%02d_', index)
+            def requiredSources = suffixes.collect {
+                "cakeworld_climate_fixture:${pathPrefix}${it}"
+            }
+            def output = matches[0].output
+            testPalettes["cakeworld_fixture:climate_range_${String.format('%02d', index)}"] = [
+                    dimension: 'minecraft:overworld',
+                    enabled: true,
+                    mode: 'replace',
+                    scope: 'selected_namespaces',
+                    region_size: 'tiny',
+                    coverage: 1.0D,
+                    fallback_weight: 0.0D,
+                    include_namespaces: ['cakeworld_climate_fixture'],
+                    exclude_namespaces: [],
+                    biomes: [
+                            (output): [
+                                    enabled: true,
+                                    weight: 1.0D,
+                                    similar_biomes: requiredSources,
+                                    required_similar_biomes: requiredSources,
+                                    min_temperature: range[0],
+                                    max_temperature: range[1],
+                                    min_downfall: range[2],
+                                    max_downfall: range[3]
+                            ]
+                    ]
+            ]
+        }
+        if (assigned.size() != 35 || assigned.toSet().size() != 35) {
+            throw new GradleException(
+                    "The 17 expected climate ranges cover ${assigned.size()} rows and ${assigned.toSet().size()} unique outputs, not all 35.")
+        }
+
+        def provider = [
+                schema_version: 4,
+                provider_modid: 'cakeworld',
+                provider_revision: 4701,
+                templates: [
+                        'cakeworld:climate_boundaries': [
+                                name_key: 'template.cakeworld.climate_boundaries',
+                                description_key: 'template.cakeworld.climate_boundaries.description',
+                                required_mods: ['cakeworld'],
+                                auto_select: false,
+                                auto_select_priority: 0,
+                                profile: [biome_palettes: testPalettes]
+                        ]
+                ]
+        ]
+        def configRoot = new File(runRoot, 'config')
+        configRoot.mkdirs()
+        def providerOverride = new File(configRoot, 'cakeworld-orespawn.json')
+        providerOverride.setText(groovy.json.JsonOutput.prettyPrint(
+                groovy.json.JsonOutput.toJson(provider))
+                + System.lineSeparator(), 'UTF-8')
+
+        def globalConfig = parser.parse(
+                samplerPlatterGlobalConfig.asFile) as Map
+        globalConfig.default_template = 'cakeworld:climate_boundaries'
+        new File(configRoot, 'orespawn-worldgen.json').setText(
+                groovy.json.JsonOutput.prettyPrint(
+                        groovy.json.JsonOutput.toJson(globalConfig))
+                        + System.lineSeparator(), 'UTF-8')
+        copy {
+            from samplerPlatterServerProperties
+            into runRoot
+            rename { 'server.properties' }
+        }
+        logger.lifecycle(
+                "Prepared 17-range/35-output climate boundary provider: ${providerOverride}")
+    }
+}
+
+def prepareProviderOverrideRun = tasks.register(
+        'prepareProviderOverrideRun') {
+    group = 'verification'
+    description = 'Prepares an isolated provider-override precedence or fail-closed run.'
+    inputs.files(providerOverrideValidFixture,
+            providerOverrideMalformedFixture,
+            providerOverrideSchema3Fixture,
+            providerOverrideEqualPriorityFixture,
+            samplerPlatterServerProperties)
+    outputs.upToDateWhen { false }
+
+    doLast {
+        if (!(providerOverrideMode in ['valid', 'removed', 'malformed',
+                'schema3', 'equal_priority'])) {
+            throw new GradleException(
+                    "cakeworldProviderOverrideMode must be valid, removed, malformed, schema3, or equal_priority; got '${providerOverrideMode}'.")
+        }
+        def runRoot = providerOverrideRunRoot.asFile
+        def savedProfile = new File(runRoot,
+                'world/serverconfig/orespawn-worldgen.json')
+        def overrideFile = new File(runRoot,
+                'config/cakeworld-orespawn.json')
+
+        if (providerOverrideMode == 'removed') {
+            if (!providerOverrideReuseWorld || !savedProfile.isFile()) {
+                throw new GradleException(
+                        'Removed-override evidence requires an existing saved profile and -PcakeworldProviderOverrideReuseWorld=true.')
+            }
+            if (overrideFile.isFile() && !overrideFile.delete()) {
+                throw new GradleException(
+                        "Could not remove isolated provider override fixture: ${overrideFile}")
+            }
+            logger.lifecycle(
+                    "Removed isolated override fixture and retained world-owned profile: ${savedProfile}")
+            return
+        }
+
+        if (savedProfile.isFile()
+                && (providerOverrideMode in ['schema3', 'equal_priority'])
+                && providerOverrideReuseWorld) {
+            if (!overrideFile.isFile()) {
+                throw new GradleException(
+                        "Provider-override reload lost its authoritative fixture: ${overrideFile}")
+            }
+            logger.lifecycle(
+                    "Reusing ${providerOverrideMode} fixture and world-owned profile: ${savedProfile}")
+            return
+        }
+        if (savedProfile.isFile()) {
+            throw new GradleException(
+                    "Provider-override run directory already contains a saved world profile: ${savedProfile}. Use a new -PcakeworldProviderOverrideRunDirectory value, or use schema3/equal_priority with -PcakeworldProviderOverrideReuseWorld=true for reload proof.")
+        }
+        copy {
+            from(providerOverrideMode == 'valid'
+                    ? providerOverrideValidFixture
+                    : providerOverrideMode == 'schema3'
+                    ? providerOverrideSchema3Fixture
+                    : providerOverrideMode == 'equal_priority'
+                    ? providerOverrideEqualPriorityFixture
+                    : providerOverrideMalformedFixture)
+            into new File(runRoot, 'config')
+            rename { 'cakeworld-orespawn.json' }
+        }
+        copy {
+            from samplerPlatterServerProperties
+            into runRoot
+            rename { 'server.properties' }
+        }
+    }
+}
+
+def prepareProviderMergeRun = tasks.register('prepareProviderMergeRun') {
+    group = 'verification'
+    description = 'Prepares an isolated copied-world provider merge and tombstone phase.'
+    inputs.files(providerMergeBaselineFixture, providerMergeUpgradeFixture,
+            samplerPlatterServerProperties)
+    outputs.upToDateWhen { false }
+
+    doLast {
+        if (!(providerMergePhase in ['baseline', 'upgrade', 'reload'])) {
+            throw new GradleException(
+                    "cakeworldProviderMergePhase must be baseline, upgrade, or reload; got '${providerMergePhase}'.")
+        }
+        def runRoot = providerMergeRunRoot.asFile
+        def savedProfile = new File(runRoot,
+                'world/serverconfig/orespawn-worldgen.json')
+        def overrideFile = new File(runRoot,
+                'config/cakeworld-orespawn.json')
+        def mutationReceipt = new File(runRoot,
+                'cakeworld-provider-merge-mutated.txt')
+
+        if (providerMergePhase == 'baseline') {
+            if (savedProfile.isFile()) {
+                throw new GradleException(
+                        "Provider-merge baseline requires a fresh run directory; found ${savedProfile}.")
+            }
+            copy {
+                from providerMergeBaselineFixture
+                into overrideFile.parentFile
+                rename { 'cakeworld-orespawn.json' }
+            }
+        } else if (providerMergePhase == 'upgrade') {
+            if (!savedProfile.isFile()) {
+                throw new GradleException(
+                        'Provider-merge upgrade requires the baseline world-owned profile.')
+            }
+            if (mutationReceipt.isFile()) {
+                throw new GradleException(
+                        "Provider-merge upgrade mutation was already applied: ${mutationReceipt}")
+            }
+            def parser = new groovy.json.JsonSlurper()
+            def profile = parser.parse(savedProfile) as Map
+            def manifest = (profile.providers as Map)?.cakeworld as Map
+            if (manifest == null || manifest.provider_revision != 1701) {
+                throw new GradleException(
+                        'Provider-merge upgrade requires the revision-1701 baseline snapshot.')
+            }
+            def rocks = profile.rocks as Map
+            def ores = profile.ores as Map
+            def editedRock = rocks?.get('cakeworld:merge/edited_rock') as Map
+            def editedOre = ores?.get('cakeworld:merge/edited_ore') as Map
+            def disabledOre = ores?.get('cakeworld:merge/disabled_ore') as Map
+            if (editedRock == null || editedOre == null
+                    || disabledOre == null
+                    || !ores.containsKey('cakeworld:merge/unassigned_ore')
+                    || !ores.containsKey('cakeworld:merge/removed_ore')) {
+                throw new GradleException(
+                        'Revision-1701 snapshot is missing a provider-merge baseline rule.')
+            }
+
+            editedRock.weight = 7.25
+            editedRock.player_note = 'keep-rock-edit'
+            def editedDimensions = editedOre.dimensions as Map
+            def editedOverworld = editedDimensions['minecraft:overworld'] as Map
+            editedOverworld.frequency = 7.5
+            editedOre.player_note = 'keep-ore-edit'
+            disabledOre.enabled = false
+            ores.remove('cakeworld:merge/unassigned_ore')
+            ores['cakeworld:merge/player_custom_ore'] = [
+                    block: 'cakeworld:fizzy_pearl',
+                    enabled: false,
+                    source_mod: 'cakeworld',
+                    player_note: 'keep-custom-rule',
+                    dimensions: [
+                            'minecraft:overworld': [
+                                    enabled: false,
+                                    min_y: -16,
+                                    max_y: 48,
+                                    frequency: 0.25,
+                                    quantity: 2,
+                                    pattern: 'default',
+                                    height_distribution: 'uniform',
+                                    host_tags: ['minecraft:stone_ore_replaceables']
+                            ]
+                    ]
+            ]
+            def aliases = profile.worldgen_aliases as Map
+            if (aliases == null) {
+                aliases = [:]
+                profile.worldgen_aliases = aliases
+            }
+            aliases['cakeworld:burnt_sugar_rock'] =
+                    'cakeworld:sprinkle_cluster'
+            savedProfile.setText(groovy.json.JsonOutput.prettyPrint(
+                    groovy.json.JsonOutput.toJson(profile))
+                    + System.lineSeparator(), 'UTF-8')
+            mutationReceipt.setText(
+                    'Applied CakeWorld copied-world edits before provider revision 1702.'
+                    + System.lineSeparator(), 'UTF-8')
+            copy {
+                from providerMergeUpgradeFixture
+                into overrideFile.parentFile
+                rename { 'cakeworld-orespawn.json' }
+            }
+            logger.lifecycle(
+                    "Applied isolated world-owned edits and installed provider revision 1702: ${savedProfile}")
+        } else {
+            if (!savedProfile.isFile() || !overrideFile.isFile()
+                    || !mutationReceipt.isFile()) {
+                throw new GradleException(
+                        'Provider-merge reload requires the completed revision-1702 upgrade fixture.')
+            }
+            def profile = new groovy.json.JsonSlurper().parse(
+                    savedProfile) as Map
+            def manifest = (profile.providers as Map)?.cakeworld as Map
+            if (manifest == null || manifest.provider_revision != 1702) {
+                throw new GradleException(
+                        'Provider-merge reload requires the revision-1702 world snapshot.')
+            }
+            logger.lifecycle(
+                    "Reusing revision-1702 provider and world-owned snapshot unchanged: ${savedProfile}")
+        }
+
+        copy {
+            from samplerPlatterServerProperties
+            into runRoot
+            rename { 'server.properties' }
+        }
+    }
+}
+
+def generateCakeWorldOreSpawnProvider =
+        tasks.register('generateCakeWorldOreSpawnProvider') {
+    group = 'build'
+    description = 'Builds normal, shared-geology Sampler, and BaseMetals CakeWorld templates from one canonical profile.'
+    inputs.files(canonicalOreSpawnProvider, baseMetalsOreSpawnOverlay)
+    outputs.file(generatedOreSpawnProvider)
+
+    doLast {
+        def parser = new groovy.json.JsonSlurper()
+        def provider = parser.parse(canonicalOreSpawnProvider.asFile)
+        def baseTemplate = provider.templates['cakeworld:edible_world']
+        def compatibilityTemplate = parser.parseText(
+                groovy.json.JsonOutput.toJson(baseTemplate))
+        def compatibilityOverlay = parser.parse(baseMetalsOreSpawnOverlay.asFile)
+
+        Closure merge
+        merge = { Map target, Map overlay ->
+            overlay.each { key, value ->
+                if (value instanceof Map && target[key] instanceof Map) {
+                    merge(target[key] as Map, value as Map)
+                } else {
+                    target[key] = value
+                }
+            }
+        }
+        merge(compatibilityTemplate as Map, compatibilityOverlay as Map)
+        provider.templates['cakeworld:edible_world_basemetals'] =
+                compatibilityTemplate
+
+        def samplerTemplate =
+                provider.templates['cakeworld:sampler_platter'] as Map
+        def samplerProfile = samplerTemplate.profile as Map
+        ['rocks', 'geomes', 'biomes', 'biome_dictionary',
+                'terrain_dimensions'].each { section ->
+            samplerProfile[section] = parser.parseText(
+                    groovy.json.JsonOutput.toJson(
+                            (baseTemplate.profile as Map)[section]))
+        }
+
+        def output = generatedOreSpawnProvider.get().asFile
+        output.parentFile.mkdirs()
+        output.setText(groovy.json.JsonOutput.prettyPrint(
+                groovy.json.JsonOutput.toJson(provider)) + System.lineSeparator(),
+                'UTF-8')
+    }
+}
+
+sourceSets.main.resources { srcDir generatedOreSpawnResources }
+
+def prepareImcProviderRun = tasks.register('prepareImcProviderRun') {
+    group = 'verification'
+    description = 'Isolates the packaged provider so a conditional Forge IMC provider is authoritative.'
+    dependsOn 'processResources'
+    inputs.files(generatedOreSpawnProvider, samplerPlatterServerProperties,
+            imcSamplerDimensionFixture)
+    outputs.upToDateWhen { false }
+
+    doLast {
+        def runRoot = imcProviderRunRoot.asFile
+        def savedProfile = new File(runRoot,
+                'world/serverconfig/orespawn-worldgen.json')
+        if (savedProfile.isFile()) {
+            throw new GradleException(
+                    "IMC provider run directory already contains a saved world profile: ${savedProfile}. Use a new -PcakeworldImcProviderRunDirectory value.")
+        }
+        def runtimeProvider = runtimePackagedProvider.get().asFile
+        if (!runtimeProvider.isFile() || !runtimeProvider.delete()) {
+            throw new GradleException(
+                    "Could not isolate the generated packaged provider: ${runtimeProvider}")
+        }
+        copy {
+            from imcSamplerDimensionFixture
+            into runtimeImcSamplerDimension.get().asFile.parentFile
+            rename { 'sampler_pantry.json' }
+        }
+        if (!runtimeImcSamplerDimension.get().asFile.isFile()) {
+            throw new GradleException(
+                    "Could not install test-only IMC dimension: ${runtimeImcSamplerDimension.get().asFile}")
+        }
+        copy {
+            from samplerPlatterServerProperties
+            into runRoot
+            rename { 'server.properties' }
+        }
+        logger.lifecycle(
+                "Removed only the build-output provider for isolated IMC evidence: ${runtimeProvider}")
+    }
+}
+
+def restorePackagedProviderAfterImc = tasks.register(
+        'restorePackagedProviderAfterImc') {
+    group = 'verification'
+    description = 'Restores the generated packaged provider after the isolated IMC runtime.'
+    dependsOn 'generateCakeWorldOreSpawnProvider'
+    outputs.upToDateWhen { false }
+
+    doLast {
+        def target = runtimePackagedProvider.get().asFile
+        target.parentFile.mkdirs()
+        copy {
+            from generatedOreSpawnProvider
+            into target.parentFile
+            rename { 'provider.json' }
+        }
+        if (!target.isFile()) {
+            throw new GradleException(
+                    "Could not restore generated packaged provider: ${target}")
+        }
+        def testDimension = runtimeImcSamplerDimension.get().asFile
+        if (testDimension.isFile() && !testDimension.delete()) {
+            throw new GradleException(
+                    "Could not remove test-only IMC dimension: ${testDimension}")
+        }
+        logger.lifecycle(
+                "Restored generated packaged provider after IMC evidence: ${target}")
+    }
+}
+
+tasks.configureEach {
+    if (editorAcceptanceRunDirectory != null && name == 'runClient') {
+        doFirst {
+            def savesDirectory = project.file(
+                    "${editorAcceptanceRunDirectory}/saves")
+            def existingSaves = savesDirectory.isDirectory()
+                    ? savesDirectory.listFiles({ file -> file.isDirectory() } as FileFilter)
+                    : []
+            if (existingSaves && !editorAcceptanceReuseWorld) {
+                throw new GradleException(
+                        "Editor acceptance directory already contains saves: ${savesDirectory}. Use a new -PcakeworldEditorRunDirectory value, or explicitly pass -PcakeworldEditorReuseWorld=true to reopen it.")
+            }
+            logger.lifecycle(
+                    "Using isolated OreSpawn editor acceptance directory: ${project.file(editorAcceptanceRunDirectory)}")
+        }
+    }
+    if (samplerPlatterRuntime && name == 'runGameTestServer') {
+        dependsOn prepareSamplerPlatterRun
+    }
+    if (replaceModeRuntime && name == 'runGameTestServer') {
+        dependsOn prepareReplaceModeRun
+    }
+    if (blankBiomeRuntime && name == 'runGameTestServer') {
+        dependsOn prepareBlankBiomeRun
+    }
+    if (climateBoundaryRuntime && name == 'runGameTestServer') {
+        dependsOn prepareClimateBoundaryRun
+    }
+    if (providerOverrideRuntime && name == 'runGameTestServer') {
+        dependsOn prepareProviderOverrideRun
+    }
+    if (providerMergeRuntime && name == 'runGameTestServer') {
+        dependsOn prepareProviderMergeRun
+    }
+    if (imcProviderRuntime && name == 'runGameTestServer') {
+        dependsOn prepareImcProviderRun
+        finalizedBy restorePackagedProviderAfterImc
+    }
+}
+
 repositories {
     // Put repositories for dependencies here
     // ForgeGradle automatically adds the Forge maven and Maven Central for you
 
-    // If you have mod jar dependencies in ./libs, you can declare them as a repository like so:
+    maven {
+        name = 'CurseMaven'
+        url = 'https://cursemaven.com'
+        content {
+            includeGroup 'curse.maven'
+        }
+    }
     flatDir {
-        dir file('../../../MinecraftMineralogy/OS118/OreSpawn/build/libs')
+        dir file('../../../BaseMetals/BaseMetals 118/BaseMetals/build/libs')
+    }
+    if (localOreSpawnJar != null) {
+        flatDir {
+            dir localOreSpawnJar.parentFile
+        }
     }
 }
 
@@ -148,7 +1058,21 @@ dependencies {
     // If the group id is "net.minecraft" and the artifact id is one of ["client", "server", "joined"],
     // then special handling is done to allow a setup of a vanilla dependency without the use of an external repository.
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
-    implementation fg.deobf("blank:OreSpawn-${minecraft_version}:${orespawn_version}")
+    if (localOreSpawnJar != null) {
+        implementation fg.deobf("local:OreSpawn:${localOreSpawnVersion}")
+    } else {
+        implementation fg.deobf(
+                "curse.maven:mmd-orespawn-${orespawn_curseforge_project_id}:${orespawn_curseforge_file_id}")
+    }
+    if (baseMetalsIntegration) {
+        def baseMetalsJar = rootProject.file(
+                '../../../BaseMetals/BaseMetals 118/BaseMetals/build/libs/BaseMetals-1.18.2-3.0.0.jar')
+        if (!baseMetalsJar.isFile()) {
+            throw new GradleException(
+                    "BaseMetals integration requested but ${baseMetalsJar} does not exist")
+        }
+        runtimeOnly fg.deobf("local:BaseMetals-${minecraft_version}:3.0.0")
+    }
 
     // Real mod deobf dependency examples - these get remapped to your current mappings
     // compileOnly fg.deobf("mezz.jei:jei-${mc_version}:${jei_version}:api") // Adds JEI API as a compile dependency
@@ -176,6 +1100,10 @@ eclipse {
 // When "copyIdeResources" is enabled, this will also run before the game launches in IDE environments.
 // See https://docs.gradle.org/current/dsl/org.gradle.language.jvm.tasks.ProcessResources.html
 tasks.named('processResources', ProcessResources).configure {
+    dependsOn generateCakeWorldOreSpawnProvider
+    // Local agent context is deliberately ignored by Git and must never be
+    // copied into development resources or a public mod artifact.
+    exclude '**/AGENTS.md', '**/agent-notes/**', '**/.codex/**'
     var replaceProperties = [
             minecraft_version: minecraft_version, minecraft_version_range: minecraft_version_range,
             forge_version: forge_version, forge_version_range: forge_version_range,
@@ -192,6 +1120,13 @@ tasks.named('processResources', ProcessResources).configure {
 
 // Example for how to get properties into the manifest for reading at runtime.
 tasks.named('jar', Jar).configure {
+    // The CurseForge artifact is distributed on its own, so carry the exact
+    // project license inside the JAR as well as declaring it in mods.toml.
+    from(layout.projectDirectory.file('LICENSE')) {
+        into 'META-INF'
+    }
+    // Defence in depth for stale or externally generated resource outputs.
+    exclude '**/AGENTS.md', '**/agent-notes/**', '**/.codex/**'
     manifest {
         attributes([
                 'Specification-Title'     : mod_id,
@@ -228,4 +1163,279 @@ publishing {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+}
+
+def auditCakeWorldOreSpawnApiUsage = tasks.register(
+        'auditCakeWorldOreSpawnApiUsage') {
+    group = 'verification'
+    description = 'Rejects deprecated or internal OreSpawn Java dependencies from packaged CakeWorld source.'
+    inputs.files(fileTree('src/main/java') { include '**/*.java' })
+
+    doLast {
+        def violations = []
+        fileTree('src/main/java') { include '**/*.java' }.files
+                .sort { left, right -> left.path <=> right.path }
+                .each { source ->
+            source.eachLine('UTF-8') { line, number ->
+                def trimmed = line.trim()
+                if ((trimmed.startsWith(
+                        'import zone.moddev.mc.orespawn.')
+                        && !trimmed.startsWith(
+                                'import zone.moddev.mc.orespawn.api.'))
+                        || trimmed.startsWith(
+                                'import zone.moddev.mc.orespawn.api.OreSpawnOreIntegration')
+                        || trimmed.contains(
+                                'WorldgenProvider.OilDefinition')) {
+                    violations << "${source}:${number}: ${trimmed}"
+                }
+            }
+        }
+        if (!violations.isEmpty()) {
+            throw new GradleException(
+                    'CakeWorld crossed the current OreSpawn API boundary:\n'
+                            + violations.join('\n'))
+        }
+    }
+}
+
+def auditCakeWorldThirdPartyIsolation = tasks.register(
+        'auditCakeWorldThirdPartyIsolation') {
+    group = 'verification'
+    description = 'Rejects broad mob, structure, or resource mutation boundaries that could capture unknown mods.'
+    inputs.files(fileTree('src/main/java/com/mcmoddev/cakeworld/world') {
+        include 'CakeWorld*Replacement.java'
+        include '*Palette.java'
+    })
+    inputs.files('src/main/orespawn/provider.json',
+            'src/main/orespawn/basemetals-overlay.json')
+
+    doLast {
+        def worldSources = fileTree(
+                'src/main/java/com/mcmoddev/cakeworld/world')
+        def converters = worldSources.matching {
+            include 'CakeWorld*Replacement.java'
+        }.files.findAll { source ->
+            source.getText('UTF-8').contains('EntityJoinWorldEvent')
+        }
+        if (converters.isEmpty()) {
+            throw new GradleException(
+                    'Third-party isolation audit found no entity converters.')
+        }
+        def broadConverters = converters.findAll { source ->
+            !(source.getText('UTF-8') =~
+                    /getType\(\)\s*!=\s*EntityType\./).find()
+        }
+        if (!broadConverters.isEmpty()) {
+            throw new GradleException(
+                    'Entity converters lost their exact literal-type guard:\n'
+                            + broadConverters*.path.sort().join('\n'))
+        }
+
+        def palettes = worldSources.matching {
+            include '*Palette.java'
+        }.files.findAll { source ->
+            source.getText('UTF-8').contains('ChunkEvent.Load')
+        }
+        if (palettes.isEmpty()) {
+            throw new GradleException(
+                    'Third-party isolation audit found no structure palettes.')
+        }
+        def broadPalettes = palettes.findAll { source ->
+            def text = source.getText('UTF-8')
+            !(text =~ /Registry\s*\.\s*CONFIGURED_STRUCTURE_FEATURE_REGISTRY/)
+                    .find()
+                    || !text.contains('getStartForFeature')
+        }
+        if (!broadPalettes.isEmpty()) {
+            throw new GradleException(
+                    'Structure palettes lost their exact configured-structure lookup:\n'
+                            + broadPalettes*.path.sort().join('\n'))
+        }
+
+        def allowedNamespaces = [
+                'minecraft', 'cakeworld', 'orespawn', 'basemetals'
+        ] as Set
+        def allowedScopeNamespaces = (allowedNamespaces
+                + ['cakeworld_fixture']) as Set
+        def resourceNamespaces = [] as Set
+        def scopeNamespaces = [] as Set
+        def walk
+        walk = { node ->
+            if (node instanceof Map) {
+                node.each { key, value ->
+                    def keyText = key.toString()
+                    def keyMatch = keyText =~
+                            /^#?([a-z0-9_.-]+):[a-z0-9_.\/-]+$/
+                    if (keyMatch.matches()) {
+                        resourceNamespaces << keyMatch.group(1)
+                    }
+                    if (keyText == 'include_namespaces'
+                            || keyText == 'exclude_namespaces') {
+                        def members = value instanceof Collection
+                                ? value : [value]
+                        members.findAll { it != null && !it.toString().isEmpty() }
+                                .each { scopeNamespaces << it.toString() }
+                    }
+                    walk(value)
+                }
+            } else if (node instanceof Collection) {
+                node.each { walk(it) }
+            } else if (node instanceof String) {
+                def match = node =~
+                        /^#?([a-z0-9_.-]+):[a-z0-9_.\/-]+$/
+                if (match.matches()) {
+                    resourceNamespaces << match.group(1)
+                }
+            }
+        }
+        ['src/main/orespawn/provider.json',
+                'src/main/orespawn/basemetals-overlay.json'].each { path ->
+            walk(new groovy.json.JsonSlurper().parse(file(path)))
+        }
+        def unexpectedResources = resourceNamespaces - allowedNamespaces
+        def unexpectedScopes = scopeNamespaces - allowedScopeNamespaces
+        if (!unexpectedResources.isEmpty() || !unexpectedScopes.isEmpty()) {
+            throw new GradleException(
+                    'OreSpawn provider introduced an undeclared compatibility namespace: resources='
+                            + unexpectedResources.sort()
+                            + ', scopes=' + unexpectedScopes.sort())
+        }
+        logger.lifecycle(
+                "Third-party isolation audit passed: ${converters.size()} exact entity converters, ${palettes.size()} exact structure palettes, resource namespaces ${resourceNamespaces.sort()}, scope namespaces ${scopeNamespaces.sort()}")
+    }
+}
+
+def auditCakeWorldOriginalIdentity = tasks.register(
+        'auditCakeWorldOriginalIdentity') {
+    group = 'verification'
+    description = 'Rejects distinctive story-IP names and reports the remaining original-art boundary.'
+    inputs.files('README.md')
+    inputs.files(fileTree('docs') { include '**/*.md' })
+    inputs.files(fileTree('src/main/java') { include '**/*.java' })
+    inputs.files(fileTree('src/main/resources') {
+        include '**/*.json'
+        include '**/*.mcmeta'
+        include '**/*.toml'
+    })
+
+    doLast {
+        def protectedFiles = [file('README.md')]
+        protectedFiles.addAll(fileTree('docs') {
+            include '**/*.md'
+        }.files)
+        protectedFiles.addAll(fileTree('src/main/java') {
+            include '**/*.java'
+        }.files)
+        protectedFiles.addAll(fileTree('src/main/resources') {
+            include '**/*.json'
+            include '**/*.mcmeta'
+            include '**/*.toml'
+        }.files)
+
+        def protectedPhrases = [
+                'author name': ~/(?i)(?<![a-z0-9])roald[ -]+dahl(?![a-z0-9])/,
+                'factory owner': ~/(?i)(?<![a-z0-9])(?:willy[ -]+)?wonka(?![a-z0-9])/,
+                'factory workers': ~/(?i)(?<![a-z0-9])oompa[ -]+loompa(?![a-z0-9])/,
+                'book title': ~/(?i)(?<![a-z0-9])charlie[ -]+(?:and[ -]+the[ -]+)?chocolate[ -]+factory(?![a-z0-9])/,
+                'distinctive sweet': ~/(?i)(?<![a-z0-9])everlasting[ -]+gobstopper(?![a-z0-9])/,
+                'distinctive invitation': ~/(?i)(?<![a-z0-9])golden[ -]+ticket(?![a-z0-9])/,
+                'distinctive drink': ~/(?i)(?<![a-z0-9])fizzy[ -]+lifting[ -]+drink(?![a-z0-9])/,
+                'distinctive berry': ~/(?i)(?<![a-z0-9])snozzberr(?:y|ies)(?![a-z0-9])/,
+                'distinctive adjective': ~/(?i)(?<![a-z0-9])scrumdiddlyumptious(?![a-z0-9])/,
+                'child character': ~/(?i)(?<![a-z0-9])(?:veruca[ -]+salt|violet[ -]+beauregarde|augustus[ -]+gloop|mike[ -]+teevee)(?![a-z0-9])/,
+                'grandparent character': ~/(?i)(?<![a-z0-9])grandpa[ -]+joe(?![a-z0-9])/,
+                'distinctive bar name': ~/(?i)(?<![a-z0-9])whipple[ -]+scrumptious(?![a-z0-9])/
+        ]
+        def violations = []
+        protectedFiles.sort { left, right -> left.path <=> right.path }
+                .each { source ->
+            def text = source.getText('UTF-8')
+            protectedPhrases.each { label, pattern ->
+                def matcher = pattern.matcher(text)
+                while (matcher.find()) {
+                    def line = text.substring(0, matcher.start())
+                            .count('\n') + 1
+                    violations << "${source}:${line}: ${label}: ${matcher.group()}"
+                }
+            }
+        }
+        if (!violations.isEmpty()) {
+            throw new GradleException(
+                    'CakeWorld introduced a protected story identity:\n'
+                            + violations.join('\n'))
+        }
+
+        def language = new groovy.json.JsonSlurper().parse(
+                file('src/main/resources/assets/cakeworld/lang/en_us.json'))
+        def cakeWorldPngs = fileTree(
+                'src/main/resources/assets/cakeworld') {
+            include '**/*.png'
+        }.files
+        def minecraftTextureReferences = 0
+        fileTree('src/main/resources/assets/cakeworld/models') {
+            include '**/*.json'
+        }.files.each { model ->
+            def matcher = (model.getText('UTF-8') =~
+                    /"(?:parent|layer[0-9]+|particle|up|down|north|south|east|west|side|top|bottom|all|end|texture)"\s*:\s*"minecraft:[a-z0-9_.\/-]+"/)
+            minecraftTextureReferences += matcher.count
+        }
+        def deferredArtRows = file('docs/GAME_DESIGN.md')
+                .readLines('UTF-8').count { line ->
+            line =~ /(?i)(original (?:art|textures|presentation)|dedicated .* art|temporary vanilla|inherited renderer|vanilla texture)/
+        }
+        logger.lifecycle(
+                "Original-identity audit passed: ${language.size()} English entries, zero protected story terms; current art boundary is ${cakeWorldPngs.size()} CakeWorld PNGs, ${minecraftTextureReferences} Minecraft model-texture references, and ${deferredArtRows} explicitly deferred design rows")
+    }
+}
+
+tasks.named('check').configure {
+    dependsOn auditCakeWorldOreSpawnApiUsage,
+            auditCakeWorldThirdPartyIsolation,
+            auditCakeWorldOriginalIdentity
+}
+
+def prepareGameTestStructures = tasks.register('prepareGameTestStructures', Copy) {
+    group = 'verification'
+    description = 'Copies tracked SNBT fixtures into the GameTest working directory.'
+    from layout.projectDirectory.dir('src/gametest/resources/gameteststructures')
+    into layout.projectDirectory.dir(providerMergeRuntime
+            ? "${providerMergeRunDirectory}/gameteststructures"
+            : providerOverrideRuntime
+            ? "${providerOverrideRunDirectory}/gameteststructures"
+            : imcProviderRuntime
+            ? "${imcProviderRunDirectory}/gameteststructures"
+            : climateBoundaryRuntime
+            ? "${climateBoundaryRunDirectory}/gameteststructures"
+            : blankBiomeRuntime
+            ? "${blankBiomeRunDirectory}/gameteststructures"
+            : replaceModeRuntime
+            ? "${replaceModeRunDirectory}/gameteststructures"
+            : samplerPlatterRuntime
+            ? "${samplerPlatterRunDirectory}/gameteststructures"
+            : baseMetalsIntegration
+            ? "${baseMetalsRunDirectory}/gameteststructures"
+            : freshWorldgenIntegration
+                    ? "${freshWorldgenRunDirectory}/gameteststructures"
+                    : 'run/gameteststructures')
+}
+
+def prepareFreshWorldgenServer = tasks.register(
+        'prepareFreshWorldgenServer', Copy) {
+    group = 'verification'
+    description = 'Installs the fixed-seed server properties for focused worldgen proof.'
+    onlyIf { freshWorldgenIntegration }
+    from layout.projectDirectory.file(
+            'src/gametest/resources/fixed-worldgen-server.properties')
+    into layout.projectDirectory.dir(baseMetalsIntegration
+            ? baseMetalsRunDirectory
+            : freshWorldgenRunDirectory)
+    rename { 'server.properties' }
+}
+
+tasks.matching { it.name == 'prepareRunGameTestServer' }.configureEach {
+    dependsOn prepareGameTestStructures, prepareFreshWorldgenServer
+}
+
+tasks.matching { it.name == 'runGameTestServer' }.configureEach {
+    dependsOn prepareGameTestStructures, prepareFreshWorldgenServer
 }

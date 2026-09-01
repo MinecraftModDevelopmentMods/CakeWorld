@@ -3,25 +3,81 @@
 ## Architecture
 
 CakeWorld is a child mod of OreSpawn. It registers content through normal Forge
-registries and declares world-generation intent through a packaged provider:
+registries and declares world-generation intent in the canonical provider
+source:
 
 ```text
-data/cakeworld/orespawn/provider.json
+src/main/orespawn/provider.json
 ```
 
-OreSpawn discovers that file during mod loading, validates all referenced
-registry IDs, merges provider-owned entries, and snapshots the selected
-template into each new world's server configuration. Generation does not call
-back into CakeWorld.
+`generateCakeWorldOreSpawnProvider` copies the normal adventure and applies
+`src/main/orespawn/basemetals-overlay.json` to create the conditional
+compatibility template. The build packages the result at
+`data/cakeworld/orespawn/provider.json`.
 
-Only `com.mcmoddev.orespawn.api` is a supported Java API. Other OreSpawn
+OreSpawn discovers the packaged result during mod loading, validates all
+referenced registry IDs, merges provider-owned entries, and snapshots the
+selected template into each new world's server configuration. Generation does
+not call back into CakeWorld.
+
+Only `zone.moddev.mc.orespawn.api` is a supported Java API. Other OreSpawn
 packages are internal.
+
+The normal development build resolves published Minecraft 1.18.2 OreSpawn
+4.0.16.118021 through CurseMaven. `gradle.properties` pins CurseForge project
+`245586` and file `8780769`, rather than reading a mutable sibling build
+directory. Release-candidate validation can still supply an explicit
+`-PcakeworldLocalOreSpawnJar=<path>` for an unreleased build. Do not treat
+compile success as a substitute for GameTest, fresh-world, same-save reload,
+package, and client evidence.
 
 ## Biomes
 
 `CakeWorldBiomes` uses `OreSpawnBiomes.copyAndRegister` to copy stable vanilla
 biome definitions and adjust their climate. Copying is a convenience for
 registration; placement is controlled by `biome_palettes` in the provider.
+CakeWorld also registers appropriate Forge `BiomeDictionary` types during
+common setup. Those types are required when the geology profile uses
+`biome_dictionary` rules; copying a biome does not copy its registry-key
+dictionary membership.
+
+For an intentionally independent biome, OreSpawn also exposes
+`blankAndRegister`. CakeWorld keeps its complete example out of production:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldBlankBiomeRuntime=true -PcakeworldBlankBiomeRunDirectory=run-blank-biome-local
+```
+
+The switch alone registers `cakeworld_fixture:blank_biome_laboratory`. Its
+builder explicitly supplies precipitation, category, temperature, temperature
+modifier, downfall, special effects, empty spawn settings and empty generation
+settings. Forge's later biome-loading lifecycle then lets released OreSpawn add
+exactly `orespawn:biome_surfaces` and `orespawn:stone_replacer`; the focused
+test requires those two integrations and no others. The laboratory is never
+named by the provider, never enters possible biome-source outputs, and is not
+registered during ordinary startup. The harness refuses a directory that
+already contains a saved profile because this is a fresh registration proof,
+not a save/reload scenario.
+
+To verify the inclusive climate comparison used by all production outputs:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldClimateBoundaryRuntime=true -PcakeworldClimateBoundaryRunDirectory=run-climate-boundaries-local
+```
+
+The task reads the generated adventure profile and refuses to proceed unless it
+finds all 35 unique outputs covered by the expected 17 distinct ranges. It then
+generates an ignored, explicit diagnostic profile with one isolated palette per
+range and conditionally registers a 102-biome vanilla checkerboard source. For
+each range, the minimum/minimum and maximum/maximum corners must select; the
+nearest float below or above each individual temperature/downfall limit must
+delegate unchanged. The fixture never changes the packaged provider and is not
+registered during ordinary startup. Always use a fresh ignored directory.
+
+Exact `biomes` weights and matching `biome_dictionary` weights are additive.
+OreSpawn's built-in dictionary defaults may also contribute generic geology
+such as mountain belts or coastal shelves, so a total-conversion provider
+should give its exact biome identities enough weight to remain readable.
 
 OreSpawn wraps the biome source that the dimension already uses. This means
 CakeWorld does not own the base climate sampler and does not need TerraBlender.
@@ -57,6 +113,396 @@ uses deterministic priority and ID ordering if multiple providers offer
 automatic templates. An explicit pack default wins, and an existing world's
 saved profile is never silently rewritten.
 
+`cakeworld:edible_world_basemetals` is generated from that same canonical
+profile with the optional thirteen-resource compatibility overlay. The third
+template, `cakeworld:sampler_platter`, is deliberately non-automatic and must
+be selected explicitly. Provider revision 59 retains its bounded
+diagnostic plot—Candy Plains augmenting the delegated vanilla source with
+`minecraft_only` scope, tiny regions, partial coverage, and a positive
+fallback weight—and adds two namespace-filter plots. Five labelled Overworld
+boundary plots then use Gingerbread Hearthlands, Peppermint Pinewoods,
+Marshmallow Peaks, Cookie Forest and Soda Ocean to show `tiny`, `small`,
+`average`, `large` and `huge` regions at exact 128, 256, 512, 1,024 and 2,048
+block scales. Each plot has half coverage, so covered and delegated regions
+remain visible together. The Nether uses an
+explicit `minecraft` allow-list with `selected_namespaces`; its Fudge output
+lists one installed and one missing optional similar biome, while a competing
+Crags output requires a deliberately missing biome. The End declares a
+Meringue output under `all` scope but excludes `minecraft`, so vanilla End
+sources must delegate unchanged. Together they demonstrate include/exclude
+lists and optional/required dependency behavior without callbacks or effects
+on either adventure. A ninth selected-namespace plot targets only an opt-in
+`cakeworld_fixture` source. The fixture registers a Plains-derived biome and
+installs a fixed source at the final level-load boundary before OreSpawn wraps
+it; normal CakeWorld never registers either. During provider generation the
+Sampler inherits the adventure's rocks, geomes, biome rules, dictionary rules
+and terrain dimensions exactly. It then selects the profile-wide legacy
+`sky_v1` algorithm with
+deliberately extreme but schema-bounded custom values. This makes the
+fixed-seed comparison meaningful while leaving both automatically selected
+adventures on average `stable_layers` settings. The same explicit Sampler maps
+its installed Burnt-Sugar geology output to Sprinkle Cluster at bake time and
+enables exactly three flat bedrock layers in the Overworld and Nether. Its
+bedrock retrogen switch remains off. Two additional ore rules are packaged
+disabled beside a disabled profile-wide retrogen control. They are inert in an
+ordinary Sampler and exist solely so a copied test save can activate one
+retrogen-enabled Sprinkle rule beside one non-retrogen Fizzy-Pearl control.
+It also enables one public `cakeworld:layer_cake` ore rule in the Overworld.
+The pattern decodes bounded layer, radius, thickness and gap settings once,
+then places allocation-free horizontal discs through OreSpawn's compiled
+hot-path contract. Standard OreSpawn weighted outputs give the deposit cells a
+`3:2:1` Mint-Crystal, Fizzy-Pearl and Rich-Sprinkle flavour mix.
+
+Run its isolated six-test fresh-world proof, including biome filters, the
+formation survey, and custom-pattern contract,
+with:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldSamplerRuntime=true -PcakeworldSamplerRunDirectory=run-sampler-platter-local '-PcakeworldGameTestNamespaces=cakeworld_sampler,cakeworld_formation,cakeworld_layer_cake,cakeworld_sampler_biome_filters' -PcakeworldExpectedFormationAlgorithm=sky_v1
+```
+
+The preparation task refuses to reuse a directory that already contains a
+world-owned OreSpawn profile. To prove persistence against the same save, run
+the same command again with `-PcakeworldSamplerReuseWorld=true`. This reuse
+flag is intentionally opt-in so an ordinary diagnostic run cannot silently
+turn into reload evidence.
+
+The supported BaseMetals combination has a smaller four-test fresh/reload
+regression namespace covering all processing contracts, natural Starsteel in
+Starlight Sugar Fields, independently attributable under-Lemonade Pearls, and
+a complete Overworld Bloom Circle:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldBaseMetalsRuntime=true -PcakeworldFreshWorldgenRuntime=true -PcakeworldBaseMetalsRunDirectory=run-basemetals-regression-local -PcakeworldGameTestNamespaces=cakeworld_basemetals_regression
+```
+
+Repeat the identical command against the same ignored directory for reload
+evidence. Provider revision 59 deliberately narrows Starsteel to Y `0..112`
+in Starlight Sugar Fields and raises Fizzy-Pearl frequency to `1.0`; these are
+adventure balance settings, not OreSpawn workarounds.
+
+The exact `4.0.12.118021` candidate gate also ran the complete 274-test suite
+four times: normal fresh and reload, then BaseMetals fresh and reload. All four
+runs passed and saved all three dimensions. The normal pair found `41/40`
+Fizzy Pearls with `13/13` independently attributable directly under Lemonade;
+the BaseMetals pair found `26/25` with `5/5` directly under Lemonade. The
+BaseMetals pair retained 33 natural focused Starlight Starsteel cells and the
+Cupcake Bloom player sentinel. Edible-world integrity reported empty residual
+sets in the Overworld, Nether and End in both profiles.
+
+The bounded retrogen proof uses a separate ignored directory and three explicit
+phases. Do not substitute a player world:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldSamplerRuntime=true -PcakeworldSamplerRunDirectory=run-sampler-retrogen-local -PcakeworldSamplerRetrogenPhase=baseline -PcakeworldGameTestNamespaces=cakeworld_sampler_retrogen
+./gradlew runGameTestServer -PcakeworldSamplerRuntime=true -PcakeworldSamplerReuseWorld=true -PcakeworldSamplerRunDirectory=run-sampler-retrogen-local -PcakeworldSamplerRetrogenPhase=apply -PcakeworldGameTestNamespaces=cakeworld_sampler_retrogen
+./gradlew runGameTestServer -PcakeworldSamplerRuntime=true -PcakeworldSamplerReuseWorld=true -PcakeworldSamplerRunDirectory=run-sampler-retrogen-local -PcakeworldSamplerRetrogenPhase=reload -PcakeworldGameTestNamespaces=cakeworld_sampler_retrogen
+```
+
+Baseline creates a 256-block Biscuit-Stone layer and a 256-block Brick control
+layer in two already-generated chunks. Apply changes only the saved profile to
+revision `5301`, `force: false`, and four chunks per tick. The released
+OreSpawn queue may first process the ordinary spawn backlog, so the harness
+allows 200 ticks before checking the deliberately distant chunks. The accepted
+result is exactly 64 Sprinkle blocks and 192 remaining Biscuit blocks in the
+eligible layer, zero Fizzy-Pearl control output, an unchanged 256-block Brick
+layer, and intact sentinels. Reload must retain those exact counts, showing that
+the revision marker prevents a second pass. A public operator-command probe in
+the apply phase returns zero for both already auto-queued chunks; it is
+diagnostic and does not perform the proof itself.
+
+The minimum-style formation comparison uses a separate ignored world and a
+test-only provider override generated from the exact packaged declaration. It
+changes only the Sampler's five profile-wide formation controls to the released
+`tiny` preset; it does not add a fourth packaged template:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldSamplerRuntime=true -PcakeworldSamplerFormationCase=minimum -PcakeworldSamplerRunDirectory=run-sampler-formation-minimum-local -PcakeworldGameTestNamespaces=cakeworld_formation -PcakeworldExpectedFormationAlgorithm=sky_v1
+```
+
+Repeat with `-PcakeworldSamplerReuseWorld=true` to verify the saved profile.
+Fixed seed `5059928472718672684` produces exact `32,296/1,624/8/14` vertical
+transitions, horizontal transitions, distinct rocks and distinct geomes, with
+unsigned signature `6,569,562,011,636,171,901`. This is a labelled minimum
+named-preset case, not a claim that it minimises every observed transition
+count or that presets can vary per geome.
+
+The unrelated-source proof is also isolated. It uses no TerraBlender and no
+production biome-source hook:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldSamplerThirdPartyRuntime=true -PcakeworldSamplerRunDirectory=run-sampler-third-party-local
+```
+
+The dedicated switch conditionally registers
+`cakeworld_fixture:delegated_meadow`, installs a fixed Overworld source at
+highest-priority level load, and then lets released OreSpawn perform its normal
+wrap. Across 4,225 samples, the final selected-namespace plot yields exactly
+1,736 untouched fixture results and 2,489 Candy-Plains selections. This proves
+that the six earlier `minecraft_only` Overworld plots delegated the unrelated
+source unchanged before the explicit fixture plot. Fresh/reload reproduce the
+counts. An ordinary Sampler asserts the fixture registry ID is absent.
+
+### Main replace-mode composition
+
+Use a separate disposable directory to prove the automatically selected main
+adventure replaces even an unrelated source under `scope=all`:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldReplaceModeRuntime=true -PcakeworldReplaceModeRunDirectory=run-replace-mode-local
+./gradlew runGameTestServer -PcakeworldReplaceModeRuntime=true -PcakeworldReplaceModeRunDirectory=run-replace-mode-local -PcakeworldReplaceModeReuseWorld=true
+```
+
+The harness conditionally installs the same fixed
+`cakeworld_fixture:delegated_meadow` owner before OreSpawn wraps the Overworld,
+but it selects the normal `cakeworld:edible_world` template rather than the
+Sampler. It checks all five saved palettes for `mode=replace`, `scope=all`,
+`coverage=1.0`, `fallback_weight=0.0` and `exclude_namespaces=[cakeworld]`.
+It then samples 66,049 positions at Overworld Y 64 and -32, Nether Y 64 and End
+Y 64. Because the fixture ID matches none of the vanilla similarity hints, the
+only eligible Overworld entry is the deliberately generic Candy Plains rule;
+all 132,098 Overworld samples therefore select it. The vanilla-backed Nether
+and End planes each expose all seven current outputs, and every one of the
+264,196 final results is in the CakeWorld namespace.
+
+The fixed-seed per-position signatures are asserted as
+`671217176651623588` for each Overworld plane,
+`14305352832125438259` for Nether and `10797345351901494849` for End. Repeat
+with explicit reuse to prove the world-owned profile and signatures survive a
+reload. The preparation task refuses accidental reuse, and an ordinary
+selection test proves the fixture ID is absent without the dedicated runtime
+switch. This reflection-based source owner is test scaffolding only; it is not
+a child-mod integration pattern and adds no TerraBlender dependency.
+
+### Read-only active-profile status
+
+Run `/cakeworld orespawn` in a dedicated or integrated server to inspect the
+world-owned OreSpawn profile without opening its snapshot or invoking a
+maintenance command. CakeWorld calls only
+`OreSpawnApi.getActiveProfile(server)` and reports the selected template,
+geology mode and typed-view counts for rocks, geomes, ores, fluid deposits,
+biome palettes and terrain dimensions. The command is available at ordinary
+player permission, performs no file/config/registry lookup in a generation
+loop, and cannot reload, retrogen or otherwise mutate the active profile.
+
+The same-seed stable baseline uses a separate world because OreSpawn formation
+settings are profile-wide:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldFreshWorldgenRuntime=true -PcakeworldFreshWorldgenRunDirectory=run-formation-stable-local -PcakeworldGameTestNamespaces=cakeworld_formation -PcakeworldExpectedFormationAlgorithm=stable_layers
+```
+
+OreSpawn `4.0.16.118021` deliberately rebaselines these surveys. Commit
+`7c82ecc` classifies the highest occupied surface block rather than first-free
+air, and `b7090d7` gives generation and the public sampler the same direct
+quart-biome lookup. Fixed seed `5059928472718672684` now asserts exact
+vertical/horizontal transition counts and unsigned identity signatures of
+`36,517/1,184/2,491,678,091,116,701,092` for extreme,
+`32,296/1,624/6,569,562,011,636,171,901` for all-`tiny`, and
+`5,456/643/15,554,542,676,638,589,477` for stable layers. These remain exact
+drift detectors because the public sampler itself is deterministic.
+
+Append `-PcakeworldFormationVisualEvidence=true` to this command or either
+Sampler formation command to write a labelled PNG and text manifest under the
+isolated run directory's `formation-visual/` folder. The export samples only
+the released public `GeologySampler`: it renders every X/Y cell in a fixed
+vertical section, an eight-block top-down grid, the observed rock legend, seed
+and the same metrics asserted by the test. It is ignored by Git and never
+packaged. Use it to distinguish the normal broad coherent strata from the
+intentionally shredded extreme case and the dense all-`tiny` case; do not
+recommend the diagnostic extreme profile as the adventure default.
+
+Do not describe these as two adjacent algorithms inside one world. Per-geome
+formation presets are not part of the released contract.
+
+### Creation-time editor compatibility
+
+Use an unused working directory when exercising OreSpawn's client editor so a
+manual acceptance run cannot alter an ordinary development save:
+
+```powershell
+./gradlew runClient -PcakeworldEditorRunDirectory=run-editor-acceptance-local
+```
+
+The harness refuses an existing save by default. Pass
+`-PcakeworldEditorReuseWorld=true` only when deliberately reopening the same
+isolated acceptance directory.
+
+OS-020 remains blocked after an isolated acceptance run against the
+`4.0.12.118021` release candidate. The editor opened the auto-selected
+CakeWorld template,
+exposed the installed
+CakeWorld biome and material IDs, and keeps **Biomes & World Materials** plus
+**World Materials** available after switching to the no-strata **Pack
+Defaults** baseline. Applying CakeWorld or CakeWorld Sampler Platter is blocked
+before world creation, however, with:
+
+```text
+Invalid geome: cakeworld:cocoa_basin
+```
+
+This is not a provider-runtime rejection. CakeWorld's packaged templates and
+OreSpawn's own complete provider example use namespaced geome keys, and the
+same candidate runtime bakes and generates them successfully. The candidate
+editor's `GeologyEditorSession` still validates geome keys with the
+unnamespaced-only expression `[a-z0-9_.-]+` in both its add and final-save
+paths. This is tracked as OreSpawn #269. Do not rename CakeWorld's public
+geomes to make this acceptance pass.
+
+After #269 is fixed, repeat the isolated UI path with seed
+`5059928472718672684`, create the world, inspect its
+`serverconfig/orespawn-worldgen.json`, and run the corresponding fixed-seed
+generation checks against a copy of that save. Until all three stages pass,
+CakeWorld must not advertise creation-editor compatibility.
+
+## Provider Overrides
+
+Released OreSpawn 4.0.6 looks for CakeWorld's pack-author override at:
+
+```text
+config/cakeworld-orespawn.json
+```
+
+A present, valid file is authoritative: it replaces CakeWorld's packaged
+provider declaration for that installation. New worlds snapshot the selected
+effective profile into `world/serverconfig/orespawn-worldgen.json`; deleting
+the global override later does not silently convert that existing save. New
+worlds created after deletion use the packaged provider again unless another
+explicit global selection wins.
+
+A present malformed override fails closed. OreSpawn reports the validation
+error and leaves CakeWorld's provider inactive instead of falling back to the
+packaged total conversion. In Forge's development lifecycle the same unique
+error can be emitted in both provider-discovery passes. This is noisy but does
+not create duplicate active definitions or stop the server safely creating a
+non-CakeWorld world.
+
+The repository contains an isolated three-part proof. Use a disposable run
+directory; the valid run creates the saved profile needed by the removal run:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldProviderOverrideMode=valid -PcakeworldProviderOverrideRunDirectory=run-provider-override-local
+./gradlew runGameTestServer -PcakeworldProviderOverrideMode=removed -PcakeworldProviderOverrideRunDirectory=run-provider-override-local -PcakeworldProviderOverrideReuseWorld=true
+./gradlew runGameTestServer -PcakeworldProviderOverrideMode=malformed -PcakeworldProviderOverrideRunDirectory=run-provider-override-malformed-local
+./gradlew runGameTestServer -PcakeworldProviderOverrideMode=schema3 -PcakeworldProviderOverrideRunDirectory=run-provider-schema3-local
+./gradlew runGameTestServer -PcakeworldProviderOverrideMode=schema3 -PcakeworldProviderOverrideRunDirectory=run-provider-schema3-local -PcakeworldProviderOverrideReuseWorld=true
+./gradlew runGameTestServer -PcakeworldProviderOverrideMode=equal_priority -PcakeworldProviderOverrideRunDirectory=run-provider-equal-priority-local
+./gradlew runGameTestServer -PcakeworldProviderOverrideMode=equal_priority -PcakeworldProviderOverrideRunDirectory=run-provider-equal-priority-local -PcakeworldProviderOverrideReuseWorld=true
+```
+
+The preparation task refuses fresh scenarios in a directory with an existing
+world-owned profile. The `removed` mode requires both that profile and the
+explicit reuse flag, deletes only the isolated `cakeworld-orespawn.json`
+fixture, and preserves the save. These fixtures are test resources and are
+not included in the mod JAR.
+
+The final pair installs an isolated schema-3 provider whose auto-selected
+template deliberately contains an empty profile. Released OreSpawn must turn
+that declaration into a current schema-5 world snapshot with `geome` mode,
+`stable_layers`, all five `average` formation presets, the configured fluid
+default and provider revision `1101`, then retain those settings on same-save
+reload. CakeWorld's `check` task separately scans all packaged Java source and
+fails on deprecated `OilDefinition`/`OreSpawnOreIntegration` use or any
+OreSpawn import outside `zone.moddev.mc.orespawn.api`. The same gate runs
+`auditCakeWorldOriginalIdentity`, which rejects distinctive protected-story
+names and phrases across source, resources and public documentation. It also
+reports the current count of CakeWorld PNGs, explicit Minecraft model-texture
+references and design rows that still defer original presentation. That
+report is an honest production boundary, not a substitute for human art and
+audio review.
+
+The equal-priority pair installs two available auto-selection templates at
+priority `777`, declared in lexical order. Released OreSpawn 4.0.6.118021
+selects `cakeworld:alpha_priority_probe` on fresh creation and retains that
+choice on reload. The same release documents a setup warning for the tie but
+does not emit one in this declaration order: its warning branch runs only when
+a later equal-priority candidate replaces the current winner. CakeWorld tracks
+that released limitation as OS-105 and does not disguise it by reversing the
+fixture order.
+
+## Existing-world Provider Merge Proof
+
+OS-017 uses one ignored disposable world and two unbundled provider revisions.
+Do not use a player save or reuse a directory from another scenario:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldProviderMergePhase=baseline -PcakeworldProviderMergeRunDirectory=run-provider-merge-local
+./gradlew runGameTestServer -PcakeworldProviderMergePhase=upgrade -PcakeworldProviderMergeRunDirectory=run-provider-merge-local
+./gradlew runGameTestServer -PcakeworldProviderMergePhase=reload -PcakeworldProviderMergeRunDirectory=run-provider-merge-local
+```
+
+`baseline` refuses an existing world and creates a revision-1701 snapshot.
+`upgrade` requires that exact manifest, then makes bounded edits only to the
+isolated saved profile: it changes a rock and ore, disables a rule, removes an
+assigned definition while leaving its known-ID tombstone, and adds a valid
+world-owned ore plus output alias. It installs revision 1702 only after those
+edits. The focused GameTest requires the edits to win over changed provider
+defaults, the unassigned rule to remain absent, new provider rock/ore IDs to
+appear, and a provider-removed ore to remain self-contained with
+`orphaned_provider: true`. It also compares the sorted historical manifest.
+
+`reload` requires the completed revision-1702 fixture and does not rewrite it.
+For byte-stability evidence, hash
+`world/serverconfig/orespawn-worldgen.json` before and after that command. The
+fixture declarations under `src/test/orespawn` never enter the distributable
+JAR.
+
+## Forge IMC Provider Alternative
+
+CakeWorld intentionally distributes only the packaged JSON provider. To show
+the equivalent Java submission lifecycle without creating duplicate production
+definitions, run this isolated fixture:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldImcProviderRuntime=true -PcakeworldImcProviderRunDirectory=run-imc-provider-local
+```
+
+The preparation task first runs resource generation, removes only
+`build/resources/main/data/cakeworld/orespawn/provider.json`, installs a
+test-only flat `cakeworld:sampler_pantry` dimension, and refuses any saved
+profile in the requested directory. With the explicit JVM switch, CakeWorld
+builds a disabled `cakeworld:ore/imc_probe` plus
+`cakeworld:ore/imc_selector_probe` entirely from registry IDs during
+`InterModEnqueueEvent` and calls `OreSpawnApi.enqueue`. The selector uses
+`orespawn:all_except_nether_end`, while an explicit disabled Overworld rule
+overrides it.
+
+The focused test requires public status `ACTIVE`, exact CakeWorld ownership in
+the world snapshot, provider revision `6001`, no selected template, immutable
+built JSON and exact selector/override declarations. The selector uses
+CakeWorld's registered `cakeworld:imc_point_probe` pattern with quantity `1`,
+so each of its 64 attempts is independent of spreading into neighbouring
+chunks. At fixed seed and chunk `512,512`, the ordinary test dimension contains
+exactly 57 Sprinkle outputs; Overworld, Nether and End each contain zero. Two
+independent fresh directories reproduced `57/0/0/0`. A finalizer restores the
+generated packaged provider and removes the test dimension after success or
+failure. The source provider is never mutated during parallel setup.
+
+The former exact selector total of `1,936` is retained only as retired
+historical evidence. That fixture used the spreading `orespawn:clusters`
+pattern, so a count in one chunk depended on whether neighbouring chunks had
+already generated. Identical seed and OreSpawn candidate produced totals of
+`1,936`, `1,891`, `1,976` and `2,054` under different fresh generation
+histories. The older `1,581` result had also changed when OreSpawn commit
+`1b71071` moved terrain replacement from `UNDERGROUND_ORES` to
+`LOCAL_MODIFICATIONS`, changing Minecraft's feature-indexed decoration RNG.
+Neither spreading total is an active deterministic assertion.
+
+Cluster behaviour is instead checked directly through OreSpawn's public
+compiled-pattern contract. With the former selector settings -- quantity `32`,
+spread `8`, vertical spread `4`, node size `4` and seed `1978` -- the audit must
+consume all 32 placements, keep every placement within the calculated squared
+distance boundary of `187`, and reproduce sorted-coordinate signature
+`13987560339079957851` (unsigned). The observed maximum squared distance is
+`81`.
+
+The same IMC fixture surveys an 8x8 Pantry grid for weighted hosts: at least
+1,000 deepslate-tag and 250 Stone outputs must appear at a ratio from 2.5:1
+through 3.75:1, with exact zero controls in Overworld, Nether and End. Both
+fresh selector runs observed `1,493/422`, a ratio of approximately `3.538:1`.
+The bounds test the declared 0.75/0.25 acceptance probabilities without
+treating one random outcome as a stable contract.
+
 ## Adding Content
 
 For a new rock:
@@ -70,9 +516,11 @@ For a new rock:
 For a new biome:
 
 1. Register it directly or use `OreSpawnBiomes.copyAndRegister`.
-2. Add it to a provider palette with weight, climate range, optional similar
+2. Register its Forge `BiomeDictionary` types during common setup if geology
+   or compatibility rules use dictionary names.
+3. Add it to a provider palette with weight, climate range, optional similar
    biomes, and surface materials.
-3. Decide whether missing comparison biomes are optional (`similar_biomes`) or
+4. Decide whether missing comparison biomes are optional (`similar_biomes`) or
    make the entry unavailable (`required_similar_biomes`).
 
 For a new fluid:
@@ -100,10 +548,40 @@ Set `-PorespawnBenchmarkDimension=nether` or `end` to exercise the other
 dimension profiles. Benchmark saves and logs are generated under `run/` and
 remain ignored.
 
+The published CurseMaven `4.0.16.118021` artifact, CurseForge file `8780769`,
+is byte-for-byte identical to the candidate from commit `4a9f944`. Those exact
+bytes completed the final post-maintenance three-run 81-chunk Sky benchmark at
+a median 35.394 ms/chunk, then allowed the GameTest harness to own shutdown.
+After publication, a fresh CurseMaven-resolved IMC run and a separate fresh
+full run passed all 274 required tests, saved every world, and exited Gradle
+normally. Earlier, a load-heavy attempt completed the benchmark but had one
+unrelated Confectioner's Cottage resident-availability timeout; a clean non-benchmark
+full run and the final combined rerun both passed that audit. The earlier
+accepted benchmark median of 35.838 ms/chunk remains historical timing
+evidence. These runs resolve the post-save `GameTestServer.onServerExit`
+null-pointer/hang without disguising the rejected timing result; benchmark
+completion alone is not sufficient if the harness does not also exit
+successfully.
+
 ## Current Proof Limits
 
 - Textures and sounds are placeholders borrowed from vanilla.
-- Copied biomes retain vanilla feature lists, mobs, structures, and effects.
-- There is no finished food, recipe, vegetation, structure, or progression
-  design yet.
-- The provider needs generated-world inspection and tuning before release.
+- Visual, audio, balance, accessibility, multiplayer, and family-play review
+  remain incomplete even where automated gameplay contracts are verified.
+- A few OreSpawn capabilities are explicitly shelved with evidence in the
+  showcase contract; they must not be presented as working examples.
+- OS-020 creation-editor acceptance still fails against the 4.0.12.118021
+  candidate (OreSpawn #269)
+  because its final validation rejected provider-owned namespaced geome IDs
+  that the provider schema and runtime accept.
+- The Sampler Platter currently proves explicit selection, augment mode,
+  `minecraft_only` declaration, `selected_namespaces`, namespace include and
+  exclude lists, optional/required similar-biome behavior, and all five live
+  region settings with fixed 128/256/512/1,024/2,048-block boundary evidence.
+  Its extreme formation, registered-output alias, three-layer flat-bedrock and
+  copied-world retrogen and minimum-preset formation cases are also automated.
+  The unrelated mod-biome pass-through fixture and deterministic formation
+  readability export are automated as well. Every labelled OreSpawn capability
+  has been attempted, so the Sampler umbrella is verified; cases the published
+  contract cannot support remain separately shelved with evidence and revisit
+  conditions.
