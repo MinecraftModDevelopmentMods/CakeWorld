@@ -128,7 +128,7 @@ update deliberately and test both behaviors.
 
 ### Current implementation
 
-Provider revision 55 builds both adventure templates from
+Provider revision 59 builds both adventure templates from
 `src/main/orespawn/provider.json` and the small
 `src/main/orespawn/basemetals-overlay.json`. The compatibility overlay keeps
 the ten currently enabled BaseMetals resources enabled, keeps Copper,
@@ -156,13 +156,21 @@ The automated integration scenario verifies:
 - enabled counterparts generate in edible Overworld, Nether, and End geology;
 - Copper, Antimony, and Bismuth remain present but non-generating.
 
+Against exact local OreSpawn candidate `4.0.12.118021`, provider revision 59
+passed the complete 274-test BaseMetals matrix on both a fresh world and the
+same saved world. The focused Starlight survey generated and retained 33
+natural Starsteel cells; the wider compatibility scan found 40. The natural
+Cupcake Bloom completed and retained its player Brick sentinel, all processing
+contracts remained green, independently attributable under-Lemonade Pearls
+were present, and the three-realm edible-integrity residual sets were empty.
+
 ### Thirteen-ore matrix
 
 | ID | BaseMetals identity | CakeWorld block and display name | Placement and compatibility notes |
 |---|---|---|---|
 | COMPAT-BM-001 | Cold-Iron; `basemetals:coldiron_ore` | Frosted Cold-Iron | Nether material with a cold frosting crust. Joins `forge:ores/coldiron`; retains Cold-Iron smelting, blasting, crushing, mining tier, and recipe roles. |
 | COMPAT-BM-002 | Adamantine; `basemetals:adamantine_ore` | Jawbreaker Adamantine | Rare, exceptionally hard Nether jawbreaker. Joins `forge:ores/adamantine`; retains Adamantine processing, hardness intent, and progression. |
-| COMPAT-BM-003 | Starsteel; `basemetals:starsteel_ore` | Starlight Starsteel | Verified optional End resource in Starlight Sugar Fields and Meringue geology. The canonical BaseMetals overlay restricts it to the End, uses sedimentary, metamorphic and intrusive host families, and weights Meringue Crust `4` and Rock-Candy Uplift `6` without relying on the currently shelved biome-filter seams. It joins `forge:ores/starsteel` and retains BaseMetals smelting, blasting, crushing and recipe-viewer progression. Fixed seed `5059928472718672684` measured exactly `0` Starsteel in `388,749` audited Starlight cells without BaseMetals and `15` naturally managed Starsteel blocks with BaseMetals; same-save reload retained the same `15`. The Sugar-Star Observatory contains no authored sample, so this is OreSpawn-attributed compatibility evidence rather than landmark decoration. |
+| COMPAT-BM-003 | Starsteel; `basemetals:starsteel_ore` | Starlight Starsteel | Verified optional End resource in Starlight Sugar Fields and Meringue geology. The revision-59 BaseMetals overlay restricts it to the End and `cakeworld:starlight_sugar_fields`, narrows placement to Y `0..112`, uses frequency `8`, accepts sedimentary, metamorphic and intrusive host families, and weights Meringue Crust `4` and Rock-Candy Uplift `6`. It joins `forge:ores/starsteel` and retains BaseMetals smelting, blasting, crushing and recipe-viewer progression. Against the exact local OreSpawn `4.0.12.118021` candidate, fixed seed `5059928472718672684` generated `33` natural Starsteel cells in the focused Starlight survey and retained them on same-save reload; the independent compatibility scan found `40`. The Sugar-Star Observatory contains no authored sample, so this is OreSpawn-attributed compatibility evidence rather than landmark decoration. |
 | COMPAT-BM-004 | Tin; `basemetals:tin_ore` | Silver-Dragée Tin | Overworld dragée-speckled ore. Joins `forge:ores/tin`; retains Tin smelting, blasting, crushing, and alloy recipe roles. |
 | COMPAT-BM-005 | Lead; `basemetals:lead_ore` | Liquorice Lead | Dense liquorice-striped ore. Joins `forge:ores/lead`; retains Lead processing and recipe roles. It is explicitly non-food. |
 | COMPAT-BM-006 | Zinc; `basemetals:zinc_ore` | Lemon-Drop Zinc | Bright lemon-drop crystal ore. Joins `forge:ores/zinc`; retains Zinc processing and alloy roles. |

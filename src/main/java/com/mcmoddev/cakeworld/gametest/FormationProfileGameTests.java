@@ -120,26 +120,26 @@ public final class FormationProfileGameTests {
 				"Active formation profile did not produce varied live geology: "
 						+ survey);
 		if ("minimum".equals(formationCase)) {
-			require(helper, survey.verticalTransitions == 32350
-						&& survey.horizontalTransitions == 1627
+			require(helper, survey.verticalTransitions == 32296
+						&& survey.horizontalTransitions == 1624
 						&& survey.rockCounts.size() == 8
 						&& survey.geomeCounts.size() == 14
-						&& survey.signature == -5967564796242673837L,
+						&& survey.signature == 6569562011636171901L,
 					"Fixed-seed minimum-preset sky_v1 signature drifted: "
 							+ survey);
 		} else if ("sky_v1".equals(expected)) {
-			require(helper, survey.verticalTransitions == 36515
-						&& survey.horizontalTransitions == 1176
+			require(helper, survey.verticalTransitions == 36517
+						&& survey.horizontalTransitions == 1184
 						&& survey.rockCounts.size() == 7
 						&& survey.geomeCounts.size() == 14
-						&& survey.signature == 2804912711855593311L,
+						&& survey.signature == 2491678091116701092L,
 					"Fixed-seed extreme sky_v1 signature drifted: " + survey);
 		} else {
-			require(helper, survey.verticalTransitions == 5393
-						&& survey.horizontalTransitions == 634
+			require(helper, survey.verticalTransitions == 5456
+						&& survey.horizontalTransitions == 643
 						&& survey.rockCounts.size() == 7
 						&& survey.geomeCounts.size() == 5
-						&& survey.signature == 6720209891956171365L,
+						&& survey.signature == -2892201397070962139L,
 					"Fixed-seed stable_layers signature drifted: " + survey);
 		}
 		LOGGER.info("CakeWorld formation survey algorithm={} case={} template={} columns={} samples={} verticalTransitions={} horizontalTransitions={} distinctRocks={} distinctGeomes={} rockCounts={} geomeCounts={} familyCounts={} signature={} elapsedMs={}",
@@ -445,7 +445,8 @@ public final class FormationProfileGameTests {
 					+ samplePoints + ", verticalTransitions="
 					+ verticalTransitions + ", horizontalTransitions="
 					+ horizontalTransitions + ", rocks=" + rockCounts
-					+ ", geomes=" + geomeCounts + "]";
+					+ ", geomes=" + geomeCounts + ", signature="
+					+ Long.toUnsignedString(signature) + "]";
 		}
 	}
 }

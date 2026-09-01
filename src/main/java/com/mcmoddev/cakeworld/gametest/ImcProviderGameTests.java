@@ -33,7 +33,12 @@ public final class ImcProviderGameTests {
 			ResourceKey.create(Registry.DIMENSION_REGISTRY,
 					new ResourceLocation("cakeworld", "sampler_pantry"));
 	private static final ChunkPos SURVEY_CHUNK = new ChunkPos(512, 512);
-	private static final int WEIGHTED_SURVEY_SIDE = 4;
+	private static final int SELECTOR_OUTPUT_BASELINE = 57;
+	private static final int WEIGHTED_SURVEY_SIDE = 8;
+	private static final int MIN_DEEPSLATE_SELECTIONS = 1000;
+	private static final int MIN_STONE_SELECTIONS = 250;
+	private static final double MIN_WEIGHTED_RATIO = 2.5D;
+	private static final double MAX_WEIGHTED_RATIO = 3.75D;
 	private static final Logger LOGGER = LogUtils.getLogger();
 
 	private ImcProviderGameTests() {
@@ -103,6 +108,7 @@ public final class ImcProviderGameTests {
 		JsonObject selector = selectorRule
 				.getAsJsonObject("dimension_selectors")
 				.getAsJsonObject("orespawn:all_except_nether_end");
+		JsonObject selectorPattern = selector.getAsJsonObject("pattern");
 		JsonObject overworldOverride = selectorRule
 				.getAsJsonObject("dimensions")
 				.getAsJsonObject("minecraft:overworld");
@@ -110,6 +116,9 @@ public final class ImcProviderGameTests {
 				&& selector.get("frequency").getAsDouble() == 64.0D
 				&& selector.get("min_y").getAsInt() == 32
 				&& selector.get("max_y").getAsInt() == 47
+				&& selector.get("quantity").getAsInt() == 1
+				&& "cakeworld:imc_point_probe".equals(
+						selectorPattern.get("type").getAsString())
 				&& selector.getAsJsonArray("host_blocks").size() == 1
 				&& !overworldOverride.get("enabled").getAsBoolean(),
 				"Selector or explicit Overworld override drifted");
@@ -168,7 +177,10 @@ public final class ImcProviderGameTests {
 				.getLevel(Level.NETHER), SURVEY_CHUNK, output);
 		int endOutputs = countBlock(helper.getLevel().getServer()
 				.getLevel(Level.END), SURVEY_CHUNK, output);
-		require(helper, pantryOutputs == 1581 && overworldOutputs == 0
+		// The selector uses the fixture's single-candidate point pattern so its
+		// exact result is independent of neighbouring chunk generation order.
+		require(helper, pantryOutputs == SELECTOR_OUTPUT_BASELINE
+				&& overworldOutputs == 0
 				&& netherOutputs == 0 && endOutputs == 0,
 				"Selector/explicit-dimension runtime boundary failed: pantry="
 						+ pantryOutputs + ", overworld=" + overworldOutputs
@@ -203,9 +215,12 @@ public final class ImcProviderGameTests {
 				.getLevel(Level.NETHER), SURVEY_CHUNK, weightedOutput);
 		int weightedEnd = countBlock(helper.getLevel().getServer()
 				.getLevel(Level.END), SURVEY_CHUNK, weightedOutput);
-		require(helper, deepslateSelections == 374
-				&& stoneSelections == 121
-				&& weightedRatio >= 2.5D && weightedRatio <= 3.5D
+		// Host weights are acceptance probabilities. Prove their distribution
+		// over a large sample instead of freezing one incidental RNG outcome.
+		require(helper, deepslateSelections >= MIN_DEEPSLATE_SELECTIONS
+				&& stoneSelections >= MIN_STONE_SELECTIONS
+				&& weightedRatio >= MIN_WEIGHTED_RATIO
+				&& weightedRatio <= MAX_WEIGHTED_RATIO
 				&& weightedOverworld == 0 && weightedNether == 0
 				&& weightedEnd == 0,
 				"Weighted host runtime boundary failed: deepslate="

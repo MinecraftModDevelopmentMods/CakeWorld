@@ -44,9 +44,9 @@ public final class ProviderOverrideGameTests {
 				"Provider-override test ran without a supported scenario");
 		JsonObject packaged = packagedProvider(helper);
 		require(helper,
-				packaged.get("provider_revision").getAsInt() == 55
+				packaged.get("provider_revision").getAsInt() == 59
 						&& packaged.getAsJsonObject("templates").size() == 3,
-				"Packaged provider is not the revision-55 three-template control");
+				"Packaged provider is not the revision-59 three-template control");
 
 		GeologyProfileView profile = OreSpawnApi.getActiveProfile(
 				helper.getLevel().getServer()).orElseThrow();

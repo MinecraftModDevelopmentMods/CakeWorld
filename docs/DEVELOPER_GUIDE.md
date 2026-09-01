@@ -23,12 +23,13 @@ not call back into CakeWorld.
 Only `zone.moddev.mc.orespawn.api` is a supported Java API. Other OreSpawn
 packages are internal.
 
-The development build resolves the published Minecraft 1.18.2 OreSpawn
-4.0.6.118021 release through CurseMaven. `gradle.properties` pins CurseForge project `245586`
-and file `8688546`, rather than reading a mutable sibling build directory. When
-testing a newer OreSpawn release, change the pinned file ID deliberately and
-repeat the compile, GameTest, fresh-world, save/reload, package, and client
-gates before treating earlier evidence as transferable.
+The normal development build resolves published Minecraft 1.18.2 OreSpawn
+4.0.16.118021 through CurseMaven. `gradle.properties` pins CurseForge project
+`245586` and file `8780769`, rather than reading a mutable sibling build
+directory. Release-candidate validation can still supply an explicit
+`-PcakeworldLocalOreSpawnJar=<path>` for an unreleased build. Do not treat
+compile success as a substitute for GameTest, fresh-world, same-save reload,
+package, and client evidence.
 
 ## Biomes
 
@@ -115,7 +116,7 @@ saved profile is never silently rewritten.
 `cakeworld:edible_world_basemetals` is generated from that same canonical
 profile with the optional thirteen-resource compatibility overlay. The third
 template, `cakeworld:sampler_platter`, is deliberately non-automatic and must
-be selected explicitly. Provider revision 55 retains its bounded
+be selected explicitly. Provider revision 59 retains its bounded
 diagnostic plot—Candy Plains augmenting the delegated vanilla source with
 `minecraft_only` scope, tiny regions, partial coverage, and a positive
 fallback weight—and adds two namespace-filter plots. Five labelled Overworld
@@ -152,12 +153,12 @@ then places allocation-free horizontal discs through OreSpawn's compiled
 hot-path contract. Standard OreSpawn weighted outputs give the deposit cells a
 `3:2:1` Mint-Crystal, Fizzy-Pearl and Rich-Sprinkle flavour mix.
 
-Run its isolated five-test fresh-world proof, including the formation survey
-and custom-pattern contract,
+Run its isolated six-test fresh-world proof, including biome filters, the
+formation survey, and custom-pattern contract,
 with:
 
 ```powershell
-./gradlew runGameTestServer -PcakeworldSamplerRuntime=true -PcakeworldSamplerRunDirectory=run-sampler-platter-local '-PcakeworldGameTestNamespaces=cakeworld_sampler,cakeworld_formation,cakeworld_layer_cake' -PcakeworldExpectedFormationAlgorithm=sky_v1
+./gradlew runGameTestServer -PcakeworldSamplerRuntime=true -PcakeworldSamplerRunDirectory=run-sampler-platter-local '-PcakeworldGameTestNamespaces=cakeworld_sampler,cakeworld_formation,cakeworld_layer_cake,cakeworld_sampler_biome_filters' -PcakeworldExpectedFormationAlgorithm=sky_v1
 ```
 
 The preparation task refuses to reuse a directory that already contains a
@@ -165,6 +166,29 @@ world-owned OreSpawn profile. To prove persistence against the same save, run
 the same command again with `-PcakeworldSamplerReuseWorld=true`. This reuse
 flag is intentionally opt-in so an ordinary diagnostic run cannot silently
 turn into reload evidence.
+
+The supported BaseMetals combination has a smaller four-test fresh/reload
+regression namespace covering all processing contracts, natural Starsteel in
+Starlight Sugar Fields, independently attributable under-Lemonade Pearls, and
+a complete Overworld Bloom Circle:
+
+```powershell
+./gradlew runGameTestServer -PcakeworldBaseMetalsRuntime=true -PcakeworldFreshWorldgenRuntime=true -PcakeworldBaseMetalsRunDirectory=run-basemetals-regression-local -PcakeworldGameTestNamespaces=cakeworld_basemetals_regression
+```
+
+Repeat the identical command against the same ignored directory for reload
+evidence. Provider revision 59 deliberately narrows Starsteel to Y `0..112`
+in Starlight Sugar Fields and raises Fizzy-Pearl frequency to `1.0`; these are
+adventure balance settings, not OreSpawn workarounds.
+
+The exact `4.0.12.118021` candidate gate also ran the complete 274-test suite
+four times: normal fresh and reload, then BaseMetals fresh and reload. All four
+runs passed and saved all three dimensions. The normal pair found `41/40`
+Fizzy Pearls with `13/13` independently attributable directly under Lemonade;
+the BaseMetals pair found `26/25` with `5/5` directly under Lemonade. The
+BaseMetals pair retained 33 natural focused Starlight Starsteel cells and the
+Cupcake Bloom player sentinel. Edible-world integrity reported empty residual
+sets in the Overworld, Nether and End in both profiles.
 
 The bounded retrogen proof uses a separate ignored directory and three explicit
 phases. Do not substitute a player world:
@@ -197,9 +221,9 @@ changes only the Sampler's five profile-wide formation controls to the released
 ```
 
 Repeat with `-PcakeworldSamplerReuseWorld=true` to verify the saved profile.
-Fixed seed `5059928472718672684` produces exact `32,350/1,627/8/14` vertical
+Fixed seed `5059928472718672684` produces exact `32,296/1,624/8/14` vertical
 transitions, horizontal transitions, distinct rocks and distinct geomes, with
-unsigned signature `12,479,179,277,466,877,779`. This is a labelled minimum
+unsigned signature `6,569,562,011,636,171,901`. This is a labelled minimum
 named-preset case, not a claim that it minimises every observed transition
 count or that presets can vary per geome.
 
@@ -268,6 +292,16 @@ settings are profile-wide:
 ./gradlew runGameTestServer -PcakeworldFreshWorldgenRuntime=true -PcakeworldFreshWorldgenRunDirectory=run-formation-stable-local -PcakeworldGameTestNamespaces=cakeworld_formation -PcakeworldExpectedFormationAlgorithm=stable_layers
 ```
 
+OreSpawn `4.0.16.118021` deliberately rebaselines these surveys. Commit
+`7c82ecc` classifies the highest occupied surface block rather than first-free
+air, and `b7090d7` gives generation and the public sampler the same direct
+quart-biome lookup. Fixed seed `5059928472718672684` now asserts exact
+vertical/horizontal transition counts and unsigned identity signatures of
+`36,517/1,184/2,491,678,091,116,701,092` for extreme,
+`32,296/1,624/6,569,562,011,636,171,901` for all-`tiny`, and
+`5,456/643/15,554,542,676,638,589,477` for stable layers. These remain exact
+drift detectors because the public sampler itself is deterministic.
+
 Append `-PcakeworldFormationVisualEvidence=true` to this command or either
 Sampler formation command to write a labelled PNG and text manifest under the
 isolated run directory's `formation-visual/` folder. The export samples only
@@ -294,8 +328,10 @@ The harness refuses an existing save by default. Pass
 `-PcakeworldEditorReuseWorld=true` only when deliberately reopening the same
 isolated acceptance directory.
 
-OS-020 is currently shelved against published OreSpawn 4.0.6.118021. The
-editor opens the auto-selected CakeWorld template, exposes the installed
+OS-020 remains blocked after an isolated acceptance run against the
+`4.0.12.118021` release candidate. The editor opened the auto-selected
+CakeWorld template,
+exposed the installed
 CakeWorld biome and material IDs, and keeps **Biomes & World Materials** plus
 **World Materials** available after switching to the no-strata **Pack
 Defaults** baseline. Applying CakeWorld or CakeWorld Sampler Platter is blocked
@@ -307,13 +343,13 @@ Invalid geome: cakeworld:cocoa_basin
 
 This is not a provider-runtime rejection. CakeWorld's packaged templates and
 OreSpawn's own complete provider example use namespaced geome keys, and the
-same released runtime bakes and generates them successfully. The released
-editor's `GeologyEditorSession` instead validates geome keys with the
+same candidate runtime bakes and generates them successfully. The candidate
+editor's `GeologyEditorSession` still validates geome keys with the
 unnamespaced-only expression `[a-z0-9_.-]+` in both its add and final-save
-paths. Do not rename CakeWorld's public geomes or substitute a locally patched
-OreSpawn JAR to make this acceptance pass.
+paths. This is tracked as OreSpawn #269. Do not rename CakeWorld's public
+geomes to make this acceptance pass.
 
-After a published OreSpawn fix, repeat the isolated UI path with seed
+After #269 is fixed, repeat the isolated UI path with seed
 `5059928472718672684`, create the world, inspect its
 `serverconfig/orespawn-worldgen.json`, and run the corresponding fixed-seed
 generation checks against a copy of that save. Until all three stages pass,
@@ -433,11 +469,39 @@ overrides it.
 
 The focused test requires public status `ACTIVE`, exact CakeWorld ownership in
 the world snapshot, provider revision `6001`, no selected template, immutable
-built JSON and exact selector/override declarations. At fixed seed and chunk
-`512,512`, the ordinary test dimension contains exactly 1,818 Sprinkle outputs;
-Overworld, Nether and End each contain zero. A finalizer restores the generated
-packaged provider and removes the test dimension after success or failure. The
-source provider is never mutated during parallel setup.
+built JSON and exact selector/override declarations. The selector uses
+CakeWorld's registered `cakeworld:imc_point_probe` pattern with quantity `1`,
+so each of its 64 attempts is independent of spreading into neighbouring
+chunks. At fixed seed and chunk `512,512`, the ordinary test dimension contains
+exactly 57 Sprinkle outputs; Overworld, Nether and End each contain zero. Two
+independent fresh directories reproduced `57/0/0/0`. A finalizer restores the
+generated packaged provider and removes the test dimension after success or
+failure. The source provider is never mutated during parallel setup.
+
+The former exact selector total of `1,936` is retained only as retired
+historical evidence. That fixture used the spreading `orespawn:clusters`
+pattern, so a count in one chunk depended on whether neighbouring chunks had
+already generated. Identical seed and OreSpawn candidate produced totals of
+`1,936`, `1,891`, `1,976` and `2,054` under different fresh generation
+histories. The older `1,581` result had also changed when OreSpawn commit
+`1b71071` moved terrain replacement from `UNDERGROUND_ORES` to
+`LOCAL_MODIFICATIONS`, changing Minecraft's feature-indexed decoration RNG.
+Neither spreading total is an active deterministic assertion.
+
+Cluster behaviour is instead checked directly through OreSpawn's public
+compiled-pattern contract. With the former selector settings -- quantity `32`,
+spread `8`, vertical spread `4`, node size `4` and seed `1978` -- the audit must
+consume all 32 placements, keep every placement within the calculated squared
+distance boundary of `187`, and reproduce sorted-coordinate signature
+`13987560339079957851` (unsigned). The observed maximum squared distance is
+`81`.
+
+The same IMC fixture surveys an 8x8 Pantry grid for weighted hosts: at least
+1,000 deepslate-tag and 250 Stone outputs must appear at a ratio from 2.5:1
+through 3.75:1, with exact zero controls in Overworld, Nether and End. Both
+fresh selector runs observed `1,493/422`, a ratio of approximately `3.538:1`.
+The bounds test the declared 0.75/0.25 acceptance probabilities without
+treating one random outcome as a stable contract.
 
 ## Adding Content
 
@@ -484,6 +548,21 @@ Set `-PorespawnBenchmarkDimension=nether` or `end` to exercise the other
 dimension profiles. Benchmark saves and logs are generated under `run/` and
 remain ignored.
 
+The published CurseMaven `4.0.16.118021` artifact, CurseForge file `8780769`,
+is byte-for-byte identical to the candidate from commit `4a9f944`. Those exact
+bytes completed the final post-maintenance three-run 81-chunk Sky benchmark at
+a median 35.394 ms/chunk, then allowed the GameTest harness to own shutdown.
+After publication, a fresh CurseMaven-resolved IMC run and a separate fresh
+full run passed all 274 required tests, saved every world, and exited Gradle
+normally. Earlier, a load-heavy attempt completed the benchmark but had one
+unrelated Confectioner's Cottage resident-availability timeout; a clean non-benchmark
+full run and the final combined rerun both passed that audit. The earlier
+accepted benchmark median of 35.838 ms/chunk remains historical timing
+evidence. These runs resolve the post-save `GameTestServer.onServerExit`
+null-pointer/hang without disguising the rejected timing result; benchmark
+completion alone is not sufficient if the harness does not also exit
+successfully.
+
 ## Current Proof Limits
 
 - Textures and sounds are placeholders borrowed from vanilla.
@@ -491,9 +570,10 @@ remain ignored.
   remain incomplete even where automated gameplay contracts are verified.
 - A few OreSpawn capabilities are explicitly shelved with evidence in the
   showcase contract; they must not be presented as working examples.
-- OS-020 creation-editor acceptance is blocked in released OreSpawn
-  4.0.6.118021 because its final validation rejects provider-owned namespaced
-  geome IDs that the provider schema and runtime accept.
+- OS-020 creation-editor acceptance still fails against the 4.0.12.118021
+  candidate (OreSpawn #269)
+  because its final validation rejected provider-owned namespaced geome IDs
+  that the provider schema and runtime accept.
 - The Sampler Platter currently proves explicit selection, augment mode,
   `minecraft_only` declaration, `selected_namespaces`, namespace include and
   exclude lists, optional/required similar-biome behavior, and all five live

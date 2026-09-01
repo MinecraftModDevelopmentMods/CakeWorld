@@ -30,9 +30,7 @@ public record CookbookLayout(int left, int top, int width, int height,
 		int bookHeight = Math.min(MAX_HEIGHT,
 				Math.max(1, screenHeight - SCREEN_MARGIN * 2));
 		int columns;
-		if (bookWidth >= 360) {
-			columns = Math.min(tabCount, 6);
-		} else if (bookWidth >= 270) {
+		if (bookWidth >= 270) {
 			columns = Math.min(tabCount, 3);
 		} else if (bookWidth >= 150) {
 			columns = Math.min(tabCount, 2);

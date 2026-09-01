@@ -43,7 +43,7 @@ and many visual and audio assets deliberately reuse vanilla placeholders.
 - Minecraft 1.18.2
 - Forge 40.3.0 or compatible Forge 40 build
 - Java 17
-- MMD OreSpawn 4.0.6.118021 or a newer compatible 4.x release for Minecraft
+- MMD OreSpawn 4.0.16.118021 or a newer compatible 4.x release for Minecraft
   1.18.2
 
 ## Installation
@@ -56,7 +56,7 @@ and many visual and audio assets deliberately reuse vanilla placeholders.
 ## Build
 
 CakeWorld pins the published MMD OreSpawn release through CurseMaven using
-CurseForge project `245586`, file `8688546`. A sibling OreSpawn checkout or
+CurseForge project `245586`, file `8780769`. A sibling OreSpawn checkout or
 locally built JAR is not required.
 
 ```powershell
@@ -94,21 +94,20 @@ with:
 ```
 
 The harness refuses to reuse an existing save unless
-`-PcakeworldEditorReuseWorld=true` is explicit. Published OreSpawn
-4.0.6.118021 currently prevents CakeWorld from completing this acceptance:
-its editor displays CakeWorld's biome/material pages, including when strata
-are disabled, but rejects the provider's valid namespaced geomes on Done (for
-example `Invalid geome: cakeworld:cocoa_basin`). OS-020 is therefore shelved
-until a published OreSpawn version makes editor validation match the provider
-schema/runtime. Do not work around the defect by renaming CakeWorld's public
-geomes or using a locally patched dependency.
+`-PcakeworldEditorReuseWorld=true` is explicit. The latest editor acceptance
+run against the `4.0.12.118021` release candidate displayed CakeWorld's
+biome/material pages but rejected the provider's valid namespaced geomes on
+Done (for example `Invalid geome: cakeworld:cocoa_basin`). OS-020 remains
+blocked by OreSpawn #269 until the UI can create the fixed-seed world and its
+saved profile plus generated output pass. Do not work around the defect by
+renaming CakeWorld's public geomes.
 
 To run the currently implemented Sampler biome plots, profile-wide extreme
 `sky_v1` formation comparison, installed-output alias and three-layer
 flat-bedrock proof against a fresh fixed-seed world:
 
 ```powershell
-./gradlew runGameTestServer -PcakeworldSamplerRuntime=true -PcakeworldSamplerRunDirectory=run-sampler-platter-local '-PcakeworldGameTestNamespaces=cakeworld_sampler,cakeworld_formation' -PcakeworldExpectedFormationAlgorithm=sky_v1
+./gradlew runGameTestServer -PcakeworldSamplerRuntime=true -PcakeworldSamplerRunDirectory=run-sampler-platter-local '-PcakeworldGameTestNamespaces=cakeworld_sampler,cakeworld_formation,cakeworld_layer_cake,cakeworld_sampler_biome_filters' -PcakeworldExpectedFormationAlgorithm=sky_v1
 ```
 
 The task refuses a directory that already owns a saved world profile. Pass

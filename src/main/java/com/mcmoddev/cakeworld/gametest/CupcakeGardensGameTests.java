@@ -315,7 +315,7 @@ public final class CupcakeGardensGameTests {
 								.feature()
 								== CupcakeBloomCircleFeature.FEATURE
 						&& CupcakeBloomCircleFeature
-								.AVERAGE_CHUNKS_PER_ATTEMPT == 10
+								.AVERAGE_CHUNKS_PER_ATTEMPT == 6
 						&& CupcakeBloomCircleFeature
 								.MAX_TERRAIN_RELIEF == 4
 						&& CupcakeBloomCircleFeature

@@ -42,8 +42,8 @@ public final class CandyCaneHoodooGardenFeature
 		extends Feature<NoneFeatureConfiguration> {
 	public static final ResourceLocation ID =
 			id("candy_cane_hoodoo_garden");
-	public static final int AVERAGE_CHUNKS_PER_ATTEMPT = 14;
-	public static final int MAX_TERRAIN_RELIEF = 12;
+	public static final int AVERAGE_CHUNKS_PER_ATTEMPT = 4;
+	public static final int MAX_TERRAIN_RELIEF = 24;
 	private static final int SAFE_SITE_MIN_OFFSET = 5;
 	private static final int SAFE_SITE_WIDTH = 6;
 	public static final int PLACEMENT_SALT = 1978071;

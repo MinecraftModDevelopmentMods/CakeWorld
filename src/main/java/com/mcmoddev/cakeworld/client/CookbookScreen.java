@@ -36,11 +36,11 @@ public final class CookbookScreen extends Screen {
 		fill(poseStack, layout.left(), layout.top(),
 				layout.left() + layout.width(),
 				layout.top() + layout.height(), PAGE_COLOUR);
-		fill(poseStack, layout.left() + layout.width() / 2 - 1,
-				layout.top() + 8,
+		fill(poseStack, layout.left() + layout.width() / 2,
+				layout.pageTop() - 2,
 				layout.left() + layout.width() / 2 + 1,
-				layout.top() + layout.height() - 8, 0x55351D10);
-		drawCenteredString(poseStack, font, title, width / 2,
+				layout.footerTop() - 4, 0x22351D10);
+		drawCrispCentered(poseStack, title, width / 2,
 				layout.top() + 9, INK_COLOUR);
 
 		DiscoveryType[] tabs = DiscoveryType.values();
@@ -52,11 +52,11 @@ public final class CookbookScreen extends Screen {
 			fill(poseStack, tabLeft, tabTop, tabRight - 1,
 					tabTop + CookbookLayout.TAB_HEIGHT,
 					tabs[i] == selected ? ACTIVE_TAB_COLOUR : TAB_COLOUR);
-			drawCenteredString(poseStack, font,
+			drawCrispCentered(poseStack,
 					new TranslatableComponent(tabs[i].translationKey()),
 					(tabLeft + tabRight) / 2, tabTop + 5, INK_COLOUR);
 			if (summary.hasStamp(tabs[i])) {
-				drawString(poseStack, font, "+", tabRight - 8,
+				drawCrisp(poseStack, "+", tabRight - 8,
 						tabTop + 5, INK_COLOUR);
 			}
 			if (tabs[i] == selected) {
@@ -70,14 +70,14 @@ public final class CookbookScreen extends Screen {
 
 		List<ResourceLocation> pages =
 				new ArrayList<>(ClientCookbookState.get(selected));
-		drawCenteredString(poseStack, font,
+		drawCrispCentered(poseStack,
 				new TranslatableComponent(
 						"screen.cakeworld.cookbook.selected_tab",
 						new TranslatableComponent(selected.translationKey()),
 						pages.size()),
 				width / 2, layout.headingTop(), INK_COLOUR);
 		if (pages.isEmpty()) {
-			drawCenteredString(poseStack, font,
+			drawCrispCentered(poseStack,
 					new TranslatableComponent("screen.cakeworld.cookbook.empty"),
 					width / 2, layout.pageTop() + 8, 0xFF7A5735);
 		} else {
@@ -89,26 +89,26 @@ public final class CookbookScreen extends Screen {
 				int columnWidth = layout.width() / layout.pageColumns();
 				int x = layout.left() + 14 + column * columnWidth;
 				int y = layout.pageTop() + row * 19;
-				drawString(poseStack, font,
+				drawCrisp(poseStack,
 						fitPageName(pageName(pages.get(i)),
 								columnWidth - 24),
 						x, y,
 						INK_COLOUR);
 			}
 		}
-		drawCenteredString(poseStack, font,
+		drawCrispCentered(poseStack,
 				new TranslatableComponent(
 						"screen.cakeworld.cookbook.summary",
 						summary.totalPages(), summary.stamps(),
 						summary.stampGoal()),
 				width / 2, layout.footerTop(), INK_COLOUR);
 		if (summary.firstEditionComplete()) {
-			drawCenteredString(poseStack, font,
+			drawCrispCentered(poseStack,
 					new TranslatableComponent(
 							"screen.cakeworld.cookbook.first_edition_complete"),
 					width / 2, layout.footerTop() + 14, 0xFF9A5A00);
 		} else {
-			drawCenteredString(poseStack, font,
+			drawCrispCentered(poseStack,
 					new TranslatableComponent(
 							"screen.cakeworld.cookbook.controls"),
 					width / 2, layout.footerTop() + 14, 0xFF7A5735);
@@ -209,6 +209,17 @@ public final class CookbookScreen extends Screen {
 		String suffix = "...";
 		return font.plainSubstrByWidth(name,
 				Math.max(0, maximumWidth - font.width(suffix))) + suffix;
+	}
+
+	private void drawCrisp(PoseStack poseStack, String text,
+			float x, float y, int colour) {
+		font.draw(poseStack, text, x, y, colour);
+	}
+
+	private void drawCrispCentered(PoseStack poseStack, Component text,
+			int centreX, int y, int colour) {
+		font.draw(poseStack, text, centreX - font.width(text) / 2.0F,
+				y, colour);
 	}
 
 	private static String pageName(ResourceLocation id) {

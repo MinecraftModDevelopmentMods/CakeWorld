@@ -1,6 +1,7 @@
 package com.mcmoddev.cakeworld.init;
 
 import java.util.Objects;
+import java.util.Set;
 
 import com.mcmoddev.cakeworld.CakeWorld;
 import zone.moddev.mc.orespawn.api.OreSpawnBiomes;
@@ -27,6 +28,55 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 public final class CakeWorldBiomes {
+	private static final Set<ResourceKey<PlacedFeature>>
+			VANILLA_OVERWORLD_INEDIBLE_FEATURES = Set.of(
+					placedFeatureKey("ore_dirt"),
+					placedFeatureKey("ore_gravel"),
+					placedFeatureKey("ore_granite_upper"),
+					placedFeatureKey("ore_granite_lower"),
+					placedFeatureKey("ore_diorite_upper"),
+					placedFeatureKey("ore_diorite_lower"),
+					placedFeatureKey("ore_andesite_upper"),
+					placedFeatureKey("ore_andesite_lower"),
+					placedFeatureKey("ore_tuff"),
+					placedFeatureKey("ore_coal_upper"),
+					placedFeatureKey("ore_coal_lower"),
+					placedFeatureKey("ore_iron_upper"),
+					placedFeatureKey("ore_iron_middle"),
+					placedFeatureKey("ore_iron_small"),
+					placedFeatureKey("ore_gold_extra"),
+					placedFeatureKey("ore_gold"),
+					placedFeatureKey("ore_gold_lower"),
+					placedFeatureKey("ore_redstone"),
+					placedFeatureKey("ore_redstone_lower"),
+					placedFeatureKey("ore_diamond"),
+					placedFeatureKey("ore_diamond_large"),
+					placedFeatureKey("ore_diamond_buried"),
+					placedFeatureKey("ore_lapis"),
+					placedFeatureKey("ore_lapis_buried"),
+					placedFeatureKey("ore_infested"),
+					placedFeatureKey("ore_emerald"),
+					placedFeatureKey("ore_copper"),
+					placedFeatureKey("ore_copper_large"),
+					placedFeatureKey("ore_clay"),
+					placedFeatureKey("disk_sand"),
+					placedFeatureKey("disk_gravel"),
+					placedFeatureKey("disk_clay"),
+					placedFeatureKey("underwater_magma"),
+					placedFeatureKey("amethyst_geode"));
+	private static final Set<ResourceKey<PlacedFeature>>
+			VANILLA_NETHER_INEDIBLE_FEATURES = Set.of(
+					placedFeatureKey("delta"),
+					placedFeatureKey("ore_magma"),
+					placedFeatureKey("ore_soul_sand"),
+					placedFeatureKey("ore_gold_deltas"),
+					placedFeatureKey("ore_quartz_deltas"),
+					placedFeatureKey("ore_gold_nether"),
+					placedFeatureKey("ore_quartz_nether"),
+					placedFeatureKey("ore_gravel_nether"),
+					placedFeatureKey("ore_blackstone"),
+					placedFeatureKey("ore_ancient_debris_large"),
+					placedFeatureKey("ore_debris_small"));
 	private static final ResourceKey<PlacedFeature>
 			SMALL_BASALT_COLUMNS = placedFeatureKey(
 					"small_basalt_columns");
@@ -37,10 +87,6 @@ public final class CakeWorldBiomes {
 			BASALT_BLOBS = placedFeatureKey("basalt_blobs");
 	private static final ResourceKey<PlacedFeature>
 			BLACKSTONE_BLOBS = placedFeatureKey("blackstone_blobs");
-	private static final ResourceKey<PlacedFeature>
-			ORE_GRAVEL_NETHER = placedFeatureKey("ore_gravel_nether");
-	private static final ResourceKey<PlacedFeature>
-			ORE_SOUL_SAND = placedFeatureKey("ore_soul_sand");
 	private static final DeferredRegister<Biome> BIOMES =
 			DeferredRegister.create(ForgeRegistries.BIOMES, CakeWorld.MODID);
 
@@ -329,7 +375,10 @@ public final class CakeWorldBiomes {
 			float temperature, float downfall) {
 		return OreSpawnBiomes.copyAndRegister(BIOMES, name,
 				() -> vanilla(vanilla),
-				builder -> builder.temperature(temperature).downfall(downfall));
+				builder -> builder.temperature(temperature).downfall(downfall)
+						.generationSettings(
+								withoutVanillaOverworldInedibleFeatures(
+										vanilla(vanilla))));
 	}
 
 	private static RegistryObject<Biome> hearthlands() {
@@ -374,6 +423,9 @@ public final class CakeWorldBiomes {
 				builder -> builder
 						.temperature(2.0F)
 						.downfall(0.0F)
+						.generationSettings(
+								withoutVanillaOverworldInedibleFeatures(
+										vanilla("desert")))
 						.specialEffects(
 								withSherbetEffects(
 										vanilla("desert")
@@ -387,6 +439,9 @@ public final class CakeWorldBiomes {
 				builder -> builder
 						.temperature(2.0F)
 						.downfall(0.0F)
+						.generationSettings(
+								withoutVanillaOverworldInedibleFeatures(
+										vanilla("badlands")))
 						.specialEffects(
 								withCandyCaneBadlandsEffects(
 										vanilla("badlands")
@@ -400,6 +455,9 @@ public final class CakeWorldBiomes {
 				builder -> builder
 						.temperature(-0.3F)
 						.downfall(0.5F)
+						.generationSettings(
+								withoutVanillaOverworldInedibleFeatures(
+										vanilla("jagged_peaks")))
 						.specialEffects(
 								withMarshmallowPeaksEffects(
 										vanilla("jagged_peaks")
@@ -413,6 +471,9 @@ public final class CakeWorldBiomes {
 				builder -> builder
 						.temperature(-0.5F)
 						.downfall(0.4F)
+						.generationSettings(
+								withoutVanillaOverworldInedibleFeatures(
+										vanilla("snowy_plains")))
 						.specialEffects(
 								withIceCreamTundraEffects(
 										vanilla("snowy_plains")
@@ -426,6 +487,9 @@ public final class CakeWorldBiomes {
 				builder -> builder
 						.temperature(0.9F)
 						.downfall(0.1F)
+						.generationSettings(
+								withoutVanillaOverworldInedibleFeatures(
+										vanilla("savanna_plateau")))
 						.specialEffects(
 								withWafflePlateauEffects(
 										vanilla("savanna_plateau")
@@ -439,6 +503,9 @@ public final class CakeWorldBiomes {
 				builder -> builder
 						.temperature(0.75F)
 						.downfall(0.8F)
+						.generationSettings(
+								withoutVanillaOverworldInedibleFeatures(
+										vanilla("sunflower_plains")))
 						.specialEffects(
 								withCupcakeGardenEffects(
 										vanilla("sunflower_plains")
@@ -452,6 +519,9 @@ public final class CakeWorldBiomes {
 				builder -> builder
 						.temperature(0.7F)
 						.downfall(0.8F)
+						.generationSettings(
+								withoutVanillaOverworldInedibleFeatures(
+										vanilla("dark_forest")))
 						.specialEffects(
 								withLiquoriceDarkwoodEffects(
 										vanilla("dark_forest")
@@ -501,6 +571,9 @@ public final class CakeWorldBiomes {
 				builder -> builder
 						.temperature(0.8F)
 						.downfall(0.4F)
+						.generationSettings(
+								withoutVanillaOverworldInedibleFeatures(
+										vanilla("dripstone_caves")))
 						.specialEffects(
 								effectsBuilder(
 										vanilla("dripstone_caves")
@@ -525,6 +598,9 @@ public final class CakeWorldBiomes {
 				builder -> builder
 						.temperature(0.7F)
 						.downfall(0.9F)
+						.generationSettings(
+								withoutVanillaOverworldInedibleFeatures(
+										vanilla("lush_caves")))
 						.specialEffects(
 								effectsBuilder(
 										vanilla("lush_caves")
@@ -550,6 +626,9 @@ public final class CakeWorldBiomes {
 				builder -> builder
 						.temperature(0.6F)
 						.downfall(0.5F)
+						.generationSettings(
+								withoutVanillaOverworldInedibleFeatures(
+										vanilla("dripstone_caves")))
 						.specialEffects(
 								effectsBuilder(
 										vanilla("dripstone_caves")
@@ -951,6 +1030,9 @@ public final class CakeWorldBiomes {
 				builder -> builder
 						.temperature(temperature)
 						.downfall(downfall)
+						.generationSettings(
+								withoutVanillaOverworldInedibleFeatures(
+										vanilla(vanilla)))
 						.specialEffects(
 								withAmbientAdditions(
 										vanilla(vanilla)
@@ -1106,22 +1188,40 @@ public final class CakeWorldBiomes {
 
 	private static BiomeGenerationSettings withoutVanillaBasaltDeltaFeatures(
 			Biome source) {
-		return withoutVanillaNetherFeatures(source, true, false);
+		return withoutVanillaNetherFeatures(source, true);
+	}
+
+	private static BiomeGenerationSettings
+			withoutVanillaOverworldInedibleFeatures(Biome source) {
+		return withoutPlacedFeatures(source,
+				VANILLA_OVERWORLD_INEDIBLE_FEATURES, true);
 	}
 
 	private static BiomeGenerationSettings withoutVanillaNetherGravel(
 			Biome source) {
-		return withoutVanillaNetherFeatures(source, false, false);
+		return withoutVanillaNetherFeatures(source, false);
 	}
 
 	private static BiomeGenerationSettings withoutVanillaSoulValleyTerrain(
 			Biome source) {
-		return withoutVanillaNetherFeatures(source, false, true);
+		return withoutVanillaNetherFeatures(source, false);
 	}
 
 	private static BiomeGenerationSettings withoutVanillaNetherFeatures(
-			Biome source, boolean removeBasaltFeatures,
-			boolean removeSoulSandOre) {
+			Biome source, boolean removeBasaltFeatures) {
+		Set<ResourceKey<PlacedFeature>> removals =
+				new java.util.HashSet<>(VANILLA_NETHER_INEDIBLE_FEATURES);
+		if (removeBasaltFeatures) {
+			removals.addAll(Set.of(SMALL_BASALT_COLUMNS,
+					LARGE_BASALT_COLUMNS, BASALT_BLOBS,
+					BLACKSTONE_BLOBS));
+		}
+		return withoutPlacedFeatures(source, removals, false);
+	}
+
+	private static BiomeGenerationSettings withoutPlacedFeatures(
+			Biome source, Set<ResourceKey<PlacedFeature>> removals,
+			boolean removeVanillaTrees) {
 		BiomeGenerationSettings sourceSettings =
 				source.getGenerationSettings();
 		BiomeGenerationSettings.Builder builder =
@@ -1138,19 +1238,23 @@ public final class CakeWorldBiomes {
 			HolderSet<PlacedFeature> features =
 					sourceSettings.features().get(step);
 			for (Holder<PlacedFeature> feature : features) {
-				boolean basaltSource = feature.is(SMALL_BASALT_COLUMNS)
-						|| feature.is(LARGE_BASALT_COLUMNS)
-						|| feature.is(BASALT_BLOBS)
-						|| feature.is(BLACKSTONE_BLOBS);
-				if (!feature.is(ORE_GRAVEL_NETHER)
-						&& !(removeSoulSandOre
-								&& feature.is(ORE_SOUL_SAND))
-						&& !(removeBasaltFeatures && basaltSource)) {
+				if (removals.stream().noneMatch(feature::is)
+						&& !(removeVanillaTrees
+								&& isVanillaTreeFeature(feature))) {
 					builder.addFeature(step, feature);
 				}
 			}
 		}
 		return builder.build();
+	}
+
+	private static boolean isVanillaTreeFeature(
+			Holder<PlacedFeature> feature) {
+		return feature.unwrapKey().map(ResourceKey::location)
+				.filter(id -> "minecraft".equals(id.getNamespace()))
+				.map(ResourceLocation::getPath)
+				.filter(path -> path.startsWith("trees_"))
+				.isPresent();
 	}
 
 	private static ResourceKey<PlacedFeature> placedFeatureKey(

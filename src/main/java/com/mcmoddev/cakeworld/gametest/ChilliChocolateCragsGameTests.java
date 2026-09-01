@@ -298,17 +298,17 @@ public final class ChilliChocolateCragsGameTests {
 					.is(Blocks.BRICKS);
 			NaturalAudit audit = audit(
 					level, foundChunk, 4, found.centre());
-			LOGGER.info("Chilli-Chocolate Crags audit: anchorChunk={}, centre={}, rotation={}, biomeSamples={}, chilliRock={}, fudgeRock={}, hotFudge={}, netherQuartz={}, netherGold={}, ancientDebris={}, plan={}, brickSentinel={}, sentinel={}",
+			LOGGER.info("Chilli-Chocolate Crags audit: anchorChunk={}, centre={}, rotation={}, biomeSamples={}, chilliRock={}, fudgeRock={}, hotFudge={}, vanillaQuartz={}, fudgeGold={}, ancientNougat={}, plan={}, brickSentinel={}, sentinel={}",
 					anchor, found.centre(), found.rotation(),
 					audit.biomeSamples(), audit.chilliRock(),
 					audit.fudgeRock(), audit.hotFudge(),
-					audit.netherQuartz(), audit.netherGold(),
-					audit.ancientDebris(), plan,
+					audit.vanillaQuartz(), audit.fudgeGold(),
+					audit.ancientNougat(), plan,
 					brickSentinel, sentinel);
 			require(helper, audit.biomeSamples() >= 128
 							&& audit.chilliRock() > 0
 							&& audit.fudgeRock() > 0
-							&& audit.netherQuartz() + audit.netherGold() > 0
+							&& audit.vanillaQuartz() + audit.fudgeGold() > 0
 							&& plan.complete(brickSentinel),
 					"Natural Crags lost terrain, progression ores or their complete Prospect: "
 							+ audit + " / " + plan);
@@ -548,9 +548,9 @@ public final class ChilliChocolateCragsGameTests {
 		int chilliRock = 0;
 		int fudgeRock = 0;
 		int hotFudge = 0;
-		int netherQuartz = 0;
-		int netherGold = 0;
-		int ancientDebris = 0;
+		int vanillaQuartz = 0;
+		int fudgeGold = 0;
+		int ancientNougat = 0;
 		BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
 		for (int chunkX = anchor.x - radius;
 				chunkX <= anchor.x + radius; chunkX++) {
@@ -578,12 +578,12 @@ public final class ChilliChocolateCragsGameTests {
 								fudgeRock++;
 							} else if (state.is(CakeWorldFluids.HOT_FUDGE_BLOCK.get())) {
 								hotFudge++;
-							} else if (state.is(Blocks.NETHER_QUARTZ_ORE)) {
-								netherQuartz++;
-							} else if (state.is(Blocks.NETHER_GOLD_ORE)) {
-								netherGold++;
-							} else if (state.is(Blocks.ANCIENT_DEBRIS)) {
-								ancientDebris++;
+							} else if (state.is(CakeWorldBlocks.VANILLA_QUARTZ.get())) {
+								vanillaQuartz++;
+							} else if (state.is(CakeWorldBlocks.FUDGE_GOLD.get())) {
+								fudgeGold++;
+							} else if (state.is(CakeWorldBlocks.ANCIENT_NOUGAT.get())) {
+								ancientNougat++;
 							}
 						}
 					}
@@ -591,7 +591,7 @@ public final class ChilliChocolateCragsGameTests {
 			}
 		}
 		return new NaturalAudit(biomeSamples, chilliRock, fudgeRock,
-				hotFudge, netherQuartz, netherGold, ancientDebris);
+				hotFudge, vanillaQuartz, fudgeGold, ancientNougat);
 	}
 
 	private static boolean nearProspect(BlockPos position, BlockPos centre) {
@@ -732,7 +732,7 @@ public final class ChilliChocolateCragsGameTests {
 	}
 
 	private record NaturalAudit(int biomeSamples, int chilliRock,
-			int fudgeRock, int hotFudge, int netherQuartz,
-			int netherGold, int ancientDebris) {
+			int fudgeRock, int hotFudge, int vanillaQuartz,
+			int fudgeGold, int ancientNougat) {
 	}
 }

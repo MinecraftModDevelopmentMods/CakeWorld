@@ -289,7 +289,9 @@ public final class BurntToffeeFoundryPalette {
 	}
 
 	private static BlockState themedState(BlockState current) {
-		if (current.is(Blocks.BLACKSTONE)) {
+		if (current.is(Blocks.BLACKSTONE)
+				|| current.is(Blocks.NETHERRACK)
+				|| current.is(Blocks.MAGMA_BLOCK)) {
 			return CakeWorldBlocks.BURNT_SUGAR_ROCK
 					.get().defaultBlockState();
 		}

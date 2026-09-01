@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "provider_modid": "cakeworld",
-  "provider_revision": 55,
+  "provider_revision": 59,
   "templates": {
     "cakeworld:edible_world": {
       "name_key": "template.cakeworld.edible_world",
@@ -538,7 +538,7 @@
                 "enabled": true,
                 "min_y": -48,
                 "max_y": 80,
-                "frequency": 0.35,
+                "frequency": 1.0,
                 "quantity": 4,
                 "pattern": {
                   "type": "orespawn:underfluids",
@@ -557,6 +557,303 @@
                 "geomes": {
                   "cakeworld:wafer_shelf": 3.0
                 }
+              }
+            }
+          },
+          "cakeworld:ore/cocoa_coal": {
+            "block": "cakeworld:cocoa_coal",
+            "enabled": true,
+            "source_mod": "cakeworld",
+            "retrogen": false,
+            "dimensions": {
+              "minecraft:overworld": {
+                "enabled": true,
+                "min_y": 0,
+                "max_y": 192,
+                "frequency": 12.0,
+                "quantity": 10,
+                "pattern": {
+                  "type": "orespawn:default",
+                  "settings": {
+                    "spread": 5,
+                    "vertical_spread": 3,
+                    "node_size": 4,
+                    "length": 10
+                  }
+                },
+                "height_distribution": "uniform_bottom_triangle",
+                "discard_chance_on_air_exposure": 0.0,
+                "host_tags": ["cakeworld:edible_ore_hosts"]
+              }
+            }
+          },
+          "cakeworld:ore/iron_wafer": {
+            "block": "cakeworld:iron_wafer",
+            "enabled": true,
+            "source_mod": "cakeworld",
+            "retrogen": false,
+            "dimensions": {
+              "minecraft:overworld": {
+                "enabled": true,
+                "min_y": -64,
+                "max_y": 256,
+                "frequency": 10.0,
+                "quantity": 8,
+                "pattern": {
+                  "type": "orespawn:default",
+                  "settings": {
+                    "spread": 4,
+                    "vertical_spread": 3,
+                    "node_size": 4,
+                    "length": 8
+                  }
+                },
+                "height_distribution": "triangle",
+                "discard_chance_on_air_exposure": 0.0,
+                "host_tags": ["cakeworld:edible_ore_hosts"]
+              }
+            }
+          },
+          "cakeworld:ore/copper_caramel": {
+            "block": "cakeworld:copper_caramel",
+            "enabled": true,
+            "source_mod": "cakeworld",
+            "retrogen": false,
+            "dimensions": {
+              "minecraft:overworld": {
+                "enabled": true,
+                "min_y": -16,
+                "max_y": 112,
+                "frequency": 8.0,
+                "quantity": 10,
+                "pattern": {
+                  "type": "orespawn:default",
+                  "settings": {
+                    "spread": 5,
+                    "vertical_spread": 3,
+                    "node_size": 4,
+                    "length": 10
+                  }
+                },
+                "height_distribution": "triangle",
+                "discard_chance_on_air_exposure": 0.0,
+                "host_tags": ["cakeworld:edible_ore_hosts"]
+              }
+            }
+          },
+          "cakeworld:ore/honeycomb_gold": {
+            "block": "cakeworld:honeycomb_gold",
+            "enabled": true,
+            "source_mod": "cakeworld",
+            "retrogen": false,
+            "dimensions": {
+              "minecraft:overworld": {
+                "enabled": true,
+                "min_y": -64,
+                "max_y": 32,
+                "frequency": 4.0,
+                "quantity": 7,
+                "pattern": {
+                  "type": "orespawn:default",
+                  "settings": {
+                    "spread": 4,
+                    "vertical_spread": 3,
+                    "node_size": 3,
+                    "length": 7
+                  }
+                },
+                "height_distribution": "bottom_triangle",
+                "discard_chance_on_air_exposure": 0.5,
+                "host_tags": ["cakeworld:edible_ore_hosts"]
+              }
+            }
+          },
+          "cakeworld:ore/raspberry_redstone": {
+            "block": "cakeworld:raspberry_redstone",
+            "enabled": true,
+            "source_mod": "cakeworld",
+            "retrogen": false,
+            "dimensions": {
+              "minecraft:overworld": {
+                "enabled": true,
+                "min_y": -64,
+                "max_y": 16,
+                "frequency": 8.0,
+                "quantity": 8,
+                "pattern": {
+                  "type": "orespawn:default",
+                  "settings": {
+                    "spread": 4,
+                    "vertical_spread": 3,
+                    "node_size": 4,
+                    "length": 8
+                  }
+                },
+                "height_distribution": "bottom_triangle",
+                "discard_chance_on_air_exposure": 0.0,
+                "host_tags": ["cakeworld:edible_ore_hosts"]
+              }
+            }
+          },
+          "cakeworld:ore/blueberry_lapis": {
+            "block": "cakeworld:blueberry_lapis",
+            "enabled": true,
+            "source_mod": "cakeworld",
+            "retrogen": false,
+            "dimensions": {
+              "minecraft:overworld": {
+                "enabled": true,
+                "min_y": -64,
+                "max_y": 64,
+                "frequency": 2.0,
+                "quantity": 7,
+                "pattern": {
+                  "type": "orespawn:default",
+                  "settings": {
+                    "spread": 4,
+                    "vertical_spread": 3,
+                    "node_size": 3,
+                    "length": 7
+                  }
+                },
+                "height_distribution": "triangle",
+                "discard_chance_on_air_exposure": 0.0,
+                "host_tags": ["cakeworld:edible_ore_hosts"]
+              }
+            }
+          },
+          "cakeworld:ore/rock_candy_diamond": {
+            "block": "cakeworld:rock_candy_diamond",
+            "enabled": true,
+            "source_mod": "cakeworld",
+            "retrogen": false,
+            "dimensions": {
+              "minecraft:overworld": {
+                "enabled": true,
+                "min_y": -64,
+                "max_y": 16,
+                "frequency": 1.2,
+                "quantity": 5,
+                "pattern": {
+                  "type": "orespawn:default",
+                  "settings": {
+                    "spread": 3,
+                    "vertical_spread": 2,
+                    "node_size": 2,
+                    "length": 5
+                  }
+                },
+                "height_distribution": "bottom_triangle",
+                "discard_chance_on_air_exposure": 0.5,
+                "host_tags": ["cakeworld:edible_ore_hosts"]
+              }
+            }
+          },
+          "cakeworld:ore/mint_emerald": {
+            "block": "cakeworld:mint_emerald",
+            "enabled": true,
+            "source_mod": "cakeworld",
+            "retrogen": false,
+            "dimensions": {
+              "minecraft:overworld": {
+                "enabled": true,
+                "min_y": -16,
+                "max_y": 256,
+                "frequency": 0.5,
+                "quantity": 3,
+                "pattern": {
+                  "type": "orespawn:default",
+                  "settings": {
+                    "spread": 2,
+                    "vertical_spread": 2,
+                    "node_size": 2,
+                    "length": 3
+                  }
+                },
+                "height_distribution": "triangle",
+                "discard_chance_on_air_exposure": 0.0,
+                "host_tags": ["cakeworld:edible_ore_hosts"]
+              }
+            }
+          },
+          "cakeworld:ore/vanilla_quartz": {
+            "block": "cakeworld:vanilla_quartz",
+            "enabled": true,
+            "source_mod": "cakeworld",
+            "retrogen": false,
+            "dimensions": {
+              "minecraft:the_nether": {
+                "enabled": true,
+                "min_y": 10,
+                "max_y": 117,
+                "frequency": 12.0,
+                "quantity": 10,
+                "pattern": {
+                  "type": "orespawn:default",
+                  "settings": {
+                    "spread": 5,
+                    "vertical_spread": 3,
+                    "node_size": 4,
+                    "length": 10
+                  }
+                },
+                "height_distribution": "uniform",
+                "discard_chance_on_air_exposure": 0.0,
+                "host_tags": ["cakeworld:edible_ore_hosts"]
+              }
+            }
+          },
+          "cakeworld:ore/fudge_gold": {
+            "block": "cakeworld:fudge_gold",
+            "enabled": true,
+            "source_mod": "cakeworld",
+            "retrogen": false,
+            "dimensions": {
+              "minecraft:the_nether": {
+                "enabled": true,
+                "min_y": 10,
+                "max_y": 117,
+                "frequency": 10.0,
+                "quantity": 6,
+                "pattern": {
+                  "type": "orespawn:default",
+                  "settings": {
+                    "spread": 4,
+                    "vertical_spread": 3,
+                    "node_size": 3,
+                    "length": 6
+                  }
+                },
+                "height_distribution": "uniform",
+                "discard_chance_on_air_exposure": 0.0,
+                "host_tags": ["cakeworld:edible_ore_hosts"]
+              }
+            }
+          },
+          "cakeworld:ore/ancient_nougat": {
+            "block": "cakeworld:ancient_nougat",
+            "enabled": true,
+            "source_mod": "cakeworld",
+            "retrogen": false,
+            "dimensions": {
+              "minecraft:the_nether": {
+                "enabled": true,
+                "min_y": 8,
+                "max_y": 119,
+                "frequency": 0.4,
+                "quantity": 2,
+                "pattern": {
+                  "type": "orespawn:default",
+                  "settings": {
+                    "spread": 2,
+                    "vertical_spread": 2,
+                    "node_size": 1,
+                    "length": 2
+                  }
+                },
+                "height_distribution": "bottom_triangle",
+                "discard_chance_on_air_exposure": 1.0,
+                "host_tags": ["cakeworld:edible_ore_hosts"]
               }
             }
           }
@@ -733,14 +1030,50 @@
             "enabled": true,
             "biome_ids": [],
             "biome_namespaces": [],
-            "host_blocks": ["minecraft:stone", "minecraft:deepslate"],
+            "host_blocks": [
+              "minecraft:stone",
+              "minecraft:deepslate",
+              "minecraft:dirt",
+              "minecraft:grass_block",
+              "minecraft:coarse_dirt",
+              "minecraft:podzol",
+              "minecraft:rooted_dirt",
+              "minecraft:gravel",
+              "minecraft:sand",
+              "minecraft:red_sand",
+              "minecraft:clay",
+              "minecraft:terracotta",
+              "minecraft:white_terracotta",
+              "minecraft:orange_terracotta",
+              "minecraft:magenta_terracotta",
+              "minecraft:light_blue_terracotta",
+              "minecraft:yellow_terracotta",
+              "minecraft:lime_terracotta",
+              "minecraft:pink_terracotta",
+              "minecraft:gray_terracotta",
+              "minecraft:light_gray_terracotta",
+              "minecraft:cyan_terracotta",
+              "minecraft:purple_terracotta",
+              "minecraft:blue_terracotta",
+              "minecraft:brown_terracotta",
+              "minecraft:green_terracotta",
+              "minecraft:red_terracotta",
+              "minecraft:black_terracotta"
+            ],
             "host_tags": []
           },
           "minecraft:the_nether": {
             "enabled": true,
             "biome_ids": [],
             "biome_namespaces": [],
-            "host_blocks": ["minecraft:netherrack", "minecraft:basalt", "minecraft:blackstone"],
+            "host_blocks": [
+              "minecraft:netherrack",
+              "minecraft:basalt",
+              "minecraft:blackstone",
+              "minecraft:gravel",
+              "minecraft:soul_sand",
+              "minecraft:soul_soil"
+            ],
             "host_tags": []
           },
           "minecraft:the_end": {
@@ -1256,11 +1589,12 @@
                 "max_temperature": 2.0,
                 "min_downfall": 0.0,
                 "max_downfall": 1.0,
-                "surface": {
-                  "top_block": "cakeworld:black_liquorice_stone",
-                  "filler_block": "cakeworld:fudge_rock",
-                  "filler_depth": 5
-                }
+            "surface": {
+              "top_block": "cakeworld:black_liquorice_stone",
+              "filler_block": "cakeworld:fudge_rock",
+              "ceiling_block": "cakeworld:black_liquorice_stone",
+              "filler_depth": 5
+            }
               },
               "cakeworld:treacle_soul_valleys": {
                 "enabled": true,
@@ -1613,6 +1947,77 @@
                   "igneous_intrusive",
                   "igneous_volcanic"
                 ]
+              }
+            }
+          },
+          "cakeworld:ore/exact_biome_filter_probe": {
+            "block": "cakeworld:cocoa_coal",
+            "enabled": true,
+            "source_mod": "cakeworld",
+            "retrogen": false,
+            "dimensions": {
+              "minecraft:overworld": {
+                "enabled": true,
+                "min_y": -30,
+                "max_y": -30,
+                "frequency": 64.0,
+                "quantity": 1,
+                "pattern": {
+                  "type": "orespawn:precision",
+                  "settings": {
+                    "spread": 0,
+                    "vertical_spread": 0,
+                    "node_size": 1,
+                    "length": 1
+                  }
+                },
+                "height_distribution": "uniform",
+                "discard_chance_on_air_exposure": 0.0,
+                "host_families": [
+                  "sedimentary",
+                  "metamorphic",
+                  "igneous_intrusive",
+                  "igneous_volcanic"
+                ],
+                "biome_ids": [
+                  "cakeworld:candy_plains",
+                  "cakeworld:cookie_forest"
+                ],
+                "excluded_biome_ids": ["cakeworld:cookie_forest"]
+              }
+            }
+          },
+          "cakeworld:ore/dictionary_biome_filter_probe": {
+            "block": "cakeworld:iron_wafer",
+            "enabled": true,
+            "source_mod": "cakeworld",
+            "retrogen": false,
+            "dimensions": {
+              "minecraft:overworld": {
+                "enabled": true,
+                "min_y": -18,
+                "max_y": -18,
+                "frequency": 64.0,
+                "quantity": 1,
+                "pattern": {
+                  "type": "orespawn:precision",
+                  "settings": {
+                    "spread": 0,
+                    "vertical_spread": 0,
+                    "node_size": 1,
+                    "length": 1
+                  }
+                },
+                "height_distribution": "uniform",
+                "discard_chance_on_air_exposure": 0.0,
+                "host_families": [
+                  "sedimentary",
+                  "metamorphic",
+                  "igneous_intrusive",
+                  "igneous_volcanic"
+                ],
+                "biome_dictionary": ["FOREST"],
+                "excluded_biome_dictionary": ["DENSE"]
               }
             }
           }

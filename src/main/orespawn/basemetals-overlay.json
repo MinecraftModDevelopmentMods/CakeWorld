@@ -34,12 +34,18 @@
         "block": "cakeworld:starlight_starsteel",
         "dimensions": {
           "minecraft:the_end": {
+            "min_y": 0,
+            "max_y": 112,
+            "frequency": 8.0,
             "host_blocks": [],
             "host_tags": [],
             "host_families": [
               "sedimentary",
               "metamorphic",
               "igneous_intrusive"
+            ],
+            "biome_ids": [
+              "cakeworld:starlight_sugar_fields"
             ],
             "geomes": {
               "cakeworld:meringue_crust": 4.0,

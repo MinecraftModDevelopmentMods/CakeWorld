@@ -16,6 +16,18 @@ base {
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
 println "Java: ${System.getProperty 'java.version'}, JVM: ${System.getProperty 'java.vm.version'} (${System.getProperty 'java.vendor'}), Arch: ${System.getProperty 'os.arch'}"
+def localOreSpawnJarPath = providers.gradleProperty(
+        'cakeworldLocalOreSpawnJar').orNull
+def localOreSpawnJar = localOreSpawnJarPath == null
+        ? null : rootProject.file(localOreSpawnJarPath)
+if (localOreSpawnJar != null && !localOreSpawnJar.isFile()) {
+    throw new GradleException(
+            "Local OreSpawn candidate does not exist: ${localOreSpawnJar}")
+}
+def localOreSpawnVersion = localOreSpawnJar == null ? null
+        : localOreSpawnJar.name
+                .replaceFirst(/^OreSpawn-/, '')
+                .replaceFirst(/\.jar$/, '')
 def baseMetalsIntegration = providers.gradleProperty('cakeworldBaseMetalsRuntime')
         .map { it.toBoolean() }.getOrElse(false)
 def baseMetalsRunDirectory = providers.gradleProperty(
@@ -1032,6 +1044,11 @@ repositories {
     flatDir {
         dir file('../../../BaseMetals/BaseMetals 118/BaseMetals/build/libs')
     }
+    if (localOreSpawnJar != null) {
+        flatDir {
+            dir localOreSpawnJar.parentFile
+        }
+    }
 }
 
 dependencies {
@@ -1041,8 +1058,12 @@ dependencies {
     // If the group id is "net.minecraft" and the artifact id is one of ["client", "server", "joined"],
     // then special handling is done to allow a setup of a vanilla dependency without the use of an external repository.
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
-    implementation fg.deobf(
-            "curse.maven:mmd-orespawn-${orespawn_curseforge_project_id}:${orespawn_curseforge_file_id}")
+    if (localOreSpawnJar != null) {
+        implementation fg.deobf("local:OreSpawn:${localOreSpawnVersion}")
+    } else {
+        implementation fg.deobf(
+                "curse.maven:mmd-orespawn-${orespawn_curseforge_project_id}:${orespawn_curseforge_file_id}")
+    }
     if (baseMetalsIntegration) {
         def baseMetalsJar = rootProject.file(
                 '../../../BaseMetals/BaseMetals 118/BaseMetals/build/libs/BaseMetals-1.18.2-3.0.0.jar')

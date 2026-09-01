@@ -226,7 +226,9 @@ public final class BiscuitBanditLookoutFeature
 				centre.offset(2, 1, -6),
 				centre, false);
 		spawnBandit(world,
-				centre.offset(10, 1, -6),
+				// Keep authored residents in the structure's originating
+				// chunk while WorldGenRegion is still persisting entities.
+				centre.offset(3, 1, -6),
 				centre, false);
 		return true;
 	}

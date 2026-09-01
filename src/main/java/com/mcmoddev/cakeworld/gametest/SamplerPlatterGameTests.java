@@ -68,8 +68,8 @@ public final class SamplerPlatterGameTests {
 	public static void packagedSamplerIsOptionalAndBounded(
 			GameTestHelper helper) {
 		JsonObject provider = packagedProvider(helper);
-		require(helper, provider.get("provider_revision").getAsInt() >= 55,
-				"Sampler Layer Cake fixture requires provider revision 55");
+		require(helper, provider.get("provider_revision").getAsInt() >= 59,
+				"Sampler biome-filter fixtures require provider revision 59");
 		JsonObject templates = provider.getAsJsonObject("templates");
 		require(helper, templates.size() == 3,
 				"Generated provider must contain two adventures and one sampler");
@@ -703,7 +703,7 @@ public final class SamplerPlatterGameTests {
 				&& !retrogen.get("force").getAsBoolean()
 				&& retrogen.get("revision").getAsInt() == 0
 				&& retrogen.get("chunks_per_tick").getAsInt() == 4
-				&& ores != null && ores.size() == 3
+				&& ores != null && ores.size() == 5
 				&& sprinkles != null
 				&& !sprinkles.get("enabled").getAsBoolean()
 				&& sprinkles.get("retrogen").getAsBoolean()
@@ -713,7 +713,7 @@ public final class SamplerPlatterGameTests {
 				&& layerCake != null
 				&& layerCake.get("enabled").getAsBoolean()
 				&& !layerCake.get("retrogen").getAsBoolean(),
-				"Sampler ore fixtures or Layer Cake rule drifted");
+				"Sampler ore, biome-filter, or Layer Cake fixtures drifted");
 	}
 
 	private static JsonObject packagedProvider(GameTestHelper helper) {

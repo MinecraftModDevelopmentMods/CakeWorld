@@ -325,7 +325,10 @@ public final class WafflePlateausGameTests {
 
 		BlockPos helperPos =
 				helper.absolutePos(new BlockPos(4, 4, 4));
-		ChunkPos chunk = new ChunkPos(helperPos);
+		ChunkPos helperChunk = new ChunkPos(helperPos);
+		ChunkPos chunk = new ChunkPos(helperChunk.x - 64,
+				helperChunk.z + 64);
+		level.getChunk(chunk.x, chunk.z);
 		BlockPos fixture = new BlockPos(
 				chunk.getMinBlockX() + 7,
 				level.getMaxBuildHeight() - 24,
@@ -821,7 +824,9 @@ public final class WafflePlateausGameTests {
 			BlockPos centre) {
 		for (int x = -7; x <= 7; x++) {
 			for (int z = -7; z <= 7; z++) {
-				for (int y = -8; y <= 12; y++) {
+				for (int y = -8;
+						y < level.getMaxBuildHeight()
+								- centre.getY(); y++) {
 					level.setBlock(centre.offset(x, y, z),
 							Blocks.AIR.defaultBlockState(), 2);
 				}

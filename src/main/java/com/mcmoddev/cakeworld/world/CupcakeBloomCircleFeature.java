@@ -43,7 +43,7 @@ public final class CupcakeBloomCircleFeature
 		extends Feature<NoneFeatureConfiguration> {
 	public static final ResourceLocation ID =
 			id("cupcake_bloom_circle");
-	public static final int AVERAGE_CHUNKS_PER_ATTEMPT = 10;
+	public static final int AVERAGE_CHUNKS_PER_ATTEMPT = 6;
 	public static final int MAX_TERRAIN_RELIEF = 4;
 	public static final int SAFE_SITE_SEARCH_RADIUS = 8;
 	public static final int PLACEMENT_SALT = 1978075;

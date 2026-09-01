@@ -358,19 +358,19 @@ public final class MoltenMarshmallowCalderasGameTests {
 					.is(Blocks.BRICKS);
 			NaturalAudit audit = audit(
 					level, foundChunk, 4, found.centre());
-			LOGGER.info("Molten-Marshmallow Calderas audit: anchorChunk={}, centre={}, rotation={}, biomeSamples={}, toastedCrust={}, fudgeRock={}, moltenMallow={}, hotFudge={}, netherQuartz={}, netherGold={}, ancientDebris={}, plan={}, brickSentinel={}, sentinel={}",
+			LOGGER.info("Molten-Marshmallow Calderas audit: anchorChunk={}, centre={}, rotation={}, biomeSamples={}, toastedCrust={}, fudgeRock={}, moltenMallow={}, hotFudge={}, vanillaQuartz={}, fudgeGold={}, ancientNougat={}, plan={}, brickSentinel={}, sentinel={}",
 					anchor, found.centre(), found.rotation(),
 					audit.biomeSamples(), audit.toastedCrust(),
 					audit.fudgeRock(), audit.moltenMallow(),
 					audit.hotFudge(),
-					audit.netherQuartz(), audit.netherGold(),
-					audit.ancientDebris(), plan,
+					audit.vanillaQuartz(), audit.fudgeGold(),
+					audit.ancientNougat(), plan,
 					brickSentinel, sentinel);
 			require(helper, audit.biomeSamples() >= 128
 							&& audit.toastedCrust() > 0
 							&& audit.fudgeRock() > 0
 							&& audit.moltenMallow() > 0
-							&& audit.netherQuartz() + audit.netherGold() > 0
+							&& audit.vanillaQuartz() + audit.fudgeGold() > 0
 							&& plan.complete(brickSentinel),
 					"Natural Calderas lost terrain, deposits, progression ores or their complete Caldera: "
 							+ audit + " / " + plan);
@@ -614,9 +614,9 @@ public final class MoltenMarshmallowCalderasGameTests {
 		int fudgeRock = 0;
 		int moltenMallow = 0;
 		int hotFudge = 0;
-		int netherQuartz = 0;
-		int netherGold = 0;
-		int ancientDebris = 0;
+		int vanillaQuartz = 0;
+		int fudgeGold = 0;
+		int ancientNougat = 0;
 		BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
 		for (int chunkX = anchor.x - radius;
 				chunkX <= anchor.x + radius; chunkX++) {
@@ -649,12 +649,12 @@ public final class MoltenMarshmallowCalderasGameTests {
 								}
 							} else if (state.is(CakeWorldFluids.HOT_FUDGE_BLOCK.get())) {
 								hotFudge++;
-							} else if (state.is(Blocks.NETHER_QUARTZ_ORE)) {
-								netherQuartz++;
-							} else if (state.is(Blocks.NETHER_GOLD_ORE)) {
-								netherGold++;
-							} else if (state.is(Blocks.ANCIENT_DEBRIS)) {
-								ancientDebris++;
+							} else if (state.is(CakeWorldBlocks.VANILLA_QUARTZ.get())) {
+								vanillaQuartz++;
+							} else if (state.is(CakeWorldBlocks.FUDGE_GOLD.get())) {
+								fudgeGold++;
+							} else if (state.is(CakeWorldBlocks.ANCIENT_NOUGAT.get())) {
+								ancientNougat++;
 							}
 						}
 					}
@@ -662,8 +662,8 @@ public final class MoltenMarshmallowCalderasGameTests {
 			}
 		}
 		return new NaturalAudit(biomeSamples, toastedCrust, fudgeRock,
-				moltenMallow, hotFudge, netherQuartz, netherGold,
-				ancientDebris);
+				moltenMallow, hotFudge, vanillaQuartz, fudgeGold,
+				ancientNougat);
 	}
 
 	private static boolean nearCaldera(BlockPos position, BlockPos centre) {
@@ -810,7 +810,7 @@ public final class MoltenMarshmallowCalderasGameTests {
 	}
 
 	private record NaturalAudit(int biomeSamples, int toastedCrust,
-			int fudgeRock, int moltenMallow, int hotFudge, int netherQuartz,
-			int netherGold, int ancientDebris) {
+			int fudgeRock, int moltenMallow, int hotFudge, int vanillaQuartz,
+			int fudgeGold, int ancientNougat) {
 	}
 }

@@ -46,8 +46,8 @@ public final class RoadsideCuriosityFeature
 			id("roadside_curiosity");
 	public static final ResourceLocation LOOT_ID =
 			id("chests/roadside_curiosity");
-	public static final int AVERAGE_CHUNKS_PER_ATTEMPT = 48;
-	public static final int SAFE_SITE_SEARCH_RADIUS = 6;
+	public static final int AVERAGE_CHUNKS_PER_ATTEMPT = 12;
+	public static final int SAFE_SITE_SEARCH_RADIUS = 12;
 	public static final int PLACEMENT_SALT = 1978025;
 	public static final RoadsideCuriosityFeature FEATURE =
 			new RoadsideCuriosityFeature();
@@ -527,9 +527,9 @@ public final class RoadsideCuriosityFeature
 	}
 
 	public enum Variant {
-		SPILLED_SWEET_CART(3, 3, 1),
-		WRONG_WAY_SIGNPOST(3, 5, 1),
-		MARSHMALLOW_RESCUE_SHELTER(4, 5, 3);
+		SPILLED_SWEET_CART(3, 3, 3),
+		WRONG_WAY_SIGNPOST(3, 5, 3),
+		MARSHMALLOW_RESCUE_SHELTER(4, 5, 6);
 
 		private final int footprintRadius;
 		private final int clearance;

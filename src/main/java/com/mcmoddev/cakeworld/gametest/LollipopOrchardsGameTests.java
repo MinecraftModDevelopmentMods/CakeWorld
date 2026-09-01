@@ -322,7 +322,10 @@ public final class LollipopOrchardsGameTests {
 
 		BlockPos helperPos =
 				helper.absolutePos(new BlockPos(4, 4, 4));
-		ChunkPos chunk = new ChunkPos(helperPos);
+		ChunkPos helperChunk = new ChunkPos(helperPos);
+		ChunkPos chunk = new ChunkPos(helperChunk.x + 64,
+				helperChunk.z + 64);
+		level.getChunk(chunk.x, chunk.z);
 		BlockPos fixture = new BlockPos(
 				chunk.getMinBlockX() + 7,
 				level.getMaxBuildHeight() - 12,

@@ -30,8 +30,8 @@ public final class BlankBiomeRegistrationGameTests {
 	private static final ResourceLocation ADVENTURE_TEMPLATE =
 			new ResourceLocation("cakeworld", "edible_world");
 	private static final List<String> EXPECTED_INTEGRATION_FEATURES = List.of(
-			"2:orespawn:biome_surfaces",
-			"6:orespawn:stone_replacer");
+			"2:orespawn:stone_replacer",
+			"2:orespawn:biome_surfaces");
 
 	private BlankBiomeRegistrationGameTests() {
 	}

@@ -79,6 +79,7 @@ public final class NougatDepthsGameTests {
 			ResourceKey.create(Registry.BIOME_REGISTRY, BIOME_ID);
 	private static final BlockPos FIXED_WORLD_SEARCH_ORIGIN =
 			new BlockPos(12288, -40, -12288);
+	private static final int NATURAL_GEOLOGY_RADIUS = 80;
 
 	private NougatDepthsGameTests() {
 	}
@@ -475,7 +476,8 @@ public final class NougatDepthsGameTests {
 					"Natural Ancient Nougat Kitchen lost its complete plan");
 			GeologyAudit geology =
 					auditNaturalGeology(
-							level, kitchen.centre(), 64);
+							level, kitchen.centre(),
+							NATURAL_GEOLOGY_RADIUS);
 			ResourceLocation biome = level.getBiome(
 					kitchen.centre()).unwrapKey()
 					.map(ResourceKey::location)

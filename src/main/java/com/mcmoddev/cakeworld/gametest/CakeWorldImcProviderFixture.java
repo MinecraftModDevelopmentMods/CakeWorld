@@ -10,7 +10,6 @@ import net.minecraftforge.fml.event.lifecycle.InterModEnqueueEvent;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
 import zone.moddev.mc.orespawn.api.OreDimensionSelector;
-import zone.moddev.mc.orespawn.api.OrePattern;
 import zone.moddev.mc.orespawn.api.OrePatternType;
 import zone.moddev.mc.orespawn.api.OreSpawnApi;
 import zone.moddev.mc.orespawn.api.OreSpawnPatternRegistry;
@@ -66,8 +65,9 @@ public final class CakeWorldImcProviderFixture {
 								OreDimensionSelector.ALL_EXCEPT_NETHER_AND_END,
 								placement -> placement.yRange(32, 47)
 										.attempts(64.0D)
-										.quantity(32)
-										.pattern(OrePattern.CLUSTERS)
+										.quantity(1)
+										.pattern(POINT_PATTERN_ID,
+												pointSettings)
 										.hostBlock(new ResourceLocation(
 												"minecraft", "stone")))
 						.dimension(Level.OVERWORLD.location(), placement ->

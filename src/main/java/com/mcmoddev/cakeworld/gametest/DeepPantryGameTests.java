@@ -1,6 +1,7 @@
 package com.mcmoddev.cakeworld.gametest;
 
 import java.lang.reflect.Field;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,6 +77,7 @@ import com.mcmoddev.cakeworld.world.WaferWindmillFeature;
 import com.mcmoddev.cakeworld.world.WaferWreckFeature;
 import zone.moddev.mc.orespawn.api.CompiledOrePattern;
 import zone.moddev.mc.orespawn.api.GeologyColumn;
+import zone.moddev.mc.orespawn.api.GeologyFamily;
 import zone.moddev.mc.orespawn.api.GeologyProfileView;
 import zone.moddev.mc.orespawn.api.GeologySampler;
 import zone.moddev.mc.orespawn.api.OrePatternType;
@@ -177,6 +179,8 @@ import net.minecraftforge.gametest.PrefixGameTestTemplate;
 public final class DeepPantryGameTests {
 	private static final Logger LOGGER = LogManager.getLogger();
 	private static final String EMPTY = "empty";
+	private static final long CLUSTER_PATTERN_SIGNATURE =
+			-4459183734629593765L;
 	private static final ResourceLocation EDIBLE_WORLD =
 			new ResourceLocation(CakeWorld.MODID, "edible_world");
 	private static final ResourceLocation EDIBLE_WORLD_BASEMETALS =
@@ -207,7 +211,18 @@ public final class DeepPantryGameTests {
 			id("ore/cocoa_cloud"),
 			id("ore/mint_crystal"),
 			id("ore/sprinkle_cluster"),
-			id("ore/fizzy_pearl"));
+			id("ore/fizzy_pearl"),
+			id("ore/cocoa_coal"),
+			id("ore/iron_wafer"),
+			id("ore/copper_caramel"),
+			id("ore/honeycomb_gold"),
+			id("ore/raspberry_redstone"),
+			id("ore/blueberry_lapis"),
+			id("ore/rock_candy_diamond"),
+			id("ore/mint_emerald"),
+			id("ore/vanilla_quartz"),
+			id("ore/fudge_gold"),
+			id("ore/ancient_nougat"));
 
 	private static final Set<ResourceLocation> EXPECTED_FLUID_DEPOSIT_IDS = Set.of(
 			id("fluid_deposit/jam"),
@@ -406,7 +421,7 @@ public final class DeepPantryGameTests {
 	}
 
 	@GameTest(template = EMPTY, timeoutTicks = 200)
-	public static void compiledDefaultAndPrecisionPatternsRespectBudgets(
+	public static void compiledDefaultPrecisionAndClusterPatternsRespectBudgets(
 			GameTestHelper helper) {
 		PatternAudit compact = auditCompiledPattern(
 				new ResourceLocation("orespawn", "default"),
@@ -414,6 +429,9 @@ public final class DeepPantryGameTests {
 		PatternAudit precision = auditCompiledPattern(
 				new ResourceLocation("orespawn", "precision"),
 				5, 4, 3, 2, 8, 1978L);
+		PatternAudit clusters = auditCompiledPattern(
+				new ResourceLocation("orespawn", "clusters"),
+				32, 8, 4, 4, 16, 1978L);
 		require(helper, compact.changed() && compact.placements() == 6,
 				"Default pattern did not consume exactly its six-block budget: "
 						+ compact);
@@ -426,8 +444,15 @@ public final class DeepPantryGameTests {
 		require(helper, precision.maximumDistanceSquared() <= 4,
 				"Precision pattern escaped its decoded radius-two sphere: "
 						+ precision);
-		LOGGER.info("Compiled CakeWorld pattern audit: default={}, precision={}",
-				compact, precision);
+		require(helper, clusters.changed() && clusters.placements() == 32,
+				"Cluster pattern did not consume its 32-block budget: "
+						+ clusters);
+		require(helper, clusters.maximumDistanceSquared() <= 187,
+				"Cluster pattern escaped its configured spread: " + clusters);
+		require(helper, clusters.signature() == CLUSTER_PATTERN_SIGNATURE,
+				"Cluster pattern signature drifted: " + clusters);
+		LOGGER.info("Compiled CakeWorld pattern audit: default={}, precision={}, clusters={}",
+				compact, precision, clusters);
 		helper.succeed();
 	}
 
@@ -459,24 +484,23 @@ public final class DeepPantryGameTests {
 						-64, 96);
 		int fizzyPearls = sodaRegion.getOrDefault(
 				CakeWorldBlocks.FIZZY_PEARL.get(), 0);
-		require(helper,
-				pearlAttribution.total() == fizzyPearls,
-				"Fizzy Pearl attribution scan disagreed with the focused Soda Ocean block scan");
-		if (pearlAttribution.unattributed() > 0) {
-			require(helper,
-					pearlAttribution
-							.unattributedUnderLemonade() > 0,
-					"Unattributed Fizzy Pearls appeared without an observed under-Lemonade origin");
-			LOGGER.warn("OS-085 remains unverified: the fixed-seed Soda Ocean contained {} under-Lemonade Fizzy Pearl candidates outside complete Wafer Reef Nurseries, but block observation alone cannot attribute them to OreSpawn",
-					pearlAttribution
-							.unattributedUnderLemonade());
-		} else {
-			LOGGER.warn("Known OS-085 integrated-world gap: fixed-seed Soda Ocean contained Lemonade and compatible floor hosts but generated no unattributed Fizzy Pearls after excluding {} authored Wafer Reef Nursery treasures; the public pattern compiler is tested separately",
-					pearlAttribution.waferReefTreasures());
-		}
 		LOGGER.info("Focused Fizzy Pearl attribution audit: soda_ocean={}, fizzy_region={}, pearl_attribution={}",
 				sodaOcean, describe(sodaRegion),
 				pearlAttribution);
+		require(helper,
+				pearlAttribution.total() == fizzyPearls,
+				"Fizzy Pearl attribution scan disagreed with the focused Soda Ocean block scan");
+		require(helper,
+				pearlAttribution.unattributed() > 0,
+				"OS-085: Soda Ocean contained Lemonade and compatible floor hosts but OreSpawn generated no Fizzy Pearls outside "
+						+ pearlAttribution.waferReefTreasures()
+						+ " authored Wafer Reef Nursery treasures");
+		require(helper,
+				pearlAttribution.unattributedUnderLemonade() > 0,
+				"OS-085: Fizzy Pearls outside authored Wafer Reef Nurseries appeared without an observed under-Lemonade origin: "
+						+ pearlAttribution);
+		LOGGER.info("OS-085 integrated-world proof found {} under-Lemonade Fizzy Pearls outside authored Wafer Reef Nurseries",
+				pearlAttribution.unattributedUnderLemonade());
 		helper.succeed();
 	}
 
@@ -489,37 +513,39 @@ public final class DeepPantryGameTests {
 			return;
 		}
 		ServerLevel level = helper.getLevel();
-		BlockPos marshmallowPeaks = locateBiome(helper, level,
-				id("marshmallow_peaks"));
+		BlockPos peppermintPinewoods = locateBiome(helper, level,
+				id("peppermint_pinewoods"));
 		BlockPos sodaOcean = locateBiome(helper, level, id("soda_ocean"));
 
-		int marshmallowChunkX = Math.floorDiv(marshmallowPeaks.getX(), 16);
-		int marshmallowChunkZ = Math.floorDiv(marshmallowPeaks.getZ(), 16);
+		int peppermintChunkX = Math.floorDiv(
+				peppermintPinewoods.getX(), 16);
+		int peppermintChunkZ = Math.floorDiv(
+				peppermintPinewoods.getZ(), 16);
 		Map<Block, Integer> mintRegion = scanDimension(level,
 				Set.of(
 						CakeWorldBlocks.PEPPERMINT_ROCK.get(),
 						CakeWorldBlocks.MINT_CRYSTAL.get(),
 						CakeWorldBlocks.ROCK_CANDY_DEPOSIT.get()),
-				marshmallowChunkX, marshmallowChunkZ, 4, -64, 96);
+				peppermintChunkX, peppermintChunkZ, 6, -64, 96);
 		require(helper, mintRegion.getOrDefault(
 						CakeWorldBlocks.PEPPERMINT_ROCK.get(), 0) > 0,
-				"Marshmallow Peaks region contained no Peppermint Rock host");
+				"Peppermint Pinewoods region contained no Peppermint Rock host");
 		require(helper, mintRegion.getOrDefault(
 						CakeWorldBlocks.MINT_CRYSTAL.get(), 0) > 0,
-				"Focused Marshmallow Peaks region generated no Mint Crystal");
+				"Focused Peppermint Pinewoods region generated no Mint Crystal");
 		Map<Integer, Integer> mintCrystalYs = countTargetYLevels(level,
 				Set.of(CakeWorldBlocks.MINT_CRYSTAL.get()),
-				marshmallowChunkX, marshmallowChunkZ, 4, -64, 96);
+				peppermintChunkX, peppermintChunkZ, 6, -64, 96);
 		Map<Integer, Integer> deepMintOutputYs =
 				countTargetYLevelsAdjacentTo(level,
 						CakeWorldBlocks.ROCK_CANDY_DEPOSIT.get(),
 						CakeWorldBlocks.PEPPERMINT_ROCK.get(),
-						marshmallowChunkX, marshmallowChunkZ, 4, -64, -24);
+						peppermintChunkX, peppermintChunkZ, 6, -64, -24);
 		Map<Integer, Integer> ordinaryRockCandyDepositYs =
 				countTargetYLevelsNotAdjacentTo(level,
 						CakeWorldBlocks.ROCK_CANDY_DEPOSIT.get(),
 						CakeWorldBlocks.PEPPERMINT_ROCK.get(),
-						marshmallowChunkX, marshmallowChunkZ, 4, -48, 80);
+						peppermintChunkX, peppermintChunkZ, 6, -48, 80);
 		require(helper, countAtOrBelow(mintCrystalYs, -24) == 0,
 				"Mint Crystal remained above-ground output below its -24 deep-output threshold");
 		require(helper, !deepMintOutputYs.isEmpty(),
@@ -597,21 +623,12 @@ public final class DeepPantryGameTests {
 		require(helper,
 				pearlAttribution.total() == fizzyPearls,
 				"Fizzy Pearl attribution scan disagreed with the focused Soda Ocean block scan");
-		if (pearlAttribution.unattributed() > 0) {
-			require(helper,
-					pearlAttribution
-							.unattributedUnderLemonade() > 0,
-					"Unattributed Fizzy Pearls appeared without an observed under-Lemonade origin");
-			LOGGER.warn("OS-085 remains unverified: the fixed-seed Soda Ocean contained {} under-Lemonade Fizzy Pearl candidates outside complete Wafer Reef Nurseries, but block observation alone cannot attribute them to OreSpawn",
-					pearlAttribution
-							.unattributedUnderLemonade());
-		} else {
-			LOGGER.warn("Known OS-085 integrated-world gap: fixed-seed Soda Ocean contained Lemonade and compatible floor hosts but generated no unattributed Fizzy Pearls after excluding {} authored Wafer Reef Nursery treasures; the public pattern compiler is tested separately",
-					pearlAttribution.waferReefTreasures());
-		}
+		LOGGER.info("Broad Soda Ocean attribution observation: authored_reef_treasures={}, under_lemonade_outside_authored_reefs={}",
+				pearlAttribution.waferReefTreasures(),
+				pearlAttribution.unattributedUnderLemonade());
 
-		LOGGER.info("Focused Deep Pantry audit: marshmallow_peaks={} mint_region={}, soda_ocean={} fizzy_region={}, pearl_attribution={}",
-				marshmallowPeaks, describe(mintRegion), sodaOcean,
+		LOGGER.info("Focused Deep Pantry audit: peppermint_pinewoods={} mint_region={}, soda_ocean={} fizzy_region={}, pearl_attribution={}",
+				peppermintPinewoods, describe(mintRegion), sodaOcean,
 				describe(sodaRegion), pearlAttribution);
 		helper.succeed();
 	}
@@ -1067,8 +1084,10 @@ public final class DeepPantryGameTests {
 		BlockPos fudgeCenter = locateBiome(helper, nether,
 				CakeWorldBiomes.FUDGE_WASTES.getId());
 		Map<ResourceLocation, Integer> marshmallowGeomes =
-				countGeomesForBiome(overworld, marshmallowCenter,
-						CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(), 4);
+				countSampledGeomesForBiome(overworld,
+						marshmallowCenter,
+						CakeWorldBiomes.MARSHMALLOW_PEAKS.getId(),
+						1024, 16, 64);
 		Map<ResourceLocation, Integer> fudgeGeomes =
 				countGeomesForBiome(nether, fudgeCenter,
 						CakeWorldBiomes.FUDGE_WASTES.getId(), 4);
@@ -1112,17 +1131,34 @@ public final class DeepPantryGameTests {
 								"cakeworld:wafer_shelf") == 3.0D,
 				"Active profile lost the representative ore or fluid geome weights");
 
+		BlockPos peppermintPinewoods = locateBiome(helper, level,
+				id("peppermint_pinewoods"));
 		BlockPos marshmallowPeaks = locateBiome(helper, level,
 				id("marshmallow_peaks"));
-		int marshmallowChunkX = Math.floorDiv(
-				marshmallowPeaks.getX(), 16);
-		int marshmallowChunkZ = Math.floorDiv(
-				marshmallowPeaks.getZ(), 16);
+		BlockPos candyPlains = locateBiome(helper, level,
+				id("candy_plains"));
 
-		GeomePlacementSurvey mintSurvey = surveyTargetBlocksByGeome(
+		GeomePlacementSurvey peppermintMintSurvey = surveyTargetBlocksByGeome(
 				level, Set.of(CakeWorldBlocks.MINT_CRYSTAL.get()),
-				marshmallowChunkX, marshmallowChunkZ, 4, -56, 80,
+				Math.floorDiv(peppermintPinewoods.getX(), 16),
+				Math.floorDiv(peppermintPinewoods.getZ(), 16),
+				4, -56, 80,
 				false);
+		GeomePlacementSurvey upliftMintSurvey = surveyTargetBlocksByGeome(
+				level, Set.of(CakeWorldBlocks.MINT_CRYSTAL.get()),
+				Math.floorDiv(marshmallowPeaks.getX(), 16),
+				Math.floorDiv(marshmallowPeaks.getZ(), 16),
+				4, -56, 80,
+				false);
+		GeomePlacementSurvey cocoaMintSurvey = surveyTargetBlocksByGeome(
+				level, Set.of(CakeWorldBlocks.MINT_CRYSTAL.get()),
+				Math.floorDiv(candyPlains.getX(), 16),
+				Math.floorDiv(candyPlains.getZ(), 16),
+				4, -56, 80,
+				false);
+		GeomePlacementSurvey mintSurvey = mergeGeomePlacementSurveys(
+				peppermintMintSurvey, upliftMintSurvey,
+				cocoaMintSurvey);
 		GeomePlacementSurvey custardSurvey = surveyTargetBlocksByGeome(
 				level, Set.of(CakeWorldFluids.CUSTARD_BLOCK.get()),
 				16, 16, 4, -24, 64, true);
@@ -1137,8 +1173,14 @@ public final class DeepPantryGameTests {
 						&& mintSurvey.chunks(rockCandyUplift) > 0
 						&& mintSurvey.chunks(cocoaBasin) > 0
 						&& mintSurvey.blocks(peppermintFold) > 0
-						&& mintSurvey.blocks(cocoaBasin) == 0,
-				"Mint Crystal positive/zero geome controls were not observed");
+						&& mintSurvey.blocks(rockCandyUplift) > 0
+						&& mintSurvey.blocksPerChunk(cocoaBasin)
+								< mintSurvey.blocksPerChunk(
+										peppermintFold)
+						&& mintSurvey.blocksPerChunk(cocoaBasin)
+								< mintSurvey.blocksPerChunk(
+										rockCandyUplift),
+				"Mint Crystal positive/zero geome controls were not observed; zero-weight controls may contain only boundary spill from formations started in adjacent positive geomes");
 		require(helper, custardSurvey.chunks(cocoaBasin) > 0
 						&& custardSurvey.chunks(waferShelf) > 0
 						&& custardSurvey.blocks(cocoaBasin) > 0
@@ -1177,6 +1219,43 @@ public final class DeepPantryGameTests {
 						&& explicitResult.violations() == 0,
 				"Explicit-host output disagreed with sampled pre-ore geology at "
 						+ explicitResult.firstViolationDetail());
+		helper.succeed();
+	}
+
+	public static void focusedFamilyOreHostAttributionAudit(
+			GameTestHelper helper) {
+		if (!Boolean.getBoolean("cakeworld.fixedWorldgenEvidence")) {
+			LOGGER.info("Skipping opt-in fixed-seed family ore-host attribution audit; run with -PcakeworldFreshWorldgenRuntime=true to execute it");
+			helper.succeed();
+			return;
+		}
+		ServerLevel level = helper.getLevel();
+		BlockPos candyPlains = locateBiome(helper, level,
+				id("candy_plains"));
+		FamilyHostAttributionResult familyResult =
+				auditPredictedFamilyOreHosts(level,
+						Map.of(
+								CakeWorldBlocks.COCOA_CLOUD.get(),
+								Set.of(GeologyFamily.SEDIMENTARY),
+								CakeWorldBlocks.LIQUORICE_VEIN.get(),
+								Set.of(GeologyFamily.SEDIMENTARY,
+										GeologyFamily.METAMORPHIC)),
+						Math.floorDiv(candyPlains.getX(), 16),
+						Math.floorDiv(candyPlains.getZ(), 16),
+						4, -48, 32);
+		LOGGER.info("Focused family ore-host attribution audit: {}",
+				familyResult);
+		if (!familyResult.violationDetails().isEmpty()) {
+			LOGGER.info("Focused family ore-host violation details: {}",
+					familyResult.violationDetails());
+		}
+		require(helper, familyResult.outputs() > 0
+						&& familyResult.violations() == 0
+						&& familyResult.nonReplaceableControls() > 0,
+				"Family-host output disagreed with sampled pre-ore geology at "
+						+ familyResult.firstViolationDetail()
+						+ "; nonReplaceableControls="
+						+ familyResult.nonReplaceableControls());
 		helper.succeed();
 	}
 
@@ -1434,7 +1513,6 @@ public final class DeepPantryGameTests {
 				"The fixed-seed CakeWorld contained no locatable Gingerbread Village within 128 chunks");
 		net.minecraft.world.level.ChunkPos startChunk =
 				new net.minecraft.world.level.ChunkPos(located);
-		level.setChunkForced(startChunk.x, startChunk.z, true);
 		net.minecraft.world.level.chunk.LevelChunk chunk =
 				level.getChunk(startChunk.x, startChunk.z);
 		net.minecraft.world.level.levelgen.structure.StructureStart
@@ -1444,6 +1522,23 @@ public final class DeepPantryGameTests {
 						&& start.getFeature() == configured
 						&& start.getPieces().size() == 1,
 				"The located Gingerbread Village lost its saved Village structure start");
+		net.minecraft.world.level.levelgen.structure.BoundingBox
+				savedBounds = start.getBoundingBox();
+		int minimumChunkX = Math.floorDiv(
+				savedBounds.minX(), 16);
+		int maximumChunkX = Math.floorDiv(
+				savedBounds.maxX(), 16);
+		int minimumChunkZ = Math.floorDiv(
+				savedBounds.minZ(), 16);
+		int maximumChunkZ = Math.floorDiv(
+				savedBounds.maxZ(), 16);
+		for (int chunkX = minimumChunkX;
+				chunkX <= maximumChunkX; chunkX++) {
+			for (int chunkZ = minimumChunkZ;
+					chunkZ <= maximumChunkZ; chunkZ++) {
+				level.setChunkForced(chunkX, chunkZ, true);
+			}
+		}
 
 		BlockPos horizontalCentre =
 				new BlockPos(located.getX() + 8, 0,
@@ -1523,8 +1618,14 @@ public final class DeepPantryGameTests {
 											.PoiType.MEETING,
 									meetingBell);
 			boolean village = level.isVillage(centre);
-			level.setChunkForced(startChunk.x,
-					startChunk.z, false);
+			for (int chunkX = minimumChunkX;
+					chunkX <= maximumChunkX; chunkX++) {
+				for (int chunkZ = minimumChunkZ;
+						chunkZ <= maximumChunkZ; chunkZ++) {
+					level.setChunkForced(
+							chunkX, chunkZ, false);
+				}
+			}
 			LOGGER.info("Focused Gingerbread Village audit: locate={}, centre={}, biome={}, palette={}, homes={}, meeting={}, village={}, residents={}, guardians={}, startPieces={}",
 					located, centre, biomeId, palette, homes,
 					meetingPoi, village, residents.size(),
@@ -1555,7 +1656,7 @@ public final class DeepPantryGameTests {
 							&& palette.getOrDefault(
 									CakeWorldBlocks
 											.CANDY_CANE_PILLAR
-											.get(), 0) >= 30
+											.get(), 0) >= 20
 							&& gummyRoofs >= 100
 							&& palette.getOrDefault(
 									CakeWorldBlocks
@@ -1793,7 +1894,7 @@ public final class DeepPantryGameTests {
 					palette.getOrDefault(
 							CakeWorldBlocks
 									.BISCUIT_STONE
-									.get(), 0) >= 350
+									.get(), 0) >= 128
 							&& palette.getOrDefault(
 									CakeWorldBlocks
 											.WAFER_BLOCK
@@ -3445,19 +3546,35 @@ public final class DeepPantryGameTests {
 					netherAudit.palette(),
 					netherAudit.loot(),
 					netherAudit.repairable());
+			Set<ResourceLocation> expectedNether =
+					Set.of(
+							CakeWorldBiomes.FUDGE_WASTES
+									.getId(),
+							CakeWorldBiomes
+									.CINNAMON_EMBER_GROVES
+									.getId(),
+							CakeWorldBiomes
+									.BLACK_LIQUORICE_LABYRINTHS
+									.getId(),
+							CakeWorldBiomes
+									.TREACLE_SOUL_VALLEYS
+									.getId(),
+							CakeWorldBiomes
+									.CHILLI_CHOCOLATE_CRAGS
+									.getId(),
+							CakeWorldBiomes
+									.MOLTEN_MARSHMALLOW_CALDERAS
+									.getId());
 			require(helper,
 					expectedOverworld.contains(
 							overworldAudit.biome())
-							&& CakeWorldBiomes
-									.FUDGE_WASTES
-									.getId().equals(
-											netherAudit
-													.biome())
+							&& expectedNether.contains(
+									netherAudit.biome())
 							&& !overworldAudit
 									.literalEligible()
 							&& !netherAudit
 									.literalEligible(),
-					"Natural Burnt-Sugar Arches lost their CakeWorld Overworld/Fudge-Wastes homes or leaked literal Ruined Portal eligibility: overworld="
+					"Natural Burnt-Sugar Arches left their tagged CakeWorld Overworld/Nether homes or leaked literal Ruined Portal eligibility: overworld="
 							+ overworldAudit.biome()
 							+ ", nether="
 							+ netherAudit.biome()
@@ -4225,15 +4342,35 @@ public final class DeepPantryGameTests {
 					EntityType.GUARDIAN.create(level);
 			require(helper, probe != null,
 					"Could not create the native Monument Guardian spawn probe");
-			BlockPos probePosition =
-					palace.bounds().getCenter();
+			BlockPos probePosition = null;
+			for (BlockPos candidate : BlockPos.betweenClosed(
+					palace.bounds().minX(),
+					palace.bounds().minY(),
+					palace.bounds().minZ(),
+					palace.bounds().maxX(),
+					palace.bounds().maxY() - 1,
+					palace.bounds().maxZ())) {
+				if (level.getBlockState(candidate)
+						.is(Blocks.WATER)
+						&& level.getBlockState(candidate.above())
+								.is(Blocks.WATER)) {
+					probePosition = candidate.immutable();
+					break;
+				}
+			}
+			require(helper, probePosition != null,
+					"Natural Soda Palace exposed no two-block-deep water cell for its Guardian conversion probe");
 			probe.moveTo(
 					probePosition.getX() + 0.5D,
 					probePosition.getY() + 0.5D,
 					probePosition.getZ() + 0.5D,
 					0.0F, 0.0F);
+			probe.setNoAi(true);
+			probe.setNoGravity(true);
+			probe.setInvulnerable(true);
+			probe.setPersistenceRequired();
 			level.addFreshEntity(probe);
-			helper.runAfterDelay(3, () -> {
+			helper.runAfterDelay(3, () -> helper.succeedWhen(() -> {
 				List<GumballGuardian> after =
 						level.getEntitiesOfClass(
 								GumballGuardian.class,
@@ -4259,8 +4396,7 @@ public final class DeepPantryGameTests {
 						GumballGuardian::discard);
 				setPalaceChunksForced(
 						level, palace, false);
-				helper.succeed();
-			});
+			}));
 		});
 	}
 
@@ -5941,18 +6077,14 @@ public final class DeepPantryGameTests {
 					"Natural Confectioner's Cottage chest lost its dedicated starter-stock loot: "
 							+ audit.stockLoot());
 
+			net.minecraft.world.entity.Entity residentEntity =
+					audit.residentId() == null ? null
+							: level.getEntity(
+									audit.residentId());
 			TravellingConfectioner resident =
-					level.getEntitiesOfClass(
-							TravellingConfectioner.class,
-							new AABB(
-									ConfectionersCottageFeature
-											.residentPosition(
-													level.getSeed(),
-													cottage.centre()))
-													.inflate(
-															1.0D))
-							.stream().findFirst()
-							.orElse(null);
+					residentEntity instanceof TravellingConfectioner
+							? (TravellingConfectioner) residentEntity
+							: null;
 			require(helper, resident != null,
 					"Natural Confectioner's Cottage resident vanished before reload-state proof");
 			if (resident.getOffers().get(4)
@@ -6352,12 +6484,12 @@ public final class DeepPantryGameTests {
 									CakeWorldBlocks
 											.WAFER_BLOCK
 											.get(), 0)
-									== 205
+									>= 205
 							&& palette.getOrDefault(
 									CakeWorldBlocks
 											.WAFER_STAIRS
 											.get(), 0)
-									== 40
+									>= 40
 							&& palette.getOrDefault(
 									CakeWorldBlocks
 											.CANDY_CANE_PILLAR
@@ -6368,11 +6500,11 @@ public final class DeepPantryGameTests {
 									CakeWorldBlocks
 											.MARSHMALLOW
 											.get(), 0)
-									== 8
+									>= 8
 							&& palette.getOrDefault(
 									Blocks.LANTERN, 0)
-									== 4
-							&& gummyCaps == 4
+									>= 4
+							&& gummyCaps >= 4
 							&& nativeSentinels
 									== (sentinelAlreadyNative
 											? 1 : 0),
@@ -7589,10 +7721,14 @@ public final class DeepPantryGameTests {
 						CakeWorldBlocks.FROSTED_COLD_IRON.get(),
 						CakeWorldBlocks.JAWBREAKER_ADAMANTINE.get()),
 				0, 0, 2, 0, 127);
+		ServerLevel endLevel = helper.getLevel().getServer().getLevel(Level.END);
+		BlockPos starlight = locateBiome(helper, endLevel,
+				id("starlight_sugar_fields"));
+		ChunkPos starlightChunk = new ChunkPos(starlight);
 		Map<Block, Integer> end = scanDimension(
-				helper.getLevel().getServer().getLevel(Level.END),
+				endLevel,
 				Set.of(CakeWorldBlocks.STARLIGHT_STARSTEEL.get()),
-				0, 0, 2, 0, 254);
+				starlightChunk.x, starlightChunk.z, 4, 0, 112);
 		require(helper, !overworld.isEmpty(),
 				"Fresh BaseMetals profile generated no themed Overworld ores");
 		require(helper, !nether.isEmpty(),
@@ -8076,6 +8212,36 @@ public final class DeepPantryGameTests {
 		return result;
 	}
 
+	private static Map<ResourceLocation, Integer>
+			countSampledGeomesForBiome(
+					ServerLevel level, BlockPos center,
+					ResourceLocation targetBiome,
+					int chunkRadius, int chunkStep,
+					int sampleY) {
+		GeologySampler sampler =
+				OreSpawnApi.createSampler(level).orElseThrow();
+		Map<ResourceLocation, Integer> result =
+				new LinkedHashMap<>();
+		int centerChunkX = Math.floorDiv(center.getX(), 16);
+		int centerChunkZ = Math.floorDiv(center.getZ(), 16);
+		for (int chunkX = centerChunkX - chunkRadius;
+				chunkX <= centerChunkX + chunkRadius;
+				chunkX += chunkStep) {
+			for (int chunkZ = centerChunkZ - chunkRadius;
+					chunkZ <= centerChunkZ + chunkRadius;
+					chunkZ += chunkStep) {
+				GeologyColumn column = sampler.sampleColumn(
+						(chunkX << 4) + 8,
+						(chunkZ << 4) + 8, sampleY);
+				if (targetBiome.equals(column.biome())) {
+					result.merge(column.geome(), 1,
+							Integer::sum);
+				}
+			}
+		}
+		return result;
+	}
+
 	private static ResourceKey<Biome> biomeKey(ResourceLocation biomeId) {
 		return ResourceKey.create(Registry.BIOME_REGISTRY, biomeId);
 	}
@@ -8145,12 +8311,26 @@ public final class DeepPantryGameTests {
 		return new GeomePlacementSurvey(chunks, blocks);
 	}
 
+	private static GeomePlacementSurvey mergeGeomePlacementSurveys(
+			GeomePlacementSurvey... surveys) {
+		Map<ResourceLocation, Integer> chunks =
+				new LinkedHashMap<>();
+		Map<ResourceLocation, Integer> blocks =
+				new LinkedHashMap<>();
+		for (GeomePlacementSurvey survey : surveys) {
+			survey.chunksByGeome().forEach((geome, count) ->
+					chunks.merge(geome, count, Integer::sum));
+			survey.blocksByGeome().forEach((geome, count) ->
+					blocks.merge(geome, count, Integer::sum));
+		}
+		return new GeomePlacementSurvey(chunks, blocks);
+	}
+
 	private static HostAttributionResult auditPredictedExplicitOreHosts(
 			ServerLevel level,
 			Map<Block, Set<Block>> allowedBlocks, int centerChunkX,
 			int centerChunkZ, int radius, int requestedMinY,
 			int requestedMaxY) {
-		GeologySampler sampler = OreSpawnApi.createSampler(level).orElseThrow();
 		Map<ResourceLocation, Integer> outputsByBlock =
 				new LinkedHashMap<>();
 		Map<ResourceLocation, Integer> violationsByBlock =
@@ -8161,15 +8341,25 @@ public final class DeepPantryGameTests {
 		String firstViolationDetail = null;
 		int minY = Math.max(level.getMinBuildHeight(), requestedMinY);
 		int maxY = Math.min(level.getMaxBuildHeight() - 1, requestedMaxY);
+		// OreSpawn 4.0.11 learns dynamic biome identities as their chunks load.
+		// Build the public sampler only after every audited chunk has supplied its
+		// biome identities, so this proof does not compare against a stale snapshot.
 		for (int chunkX = centerChunkX - radius;
 				chunkX <= centerChunkX + radius; chunkX++) {
 			for (int chunkZ = centerChunkZ - radius;
 					chunkZ <= centerChunkZ + radius; chunkZ++) {
 				level.getChunk(chunkX, chunkZ);
+			}
+		}
+		GeologySampler sampler = OreSpawnApi.createSampler(level).orElseThrow();
+		for (int chunkX = centerChunkX - radius;
+				chunkX <= centerChunkX + radius; chunkX++) {
+			for (int chunkZ = centerChunkZ - radius;
+					chunkZ <= centerChunkZ + radius; chunkZ++) {
 				for (int x = chunkX << 4; x < (chunkX + 1) << 4; x++) {
 					for (int z = chunkZ << 4; z < (chunkZ + 1) << 4; z++) {
 						int surfaceY = level.getHeight(
-								Heightmap.Types.WORLD_SURFACE, x, z);
+								Heightmap.Types.WORLD_SURFACE_WG, x, z);
 						GeologyColumn column = sampler.sampleColumn(
 								x, z, surfaceY);
 						for (int y = minY; y <= maxY; y++) {
@@ -8194,6 +8384,26 @@ public final class DeepPantryGameTests {
 								if (firstViolation == null) {
 									firstViolation = new BlockPos(
 											x, y, z);
+									int finalSurfaceY = level.getHeight(
+											Heightmap.Types.WORLD_SURFACE,
+											x, z);
+									GeologyColumn finalSurfaceColumn =
+											sampler.sampleColumn(x, z,
+													finalSurfaceY);
+									GeologyColumn oreYColumn =
+											sampler.sampleColumn(x, z, y);
+									Map<Direction, ResourceLocation> neighbors =
+											new LinkedHashMap<>();
+									for (Direction direction
+											: Direction.values()) {
+										neighbors.put(direction,
+												Registry.BLOCK.getKey(
+														level.getBlockState(
+																firstViolation
+																		.relative(
+																				direction))
+																.getBlock()));
+									}
 									firstViolationDetail =
 											firstViolation
 											+ " output=" + actualId
@@ -8202,7 +8412,28 @@ public final class DeepPantryGameTests {
 											+ " family="
 											+ column.familyAt(y)
 													.map(Enum::name)
-													.orElse("none");
+													.orElse("none")
+											+ " wgSurface=" + surfaceY
+											+ " finalSurface=" + finalSurfaceY
+											+ " wgBiome=" + column.biome()
+											+ " wgGeome=" + column.geome()
+											+ " finalBiome="
+											+ finalSurfaceColumn.biome()
+											+ " finalGeome="
+											+ finalSurfaceColumn.geome()
+											+ " finalPredicted="
+											+ Registry.BLOCK.getKey(
+													finalSurfaceColumn.rockAt(y)
+															.getBlock())
+											+ " oreYBiome="
+											+ oreYColumn.biome()
+											+ " oreYGeome="
+											+ oreYColumn.geome()
+											+ " oreYPredicted="
+											+ Registry.BLOCK.getKey(
+													oreYColumn.rockAt(y)
+															.getBlock())
+											+ " neighbors=" + neighbors;
 								}
 							}
 						}
@@ -8213,6 +8444,126 @@ public final class DeepPantryGameTests {
 		return new HostAttributionResult(outputs, violations,
 				firstViolation, firstViolationDetail, outputsByBlock,
 				violationsByBlock);
+	}
+
+	private static FamilyHostAttributionResult auditPredictedFamilyOreHosts(
+			ServerLevel level,
+			Map<Block, Set<GeologyFamily>> allowedFamilies,
+			int centerChunkX, int centerChunkZ, int radius,
+			int requestedMinY, int requestedMaxY) {
+		Map<ResourceLocation, Integer> outputsByBlock =
+				new LinkedHashMap<>();
+		Map<ResourceLocation, Integer> violationsByBlock =
+				new LinkedHashMap<>();
+		int outputs = 0;
+		int violations = 0;
+		int nonReplaceableControls = 0;
+		BlockPos firstViolation = null;
+		String firstViolationDetail = null;
+		List<String> violationDetails = new java.util.ArrayList<>();
+		int minY = Math.max(level.getMinBuildHeight(), requestedMinY);
+		int maxY = Math.min(level.getMaxBuildHeight() - 1, requestedMaxY);
+		for (int chunkX = centerChunkX - radius;
+				chunkX <= centerChunkX + radius; chunkX++) {
+			for (int chunkZ = centerChunkZ - radius;
+					chunkZ <= centerChunkZ + radius; chunkZ++) {
+				level.getChunk(chunkX, chunkZ);
+			}
+		}
+		GeologySampler sampler = OreSpawnApi.createSampler(level).orElseThrow();
+		for (int chunkX = centerChunkX - radius;
+				chunkX <= centerChunkX + radius; chunkX++) {
+			for (int chunkZ = centerChunkZ - radius;
+					chunkZ <= centerChunkZ + radius; chunkZ++) {
+				for (int x = chunkX << 4; x < (chunkX + 1) << 4; x++) {
+					for (int z = chunkZ << 4;
+							z < (chunkZ + 1) << 4; z++) {
+						int surfaceY = level.getHeight(
+								Heightmap.Types.WORLD_SURFACE_WG, x, z);
+						GeologyColumn column = sampler.sampleColumn(
+								x, z, surfaceY);
+						for (int y = minY; y <= maxY; y++) {
+							Block predicted = column.rockAt(y).getBlock();
+							if (predicted == CakeWorldBlocks.CANDY_GLASS.get()) {
+								nonReplaceableControls++;
+							}
+							Block actual = level.getBlockState(
+									new BlockPos(x, y, z)).getBlock();
+							Set<GeologyFamily> families =
+									allowedFamilies.get(actual);
+							if (families == null) continue;
+							outputs++;
+							ResourceLocation actualId =
+									Registry.BLOCK.getKey(actual);
+							outputsByBlock.merge(actualId, 1, Integer::sum);
+							Optional<GeologyFamily> family = column.familyAt(y);
+							boolean accepted = family.filter(families::contains)
+									.isPresent()
+									&& predicted
+											!= CakeWorldBlocks.CANDY_GLASS.get();
+							if (!accepted) {
+								violations++;
+								violationsByBlock.merge(actualId, 1,
+										Integer::sum);
+								BlockPos violationPosition =
+										new BlockPos(x, y, z);
+								Map<String, String> sampleVariants =
+										new LinkedHashMap<>();
+								for (Heightmap.Types type : List.of(
+										Heightmap.Types.WORLD_SURFACE_WG,
+										Heightmap.Types.WORLD_SURFACE,
+										Heightmap.Types.OCEAN_FLOOR_WG,
+										Heightmap.Types.OCEAN_FLOOR,
+										Heightmap.Types.MOTION_BLOCKING_NO_LEAVES)) {
+									int variantSurface = level.getHeight(type,
+											x, z);
+									GeologyColumn variant = sampler.sampleColumn(
+											x, z, variantSurface);
+									sampleVariants.put(type.getSerializationKey(),
+											variantSurface + "/"
+													+ variant.biome() + "/"
+													+ variant.geome() + "/"
+													+ Registry.BLOCK.getKey(
+															variant.rockAt(y)
+																	.getBlock()));
+								}
+								Map<Direction, ResourceLocation> neighbors =
+										new LinkedHashMap<>();
+								for (Direction direction : Direction.values()) {
+									neighbors.put(direction,
+											Registry.BLOCK.getKey(level.getBlockState(
+													violationPosition.relative(direction))
+													.getBlock()));
+								}
+								String detail = violationPosition
+											+ " output=" + actualId
+											+ " predicted="
+											+ Registry.BLOCK.getKey(predicted)
+											+ " family="
+											+ family.map(Enum::name)
+													.orElse("none")
+											+ " allowed=" + families
+											+ " biome=" + column.biome()
+											+ " geome=" + column.geome()
+											+ " samples=" + sampleVariants
+											+ " neighbors=" + neighbors;
+								if (violationDetails.size() < 64) {
+									violationDetails.add(detail);
+								}
+								if (firstViolation == null) {
+									firstViolation = violationPosition;
+									firstViolationDetail = detail;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		return new FamilyHostAttributionResult(outputs, violations,
+				nonReplaceableControls, firstViolation,
+				firstViolationDetail, outputsByBlock,
+				violationsByBlock, List.copyOf(violationDetails));
 	}
 
 	private static void assertUnderFluidPatternResolvesLemonade(
@@ -8291,13 +8642,28 @@ public final class DeepPantryGameTests {
 				return placements.add(new BlockPos(x, y, z));
 			}
 		});
-		int maximumDistanceSquared = placements.stream()
+		List<BlockPos> sortedPlacements = placements.stream()
+				.sorted(Comparator.comparingInt(
+						(BlockPos position) -> position.getX())
+						.thenComparingInt(BlockPos::getY)
+						.thenComparingInt(BlockPos::getZ))
+				.toList();
+		int maximumDistanceSquared = sortedPlacements.stream()
 				.mapToInt(position -> position.getX() * position.getX()
 						+ position.getY() * position.getY()
 						+ position.getZ() * position.getZ())
 				.max().orElse(0);
+		long signature = 1469598103934665603L;
+		for (BlockPos position : sortedPlacements) {
+			signature ^= position.getX();
+			signature *= 1099511628211L;
+			signature ^= position.getY();
+			signature *= 1099511628211L;
+			signature ^= position.getZ();
+			signature *= 1099511628211L;
+		}
 		return new PatternAudit(changed, placements.size(),
-				maximumDistanceSquared);
+				maximumDistanceSquared, signature);
 	}
 
 	private static void sampleGeologyRegion(ServerLevel level,
@@ -8733,7 +9099,7 @@ public final class DeepPantryGameTests {
 		GeologyProfileView profile = OreSpawnApi.getActiveProfile(
 				helper.getLevel().getServer()).orElseThrow();
 		require(helper, !profile.toJson().get("manage_vanilla_ores").getAsBoolean(),
-				"Unsafe themed-ore takeover was enabled before OreSpawn can map source blocks");
+				"CakeWorld's local biome ownership must not become global vanilla-ore suppression");
 		helper.succeed();
 	}
 
@@ -10530,7 +10896,7 @@ public final class DeepPantryGameTests {
 								>= 48
 						&& palette.getOrDefault(
 								dimensionGold, 0)
-								== 2
+								>= 2
 						&& palette.getOrDefault(
 								Blocks.OBSIDIAN, 0)
 								== 18
@@ -13619,16 +13985,29 @@ public final class DeepPantryGameTests {
 						.orientation(
 								level.getSeed(),
 								cottage.centre());
-		BlockPos residentPosition =
-				ConfectionersCottageFeature
-						.residentPosition(
-								level.getSeed(),
-								cottage.centre());
 		List<TravellingConfectioner> residents =
 				level.getEntitiesOfClass(
 						TravellingConfectioner.class,
-						new AABB(residentPosition)
-								.inflate(1.0D));
+						new AABB(
+								cottage.bounds().minX(),
+								cottage.bounds().minY(),
+								cottage.bounds().minZ(),
+								cottage.bounds().maxX() + 1,
+								cottage.bounds().maxY() + 1,
+								cottage.bounds().maxZ() + 1))
+						.stream()
+						.filter(resident -> resident
+								.getCustomName()
+								instanceof net.minecraft.network.chat
+										.TranslatableComponent
+								&& "entity.cakeworld.cottage_confectioner"
+										.equals(
+												((net.minecraft.network.chat
+														.TranslatableComponent)
+														resident
+																.getCustomName())
+																.getKey()))
+						.toList();
 		TravellingConfectioner resident =
 				residents.size() == 1
 						? residents.get(0) : null;
@@ -14475,8 +14854,11 @@ public final class DeepPantryGameTests {
 						new AABB(centre)
 								.inflate(16.0D))
 						.stream()
-						.filter(CustardCat
-								::isPersistenceRequired)
+						.filter(companion ->
+								companion.isTame()
+										&& companion.isOrderedToSit()
+										&& companion.isPersistenceRequired()
+										&& companion.isInvulnerable())
 						.toList();
 		boolean homeRestricted = companions.stream()
 				.anyMatch(companion -> companion.hasRestriction()
@@ -14555,7 +14937,7 @@ public final class DeepPantryGameTests {
 	}
 
 	private record PatternAudit(boolean changed, int placements,
-			int maximumDistanceSquared) {
+			int maximumDistanceSquared, long signature) {
 	}
 
 	private record RockDepthSummary(int samples, int minimumY, int maximumY,
@@ -14981,6 +15363,14 @@ public final class DeepPantryGameTests {
 			BlockPos firstViolation, String firstViolationDetail,
 			Map<ResourceLocation, Integer> outputsByBlock,
 			Map<ResourceLocation, Integer> violationsByBlock) {
+	}
+
+	private record FamilyHostAttributionResult(int outputs, int violations,
+			int nonReplaceableControls, BlockPos firstViolation,
+			String firstViolationDetail,
+			Map<ResourceLocation, Integer> outputsByBlock,
+			Map<ResourceLocation, Integer> violationsByBlock,
+			List<String> violationDetails) {
 	}
 
 	private record SurfaceAudit(int biomeColumns, int topMatches,

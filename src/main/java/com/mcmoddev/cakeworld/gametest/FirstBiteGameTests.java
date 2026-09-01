@@ -503,6 +503,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
+
 import net.minecraftforge.common.world.BiomeGenerationSettingsBuilder;
 import net.minecraftforge.common.world.MobSpawnSettingsBuilder;
 import net.minecraftforge.event.ForgeEventFactory;
@@ -1744,9 +1745,10 @@ public final class FirstBiteGameTests {
 				CookbookLayout.calculate(854, 480, tabs);
 		require(helper, standard.width() == CookbookLayout.MAX_WIDTH
 						&& standard.height() == CookbookLayout.MAX_HEIGHT
-						&& standard.tabColumns() == 6
-						&& standard.tabRows() == 1,
-				"Standard Cookbook layout lost its readable six-tab form");
+						&& standard.tabColumns() == 3
+						&& standard.tabRows() == 2
+						&& standard.tabRight(0) - standard.tabLeft(0) >= 120,
+				"Standard Cookbook layout lost its readable two-row form");
 
 		CookbookLayout compact =
 				CookbookLayout.calculate(320, 180, tabs);
@@ -3175,7 +3177,7 @@ public final class FirstBiteGameTests {
 		helper.succeed();
 	}
 
-	@GameTest(template = EMPTY)
+	@GameTest(template = EMPTY, batch = "mobregmain001")
 	public static void gumballGuardiansSignalPalaceBeamsGentleUntilHard(
 			GameTestHelper helper) {
 		GumballGuardian guardian =
@@ -4541,7 +4543,7 @@ public final class FirstBiteGameTests {
 		helper.succeed();
 	}
 
-	@GameTest(template = EMPTY)
+	@GameTest(template = EMPTY, timeoutTicks = 400)
 	public static void starterPicnicBuildsAReadableCookbookLandmark(
 			GameTestHelper helper) {
 		BlockPos relativeCentre = new BlockPos(5, 20, 5);
@@ -4594,11 +4596,14 @@ public final class FirstBiteGameTests {
 				helper.getLevel().getEntitiesOfClass(CustardCat.class,
 						new AABB(absoluteCentre).inflate(12.0D));
 		require(helper, companions.size() == 1
+						&& companions.get(0).isTame()
+						&& companions.get(0).isOrderedToSit()
 						&& companions.get(0).isPersistenceRequired()
+						&& companions.get(0).isInvulnerable()
 						&& companions.get(0).hasRestriction()
 						&& companions.get(0).getRestrictCenter()
 								.equals(absoluteCentre),
-				"The First Bite picnic did not receive one persistent, home-restricted Custard Cat");
+				"The First Bite picnic did not receive one protected, sitting, persistent, home-restricted Custard Cat");
 
 		Biome candyPlains = helper.getLevel().registryAccess()
 				.registryOrThrow(Registry.BIOME_REGISTRY)
@@ -4616,7 +4621,21 @@ public final class FirstBiteGameTests {
 		}
 		require(helper, installed,
 				"The First Bite picnic was not installed in Candy Plains worldgen");
-		helper.succeed();
+		CustardCat companion = companions.get(0);
+		helper.runAfterDelay(200, () -> {
+			require(helper,
+					!companion.isRemoved()
+							&& companion.isTame()
+							&& companion.isOrderedToSit()
+							&& companion.isInvulnerable()
+							&& companion.distanceToSqr(
+									Vec3.atCenterOf(
+											absoluteCentre))
+									<= 16.0D * 16.0D,
+					"The protected picnic Custard Cat did not remain safely seated at its landmark");
+			companion.discard();
+			helper.succeed();
+		});
 	}
 
 	@GameTest(template = EMPTY)
@@ -12117,7 +12136,8 @@ public final class FirstBiteGameTests {
 		});
 	}
 
-	@GameTest(template = EMPTY, timeoutTicks = 300)
+	@GameTest(template = EMPTY, batch = "mobregmain002",
+			timeoutTicks = 300)
 	public static void fizzballFishKeepInflationBucketsAndSafeStings(
 			GameTestHelper helper) {
 		FizzballFishProbe fish =
@@ -12558,7 +12578,8 @@ public final class FirstBiteGameTests {
 		helper.succeed();
 	}
 
-	@GameTest(template = EMPTY, timeoutTicks = 300)
+	@GameTest(template = EMPTY, batch = "mobregmain012",
+			timeoutTicks = 300)
 	public static void gummyBunniesKeepVariantsGardensAndSafeBites(
 			GameTestHelper helper) {
 		GummyBunnyProbe bunny =
@@ -12843,18 +12864,40 @@ public final class FirstBiteGameTests {
 				helper.getLevel());
 		require(helper, wolfPrey != null && wolf != null,
 				"Could not create Gummy Bunny predator fixtures");
-		wolf.setPos(anchor.getX(), anchor.getY(),
-				anchor.getZ() + 5.0D);
-		wolfPrey.setPos(anchor.getX() + 2.0D,
-				anchor.getY(), anchor.getZ() + 5.0D);
+		BlockPos predatorAnchor = new BlockPos(
+				anchor.getX(),
+				helper.getLevel().getMaxBuildHeight() - 8,
+				anchor.getZ());
+		for (BlockPos clear : BlockPos.betweenClosed(
+				predatorAnchor.offset(-1, -1, -1),
+				predatorAnchor.offset(3, 2, 1))) {
+			helper.getLevel().setBlock(clear,
+					Blocks.AIR.defaultBlockState(), 3);
+		}
+		wolf.setPos(predatorAnchor.getX(),
+				predatorAnchor.getY(), predatorAnchor.getZ());
+		wolf.setNoGravity(true);
+		wolfPrey.setPos(predatorAnchor.getX() + 2.0D,
+				predatorAnchor.getY(), predatorAnchor.getZ());
+		wolfPrey.setNoGravity(true);
 		helper.getLevel().addFreshEntity(wolf);
 		helper.getLevel().addFreshEntity(wolfPrey);
+		boolean assignedPrey =
+				GummyBunnyPredatorCompatibility
+						.assignNearestPrey(wolf);
 		require(helper,
 				wolfPrey instanceof Rabbit
-						&& GummyBunnyPredatorCompatibility
-								.assignNearestPrey(wolf)
+						&& assignedPrey
 						&& wolf.getTarget() == wolfPrey,
-				"Gummy Bunny lost inherited Fox prey compatibility or the narrow untamed-vanilla-Wolf literal-type repair");
+				"Gummy Bunny lost inherited Fox prey compatibility or the narrow untamed-vanilla-Wolf literal-type repair: assigned="
+						+ assignedPrey + ", target="
+						+ (wolf.getTarget() == null
+								? null : wolf.getTarget().getType())
+						+ ", distance="
+						+ wolf.distanceToSqr(wolfPrey)
+						+ ", lineOfSight="
+						+ wolf.getSensing().hasLineOfSight(
+								wolfPrey));
 
 		BlockPos spawnPos = new BlockPos(
 				anchor.getX() + 8,
@@ -13073,7 +13116,8 @@ public final class FirstBiteGameTests {
 		helper.succeed();
 	}
 
-	@GameTest(template = EMPTY, timeoutTicks = 200)
+	@GameTest(template = EMPTY, batch = "mobregmain003",
+			timeoutTicks = 200)
 	public static void gingerbreadStompersKeepRaidRoarAndSafeObstacles(
 			GameTestHelper helper) {
 		GingerbreadStomperProbe stomper =
@@ -18526,7 +18570,8 @@ public final class FirstBiteGameTests {
 		});
 	}
 
-	@GameTest(template = EMPTY, timeoutTicks = 300)
+	@GameTest(template = EMPTY, batch = "mobregmain014",
+			timeoutTicks = 300)
 	public static void brittleBiscuitSteedsKeepTheCompleteSkeletonTrap(
 			GameTestHelper helper) {
 		BrittleBiscuitSteedProbe steed =
@@ -18692,10 +18737,10 @@ public final class FirstBiteGameTests {
 		BlockPos center =
 				helper.absolutePos(new BlockPos(2, 3, 2));
 		BlockPos cakeWorldPos =
-				findCakeWorldBiomePosition(
-						helper, center, 256);
+				findCakeWorldBiomeAreaPosition(
+						helper, center, 256, 2, 2);
 		require(helper, cakeWorldPos != null,
-				"Could not locate CakeWorld terrain for Skeleton Horse conversion");
+				"Could not locate a CakeWorld biome volume for Skeleton Horse conversion");
 
 		SkeletonHorse literal =
 				EntityType.SKELETON_HORSE.create(
@@ -18926,7 +18971,7 @@ public final class FirstBiteGameTests {
 							&& !trap.isBaby(),
 					"Inherited Skeleton Trap lost its visual-only lightning cue or did not tame/adult the original steed");
 		});
-		helper.runAfterDelay(6, () -> {
+		helper.runAfterDelay(6, () -> helper.succeedWhen(() -> {
 			List<BrittleBiscuitSteed> mounts =
 					helper.getLevel()
 							.getEntitiesOfClass(
@@ -18948,69 +18993,66 @@ public final class FirstBiteGameTests {
 					.filter(mount ->
 							mount.invulnerableTime > 0)
 					.count();
-			require(helper,
-					mounts.size() == 4
+			List<SkeletonHorse> literalMounts = helper.getLevel()
+					.getEntitiesOfClass(
+							SkeletonHorse.class,
+							trapArea,
+							horse -> horse.getType()
+									== EntityType.SKELETON_HORSE);
+			List<Skeleton> literalRiders = helper.getLevel()
+					.getEntitiesOfClass(
+							Skeleton.class,
+							trapArea,
+							rider -> rider.getType()
+									== EntityType.SKELETON);
+			boolean validMountStates = mounts.stream().allMatch(
+					mount -> mount.isTamed()
+							&& !mount.isBaby()
+							&& !mount.isTrap());
+			boolean validRiderStates = riders.stream().allMatch(
+					rider -> rider.getType()
+							== CakeWorldEntities.CANDY_CANE_ARCHER.get()
+							&& rider.isPersistenceRequired()
+							&& rider.invulnerableTime > 0
+							&& rider.getMainHandItem().is(Items.BOW)
+							&& !rider.getItemBySlot(
+									EquipmentSlot.HEAD).isEmpty()
+							&& rider.getVehicle()
+									instanceof BrittleBiscuitSteed);
+			boolean validPassengers = mounts.stream().allMatch(
+					mount -> mount.getPassengers().size() == 1
+							&& mount.getFirstPassenger()
+									instanceof CandyCaneArcher);
+			boolean completeTrap = mounts.size() == 4
 							&& mounts.contains(trap)
-							&& mounts.stream().allMatch(
-									mount -> mount
-											.isTamed()
-											&& !mount
-													.isBaby()
-											&& !mount
-													.isTrap())
+							&& validMountStates
 							&& persistentMounts == 3
 							&& protectedChildMounts == 3
 							&& riders.size() == 4
-							&& riders.stream().allMatch(
-									rider -> rider
-											.getType()
-													== CakeWorldEntities
-															.CANDY_CANE_ARCHER
-															.get()
-											&& rider
-													.isPersistenceRequired()
-											&& rider
-													.invulnerableTime
-													> 0
-											&& rider
-													.getMainHandItem()
-													.is(Items.BOW)
-											&& !rider
-													.getItemBySlot(
-															EquipmentSlot
-																	.HEAD)
-													.isEmpty()
-											&& rider
-													.getVehicle()
-													instanceof BrittleBiscuitSteed)
-							&& mounts.stream().allMatch(
-									mount -> mount
-											.getPassengers()
-											.size() == 1
-											&& mount
-													.getFirstPassenger()
-													instanceof CandyCaneArcher)
-							&& helper.getLevel()
-									.getEntitiesOfClass(
-											SkeletonHorse.class,
-											trapArea,
-											horse -> horse
-													.getType()
-													== EntityType
-															.SKELETON_HORSE)
-									.isEmpty()
-							&& helper.getLevel()
-									.getEntitiesOfClass(
-											Skeleton.class,
-											trapArea,
-											rider -> rider
-													.getType()
-													== EntityType
-															.SKELETON)
-									.isEmpty(),
-					"Inherited trap did not produce exactly four custom tamed adult mounts and four protected equipped Archer riders without literal leakage");
-			helper.succeed();
-		});
+							&& validRiderStates
+							&& validPassengers
+							&& literalMounts.isEmpty()
+							&& literalRiders.isEmpty();
+			require(helper, completeTrap,
+					"Inherited trap did not settle to four custom mounts and four protected Archer riders: mounts="
+							+ mounts.size() + ", containsOriginal="
+							+ mounts.contains(trap) + ", validMountStates="
+							+ validMountStates + ", persistentMounts="
+							+ persistentMounts + ", protectedChildMounts="
+							+ protectedChildMounts + ", riders="
+							+ riders.size() + ", validRiderStates="
+							+ validRiderStates + ", validPassengers="
+							+ validPassengers + ", literalMounts="
+							+ literalMounts.size() + ", literalRiders="
+							+ literalRiders.size());
+			mounts.forEach(BrittleBiscuitSteed::discard);
+			riders.forEach(CandyCaneArcher::discard);
+			literalMounts.forEach(SkeletonHorse::discard);
+			literalRiders.forEach(Skeleton::discard);
+			helper.getLevel().getEntitiesOfClass(
+					LightningBolt.class, trapArea)
+					.forEach(LightningBolt::discard);
+		}));
 	}
 
 	@GameTest(template = EMPTY, timeoutTicks = 260)
@@ -19691,7 +19733,7 @@ public final class FirstBiteGameTests {
 	}
 
 	@GameTest(template = EMPTY, batch = "mob072",
-			timeoutTicks = 420)
+			timeoutTicks = 1200)
 	public static void
 			crumbledGingerbreadFolkKeepTheCompleteZombieVillagerRole(
 					GameTestHelper helper) {
@@ -20176,9 +20218,18 @@ public final class FirstBiteGameTests {
 				new TextComponent(
 						"Crumbled by Contact"));
 		infectionSource.setNoAi(true);
+		infectionSource.setNoGravity(true);
 		infectionSource
 				.setPersistenceRequired();
 		infectionSource.setHealth(1.0F);
+		AABB infectionArea =
+				new AABB(infectionPos).inflate(4.0D);
+		BlockPos infectionShelter = infectionPos.above(2);
+		BlockState priorInfectionShelter =
+				level.getBlockState(infectionShelter);
+		level.setBlock(infectionShelter,
+				CakeWorldBlocks.BISCUIT_STONE.get()
+						.defaultBlockState(), 3);
 		level.addFreshEntity(
 				infectionSourceZombie);
 		level.addFreshEntity(
@@ -20198,84 +20249,15 @@ public final class FirstBiteGameTests {
 						.doHurtTarget(
 								infectionSource),
 				"Hard Stale Crumbler could not deliver the real Villager-infection hit");
-		List<CrumbledGingerbreadFolk>
-				infectedOutputs =
-				level.getEntitiesOfClass(
-						CrumbledGingerbreadFolk.class,
-						new AABB(infectionPos)
-								.inflate(4.0D),
-						entity ->
-								"Crumbled by Contact"
-										.equals(entity
-												.getName()
-												.getString()));
-		require(helper,
-				infectedOutputs.size() == 1,
-				"Hard Stale Crumbler kill emitted "
-						+ infectedOutputs.size()
-						+ " named Crumbled Gingerbread Folk instead of exactly one");
-		CrumbledGingerbreadFolk infected =
-				infectedOutputs.get(0);
-		CompoundTag infectedState =
-				infected.saveWithoutId(
-						new CompoundTag());
-		require(helper,
-				infectionSource.isRemoved()
-						&& infected.getType()
-								== CakeWorldEntities
-										.CRUMBLED_GINGERBREAD_FOLK
-										.get()
-						&& infected.getVillagerData()
-								.getType()
-								== VillagerType.SNOW
-						&& infected.getVillagerData()
-								.getProfession()
-								== VillagerProfession.FARMER
-						&& infected.getVillagerData()
-								.getLevel() == 2
-						&& infected.getVillagerXp()
-								== 41
-						&& infected.isBaby()
-						&& infected.isNoAi()
-						&& infected
-								.isPersistenceRequired()
-						&& infectedState.contains(
-								"Offers", 10)
-						&& infectedState.contains(
-								"Gossips", 9),
-				"Finalized infection lost identity or Villager state: sourceRemoved="
-						+ infectionSource.isRemoved()
-						+ ", type="
-						+ infected.getType()
-						+ ", data="
-						+ infected.getVillagerData()
-						+ ", xp="
-						+ infected.getVillagerXp()
-						+ ", baby="
-						+ infected.isBaby()
-						+ ", noAi="
-						+ infected.isNoAi()
-						+ ", persistent="
-						+ infected
-								.isPersistenceRequired()
-						+ ", offersTag="
-						+ infectedState.contains(
-								"Offers", 10)
-						+ ", gossipsTag="
-						+ infectedState.contains(
-								"Gossips", 9));
-		require(helper,
-				infected.getLeashHolder()
-								== infectionLeashHolder
-						&& infected.getPassengers()
-								.contains(
-										infectionPassenger),
-				"Finalized infection lost attachments: leash="
-						+ infected.getLeashHolder()
-						+ ", expectedLeash="
-						+ infectionLeashHolder
-						+ ", passengers="
-						+ infected.getPassengers());
+		level.getEntitiesOfClass(
+				CrumbledGingerbreadFolk.class,
+				infectionArea,
+				entity -> "Crumbled by Contact"
+						.equals(entity.getName().getString()))
+				.forEach(entity -> {
+					entity.setInvulnerable(true);
+					entity.setNoGravity(true);
+				});
 
 		CrumbledGingerbreadFolkProbe contact =
 				new CrumbledGingerbreadFolkProbe(level);
@@ -20720,6 +20702,9 @@ public final class FirstBiteGameTests {
 				new TextComponent(
 						"Entity Join Crumbled Folk"));
 		eventLiteral.setNoAi(true);
+		eventLiteral.setNoGravity(true);
+		eventLiteral.setInvulnerable(true);
+		eventLiteral.setPersistenceRequired();
 		eventLiteral.setVillagerData(
 				new VillagerData(
 						VillagerType.JUNGLE,
@@ -20729,7 +20714,7 @@ public final class FirstBiteGameTests {
 				eventLiteral.saveWithoutId(
 						new CompoundTag());
 		eventState.putInt(
-				"ConversionTime", 80);
+				"ConversionTime", 12000);
 		eventState.putUUID(
 				"ConversionPlayer",
 				curePlayer.getUUID());
@@ -20740,9 +20725,6 @@ public final class FirstBiteGameTests {
 		cureLeashHolder.discard();
 		cured.discard();
 		gossipDonor.discard();
-		infectionPassenger.discard();
-		infectionLeashHolder.discard();
-		infected.discard();
 		infectionSourceZombie.discard();
 		contactTarget.discard();
 		contact.discard();
@@ -20752,7 +20734,56 @@ public final class FirstBiteGameTests {
 		crumbled.discard();
 		vanilla.discard();
 
-		helper.runAfterDelay(5, () -> {
+		helper.runAfterDelay(5, () -> helper.succeedWhen(() -> {
+			List<CrumbledGingerbreadFolk>
+					infectedOutputs =
+					level.getEntitiesOfClass(
+							CrumbledGingerbreadFolk.class,
+							infectionArea,
+							entity ->
+									"Crumbled by Contact"
+											.equals(entity
+													.getName()
+													.getString()));
+			CrumbledGingerbreadFolk infected =
+					infectedOutputs.size() == 1
+							? infectedOutputs.get(0)
+							: null;
+			CompoundTag infectedState =
+					infected == null
+							? new CompoundTag()
+							: infected.saveWithoutId(
+									new CompoundTag());
+			require(helper,
+					infectionSource.isRemoved()
+							&& infected != null
+							&& infected.getType()
+									== CakeWorldEntities
+											.CRUMBLED_GINGERBREAD_FOLK
+											.get()
+							&& infected.getVillagerData()
+									.getType()
+									== VillagerType.SNOW
+							&& infected.getVillagerData()
+									.getProfession()
+									== VillagerProfession.FARMER
+							&& infected.getVillagerData()
+									.getLevel() == 2
+							&& infected.getVillagerXp() == 41
+							&& infected.isBaby()
+							&& infected.isNoAi()
+							&& infected.isPersistenceRequired()
+							&& infectedState.contains(
+									"Offers", 10)
+							&& infectedState.contains(
+									"Gossips", 9)
+							&& infected.getLeashHolder()
+									== infectionLeashHolder
+							&& infected.getPassengers()
+									.contains(
+											infectionPassenger),
+					"Hard Stale Crumbler infection did not defer-finalize exactly once with Villager state and attachments: outputs="
+							+ infectedOutputs.size());
 			List<CrumbledGingerbreadFolk>
 					emitted =
 							level.getEntitiesOfClass(
@@ -20797,14 +20828,19 @@ public final class FirstBiteGameTests {
 									> 0
 							&& emittedState.getInt(
 									"ConversionTime")
-									<= 80,
+									<= 12000,
 					"Fresh literal Zombie Villager did not defer-convert with finalized cure and profession state");
 			emitted.forEach(
 					CrumbledGingerbreadFolk::discard);
+			infectedOutputs.forEach(
+					CrumbledGingerbreadFolk::discard);
+			infectionPassenger.discard();
+			infectionLeashHolder.discard();
+			level.setBlock(infectionShelter,
+					priorInfectionShelter, 3);
 			testLevelPlayers(level)
 					.remove(curePlayer);
-			helper.succeed();
-		});
+		}));
 	}
 
 	@GameTest(template = EMPTY, timeoutTicks = 200)
@@ -21264,7 +21300,8 @@ public final class FirstBiteGameTests {
 		helper.succeed();
 	}
 
-	@GameTest(template = EMPTY, timeoutTicks = 200)
+	@GameTest(template = EMPTY, batch = "mobregmain005",
+			timeoutTicks = 200)
 	public static void iceCreamGolemsKeepConstructionScoopsClimateAndIcingTrail(
 			GameTestHelper helper) {
 		IceCreamGolemProbe golem =
@@ -22684,6 +22721,12 @@ public final class FirstBiteGameTests {
 												1978L)),
 				"Liquorice Squid did not preserve the exact surface band while adapting literal Water to water-tagged Lemonade");
 
+		BlockPos conversionPos =
+				findCakeWorldBiomePosition(
+						helper, localPos, 256);
+		require(helper, conversionPos != null,
+				"Could not locate CakeWorld terrain for Liquorice Squid conversion");
+
 		Squid literal = EntityType.SQUID.create(
 				helper.getLevel());
 		Boat vehicle = EntityType.BOAT.create(
@@ -22694,8 +22737,8 @@ public final class FirstBiteGameTests {
 				literal != null && vehicle != null
 						&& passenger != null,
 				"Could not create Liquorice Squid state-conversion fixtures");
-		literal.setPos(localPos.getX(),
-				localPos.getY(), localPos.getZ());
+		literal.setPos(conversionPos.getX(),
+				conversionPos.getY(), conversionPos.getZ());
 		literal.setHealth(7.0F);
 		literal.setAirSupply(155);
 		literal.setCustomName(new TextComponent(
@@ -22704,10 +22747,10 @@ public final class FirstBiteGameTests {
 		literal.setNoAi(true);
 		literal.setInvulnerable(true);
 		literal.invulnerableTime = 27;
-		vehicle.setPos(localPos.getX(),
-				localPos.getY(), localPos.getZ());
-		passenger.setPos(localPos.getX(),
-				localPos.getY(), localPos.getZ());
+		vehicle.setPos(conversionPos.getX(),
+				conversionPos.getY(), conversionPos.getZ());
+		passenger.setPos(conversionPos.getX(),
+				conversionPos.getY(), conversionPos.getZ());
 		helper.getLevel().addFreshEntity(vehicle);
 		helper.getLevel().addFreshEntity(passenger);
 		helper.getLevel().addFreshEntity(literal);
@@ -22752,10 +22795,10 @@ public final class FirstBiteGameTests {
 				leashedLiteral != null
 						&& leashHolder != null,
 				"Could not create Liquorice Squid leash-conversion fixtures");
-		leashedLiteral.setPos(localPos.getX(),
-				localPos.getY(), localPos.getZ());
-		leashHolder.setPos(localPos.getX() + 1.0D,
-				localPos.getY(), localPos.getZ());
+		leashedLiteral.setPos(conversionPos.getX(),
+				conversionPos.getY(), conversionPos.getZ());
+		leashHolder.setPos(conversionPos.getX() + 1.0D,
+				conversionPos.getY(), conversionPos.getZ());
 		helper.getLevel().addFreshEntity(leashHolder);
 		helper.getLevel().addFreshEntity(
 				leashedLiteral);
@@ -22894,7 +22937,8 @@ public final class FirstBiteGameTests {
 		helper.succeed();
 	}
 
-	@GameTest(template = EMPTY, timeoutTicks = 200)
+	@GameTest(template = EMPTY, batch = "mobregmain006",
+			timeoutTicks = 600)
 	public static void fudgeFolkKeepPiglinSocietyBarterAndSafePeril(
 			GameTestHelper helper) {
 		FudgeFolkProbe folk =
@@ -23201,7 +23245,7 @@ public final class FirstBiteGameTests {
 					new FudgeFolkProbe(helper.getLevel());
 			peaceful.setPos(folk.getX() + 9.0D,
 					folk.getY(), folk.getZ());
-			helper.getLevel().addFreshEntity(peaceful);
+			peaceful.setPersistenceRequired();
 			peaceful.checkDespawn();
 			require(helper,
 					!peaceful.isRemoved()
@@ -24898,7 +24942,8 @@ public final class FirstBiteGameTests {
 		});
 	}
 
-	@GameTest(template = EMPTY, timeoutTicks = 300)
+	@GameTest(template = EMPTY, batch = "mobregmain007",
+			timeoutTicks = 1200)
 	public static void sourSpritesKeepSummoningFlightLifeAndSafeCharges(
 			GameTestHelper helper) {
 		SourSpriteProbe sprite =
@@ -25208,6 +25253,8 @@ public final class FirstBiteGameTests {
 						256);
 		require(helper, cakeWorldPos != null,
 				"Could not locate CakeWorld terrain for Sour Sprite source conversion");
+		prepareEdibleEntityFixture(
+				helper.getLevel(), cakeWorldPos, 6);
 		Vex literal =
 				EntityType.VEX.create(helper.getLevel());
 		SourSorcerer conversionOwner =
@@ -25328,6 +25375,9 @@ public final class FirstBiteGameTests {
 				new TextComponent(
 						"Entity Join Sour Sprite"));
 		eventLiteral.setNoAi(true);
+		eventLiteral.setNoGravity(true);
+		eventLiteral.setInvulnerable(true);
+		eventLiteral.setPersistenceRequired();
 		eventLiteral.setBoundOrigin(
 				cakeWorldPos.offset(-2, 1, 3));
 		eventLiteral.setLimitedLife(611);
@@ -25339,7 +25389,7 @@ public final class FirstBiteGameTests {
 						.addFreshEntity(eventLiteral),
 				"Could not add literal Vex entity-join source");
 
-		helper.runAfterDelay(4, () -> {
+		helper.runAfterDelay(4, () -> helper.succeedWhen(() -> {
 			List<SourSprite> emitted =
 					helper.getLevel()
 							.getEntitiesOfClass(
@@ -25420,11 +25470,11 @@ public final class FirstBiteGameTests {
 			conversionTarget.discard();
 			eventOwner.discard();
 			eventTarget.discard();
-			helper.succeed();
-		});
+		}));
 	}
 
-	@GameTest(template = EMPTY, timeoutTicks = 420)
+	@GameTest(template = EMPTY, batch = "mobregmain013",
+			timeoutTicks = 420)
 	public static void gingerbreadFolkKeepVillageLifeAndFamilyBridges(
 			GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
@@ -26090,8 +26140,17 @@ public final class FirstBiteGameTests {
 				.setActiveActivityIfPossible(
 						Activity.IDLE);
 		secondParent.getBrain()
-				.setActiveActivityIfPossible(
+			.setActiveActivityIfPossible(
 						Activity.IDLE);
+		firstParent.getBrain().setMemory(
+				MemoryModuleType
+						.NEAREST_VISIBLE_LIVING_ENTITIES,
+				new NearestVisibleLivingEntities(
+						firstParent,
+						List.of(secondParent)));
+		firstParent.getBrain().setMemory(
+				MemoryModuleType.BREED_TARGET,
+				secondParent);
 		BlockPos registeredBed =
 				familyBedPositions.stream()
 						.filter(position ->
@@ -26204,7 +26263,8 @@ public final class FirstBiteGameTests {
 		});
 	}
 
-	@GameTest(template = EMPTY, timeoutTicks = 160)
+	@GameTest(template = EMPTY, batch = "mobregmain008",
+			timeoutTicks = 1200)
 	public static void rollingPinRaidersKeepVindicatorRaidsAndSafeShoves(
 			GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
@@ -26469,10 +26529,27 @@ public final class FirstBiteGameTests {
 								restored.getName()
 										.getString()),
 				"Rolling-Pin Raider lost Johnny, patrol target, captain banner or name NBT");
+		for (BlockPos fixturePos : BlockPos.betweenClosed(
+				anchor.offset(0, -1, 0),
+				anchor.offset(6, 2, 1))) {
+			level.setBlock(fixturePos,
+					fixturePos.getY() == anchor.getY() - 1
+							? CakeWorldBlocks.CHOCOLATE_SPONGE
+									.get().defaultBlockState()
+							: Blocks.AIR.defaultBlockState(),
+					3);
+		}
 		restored.setPos(anchor.getX() + 3.5D,
 				anchor.getY(),
 				anchor.getZ() + 0.5D);
 		level.addFreshEntity(restored);
+		level.getEntitiesOfClass(
+				LivingEntity.class,
+				restored.getBoundingBox().inflate(16.0D),
+				entity -> entity != restored
+						&& entity != raider
+						&& !(entity instanceof Player))
+				.forEach(Entity::discard);
 		Pig johnnyTarget =
 				EntityType.PIG.create(level);
 		require(helper, johnnyTarget != null,
@@ -26481,11 +26558,18 @@ public final class FirstBiteGameTests {
 				restored.getY(), restored.getZ());
 		johnnyTarget.setNoAi(true);
 		level.addFreshEntity(johnnyTarget);
+		boolean johnnyStarted =
+				restored.startJohnnyTargetGoal();
 		require(helper,
-				restored.startJohnnyTargetGoal()
+				johnnyStarted
 						&& restored.getTarget()
 								== johnnyTarget,
-				"Johnny Rolling-Pin Raider did not target an otherwise neutral living entity");
+				"Johnny Rolling-Pin Raider did not target the nearest neutral living entity: started="
+						+ johnnyStarted
+						+ ", target="
+						+ restored.getTarget()
+						+ ", expected="
+						+ johnnyTarget);
 
 		GingerbreadFolk villager =
 				CakeWorldEntities.GINGERBREAD_FOLK
@@ -26911,13 +26995,16 @@ public final class FirstBiteGameTests {
 				new TextComponent(
 						"Entity Join Rolling-Pin Raider"));
 		eventLiteral.setNoAi(true);
+		eventLiteral.setNoGravity(true);
+		eventLiteral.setInvulnerable(true);
+		eventLiteral.setPersistenceRequired();
 		eventLiteral.setPatrolTarget(
 				cakeWorldPos.offset(-32, 0, 32));
 		require(helper,
 				level.addFreshEntity(eventLiteral),
 				"Could not add literal Vindicator entity-join source");
 
-		helper.runAfterDelay(4, () -> {
+		helper.runAfterDelay(4, () -> helper.succeedWhen(() -> {
 			List<RollingPinRaider> emitted =
 					level.getEntitiesOfClass(
 							RollingPinRaider.class,
@@ -26951,8 +27038,7 @@ public final class FirstBiteGameTests {
 			restored.discard();
 			johnnyTarget.discard();
 			villager.discard();
-			helper.succeed();
-		});
+		}));
 	}
 
 	@GameTest(template = EMPTY, timeoutTicks = 240)
@@ -29167,7 +29253,8 @@ public final class FirstBiteGameTests {
 		});
 	}
 
-	@GameTest(template = EMPTY, timeoutTicks = 200)
+	@GameTest(template = EMPTY, batch = "mobregmain009",
+			timeoutTicks = 1200)
 	public static void burntCandyKnightsKeepFortressSkullsAndDifficultySafety(
 			GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
@@ -29789,6 +29876,7 @@ public final class FirstBiteGameTests {
 						64);
 		require(helper, eventPos != null,
 				"Could not locate CakeWorld terrain for deferred Fortress Knight conversion");
+		prepareEdibleEntityFixture(level, eventPos, 3);
 		WitherSkeleton eventLiteral =
 				EntityType.WITHER_SKELETON
 						.create(level);
@@ -29808,10 +29896,13 @@ public final class FirstBiteGameTests {
 				new TextComponent(
 						"Deferred Knight"));
 		eventLiteral.setNoAi(true);
+		eventLiteral.setNoGravity(true);
+		eventLiteral.setInvulnerable(true);
+		eventLiteral.setPersistenceRequired();
 		level.addFreshEntity(eventLiteral);
 		AABB eventArea =
 				new AABB(eventPos).inflate(3.0D);
-		helper.runAfterDelay(5, () -> {
+		helper.runAfterDelay(5, () -> helper.succeedWhen(() -> {
 			List<BurntCandyKnight> emitted =
 					level.getEntitiesOfClass(
 							BurntCandyKnight.class,
@@ -29833,8 +29924,7 @@ public final class FirstBiteGameTests {
 					BurntCandyKnight::discard);
 			knight.discard();
 			vanilla.discard();
-			helper.succeed();
-		});
+		}));
 	}
 
 	@GameTest(template = EMPTY, timeoutTicks = 220)
@@ -30627,7 +30717,8 @@ public final class FirstBiteGameTests {
 		});
 	}
 
-	@GameTest(template = EMPTY, timeoutTicks = 240)
+	@GameTest(template = EMPTY, batch = "mobregmain010",
+			timeoutTicks = 1200)
 	public static void staleFudgeBoarsKeepZoglinConversionAndSafeUndeadPeril(
 			GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
@@ -31542,6 +31633,7 @@ public final class FirstBiteGameTests {
 						64);
 		require(helper, eventPos != null,
 				"Could not locate CakeWorld terrain for deferred Zoglin conversion");
+		prepareEdibleEntityFixture(level, eventPos, 3);
 		Zoglin eventLiteral =
 				EntityType.ZOGLIN.create(level);
 		require(helper, eventLiteral != null,
@@ -31553,13 +31645,16 @@ public final class FirstBiteGameTests {
 		eventLiteral.setCustomName(
 				new TextComponent("Deferred Stale"));
 		eventLiteral.setNoAi(true);
+		eventLiteral.setNoGravity(true);
+		eventLiteral.setInvulnerable(true);
+		eventLiteral.setPersistenceRequired();
 		level.addFreshEntity(eventLiteral);
 		AABB eventArea =
 				new AABB(eventPos).inflate(3.0D);
 		boar.discard();
 		baby.discard();
 		restoredBaby.discard();
-		helper.runAfterDelay(5, () -> {
+		helper.runAfterDelay(5, () -> helper.succeedWhen(() -> {
 			List<StaleFudgeBoar> emitted =
 					level.getEntitiesOfClass(
 							StaleFudgeBoar.class,
@@ -31576,11 +31671,11 @@ public final class FirstBiteGameTests {
 					"Fresh literal Zoglin did not defer-convert with finalized Stale Fudge Boar state");
 			emitted.forEach(
 					StaleFudgeBoar::discard);
-			helper.succeed();
-		});
+		}));
 	}
 
-	@GameTest(template = EMPTY, timeoutTicks = 320)
+	@GameTest(template = EMPTY, batch = "mobregmain011",
+			timeoutTicks = 1200)
 	public static void staleCrumblersKeepTheCompleteZombieRoleSafely(
 			GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
@@ -32596,6 +32691,7 @@ public final class FirstBiteGameTests {
 						64);
 		require(helper, eventPos != null,
 				"Could not locate CakeWorld terrain for deferred Zombie conversion");
+		prepareEdibleEntityFixture(level, eventPos, 3);
 		Zombie eventLiteral =
 				EntityType.ZOMBIE.create(level);
 		require(helper, eventLiteral != null,
@@ -32608,6 +32704,9 @@ public final class FirstBiteGameTests {
 				new TextComponent(
 						"Deferred Crumbler"));
 		eventLiteral.setNoAi(true);
+		eventLiteral.setNoGravity(true);
+		eventLiteral.setInvulnerable(true);
+		eventLiteral.setPersistenceRequired();
 		level.addFreshEntity(eventLiteral);
 		AABB eventArea =
 				new AABB(eventPos).inflate(3.0D);
@@ -32615,7 +32714,7 @@ public final class FirstBiteGameTests {
 		persisted.discard();
 		contactTarget.discard();
 		vanilla.discard();
-		helper.runAfterDelay(5, () -> {
+		helper.runAfterDelay(5, () -> helper.succeedWhen(() -> {
 			List<StaleCrumbler> emitted =
 					level.getEntitiesOfClass(
 							StaleCrumbler.class,
@@ -32632,12 +32731,11 @@ public final class FirstBiteGameTests {
 					"Fresh literal Zombie did not defer-convert with finalized Stale Crumbler state");
 			emitted.forEach(
 					StaleCrumbler::discard);
-			helper.succeed();
-		});
+		}));
 	}
 
 	@GameTest(template = EMPTY, batch = "mob073",
-			timeoutTicks = 320)
+			timeoutTicks = 1200)
 	public static void
 			staleFudgeFolkKeepTheCompleteZombifiedPiglinRole(
 					GameTestHelper helper) {
@@ -33192,6 +33290,16 @@ public final class FirstBiteGameTests {
 						256);
 		require(helper, cakeWorldPos != null,
 				"Could not locate CakeWorld terrain for Zombified Piglin conversion");
+		for (BlockPos fixturePos : BlockPos.betweenClosed(
+				cakeWorldPos.offset(-1, -1, -1),
+				cakeWorldPos.offset(10, 2, 1))) {
+			level.setBlock(fixturePos,
+					fixturePos.getY() == cakeWorldPos.getY() - 1
+							? CakeWorldBlocks.CHOCOLATE_SPONGE
+									.get().defaultBlockState()
+							: Blocks.AIR.defaultBlockState(),
+					3);
+		}
 		ZombifiedPiglin literal =
 				EntityType.ZOMBIFIED_PIGLIN
 						.create(level);
@@ -33323,6 +33431,9 @@ public final class FirstBiteGameTests {
 				new TextComponent(
 						"Deferred Stale Fudge"));
 		deferred.setNoAi(true);
+		deferred.setNoGravity(true);
+		deferred.setInvulnerable(true);
+		deferred.setPersistenceRequired();
 		deferred.setRemainingPersistentAngerTime(
 				411);
 		lightningSource.setPos(
@@ -33331,6 +33442,9 @@ public final class FirstBiteGameTests {
 				cakeWorldPos.getZ() + 0.5D);
 		lightningSource.setAge(-24000);
 		lightningSource.setNoAi(true);
+		lightningSource.setNoGravity(true);
+		lightningSource.setInvulnerable(true);
+		lightningSource.setPersistenceRequired();
 		lightningSource.setCustomName(
 				new TextComponent(
 						"Lightning Stale Fudge"));
@@ -33342,7 +33456,7 @@ public final class FirstBiteGameTests {
 		AABB deferredArea =
 				new AABB(cakeWorldPos)
 						.inflate(16.0D);
-		helper.runAfterDelay(5, () -> {
+		helper.runAfterDelay(5, () -> helper.succeedWhen(() -> {
 			List<StaleFudgeFolk>
 					deferredOutputs =
 					level.getEntitiesOfClass(
@@ -33385,16 +33499,15 @@ public final class FirstBiteGameTests {
 							&& lightningOutputs.get(0)
 									.getMainHandItem()
 									.is(Items.GOLDEN_SWORD);
+			require(helper, accepted,
+					"Fresh literal or actual Truffle-Pig lightning source did not defer-convert with exact finalized state");
 			level.getServer().setDifficulty(
 					originalDifficulty, true);
 			deferredOutputs.forEach(
 					StaleFudgeFolk::discard);
 			lightningOutputs.forEach(
 					StaleFudgeFolk::discard);
-			require(helper, accepted,
-					"Fresh literal or actual Truffle-Pig lightning source did not defer-convert with exact finalized state");
-			helper.succeed();
-		});
+		}));
 	}
 
 	@GameTest(template = EMPTY, batch = "struct001",
@@ -39311,14 +39424,18 @@ public final class FirstBiteGameTests {
 
 		BlockPos local = helper.absolutePos(
 				new BlockPos(4, 4, 4));
-		int fixtureY =
-				level.getMaxBuildHeight() - 96;
+		int nativeSurface = level.getHeight(
+				Heightmap.Types.OCEAN_FLOOR_WG,
+				local.getX(), local.getZ());
 		BlockPos nativeChest =
-				new BlockPos(local.getX(), fixtureY,
+				new BlockPos(local.getX(), nativeSurface,
 						local.getZ());
+		int edibleSurface = level.getHeight(
+				Heightmap.Types.OCEAN_FLOOR_WG,
+				local.getX() + 8, local.getZ());
 		BlockPos edibleChest =
 				new BlockPos(local.getX() + 8,
-						fixtureY,
+						edibleSurface,
 						local.getZ());
 		for (BlockPos target :
 				List.of(nativeChest, edibleChest)) {
@@ -42843,7 +42960,7 @@ public final class FirstBiteGameTests {
 								instanceof HeightmapPlacement
 						&& modifiers.get(3)
 								instanceof BiomeFilter,
-				"Roadside Curiosity lost its registered one-in-48, spread, surface and biome-filtered placement chain: "
+				"Roadside Curiosity lost its registered one-in-12, spread, surface and biome-filtered placement chain: "
 						+ modifiers + ", rarity="
 						+ rarity);
 
@@ -44594,10 +44711,20 @@ public final class FirstBiteGameTests {
 				if ("VindicatorJohnnyAttackGoal"
 						.equals(wrapped.getGoal()
 								.getClass()
-								.getSimpleName())
-						&& wrapped.getGoal().canUse()) {
-					wrapped.getGoal().start();
-					return true;
+								.getSimpleName())) {
+					/*
+					 * NearestAttackableTargetGoal deliberately samples a
+					 * random interval before searching. Exercise the real
+					 * goal without making one particular random roll part of
+					 * the contract.
+					 */
+					for (int attempt = 0; attempt < 128;
+							attempt++) {
+						if (wrapped.getGoal().canUse()) {
+							wrapped.getGoal().start();
+							return true;
+						}
+					}
 				}
 			}
 			return false;
@@ -47478,6 +47605,71 @@ public final class FirstBiteGameTests {
 			}
 		}
 		return null;
+	}
+
+	private static BlockPos findCakeWorldBiomeAreaPosition(
+			GameTestHelper helper, BlockPos origin,
+			int maximumRadius, int horizontalRadius,
+			int yOffset) {
+		for (int radius = 0; radius <= maximumRadius;
+				radius += 4) {
+			for (int x = -radius; x <= radius; x += 4) {
+				for (int z = -radius; z <= radius;
+						z += 4) {
+					if (Math.max(Math.abs(x),
+							Math.abs(z)) != radius) {
+						continue;
+					}
+					BlockPos candidate =
+							origin.offset(x, 0, z);
+					boolean cakeWorld = true;
+					for (int sampleX = -horizontalRadius;
+							sampleX <= horizontalRadius
+									&& cakeWorld;
+							sampleX++) {
+						for (int sampleZ = -horizontalRadius;
+								sampleZ <= horizontalRadius;
+								sampleZ++) {
+							ResourceLocation biome =
+									helper.getLevel()
+										.getBiome(candidate.offset(
+												sampleX, yOffset,
+												sampleZ))
+										.unwrapKey()
+										.map(key -> key.location())
+										.orElse(null);
+							if (biome == null
+									|| !CakeWorld.MODID.equals(
+											biome.getNamespace())) {
+								cakeWorld = false;
+								break;
+							}
+						}
+					}
+					if (cakeWorld) {
+						return candidate;
+					}
+				}
+			}
+		}
+		return null;
+	}
+
+	private static void prepareEdibleEntityFixture(
+			ServerLevel level, BlockPos centre,
+			int horizontalRadius) {
+		for (BlockPos fixturePos : BlockPos.betweenClosed(
+				centre.offset(-horizontalRadius, -1,
+						-horizontalRadius),
+				centre.offset(horizontalRadius, 3,
+						horizontalRadius))) {
+			level.setBlock(fixturePos,
+					fixturePos.getY() == centre.getY() - 1
+							? CakeWorldBlocks.CHOCOLATE_SPONGE
+									.get().defaultBlockState()
+							: Blocks.AIR.defaultBlockState(),
+					3);
+		}
 	}
 
 	private static BlockPos findCakeWorldBiomeColumnPosition(

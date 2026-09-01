@@ -4,10 +4,8 @@ import java.util.List;
 import java.util.Random;
 
 import com.mcmoddev.cakeworld.CakeWorld;
-import com.mcmoddev.cakeworld.entity.CustardCat;
 import com.mcmoddev.cakeworld.init.CakeWorldBiomes;
 import com.mcmoddev.cakeworld.init.CakeWorldBlocks;
-import com.mcmoddev.cakeworld.init.CakeWorldEntities;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -16,6 +14,7 @@ import net.minecraft.core.Registry;
 import net.minecraft.data.BuiltinRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.WorldGenLevel;
@@ -167,18 +166,16 @@ public final class StarterPicnicFeature extends Feature<NoneFeatureConfiguration
 
 	private static void spawnCompanion(WorldGenLevel world, Random random,
 			BlockPos floorCentre) {
-		CustardCat cat = CakeWorldEntities.CUSTARD_CAT.get()
-				.create(world.getLevel());
-		if (cat == null) {
-			return;
+		int catType = random.nextInt(10);
+		if (world instanceof ServerLevel level) {
+			StarterPicnicCompanions.spawn(level,
+					floorCentre, catType);
+		} else {
+			// WorldGenRegion does not reliably retain live entities. Defer the
+			// companion until the owning chunk has reached the ServerLevel.
+			StarterPicnicCompanions.queue(world,
+					floorCentre, catType);
 		}
-		BlockPos shelter = floorCentre.offset(-2, 1, -2);
-		cat.setPos(shelter.getX() + 0.5D, shelter.getY(),
-				shelter.getZ() + 0.5D);
-		cat.setCatType(random.nextInt(10));
-		cat.setPersistenceRequired();
-		cat.restrictTo(floorCentre, 12);
-		world.addFreshEntity(cat);
 	}
 
 	private static boolean hasSafeFootprint(WorldGenLevel world,
