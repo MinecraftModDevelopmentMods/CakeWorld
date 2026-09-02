@@ -3,7 +3,10 @@ package zone.moddev.mc.cakeworld.world;
 import java.util.List;
 import java.util.Queue;
 import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
 
 import zone.moddev.mc.cakeworld.CakeWorld;
 import zone.moddev.mc.cakeworld.init.CakeWorldBlocks;
@@ -11,6 +14,8 @@ import zone.moddev.mc.cakeworld.init.CakeWorldFluids;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
@@ -20,6 +25,7 @@ import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.WorldgenRandom;
 import net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature;
@@ -31,6 +37,7 @@ import net.minecraft.world.level.levelgen.structure.pieces.PiecesContainer;
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePiecesBuilder;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
+import net.minecraftforge.event.world.ChunkDataEvent;
 import net.minecraftforge.event.world.ChunkEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -47,10 +54,60 @@ import net.minecraftforge.server.ServerLifecycleHooks;
  */
 @Mod.EventBusSubscriber(modid = CakeWorld.MODID)
 public final class AncientCakeVaultPalette {
+	private static final String PERSISTENT_KEY =
+			"cakeworld_ancient_cake_vault_palette";
+	private static final String CONVERTED_STARTS_KEY =
+			"converted_starts";
 	private static final Queue<PendingSlice> PENDING =
 			new ConcurrentLinkedQueue<>();
+	private static final ConcurrentMap<Long, Set<Long>>
+			CONVERTED_STARTS = new ConcurrentHashMap<>();
 
 	private AncientCakeVaultPalette() {
+	}
+
+	@SubscribeEvent
+	public static void onChunkDataLoad(
+			ChunkDataEvent.Load event) {
+		if (event.getStatus()
+				!= ChunkStatus.ChunkType.LEVELCHUNK
+				|| !event.getData().contains(
+						PERSISTENT_KEY,
+						Tag.TAG_COMPOUND)) {
+			return;
+		}
+		CompoundTag persistent = event.getData()
+				.getCompound(PERSISTENT_KEY);
+		Set<Long> starts = convertedStarts(
+				event.getChunk().getPos().toLong());
+		for (long start : persistent.getLongArray(
+				CONVERTED_STARTS_KEY)) {
+			starts.add(start);
+		}
+	}
+
+	@SubscribeEvent
+	public static void onChunkDataSave(
+			ChunkDataEvent.Save event) {
+		if (!(event.getWorld()
+				instanceof ServerLevel level)
+				|| !level.dimension()
+						.equals(Level.OVERWORLD)) {
+			return;
+		}
+		Set<Long> starts = CONVERTED_STARTS.get(
+				event.getChunk().getPos().toLong());
+		if (starts == null || starts.isEmpty()) {
+			return;
+		}
+		CompoundTag persistent = event.getData()
+				.getCompound(PERSISTENT_KEY);
+		persistent.putLongArray(CONVERTED_STARTS_KEY,
+				starts.stream()
+						.mapToLong(Long::longValue)
+						.sorted().toArray());
+		event.getData().put(PERSISTENT_KEY,
+				persistent);
 	}
 
 	@SubscribeEvent
@@ -118,8 +175,7 @@ public final class AncientCakeVaultPalette {
 							stronghold);
 			if (isCakeWorldVault(
 					level, direct)) {
-				themeChunk(level, chunk,
-						direct);
+				themeLoadedChunks(level, direct);
 				themed = true;
 			}
 			for (long reference
@@ -136,8 +192,7 @@ public final class AncientCakeVaultPalette {
 								stronghold);
 				if (isCakeWorldVault(
 						level, start)) {
-					themeChunk(level, chunk,
-							start);
+					themeLoadedChunks(level, start);
 					themed = true;
 				}
 			}
@@ -159,6 +214,7 @@ public final class AncientCakeVaultPalette {
 	public static void onServerStopped(
 			ServerStoppedEvent event) {
 		PENDING.clear();
+		CONVERTED_STARTS.clear();
 	}
 
 	private static boolean isCakeWorldVault(
@@ -178,10 +234,42 @@ public final class AncientCakeVaultPalette {
 						.GENERATES_IN);
 	}
 
+	private static void themeLoadedChunks(
+			ServerLevel level,
+			StructureStart start) {
+		BoundingBox bounds = start.getBoundingBox();
+		int minimumChunkX =
+				Math.floorDiv(bounds.minX(), 16);
+		int maximumChunkX =
+				Math.floorDiv(bounds.maxX(), 16);
+		int minimumChunkZ =
+				Math.floorDiv(bounds.minZ(), 16);
+		int maximumChunkZ =
+				Math.floorDiv(bounds.maxZ(), 16);
+		for (int chunkX = minimumChunkX;
+				chunkX <= maximumChunkX; chunkX++) {
+			for (int chunkZ = minimumChunkZ;
+					chunkZ <= maximumChunkZ; chunkZ++) {
+				if (level.hasChunk(chunkX, chunkZ)) {
+					themeChunk(level,
+							level.getChunk(
+									chunkX, chunkZ),
+							start);
+				}
+			}
+		}
+	}
+
 	private static void themeChunk(
 			ServerLevel level,
 			LevelChunk chunk,
 			StructureStart start) {
+		Set<Long> converted = convertedStarts(
+				chunk.getPos().toLong());
+		long startKey = start.getChunkPos().toLong();
+		if (converted.contains(startKey)) {
+			return;
+		}
 		ChunkPos chunkPos = chunk.getPos();
 		BoundingBox slice = new BoundingBox(
 				chunkPos.getMinBlockX(),
@@ -200,6 +288,16 @@ public final class AncientCakeVaultPalette {
 				slice, chunkPos,
 				new PiecesContainer(
 						start.getPieces()));
+		converted.add(startKey);
+		chunk.setUnsaved(true);
+	}
+
+	private static Set<Long> convertedStarts(
+			long chunkKey) {
+		return CONVERTED_STARTS.computeIfAbsent(
+				chunkKey,
+				ignored -> ConcurrentHashMap
+						.newKeySet());
 	}
 
 	/**

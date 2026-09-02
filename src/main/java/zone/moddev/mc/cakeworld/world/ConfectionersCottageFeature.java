@@ -506,10 +506,40 @@ public final class ConfectionersCottageFeature
 		if (!bounds.isInside(position)) {
 			return false;
 		}
-		world.getLevel().getEntitiesOfClass(
-				TravellingConfectioner.class,
-				new AABB(position).inflate(1.0D))
-				.forEach(TravellingConfectioner::discard);
+		if (!world.getFluidState(position).isEmpty()
+				|| !world.getFluidState(position.below())
+						.isEmpty()
+				|| !world.getBlockState(position.below())
+						.is(CakeWorldBlocks.WAFER_BLOCK.get())) {
+			return false;
+		}
+		AABB cottage = new AABB(
+				centre.offset(-8, -2, -8),
+				centre.offset(9, 13, 9));
+		List<TravellingConfectioner> residents =
+				world.getLevel().getEntitiesOfClass(
+						TravellingConfectioner.class,
+						cottage,
+						ConfectionersCottageFeature
+								::isCottageResident);
+		if (residents.size() > 1) {
+			residents.forEach(
+					TravellingConfectioner::discard);
+			return false;
+		}
+		if (residents.size() == 1) {
+			TravellingConfectioner resident =
+					residents.get(0);
+			resident.moveTo(position,
+					rotation.rotate(Direction.SOUTH)
+							.toYRot(),
+					0.0F);
+			configureCottageResident(
+					resident, centre);
+			markResidentActivated(
+					world, centre, rotation, bounds);
+			return true;
+		}
 		TravellingConfectioner resident =
 				CakeWorldEntities.TRAVELLING_CONFECTIONER
 						.get().create(world.getLevel());
@@ -525,6 +555,26 @@ public final class ConfectionersCottageFeature
 				world.getCurrentDifficultyAt(position),
 				MobSpawnType.STRUCTURE,
 				null, null);
+		configureCottageResident(resident, centre);
+		if (!world.addFreshEntity(resident)) {
+			return false;
+		}
+		markResidentActivated(
+				world, centre, rotation, bounds);
+		return true;
+	}
+
+	private static boolean isCottageResident(
+			TravellingConfectioner resident) {
+		return resident.getCustomName()
+				instanceof TranslatableComponent name
+				&& name.getKey().equals(
+						"entity.cakeworld.cottage_confectioner");
+	}
+
+	private static void configureCottageResident(
+			TravellingConfectioner resident,
+			BlockPos centre) {
 		resident.installCottageOffers();
 		resident.setDespawnDelay(0);
 		resident.setWanderTarget(centre);
@@ -532,26 +582,19 @@ public final class ConfectionersCottageFeature
 		resident.restrictTo(centre, 7);
 		resident.setCustomName(new TranslatableComponent(
 				"entity.cakeworld.cottage_confectioner"));
-		world.addFreshEntity(resident);
+	}
 
-		boolean complete =
-				world.getLevel().getEntitiesOfClass(
-						TravellingConfectioner.class,
-						new AABB(position).inflate(1.0D))
-						.size() == 1;
-		if (complete) {
-			BlockPos marker =
-					residentMarker(centre, rotation);
-			if (bounds.isInside(marker)) {
-				world.setBlock(marker,
-						CakeWorldBlocks
-								.GINGERBREAD_BRICKS
-								.get()
-								.defaultBlockState(),
-						2);
-			}
+	private static void markResidentActivated(
+			WorldGenLevel world, BlockPos centre,
+			Rotation rotation, BoundingBox bounds) {
+		BlockPos marker =
+				residentMarker(centre, rotation);
+		if (bounds.isInside(marker)) {
+			world.setBlock(marker,
+					CakeWorldBlocks.GINGERBREAD_BRICKS
+							.get().defaultBlockState(),
+					2);
 		}
-		return complete;
 	}
 
 	private static void fillSupportDown(
