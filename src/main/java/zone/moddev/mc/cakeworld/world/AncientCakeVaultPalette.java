@@ -126,18 +126,32 @@ public final class AncientCakeVaultPalette {
 						.equals(Level.OVERWORLD)) {
 			return;
 		}
-		// Keep the callback non-reentrant, but isolate the 128 authoritative
-		// Stronghold start candidates from ordinary chunk-load traffic. A large
-		// world-generation scan can otherwise keep moving a candidate behind
-		// newer loads before the deferred server-tick pass observes its start.
+		// Keep the callback non-reentrant, but isolate actual saved Stronghold
+		// starts and the 128 early-load candidates from ordinary chunk traffic.
+		// A large world-generation scan can otherwise keep moving a start behind
+		// newer loads before the deferred server-tick pass observes it.
 		PendingSlice pending = new PendingSlice(
 				level.dimension(),
 				chunk.getPos(), 0);
-		if (isStrongholdStartCandidate(level, chunk.getPos())) {
+		if (hasSavedStrongholdStart(level, chunk)
+				|| isStrongholdStartCandidate(
+						level, chunk.getPos())) {
 			START_CANDIDATES.addLast(pending);
 		} else {
 			PENDING.addFirst(pending);
 		}
+	}
+
+	private static boolean hasSavedStrongholdStart(
+			ServerLevel level, LevelChunk chunk) {
+		ConfiguredStructureFeature<?, ?> stronghold =
+				configuredStronghold(level);
+		if (stronghold == null) {
+			return false;
+		}
+		StructureStart start = chunk.getStartForFeature(
+				stronghold);
+		return start != null && start.isValid();
 	}
 
 	@SubscribeEvent
