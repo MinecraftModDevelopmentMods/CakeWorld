@@ -8,6 +8,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentMap;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import zone.moddev.mc.cakeworld.CakeWorld;
 import zone.moddev.mc.cakeworld.init.CakeWorldBlocks;
 import zone.moddev.mc.cakeworld.init.CakeWorldFluids;
@@ -56,6 +59,7 @@ import net.minecraftforge.server.ServerLifecycleHooks;
  */
 @Mod.EventBusSubscriber(modid = CakeWorld.MODID)
 public final class AncientCakeVaultPalette {
+	private static final Logger LOGGER = LogManager.getLogger();
 	private static final String PERSISTENT_KEY =
 			"cakeworld_ancient_cake_vault_palette";
 	private static final String CONVERTED_STARTS_KEY =
@@ -105,6 +109,10 @@ public final class AncientCakeVaultPalette {
 			starts.add(start);
 			persisted.add(start);
 		}
+		if (fixedWorldgenEvidence()) {
+			LOGGER.info("Ancient Cake Vault marker load: chunk={}, starts={}",
+					event.getChunk().getPos(), persisted);
+		}
 	}
 
 	@SubscribeEvent
@@ -132,6 +140,10 @@ public final class AncientCakeVaultPalette {
 		persistedConvertedStarts(
 				event.getChunk().getPos().toLong())
 				.addAll(starts);
+		if (fixedWorldgenEvidence()) {
+			LOGGER.info("Ancient Cake Vault marker save: chunk={}, starts={}",
+					event.getChunk().getPos(), starts);
+		}
 	}
 
 	@SubscribeEvent
@@ -152,10 +164,21 @@ public final class AncientCakeVaultPalette {
 		PendingSlice pending = new PendingSlice(
 				level.dimension(),
 				chunk.getPos(), 0, 0, savedStart);
+		boolean startCandidate = isStrongholdStartCandidate(
+				level, chunk.getPos());
+		if (fixedWorldgenEvidence()
+				&& (savedStart || startCandidate)) {
+			LOGGER.info("Ancient Cake Vault load event: chunk={}, savedStart={}, candidate={}, converted={}, persisted={}",
+					chunk.getPos(), savedStart,
+					startCandidate,
+					CONVERTED_STARTS.getOrDefault(
+							chunk.getPos().toLong(), Set.of()),
+					PERSISTED_CONVERTED_STARTS.getOrDefault(
+							chunk.getPos().toLong(), Set.of()));
+		}
 		if (savedStart) {
 			START_CANDIDATES.addFirst(pending);
-		} else if (isStrongholdStartCandidate(
-						level, chunk.getPos())) {
+		} else if (startCandidate) {
 			START_CANDIDATES.addLast(pending);
 		} else {
 			PENDING.addFirst(pending);
@@ -260,6 +283,29 @@ public final class AncientCakeVaultPalette {
 			boolean startCandidate =
 					isStrongholdStartCandidate(
 							level, pending.chunk());
+			if (fixedWorldgenEvidence()
+					&& (pending.refreshSessionConversion()
+							|| direct != null || hasReferences)
+					&& (pending.attempts() == 0
+							|| visibleAttempts == 1
+							|| visibleAttempts
+									== REQUIRED_VISIBLE_ATTEMPTS
+							|| pending.attempts()
+									== MAX_REFERENCE_ATTEMPTS
+							|| pending.attempts()
+									== MAX_START_ACTIVATION_ATTEMPTS)) {
+				LOGGER.info("Ancient Cake Vault tick probe: chunk={}, attempt={}, visibleAttempts={}, refresh={}, candidate={}, direct={}, references={}, visibleVault={}, themed={}, converted={}, persisted={}",
+						pending.chunk(), pending.attempts(),
+						visibleAttempts,
+						pending.refreshSessionConversion(),
+						startCandidate, direct != null,
+						hasReferences, visibleVault != null,
+						themed,
+						CONVERTED_STARTS.getOrDefault(
+								pending.chunk().toLong(), Set.of()),
+						PERSISTED_CONVERTED_STARTS.getOrDefault(
+								pending.chunk().toLong(), Set.of()));
+			}
 			int maximumAttempts = startCandidate
 					? MAX_START_ACTIVATION_ATTEMPTS
 					: MAX_REFERENCE_ATTEMPTS;
@@ -451,6 +497,11 @@ public final class AncientCakeVaultPalette {
 				.computeIfAbsent(chunkKey,
 						ignored -> ConcurrentHashMap
 								.newKeySet());
+	}
+
+	private static boolean fixedWorldgenEvidence() {
+		return Boolean.getBoolean(
+				"cakeworld.fixedWorldgenEvidence");
 	}
 
 	/**
