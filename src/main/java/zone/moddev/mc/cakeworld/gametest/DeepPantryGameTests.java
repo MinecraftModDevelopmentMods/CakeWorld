@@ -159,8 +159,10 @@ import net.minecraft.world.level.levelgen.structure.NetherFossilPieces;
 import net.minecraft.world.level.levelgen.structure.PoolElementStructurePiece;
 import net.minecraft.world.level.levelgen.structure.StrongholdPieces;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
+import net.minecraft.world.level.levelgen.structure.StructureSet;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.levelgen.structure.TemplateStructurePiece;
+import net.minecraft.world.level.levelgen.structure.placement.ConcentricRingsStructurePlacement;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.portal.PortalShape;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
@@ -10447,19 +10449,29 @@ public final class DeepPantryGameTests {
 			GameTestHelper helper, ServerLevel level,
 			ConfiguredStructureFeature<?, ?> configured,
 			BlockPos origin) {
+		ChunkPos startChunk = nearestEligibleVaultStart(
+				helper, level, configured, origin);
+		BlockPos vaultOrigin = startChunk
+				.getMiddleBlockPosition(level.getSeaLevel());
 		BlockPos located = level.findNearestMapFeature(
 				AncientCakeVaultFeature.STRUCTURE_TAG,
-				origin, 512, false);
+				vaultOrigin, 512, false);
 		require(helper, located != null,
 				"The fixed-seed CakeWorld contained no locatable Ancient Cake Vault within 512 chunks");
 		BlockPos eyeLocated =
 				level.findNearestMapFeature(
 						ConfiguredStructureTags
 								.EYE_OF_ENDER_LOCATED,
-						origin, 512, false);
+						vaultOrigin, 512, false);
 		require(helper, eyeLocated != null,
 				"The fixed-seed Ancient Cake Vault was not locatable with a vanilla Eye of Ender");
-		ChunkPos startChunk = new ChunkPos(located);
+		require(helper,
+				new ChunkPos(located).equals(startChunk)
+						&& new ChunkPos(eyeLocated)
+								.equals(startChunk),
+				"CakeWorld and Eye-of-Ender locate routes did not resolve the selected eligible Stronghold start: selected="
+						+ startChunk + ", own=" + located
+						+ ", eye=" + eyeLocated);
 		net.minecraft.world.level.chunk.LevelChunk
 				startLevelChunk =
 				level.getChunk(startChunk.x,
@@ -10558,6 +10570,77 @@ public final class DeepPantryGameTests {
 				maximumDepth,
 				startChunk,
 				portal, library, corridor);
+	}
+
+	private static ChunkPos nearestEligibleVaultStart(
+			GameTestHelper helper, ServerLevel level,
+			ConfiguredStructureFeature<?, ?> configured,
+			BlockPos origin) {
+		StructureSet structureSet = level.registryAccess()
+				.registryOrThrow(
+						Registry.STRUCTURE_SET_REGISTRY)
+				.get(AncientCakeVaultFeature
+						.STRUCTURE_SET_ID);
+		require(helper,
+				structureSet != null
+						&& structureSet.placement()
+								instanceof ConcentricRingsStructurePlacement,
+				"The native Stronghold ring placement required by Ancient Cake Vaults was absent");
+		ConcentricRingsStructurePlacement placement =
+				(ConcentricRingsStructurePlacement)
+						structureSet.placement();
+		List<ChunkPos> ringPositions = level
+				.getChunkSource().getGenerator()
+				.getRingPositionsFor(placement);
+		require(helper,
+				ringPositions != null
+						&& !ringPositions.isEmpty(),
+				"The native Stronghold placement exposed no generated ring positions");
+		List<ChunkPos> nearestFirst = ringPositions.stream()
+				.sorted(Comparator.comparingLong(
+						chunk -> horizontalDistanceSquared(
+								chunk, origin)))
+				.toList();
+		List<String> rejected = new java.util.ArrayList<>();
+		for (ChunkPos candidate : nearestFirst) {
+			LevelChunk chunk = level.getChunk(
+					candidate.x, candidate.z);
+			StructureStart start = chunk
+					.getStartForFeature(configured);
+			BlockPos biomePosition = candidate
+					.getMiddleBlockPosition(
+							level.getSeaLevel());
+			ResourceLocation biome = level.registryAccess()
+					.registryOrThrow(Registry.BIOME_REGISTRY)
+					.getKey(level.getBiome(
+							biomePosition).value());
+			boolean valid = start != null
+					&& start.isValid()
+					&& start.getFeature() == configured;
+			if (valid && level.getBiome(biomePosition)
+					.is(AncientCakeVaultFeature
+							.GENERATES_IN)) {
+				return candidate;
+			}
+			if (rejected.size() < 8) {
+				rejected.add(candidate + "=" + biome
+						+ "(valid=" + valid + ")");
+			}
+		}
+		require(helper, false,
+				"The fixed-seed CakeWorld contained no saved Stronghold start in an Ancient Cake Vault biome; nearest candidates="
+						+ rejected);
+		throw new IllegalStateException(
+				"Unreachable after GameTest failure");
+	}
+
+	private static long horizontalDistanceSquared(
+			ChunkPos chunk, BlockPos origin) {
+		long deltaX = (long) chunk.getMiddleBlockX()
+				- origin.getX();
+		long deltaZ = (long) chunk.getMiddleBlockZ()
+				- origin.getZ();
+		return deltaX * deltaX + deltaZ * deltaZ;
 	}
 
 	private static String structuresLabel(
