@@ -32,7 +32,9 @@ import net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.StrongholdPieces;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
+import net.minecraft.world.level.levelgen.structure.StructureSet;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
+import net.minecraft.world.level.levelgen.structure.placement.ConcentricRingsStructurePlacement;
 import net.minecraft.world.level.levelgen.structure.pieces.PiecesContainer;
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePiecesBuilder;
 import net.minecraftforge.event.TickEvent;
@@ -62,6 +64,9 @@ public final class AncientCakeVaultPalette {
 			new ConcurrentLinkedQueue<>();
 	private static final ConcurrentMap<Long, Set<Long>>
 			CONVERTED_STARTS = new ConcurrentHashMap<>();
+	private static final int MAX_REFERENCE_ATTEMPTS = 4;
+	private static final int MAX_START_DISCOVERY_ATTEMPTS = 1200;
+	private static volatile Set<Long> strongholdStartCandidates;
 
 	private AncientCakeVaultPalette() {
 	}
@@ -196,12 +201,21 @@ public final class AncientCakeVaultPalette {
 					themed = true;
 				}
 			}
-			if (!themed && pending.attempts() < 4
-					&& (direct != null
-							|| !chunk
-									.getReferencesForFeature(
-											stronghold)
-									.isEmpty())) {
+			boolean hasReferences = !chunk
+					.getReferencesForFeature(stronghold)
+					.isEmpty();
+			boolean awaitingStart = direct == null
+					&& !hasReferences
+					&& isStrongholdStartCandidate(
+							level, pending.chunk());
+			int maximumAttempts = awaitingStart
+					? MAX_START_DISCOVERY_ATTEMPTS
+					: MAX_REFERENCE_ATTEMPTS;
+			if (!themed
+					&& pending.attempts()
+							< maximumAttempts
+					&& (awaitingStart || direct != null
+							|| hasReferences)) {
 				PENDING.add(new PendingSlice(
 						pending.dimension(),
 						pending.chunk(),
@@ -215,6 +229,46 @@ public final class AncientCakeVaultPalette {
 			ServerStoppedEvent event) {
 		PENDING.clear();
 		CONVERTED_STARTS.clear();
+		strongholdStartCandidates = null;
+	}
+
+	/**
+	 * Returns whether this is one of the generator's authoritative Stronghold
+	 * start chunks.
+	 *
+	 * <p>A {@link LevelChunk} load event can arrive before Minecraft attaches
+	 * its generated structure starts. Only the 128 concentric-ring candidates
+	 * need to survive that lifecycle gap; caching their packed positions keeps
+	 * ordinary chunk-load processing constant-time.</p>
+	 */
+	private static boolean isStrongholdStartCandidate(
+			ServerLevel level, ChunkPos chunk) {
+		Set<Long> candidates = strongholdStartCandidates;
+		if (candidates == null) {
+			StructureSet structureSet = level.registryAccess()
+					.registryOrThrow(
+							Registry.STRUCTURE_SET_REGISTRY)
+					.get(AncientCakeVaultFeature
+							.STRUCTURE_SET_ID);
+			if (structureSet == null
+					|| !(structureSet.placement()
+							instanceof ConcentricRingsStructurePlacement
+							placement)) {
+				return false;
+			}
+			List<ChunkPos> ringPositions = level
+					.getChunkSource().getGenerator()
+					.getRingPositionsFor(placement);
+			if (ringPositions == null) {
+				return false;
+			}
+			candidates = ringPositions.stream()
+					.map(ChunkPos::toLong)
+					.collect(java.util.stream.Collectors
+							.toUnmodifiableSet());
+			strongholdStartCandidates = candidates;
+		}
+		return candidates.contains(chunk.toLong());
 	}
 
 	private static boolean isCakeWorldVault(
