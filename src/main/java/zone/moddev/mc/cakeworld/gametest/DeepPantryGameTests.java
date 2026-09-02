@@ -4019,7 +4019,13 @@ public final class DeepPantryGameTests {
 				helper, level, configured,
 				new BlockPos(96, 64, 128));
 		setVaultChunksForced(level, vault, true);
-		helper.runAfterDelay(100, () -> {
+		// Forced tickets are asynchronous. Load every audited piece first so
+		// the public chunk-load palette queue can complete on normal server
+		// ticks before the assertions inspect those chunks.
+		helper.runAfterDelay(80, () ->
+				loadVaultChunks(level, vault));
+		helper.runAfterDelay(102, () -> {
+			helper.succeedWhen(() -> {
 			VaultPieceAudit portal =
 					auditVaultPiece(
 							level,
@@ -4062,8 +4068,22 @@ public final class DeepPantryGameTests {
 					provesCompletableEndPortal(
 							level,
 							portal.frames());
-			setVaultChunksForced(level, vault,
-					false);
+			require(helper,
+					portal.palette().getOrDefault(
+							CakeWorldBlocks
+									.GINGERBREAD_BRICKS
+									.get(),
+							0) > 0
+							&& (library == null
+									|| library.palette()
+											.getOrDefault(
+													CakeWorldBlocks
+															.COOKBOOK_LIBRARY
+															.get(),
+													0) > 0),
+					"Natural Ancient Cake Vault chunk-load palette work is still pending: portal="
+							+ portal + ", library="
+							+ library);
 			LOGGER.info("Focused Ancient Cake Vault audit: locate={}, eyeLocate={}, bounds={}, biome={}, pieces={}, portals={}, libraries={}, corridors={}, junctions={}, maxDepth={}, portalPalette={}, portalFrames={}, portalSpawner={}, libraryPalette={}, libraryLoot={}, corridorPalette={}, corridorLoot={}, literalEligible={}, portalCompletable={}",
 					vault.located(),
 					vault.eyeLocated(),
@@ -4198,7 +4218,9 @@ public final class DeepPantryGameTests {
 						"Natural Ancient Cake Vault chest corridor lost its edible masonry or exact vanilla loot role: "
 								+ corridor);
 			}
-			helper.succeed();
+			setVaultChunksForced(level, vault,
+					false);
+			});
 		});
 	}
 
@@ -5906,10 +5928,24 @@ public final class DeepPantryGameTests {
 						helper, level, configured,
 						new BlockPos(96, 64, 128));
 		setCottageChunksForced(level, cottage, true);
-		helper.runAfterDelay(160, () -> {
+		// Touch the saved piece before inspecting it. This gives the public
+		// chunk-load resident queue a normal server-tick boundary on slower
+		// runners, then retries until its durable marker is consumed.
+		helper.runAfterDelay(80, () ->
+				level.getChunkAt(cottage.centre()));
+		helper.runAfterDelay(100, () ->
+				auditConfectionersCottage(
+						level, cottage));
+		helper.runAfterDelay(102, () -> {
+			helper.succeedWhen(() -> {
 			CottageShopWorldAudit audit =
 					auditConfectionersCottage(
 							level, cottage);
+			require(helper,
+					audit.markerConsumed()
+						&& audit.residents() == 1,
+					"Natural Confectioner's Cottage chunk-load resident work is still pending: "
+							+ audit);
 			BlockPos sentinel =
 					cottage.centre().offset(
 							new BlockPos(0, 9, 0)
@@ -6109,7 +6145,7 @@ public final class DeepPantryGameTests {
 			}
 			setCottageChunksForced(level, cottage,
 					false);
-			helper.succeed();
+			});
 		});
 	}
 
@@ -10541,6 +10577,21 @@ public final class DeepPantryGameTests {
 	private static void setVaultChunksForced(
 			ServerLevel level, LocatedVault vault,
 			boolean forced) {
+		for (ChunkPos chunk : vaultChunks(vault)) {
+			level.setChunkForced(
+					chunk.x, chunk.z, forced);
+		}
+	}
+
+	private static void loadVaultChunks(
+			ServerLevel level, LocatedVault vault) {
+		for (ChunkPos chunk : vaultChunks(vault)) {
+			level.getChunk(chunk.x, chunk.z);
+		}
+	}
+
+	private static Set<ChunkPos> vaultChunks(
+			LocatedVault vault) {
 		Set<ChunkPos> chunks =
 				new java.util.LinkedHashSet<>();
 		chunks.add(vault.startChunk());
@@ -10559,10 +10610,7 @@ public final class DeepPantryGameTests {
 					vault.corridor()
 							.getBoundingBox());
 		}
-		for (ChunkPos chunk : chunks) {
-			level.setChunkForced(
-					chunk.x, chunk.z, forced);
-		}
+		return chunks;
 	}
 
 	private static void addVaultPieceChunks(
