@@ -42,3 +42,4 @@ Cake World uses the Gradle wrapper and downloads its OreSpawn dependency from Cu
 
 ```powershell
 .\gradlew.bat build
+```

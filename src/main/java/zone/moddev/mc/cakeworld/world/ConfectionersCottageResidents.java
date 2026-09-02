@@ -1,0 +1,186 @@
+package zone.moddev.mc.cakeworld.world;
+
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import zone.moddev.mc.cakeworld.CakeWorld;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Registry;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.WorldGenLevel;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.levelgen.structure.StructureStart;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.server.ServerStoppedEvent;
+import net.minecraftforge.event.world.ChunkEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.server.ServerLifecycleHooks;
+
+/**
+ * Creates the cottage's one permanent shopkeeper at the live-server boundary.
+ */
+@Mod.EventBusSubscriber(modid = CakeWorld.MODID)
+public final class ConfectionersCottageResidents {
+	private static final Logger LOGGER =
+			LogManager.getLogger();
+	private static final Queue<PendingCottage> PENDING =
+			new ConcurrentLinkedQueue<>();
+
+	private ConfectionersCottageResidents() {
+	}
+
+	static void queue(WorldGenLevel world,
+			BlockPos centre, BoundingBox bounds) {
+		PENDING.add(new PendingCottage(
+				world.getLevel().dimension(),
+				centre.immutable(), bounds, 0,
+				true));
+	}
+
+	@SubscribeEvent
+	public static void onChunkLoad(ChunkEvent.Load event) {
+		if (!(event.getWorld() instanceof ServerLevel level)
+				|| !(event.getChunk()
+						instanceof LevelChunk chunk)) {
+			return;
+		}
+		ConfiguredStructureFeature<?, ?> configured =
+				level.registryAccess()
+						.registryOrThrow(Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY)
+						.get(ConfectionersCottageFeature
+								.STRUCTURE_ID);
+		if (configured == null) {
+			return;
+		}
+		StructureStart start =
+				chunk.getStartForFeature(configured);
+		if (start == null || !start.isValid()) {
+			return;
+		}
+		BoundingBox bounds = start.getBoundingBox();
+		BlockPos centre = new BlockPos(
+				bounds.minX()
+						+ ConfectionersCottageStructureFeature
+								.CENTRE_OFFSET,
+				bounds.minY(),
+				bounds.minZ()
+						+ ConfectionersCottageStructureFeature
+								.CENTRE_OFFSET);
+		if (!new ChunkPos(centre).equals(
+				chunk.getPos())) {
+			return;
+		}
+		PENDING.add(new PendingCottage(
+				level.dimension(),
+				centre.immutable(), bounds, 0,
+				false));
+	}
+
+	@SubscribeEvent
+	public static void onServerTick(
+			TickEvent.ServerTickEvent event) {
+		if (event.phase != TickEvent.Phase.START
+				|| PENDING.isEmpty()) {
+			return;
+		}
+		MinecraftServer server =
+				ServerLifecycleHooks
+						.getCurrentServer();
+		if (server == null) {
+			return;
+		}
+		int pendingAtStart = PENDING.size();
+		for (int index = 0;
+				index < pendingAtStart; index++) {
+			PendingCottage pending =
+					PENDING.poll();
+			if (pending == null) {
+				break;
+			}
+			ServerLevel level =
+					server.getLevel(
+							pending.dimension());
+			if (level == null) {
+				continue;
+			}
+			Rotation rotation =
+					ConfectionersCottageFeature
+							.orientation(
+									level.getSeed(),
+									pending.centre());
+			BlockPos marker =
+					ConfectionersCottageFeature
+							.residentMarker(
+									pending.centre(),
+									rotation);
+			if (!level.hasChunkAt(marker)) {
+				retry(pending);
+				continue;
+			}
+			if (!level.getBlockState(marker)
+					.is(Blocks.STRUCTURE_VOID)) {
+				if (pending.waitForMarker()) {
+					retry(pending);
+				}
+				continue;
+			}
+			if (!ConfectionersCottageFeature
+					.spawnResident(
+							level,
+							pending.centre(),
+							pending.bounds())) {
+				retry(pending);
+			} else {
+				LOGGER.info("Activated Confectioner's Cottage shopkeeper at {} in {}",
+						pending.centre(),
+						pending.dimension()
+								.location());
+			}
+		}
+	}
+
+	@SubscribeEvent
+	public static void onServerStopped(
+			ServerStoppedEvent event) {
+		PENDING.clear();
+	}
+
+	private static void retry(
+			PendingCottage pending) {
+		if (pending.attempt() < 100) {
+			PENDING.add(new PendingCottage(
+					pending.dimension(),
+					pending.centre(),
+					pending.bounds(),
+					pending.attempt() + 1,
+					pending.waitForMarker()));
+		} else {
+			LOGGER.warn("Confectioner's Cottage shopkeeper at {} in {} was still unavailable after {} server ticks",
+					pending.centre(),
+					pending.dimension().location(),
+					pending.attempt());
+		}
+	}
+
+	private record PendingCottage(
+			ResourceKey<Level> dimension,
+			BlockPos centre,
+			BoundingBox bounds,
+			int attempt,
+			boolean waitForMarker) {
+	}
+}

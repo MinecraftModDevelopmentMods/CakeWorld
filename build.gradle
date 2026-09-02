@@ -1,19 +1,90 @@
+import groovy.json.JsonSlurper
+import groovy.xml.XmlSlurper
+import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
+import java.util.zip.ZipFile
+
 plugins {
+    id 'java'
     id 'eclipse'
     id 'idea'
     id 'maven-publish'
-    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
+    id 'net.minecraftforge.renamer' version '1.1.5'
+    id 'net.minecraftforge.accesstransformers' version '2.0.0'
+    id 'net.minecraftforge.gradle' version '7.0.34'
 }
 
-version = mod_version
-group = mod_group_id
+def mavenizerCompatibilityJar = layout.projectDirectory.file(
+        'ci-fixtures/tools/minecraft-mavenizer-0.5.21-orespawn-1.18.jar')
+def mavenizerCompatibilitySha256 =
+        '28A6697BDF6D9500EC0AF9C1C949B9F3ED7DDFDA649CB5CAC4BEEA2E9567570A'
+
+// ForgeGradle 7's Mavenizer recompilation rejects a redundant accessor emitted
+// by Forge 40's 1.18.2 decompiler. This checksum-sealed build-only variant
+// removes that accessor; CakeWorld and every shipped class remain Java 17.
+fgtools.configure('mavenizer') {
+    classpath.from(mavenizerCompatibilityJar)
+    mainClass.set('net.minecraftforge.mcmaven.cli.Main')
+    javaLauncher.set(javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(25)
+        vendor = JvmVendorSpec.ADOPTIUM
+    })
+}
+
+version = project.mod_version
+group = project.mod_group_id
 
 base {
-    archivesName = "CakeWorld-${minecraft_version}"
+    archivesName = 'CakeWorld'
 }
 
-// Mojang ships Java 17 to end users in 1.18+, so your mod should target Java 17.
-java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+def versionParts = project.mod_version.toString().tokenize('.')
+if (versionParts.size() != 4 || !versionParts.every { it ==~ /\d+/ }) {
+    throw new GradleException(
+            "mod_version must use Major.Minor.Bug.Target numeric form: ${project.mod_version}")
+}
+def minecraftVersionParts = project.minecraft_version.toString().tokenize('.')
+def minecraftPatch = minecraftVersionParts.size() == 3
+        ? minecraftVersionParts[2] : '0'
+def expectedTargetVersion = "${minecraftVersionParts[0]}" +
+        "${minecraftVersionParts[1].padLeft(2, '0')}" +
+        "${minecraftPatch.padLeft(2, '0')}" + project.loader_code
+if (versionParts[3] != expectedTargetVersion) {
+    throw new GradleException("mod_version target ${versionParts[3]} does not match " +
+            "Minecraft ${project.minecraft_version} ${project.loader_name} target ${expectedTargetVersion}")
+}
+ext.functional_version = versionParts[0..2].join('.')
+ext.display_version = project.mod_version
+ext.release_tag = project.mod_version
+def expectedMavenGroup = 'zone.moddev.mc.cakeworld'
+def expectedMavenArtifact = 'CakeWorld'
+def expectedMavenCoordinate =
+        "${expectedMavenGroup}:${expectedMavenArtifact}:${project.version}"
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+        vendor = JvmVendorSpec.ADOPTIUM
+    }
+    withSourcesJar()
+    withJavadocJar()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 17
+}
+
+tasks.withType(Javadoc).configureEach {
+    options.encoding = 'UTF-8'
+    options.addStringOption('Xdoclint:none', '-quiet')
+    options.addBooleanOption('notimestamp', true)
+}
+
+tasks.withType(AbstractArchiveTask).configureEach {
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
 
 println "Java: ${System.getProperty 'java.version'}, JVM: ${System.getProperty 'java.vm.version'} (${System.getProperty 'java.vendor'}), Arch: ${System.getProperty 'os.arch'}"
 def localOreSpawnJarPath = providers.gradleProperty(
@@ -124,17 +195,12 @@ minecraft {
     //
     // Use non-default mappings at your own risk. They may not always work.
     // Simply re-run your setup task after changing the mappings to update your workspace.
-    mappings channel: mapping_channel, version: mapping_version
+    mappings channel: project.mapping_channel, version: project.mapping_version
 
     // When true, this property will have all Eclipse/IntelliJ IDEA run configurations run the "prepareX" task for the given run configuration before launching the game.
     // In most cases, it is not necessary to enable.
     // enableEclipsePrepareRuns = true
     // enableIdeaPrepareRuns = true
-
-    // This property allows configuring Gradle's ProcessResources task(s) to run on IDE output locations before launching the game.
-    // It is REQUIRED to be set to true for this template to function.
-    // See https://docs.gradle.org/current/dsl/org.gradle.language.jvm.tasks.ProcessResources.html
-    copyIdeResources = true
 
     // When true, this property will add the folder name of all declared run configurations to generated IDE run configurations.
     // The folder name can be set on a run configuration using the "folderName" property.
@@ -147,29 +213,30 @@ minecraft {
     // However, it must be at "META-INF/accesstransformer.cfg" in the final mod jar to be loaded by Forge.
     // This default location is a best practice to automatically put the file in the right place in the final jar.
     // See https://docs.minecraftforge.net/en/latest/advanced/accesstransformers/ for more information.
-    accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
+    accessTransformer = 'META-INF/accesstransformer.cfg'
 
     // Default run configurations.
     // These can be tweaked, removed, or duplicated as needed.
     runs {
         // applies to all the run configs below
         configureEach {
-            workingDirectory project.file('run')
+            workingDir.convention layout.projectDirectory.dir('run')
+            jvmArgs '--add-opens', 'java.base/java.lang.invoke=ALL-UNNAMED'
 
             // Recommended logging data for a userdev environment
             // The markers can be added/remove as needed separated by commas.
             // "SCAN": For mods scan.
             // "REGISTRIES": For firing of registry events.
             // "REGISTRYDUMP": For getting the contents of all registries.
-            property 'forge.logging.markers', 'REGISTRIES'
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
 
             // Recommended logging level for the console
             // You can set various levels here.
             // Please read: https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
-            property 'forge.logging.console.level', 'debug'
+            systemProperty 'forge.logging.console.level', 'debug'
 
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
-            property 'forge.enabledGameTestNamespaces', mod_id
+            systemProperty 'forge.enabledGameTestNamespaces', mod_id
 
             mods {
                 "${mod_id}" {
@@ -178,112 +245,114 @@ minecraft {
             }
         }
 
-        client {
+        register('client') {
             if (editorAcceptanceRunDirectory != null) {
-                workingDirectory project.file(editorAcceptanceRunDirectory)
+                workingDir.convention layout.projectDirectory.dir(
+                        editorAcceptanceRunDirectory)
             } else if (baseMetalsIntegration) {
-                workingDirectory project.file('run-basemetals-client')
+                workingDir.convention layout.projectDirectory.dir(
+                        'run-basemetals-client')
             }
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
-            property 'forge.enabledGameTestNamespaces', mod_id
+            systemProperty 'forge.enabledGameTestNamespaces', mod_id
         }
 
-        server {
-            property 'forge.enabledGameTestNamespaces', mod_id
+        register('server') {
+            systemProperty 'forge.enabledGameTestNamespaces', mod_id
             args '--nogui'
         }
 
         // This run config launches GameTestServer and runs all registered gametests, then exits.
         // By default, the server will crash when no gametests are provided.
         // The gametest system is also enabled by default for other run configs under the /test command.
-        gameTestServer {
+        register('gameTestServer') {
             if (providerMergeRuntime) {
-                workingDirectory project.file(providerMergeRunDirectory)
+                workingDir.convention layout.projectDirectory.dir(providerMergeRunDirectory)
             } else if (providerOverrideRuntime) {
-                workingDirectory project.file(providerOverrideRunDirectory)
+                workingDir.convention layout.projectDirectory.dir(providerOverrideRunDirectory)
             } else if (imcProviderRuntime) {
-                workingDirectory project.file(imcProviderRunDirectory)
+                workingDir.convention layout.projectDirectory.dir(imcProviderRunDirectory)
             } else if (climateBoundaryRuntime) {
-                workingDirectory project.file(climateBoundaryRunDirectory)
+                workingDir.convention layout.projectDirectory.dir(climateBoundaryRunDirectory)
             } else if (blankBiomeRuntime) {
-                workingDirectory project.file(blankBiomeRunDirectory)
+                workingDir.convention layout.projectDirectory.dir(blankBiomeRunDirectory)
             } else if (replaceModeRuntime) {
-                workingDirectory project.file(replaceModeRunDirectory)
+                workingDir.convention layout.projectDirectory.dir(replaceModeRunDirectory)
             } else if (samplerPlatterRuntime) {
-                workingDirectory project.file(samplerPlatterRunDirectory)
+                workingDir.convention layout.projectDirectory.dir(samplerPlatterRunDirectory)
             } else if (baseMetalsIntegration) {
-                workingDirectory project.file(baseMetalsRunDirectory)
+                workingDir.convention layout.projectDirectory.dir(baseMetalsRunDirectory)
             } else if (freshWorldgenIntegration) {
-                workingDirectory project.file(freshWorldgenRunDirectory)
+                workingDir.convention layout.projectDirectory.dir(freshWorldgenRunDirectory)
             }
-            property 'forge.enabledGameTestNamespaces',
+            systemProperty 'forge.enabledGameTestNamespaces',
                     cakeworldGameTestNamespaces
             if (samplerPlatterRuntime) {
-                property 'cakeworld.samplerPlatterEvidence', 'true'
+                systemProperty 'cakeworld.samplerPlatterEvidence', 'true'
             }
             if (samplerRetrogenPhase != null) {
-                property 'cakeworld.samplerRetrogenPhase',
+                systemProperty 'cakeworld.samplerRetrogenPhase',
                         samplerRetrogenPhase
             }
             if (samplerFormationCase != null) {
-                property 'cakeworld.samplerFormationCase',
+                systemProperty 'cakeworld.samplerFormationCase',
                         samplerFormationCase
             }
             if (samplerThirdPartyRuntime) {
-                property 'cakeworld.samplerThirdPartyFixture', 'true'
+                systemProperty 'cakeworld.samplerThirdPartyFixture', 'true'
             }
             if (replaceModeRuntime) {
-                property 'cakeworld.replaceModeFixture', 'true'
+                systemProperty 'cakeworld.replaceModeFixture', 'true'
             }
             if (blankBiomeRuntime) {
-                property 'cakeworld.blankBiomeFixture', 'true'
+                systemProperty 'cakeworld.blankBiomeFixture', 'true'
             }
             if (climateBoundaryRuntime) {
-                property 'cakeworld.climateBoundaryFixture', 'true'
+                systemProperty 'cakeworld.climateBoundaryFixture', 'true'
             }
             if (providerOverrideRuntime) {
-                property 'cakeworld.providerOverrideMode',
+                systemProperty 'cakeworld.providerOverrideMode',
                         providerOverrideMode
             }
             if (providerMergeRuntime) {
-                property 'cakeworld.providerMergePhase',
+                systemProperty 'cakeworld.providerMergePhase',
                         providerMergePhase
             }
             if (imcProviderRuntime) {
-                property 'cakeworld.imcProviderFixture', 'true'
+                systemProperty 'cakeworld.imcProviderFixture', 'true'
             }
             if (freshWorldgenIntegration) {
-                property 'cakeworld.fixedWorldgenEvidence', 'true'
+                systemProperty 'cakeworld.fixedWorldgenEvidence', 'true'
             }
             if (expectedFormationAlgorithm != null) {
-                property 'cakeworld.expectedFormationAlgorithm',
+                systemProperty 'cakeworld.expectedFormationAlgorithm',
                         expectedFormationAlgorithm
             }
             if (formationVisualEvidence) {
-                property 'cakeworld.formationVisualEvidence', 'true'
+                systemProperty 'cakeworld.formationVisualEvidence', 'true'
             }
             if (providers.gradleProperty('orespawnBenchmarkMode').isPresent()) {
-                property 'orespawn.worldgenBenchmarkMode',
+                systemProperty 'orespawn.worldgenBenchmarkMode',
                         providers.gradleProperty('orespawnBenchmarkMode').get()
-                property 'orespawn.worldgenBenchmarkRadius',
+                systemProperty 'orespawn.worldgenBenchmarkRadius',
                         providers.gradleProperty('orespawnBenchmarkRadius').getOrElse('4')
-                property 'orespawn.worldgenBenchmarkRepetitions',
+                systemProperty 'orespawn.worldgenBenchmarkRepetitions',
                         providers.gradleProperty('orespawnBenchmarkRepetitions').getOrElse('3')
-                property 'orespawn.worldgenBenchmarkDimension',
+                systemProperty 'orespawn.worldgenBenchmarkDimension',
                         providers.gradleProperty('orespawnBenchmarkDimension').getOrElse('overworld')
-                property 'orespawn.worldgenBenchmarkCenterX',
+                systemProperty 'orespawn.worldgenBenchmarkCenterX',
                         providers.gradleProperty('orespawnBenchmarkCenterX').getOrElse('256')
-                property 'orespawn.worldgenBenchmarkCenterZ',
+                systemProperty 'orespawn.worldgenBenchmarkCenterZ',
                         providers.gradleProperty('orespawnBenchmarkCenterZ').getOrElse('256')
-                property 'orespawn.worldgenBenchmarkCenterStep',
+                systemProperty 'orespawn.worldgenBenchmarkCenterStep',
                         providers.gradleProperty('orespawnBenchmarkCenterStep').getOrElse('64')
-                property 'orespawn.worldgenBenchmarkStopServer', 'true'
+                systemProperty 'orespawn.worldgenBenchmarkStopServer', 'true'
             }
         }
 
-        data {
+        register('data') {
             // example of overriding the workingDirectory set in configureEach above
-            workingDirectory project.file('run-data')
+            workingDir.convention layout.projectDirectory.dir('run-data')
 
             // Specify the modid for data generation, where to output the resulting resource, and where to look for existing resources.
             args '--mod', mod_id, '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
@@ -293,6 +362,27 @@ minecraft {
 
 // Include resources generated by data generators.
 sourceSets.main.resources { srcDir 'src/generated/resources' }
+
+def forgeRunModClassesDirectory =
+        file("${buildDir}/forge-run-mod-classes/main")
+def prepareForgeRunModClasses = tasks.register(
+        'prepareForgeRunModClasses', Sync) {
+    dependsOn tasks.named('classes')
+    from sourceSets.main.output.classesDirs
+    from sourceSets.main.output.resourcesDir
+    into forgeRunModClassesDirectory
+}
+
+tasks.withType(JavaExec).configureEach { JavaExec runTask ->
+    if (['runClient', 'runServer', 'runGameTestServer', 'runData']
+            .contains(runTask.name)) {
+        runTask.dependsOn prepareForgeRunModClasses
+        // Forge 40 resolves one complete exploded mod more reliably than
+        // separate class and resource roots under ForgeGradle 7.
+        runTask.environment 'MOD_CLASSES',
+                "${mod_id}%%${forgeRunModClassesDirectory}"
+    }
+}
 
 def canonicalOreSpawnProvider =
         layout.projectDirectory.file('src/main/orespawn/provider.json')
@@ -1030,16 +1120,31 @@ tasks.configureEach {
     }
 }
 
+def orespawnModule =
+        "mmd-orespawn-${project.orespawn_curseforge_project_id}"
 repositories {
-    // Put repositories for dependencies here
-    // ForgeGradle automatically adds the Forge maven and Maven Central for you
-
-    maven {
-        name = 'CurseMaven'
-        url = 'https://cursemaven.com'
-        content {
-            includeGroup 'curse.maven'
+    minecraft.mavenizer(it)
+    maven fg.forgeMaven
+    maven fg.minecraftLibsMaven
+    exclusiveContent {
+        forRepository {
+            maven {
+                url = 'https://repo.spongepowered.org/repository/maven-public'
+            }
         }
+        filter { includeGroupAndSubgroups('org.spongepowered') }
+    }
+    mavenCentral()
+    maven { url = 'https://libraries.minecraft.net/' }
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = 'CurseMaven'
+                url = 'https://www.cursemaven.com'
+                metadataSources { artifact() }
+            }
+        }
+        filter { includeModule('curse.maven', orespawnModule) }
     }
     flatDir {
         dir file('../../../BaseMetals/BaseMetals 118/BaseMetals/build/libs')
@@ -1051,17 +1156,54 @@ repositories {
     }
 }
 
+def verifyMavenizerCompatibilityFixture = tasks.register(
+        'verifyMavenizerCompatibilityFixture') {
+    group = 'verification'
+    description = 'Verifies the checksum-sealed Forge 1.18 Mavenizer compatibility tool.'
+    inputs.file mavenizerCompatibilityJar
+    doLast {
+        File fixture = mavenizerCompatibilityJar.asFile
+        if (!fixture.isFile()) {
+            throw new GradleException(
+                    "Missing Mavenizer compatibility fixture: ${fixture}")
+        }
+        MessageDigest digest = MessageDigest.getInstance('SHA-256')
+        fixture.withInputStream { input ->
+            byte[] buffer = new byte[8192]
+            for (int read = input.read(buffer); read >= 0;
+                    read = input.read(buffer)) {
+                if (read > 0) digest.update(buffer, 0, read)
+            }
+        }
+        String actual = digest.digest().encodeHex().toString().toUpperCase()
+        if (actual != mavenizerCompatibilitySha256) {
+            throw new GradleException(
+                    "Mavenizer compatibility fixture checksum mismatch: ${actual}")
+        }
+    }
+}
+
+tasks.named('compileJava', JavaCompile) {
+    dependsOn verifyMavenizerCompatibilityFixture
+}
+
 dependencies {
     // Specify the version of Minecraft to use.
     // Any artifact can be supplied so long as it has a "userdev" classifier artifact and is a compatible patcher artifact.
     // The "userdev" classifier will be requested and setup by ForgeGradle.
     // If the group id is "net.minecraft" and the artifact id is one of ["client", "server", "joined"],
     // then special handling is done to allow a setup of a vanilla dependency without the use of an external repository.
-    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+    implementation minecraft.dependency(
+            "net.minecraftforge:forge:${minecraft_version}-${forge_version}")
+    // Forge 40 publishes LWJGL only on its runtime variant under ForgeGradle
+    // 7, while the Cookbook screen references GLFW key constants at compile
+    // time. The game runtime already supplies this exact Minecraft version.
+    compileOnly 'org.lwjgl:lwjgl-glfw:3.2.2'
     if (localOreSpawnJar != null) {
-        implementation fg.deobf("local:OreSpawn:${localOreSpawnVersion}")
+        implementation renamer.dependency(
+                "local:OreSpawn:${localOreSpawnVersion}")
     } else {
-        implementation fg.deobf(
+        implementation renamer.dependency(
                 "curse.maven:mmd-orespawn-${orespawn_curseforge_project_id}:${orespawn_curseforge_file_id}")
     }
     if (baseMetalsIntegration) {
@@ -1071,7 +1213,8 @@ dependencies {
             throw new GradleException(
                     "BaseMetals integration requested but ${baseMetalsJar} does not exist")
         }
-        runtimeOnly fg.deobf("local:BaseMetals-${minecraft_version}:3.0.0")
+        runtimeOnly renamer.dependency(
+                "local:BaseMetals-${minecraft_version}:3.0.0")
     }
 
     // Real mod deobf dependency examples - these get remapped to your current mappings
@@ -1089,10 +1232,32 @@ dependencies {
     // http://www.gradle.org/docs/current/userguide/dependency_management.html
 }
 
+// Third-party development dependencies use the inverse of CakeWorld's
+// named-to-SRG release mapping.
+renamer.mappings.from minecraft.dependency.toSrgFile
+
 eclipse {
     project {
         name = 'CakeWorld'
     }
+    classpath {
+        downloadSources = true
+        downloadJavadoc = true
+        file.whenMerged { classpath ->
+            classpath.entries.removeAll { entry ->
+                entry instanceof org.gradle.plugins.ide.eclipse.model.SourceFolder
+                        && ['src/main/resources', 'src/generated/resources']
+                                .contains(entry.path)
+            }
+            if (!classpath.entries.any {
+                    entry -> entry.path == 'build/resources/main' }) {
+                classpath.entries.add(
+                        new org.gradle.plugins.ide.eclipse.model.SourceFolder(
+                                'build/resources/main', 'bin/main'))
+            }
+        }
+    }
+    synchronizationTasks 'isolateEclipseProductionRuns'
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.
@@ -1118,51 +1283,354 @@ tasks.named('processResources', ProcessResources).configure {
     }
 }
 
-// Example for how to get properties into the manifest for reading at runtime.
 tasks.named('jar', Jar).configure {
-    // The CurseForge artifact is distributed on its own, so carry the exact
-    // project license inside the JAR as well as declaring it in mods.toml.
+    archiveClassifier = 'deobf'
+    destinationDirectory = layout.buildDirectory.dir('libs-dev')
     from(layout.projectDirectory.file('LICENSE')) {
         into 'META-INF'
     }
-    // Defence in depth for stale or externally generated resource outputs.
     exclude '**/AGENTS.md', '**/agent-notes/**', '**/.codex/**'
     manifest {
         attributes([
                 'Specification-Title'     : mod_id,
                 'Specification-Vendor'    : mod_authors,
-                'Specification-Version'   : '1', // We are version 1 of ourselves
+                'Specification-Version'   : functional_version,
                 'Implementation-Title'    : project.name,
-                'Implementation-Version'  : project.jar.archiveVersion,
+                'Implementation-Version'  : project.version,
                 'Implementation-Vendor'   : mod_authors,
-                'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+                'Built-On-Java'            : java_version,
+                'Built-On'                 : "${minecraft_version}-${forge_version}"
         ])
     }
-
-    // This is the preferred method to reobfuscate your jar file
-    finalizedBy 'reobfJar'
 }
 
-// However if you are in a multi-project build, dev time needs unobfed jar files, so you can delay the obfuscation until publishing by doing:
-// tasks.named('publish').configure {
-//     dependsOn 'reobfJar'
-// }
+def releaseJar = renamer.classes(tasks.named('jar', Jar)) {
+    map.from minecraft.dependency.toSrgFile
+    accessTransformers = true
+    archiveClassifier = null
+    output = layout.buildDirectory.file(
+            "libs/${base.archivesName.get()}-${project.version}.jar")
+}
+
+['apiElements', 'runtimeElements'].each { configurationName ->
+    configurations.named(configurationName) { artifacts.clear() }
+    artifacts { add(configurationName, releaseJar) }
+}
+
+tasks.named('sourcesJar', Jar) {
+    dependsOn generateCakeWorldOreSpawnProvider
+    from(layout.projectDirectory.file('LICENSE')) { into 'META-INF' }
+    exclude '**/AGENTS.md', '**/agent-notes/**', '**/.codex/**'
+}
+
+tasks.named('javadocJar', Jar) {
+    from(layout.projectDirectory.file('LICENSE')) { into 'META-INF' }
+    exclude '**/AGENTS.md', '**/agent-notes/**', '**/.codex/**'
+}
+
+tasks.named('assemble') {
+    dependsOn releaseJar
+    dependsOn tasks.named('sourcesJar')
+    dependsOn tasks.named('javadocJar')
+}
+
+def expectedReleaseFiles = providers.provider {
+    [
+            "CakeWorld-${project.version}.jar".toString(),
+            "CakeWorld-${project.version}-sources.jar".toString(),
+            "CakeWorld-${project.version}-javadoc.jar".toString()
+    ]
+}
+
+tasks.register('verifyReleaseConfiguration') {
+    group = 'verification'
+    description = 'Verifies CakeWorld release and target metadata.'
+    doLast {
+        if (project.minecraft_version != '1.18.2'
+                || project.forge_version != '40.3.0'
+                || project.mapping_channel != 'official'
+                || project.mapping_version != '1.18.2'
+                || project.loader_name != 'forge'
+                || project.loader_code != '1'
+                || project.java_version != '17'
+                || project.java_toolchain_version != '17.0.1+12'
+                || project.java_setup_version != '17.0.1+12'
+                || project.gradle_java_version != '17'
+                || project.curseforge_project_id != '1620472'
+                || project.orespawn_curseforge_project_id != '245586'
+                || project.orespawn_curseforge_file_id != '8780769'
+                || expectedMavenCoordinate !=
+                        'zone.moddev.mc.cakeworld:CakeWorld:0.2.0.118021') {
+            throw new GradleException('Unexpected CakeWorld 1.18.2 release metadata')
+        }
+    }
+}
+
+tasks.register('verifyReleaseArtifacts') {
+    group = 'verification'
+    description = 'Audits the deterministic CakeWorld release bundle.'
+    dependsOn tasks.named('assemble'),
+            tasks.named('verifyReleaseConfiguration')
+    doLast {
+        File libs = layout.buildDirectory.dir('libs').get().asFile
+        List<File> jars = expectedReleaseFiles.get().collect { name ->
+            File candidate = new File(libs, name)
+            if (!candidate.isFile() || candidate.length() == 0) {
+                throw new GradleException("Missing release artifact: ${candidate}")
+            }
+            candidate
+        }
+        Set<String> unexpected = (libs.listFiles() ?: [] as File[])
+                .findAll { it.isFile() && it.name.endsWith('.jar')
+                        && !expectedReleaseFiles.get().contains(it.name) }
+                .collect { it.name } as Set<String>
+        if (!unexpected.isEmpty()) {
+            throw new GradleException("Unexpected release jars: ${unexpected}")
+        }
+
+        jars.each { jarFile ->
+            ZipFile zip = new ZipFile(jarFile)
+            try {
+                Set<String> names = zip.entries().collect { it.name } as Set<String>
+                Set<String> forbiddenNames = names.findAll { entry ->
+                    String lower = entry.toLowerCase(Locale.ROOT)
+                    lower.contains('agent-notes') || lower.contains('.codex')
+                            || lower.contains('.claude') || lower.contains('.cursor')
+                            || lower.contains('com/mcmoddev/cakeworld')
+                            || lower == 'data/cakeworld/dimension/sampler_pantry.json'
+                            || lower.endsWith('/orespawn.jar')
+                            || (lower.contains('orespawn-') && lower.endsWith('.jar'))
+                }
+                if (!forbiddenNames.isEmpty()) {
+                    throw new GradleException(
+                            "Forbidden entries in ${jarFile.name}: ${forbiddenNames}")
+                }
+                zip.entries().each { entry ->
+                    if (!entry.directory) {
+                        byte[] bytes = zip.getInputStream(entry).bytes
+                        String content = new String(bytes,
+                                StandardCharsets.ISO_8859_1).toLowerCase(Locale.ROOT)
+                        List<String> forbiddenContent = [
+                                'com.mcmoddev.cakeworld',
+                                'com/mcmoddev/cakeworld',
+                                'agent-notes', '.codex', '.claude', '.cursor',
+                                'c:' + ((char) 92) + 'users' + ((char) 92),
+                                'd:' + ((char) 92) + 'cakeworld',
+                                '/home/runner/'
+                        ]
+                        String match = forbiddenContent.find { content.contains(it) }
+                        if (match != null) {
+                            throw new GradleException(
+                                    "${jarFile.name}!${entry.name} contains forbidden local context: ${match}")
+                        }
+                        if (entry.name.endsWith('.class') && bytes.length >= 8) {
+                            int major = ((bytes[6] & 0xff) << 8) | (bytes[7] & 0xff)
+                            if (major != 61) {
+                                throw new GradleException(
+                                        "${jarFile.name}!${entry.name} uses class version ${major}, expected 61")
+                            }
+                        }
+                    }
+                }
+            } finally {
+                zip.close()
+            }
+        }
+
+        ZipFile main = new ZipFile(jars[0])
+        try {
+            Set<String> names = main.entries().collect { it.name } as Set<String>
+            [
+                    'META-INF/mods.toml',
+                    'META-INF/LICENSE',
+                    'zone/moddev/mc/cakeworld/CakeWorld.class',
+                    'data/cakeworld/orespawn/provider.json'
+            ].each { required ->
+                if (!names.contains(required)) {
+                    throw new GradleException(
+                            "Release jar is missing ${required}")
+                }
+            }
+            String modsToml = main.getInputStream(
+                    main.getEntry('META-INF/mods.toml')).getText('UTF-8')
+            if (!modsToml.contains('modId="cakeworld"')
+                    || !modsToml.contains('version="0.2.0.118021"')
+                    || !modsToml.contains('versionRange="[4.0.16.118021,5.0.0)"')) {
+                throw new GradleException(
+                        'Release metadata does not preserve CakeWorld and OreSpawn contracts')
+            }
+            def provider = new JsonSlurper().parseText(main.getInputStream(
+                    main.getEntry('data/cakeworld/orespawn/provider.json'))
+                    .getText('UTF-8'))
+            if (provider.provider_revision != 59) {
+                throw new GradleException(
+                        "Expected OreSpawn provider revision 59, found ${provider.provider_revision}")
+            }
+        } finally {
+            main.close()
+        }
+    }
+}
+
+tasks.register('writeReleaseChecksums') {
+    group = 'verification'
+    dependsOn tasks.named('verifyReleaseArtifacts')
+    def output = layout.buildDirectory.file('release/SHA256SUMS')
+    outputs.file(output)
+    doLast {
+        File libs = layout.buildDirectory.dir('libs').get().asFile
+        File checksumFile = output.get().asFile
+        checksumFile.parentFile.mkdirs()
+        checksumFile.setText(expectedReleaseFiles.get().collect { name ->
+            File candidate = new File(libs, name)
+            MessageDigest digest = MessageDigest.getInstance('SHA-256')
+            candidate.withInputStream { input ->
+                byte[] buffer = new byte[8192]
+                for (int read = input.read(buffer); read >= 0;
+                        read = input.read(buffer)) {
+                    if (read > 0) digest.update(buffer, 0, read)
+                }
+            }
+            "${digest.digest().encodeHex().toString().toUpperCase()}  ${name}"
+        }.sort().join('\n') + '\n', 'UTF-8')
+    }
+}
+
+def preparedReleaseDir = providers.gradleProperty('preparedReleaseDir')
+tasks.register('verifyPreparedReleaseArtifacts') {
+    group = 'verification'
+    onlyIf { preparedReleaseDir.isPresent() }
+    doLast {
+        File prepared = file(preparedReleaseDir.get())
+        Set<String> expected = (expectedReleaseFiles.get()
+                + ['SHA256SUMS', 'CHANGELOG.txt']) as Set<String>
+        Set<String> actual = (prepared.listFiles() ?: [] as File[])
+                .findAll { it.isFile() }.collect { it.name } as Set<String>
+        if (actual != expected) {
+            throw new GradleException(
+                    "Prepared release files differ: expected ${expected}, found ${actual}")
+        }
+        File checksums = new File(prepared, 'SHA256SUMS')
+        List<String> actualChecksums = expectedReleaseFiles.get().collect { name ->
+            File candidate = new File(prepared, name)
+            MessageDigest digest = MessageDigest.getInstance('SHA-256')
+            candidate.withInputStream { input ->
+                byte[] buffer = new byte[8192]
+                for (int read = input.read(buffer); read >= 0;
+                        read = input.read(buffer)) {
+                    if (read > 0) digest.update(buffer, 0, read)
+                }
+            }
+            "${digest.digest().encodeHex().toString().toUpperCase()}  ${name}"
+        }.sort()
+        if (actualChecksums != checksums.readLines('UTF-8')
+                .findAll { !it.trim().isEmpty() }.sort()) {
+            throw new GradleException('Prepared release checksums do not match')
+        }
+    }
+}
+
+def mavenUploadUrl = providers.environmentVariable('MAVEN_UPLOAD_URL')
+        .orElse('https://invalid.invalid/missing-maven-upload-url')
+def mavenUploadUsername = providers.environmentVariable('MAVEN_UPLOAD_USERNAME')
+def mavenUploadPassword = providers.environmentVariable('MAVEN_UPLOAD_PASSWORD')
 
 publishing {
     publications {
-        register('mavenJava', MavenPublication) {
-            artifact jar
+        mavenJava(MavenPublication) {
+            groupId = expectedMavenGroup
+            artifactId = expectedMavenArtifact
+            version = project.version.toString()
+            if (preparedReleaseDir.isPresent()) {
+                File prepared = file(preparedReleaseDir.get())
+                artifact(new File(prepared, expectedReleaseFiles.get()[0]))
+                artifact(new File(prepared, expectedReleaseFiles.get()[1])) {
+                    classifier = 'sources'
+                }
+                artifact(new File(prepared, expectedReleaseFiles.get()[2])) {
+                    classifier = 'javadoc'
+                }
+            } else {
+                artifact releaseJar
+                artifact tasks.named('sourcesJar')
+                artifact tasks.named('javadocJar')
+            }
+            pom {
+                name = 'CakeWorld'
+                description = project.mod_description
+                url = 'https://github.com/MinecraftModDevelopmentMods/CakeWorld'
+                licenses {
+                    license {
+                        name = 'GNU General Public License, Version 3'
+                        url = 'https://www.gnu.org/licenses/gpl-3.0.txt'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:https://github.com/MinecraftModDevelopmentMods/CakeWorld.git'
+                    developerConnection = 'scm:git:ssh://git@github.com/MinecraftModDevelopmentMods/CakeWorld.git'
+                    url = 'https://github.com/MinecraftModDevelopmentMods/CakeWorld'
+                }
+            }
         }
     }
     repositories {
         maven {
-            url "file://${project.projectDir}/mcmodsrepo"
+            name = 'release'
+            url = uri(mavenUploadUrl.get())
+            credentials {
+                username = mavenUploadUsername.orNull ?: ''
+                password = mavenUploadPassword.orNull ?: ''
+            }
         }
     }
 }
 
-tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+tasks.register('verifyMavenCoordinates') {
+    group = 'verification'
+    dependsOn tasks.named('generatePomFileForMavenJavaPublication')
+    doLast {
+        File pomFile = layout.buildDirectory.file(
+                'publications/mavenJava/pom-default.xml').get().asFile
+        if (!pomFile.isFile()) {
+            throw new GradleException(
+                    "Generated Maven POM does not exist: ${pomFile}")
+        }
+        def pom = new XmlSlurper(false, false).parse(pomFile)
+        List<String> actual = [pom.groupId.text(), pom.artifactId.text(),
+                pom.version.text()]
+        List<String> expected = [expectedMavenGroup, expectedMavenArtifact,
+                project.version.toString()]
+        if (project.group.toString() != expectedMavenGroup
+                || actual != expected) {
+            throw new GradleException(
+                    "Expected Maven coordinate ${expected.join(':')}, found ${actual.join(':')}")
+        }
+    }
+}
+
+tasks.register('validateMavenReleaseCredentials') {
+    group = 'publishing'
+    doLast {
+        if (!providers.environmentVariable('MAVEN_UPLOAD_URL').isPresent()
+                || !mavenUploadUsername.isPresent()
+                || !mavenUploadPassword.isPresent()) {
+            throw new GradleException(
+                    'MAVEN_UPLOAD_URL, MAVEN_UPLOAD_USERNAME, and MAVEN_UPLOAD_PASSWORD are required')
+        }
+        if (providers.environmentVariable('MAVEN_UPLOAD_URL').get()
+                .startsWith('file:')) {
+            throw new GradleException(
+                    'Maven release publication must use a remote repository')
+        }
+    }
+}
+
+tasks.withType(PublishToMavenRepository).configureEach {
+    dependsOn tasks.named('validateMavenReleaseCredentials')
+    dependsOn tasks.named('verifyMavenCoordinates')
+    dependsOn preparedReleaseDir.isPresent()
+            ? tasks.named('verifyPreparedReleaseArtifacts')
+            : tasks.named('verifyReleaseArtifacts')
 }
 
 def auditCakeWorldOreSpawnApiUsage = tasks.register(
@@ -1202,7 +1670,7 @@ def auditCakeWorldThirdPartyIsolation = tasks.register(
         'auditCakeWorldThirdPartyIsolation') {
     group = 'verification'
     description = 'Rejects broad mob, structure, or resource mutation boundaries that could capture unknown mods.'
-    inputs.files(fileTree('src/main/java/com/mcmoddev/cakeworld/world') {
+    inputs.files(fileTree('src/main/java/zone/moddev/mc/cakeworld/world') {
         include 'CakeWorld*Replacement.java'
         include '*Palette.java'
     })
@@ -1211,7 +1679,7 @@ def auditCakeWorldThirdPartyIsolation = tasks.register(
 
     doLast {
         def worldSources = fileTree(
-                'src/main/java/com/mcmoddev/cakeworld/world')
+                'src/main/java/zone/moddev/mc/cakeworld/world')
         def converters = worldSources.matching {
             include 'CakeWorld*Replacement.java'
         }.files.findAll { source ->
@@ -1391,7 +1859,170 @@ def auditCakeWorldOriginalIdentity = tasks.register(
 tasks.named('check').configure {
     dependsOn auditCakeWorldOreSpawnApiUsage,
             auditCakeWorldThirdPartyIsolation,
-            auditCakeWorldOriginalIdentity
+            auditCakeWorldOriginalIdentity,
+            tasks.named('verifyMavenCoordinates'),
+            tasks.named('verifyReleaseConfiguration')
+}
+
+def prepareEclipseResources = tasks.register('prepareEclipseResources') {
+    group = 'ide'
+    description = 'Refreshes Eclipse production output with processed resources.'
+    dependsOn tasks.named('processResources')
+    doLast {
+        // bin/main is generated output. Clear it so removed resources and classes
+        // from an earlier package namespace cannot leak into a new launch.
+        project.delete(layout.projectDirectory.dir('bin/main'))
+        project.copy {
+            from(layout.buildDirectory.dir('resources/main'))
+            into(layout.projectDirectory.dir('bin/main'))
+        }
+    }
+}
+
+def configureEclipseBuildship = tasks.register('configureEclipseBuildship') {
+    group = 'ide'
+    description = 'Pins Eclipse Buildship to the validated Gradle home.'
+    doLast {
+        File preferencesFile = file(
+                '.settings/org.eclipse.buildship.core.prefs')
+        Properties preferences = new Properties()
+        if (preferencesFile.isFile()) {
+            preferencesFile.withInputStream { preferences.load(it) }
+        }
+        preferences.setProperty('eclipse.preferences.version', '1')
+        preferences.setProperty('connection.gradle.distribution',
+                'GRADLE_DISTRIBUTION(WRAPPER)')
+        preferences.setProperty('connection.gradle.user.home',
+                gradle.gradleUserHomeDir.canonicalPath)
+        preferences.setProperty('connection.project.dir', '')
+        preferences.setProperty('gradle.user.home',
+                gradle.gradleUserHomeDir.canonicalPath)
+        preferences.setProperty('override.workspace.settings', 'true')
+        preferencesFile.parentFile.mkdirs()
+        preferencesFile.withOutputStream {
+            preferences.store(it, 'Generated CakeWorld Buildship configuration.')
+        }
+    }
+}
+
+def syncForge40EclipseLaunches = tasks.register(
+        'syncForge40EclipseLaunches') {
+    group = 'ide'
+    description = 'Normalizes ForgeGradle 7 Eclipse launches for Forge 40.'
+    doLast {
+        String mainOutput = new File(projectDir, 'bin/main').absolutePath
+        String productionModClasses = "${mod_id}%%${mainOutput}"
+        ['Client', 'Server', 'GameTestServer', 'Data'].each { runName ->
+            File launch = file("run${runName}.launch")
+            if (!launch.isFile()) {
+                throw new GradleException(
+                        "Missing generated Eclipse launch: ${launch}")
+            }
+            String text = launch.getText('UTF-8').replaceFirst(
+                    /<mapEntry key="MOD_CLASSES" value="[^"]*"\/>/,
+                    java.util.regex.Matcher.quoteReplacement(
+                            "<mapEntry key=\"MOD_CLASSES\" value=\"${productionModClasses}\"/>"))
+            if (!text.contains(
+                    'org.eclipse.jdt.launching.ATTR_EXCLUDE_TEST_CODE')) {
+                text = text.replace('</launchConfiguration>',
+                        '  <booleanAttribute key="org.eclipse.jdt.launching.ATTR_EXCLUDE_TEST_CODE" value="true"/>\r\n'
+                                + '</launchConfiguration>')
+            }
+            launch.setText(text.replace('\r\n', '\n'), 'UTF-8')
+        }
+    }
+}
+
+tasks.matching { it.name == 'genEclipseRuns' }.configureEach {
+    finalizedBy syncForge40EclipseLaunches
+}
+
+def isolateEclipseProductionRuns = tasks.register(
+        'isolateEclipseProductionRuns') {
+    group = 'ide'
+    description = 'Prepares the ForgeGradle 7 Eclipse project configuration.'
+    dependsOn tasks.named('genEclipseRuns')
+    dependsOn syncForge40EclipseLaunches
+    dependsOn configureEclipseBuildship
+    dependsOn prepareEclipseResources
+}
+
+def verifyEclipseProductionClasspath = tasks.register(
+        'verifyEclipseProductionClasspath') {
+    group = 'verification'
+    description = 'Rejects stale resources, local paths, and test leakage in Eclipse launches.'
+    dependsOn isolateEclipseProductionRuns
+    dependsOn tasks.named('eclipseClasspath')
+    doLast {
+        File classpathFile = file('.classpath')
+        if (!classpathFile.isFile()) {
+            throw new GradleException('Missing generated Eclipse .classpath')
+        }
+        String classpathText = classpathFile.getText('UTF-8')
+        if (!classpathText.contains('path="build/resources/main"')
+                || classpathText.contains('path="src/main/resources"')
+                || classpathText.contains('path="src/generated/resources"')
+                || !classpathText.contains('kind="output" path="bin/default"')) {
+            throw new GradleException(
+                    'Eclipse must use disjoint outputs and processed production resources')
+        }
+
+        File preferencesFile = file(
+                '.settings/org.eclipse.buildship.core.prefs')
+        Properties preferences = new Properties()
+        preferencesFile.withInputStream { preferences.load(it) }
+        String expectedGradleHome = gradle.gradleUserHomeDir.canonicalPath
+        if (preferences.getProperty('connection.gradle.user.home')
+                    != expectedGradleHome
+                || preferences.getProperty('gradle.user.home')
+                    != expectedGradleHome
+                || preferences.getProperty('override.workspace.settings')
+                    != 'true') {
+            throw new GradleException(
+                    "Eclipse Buildship is not pinned to ${expectedGradleHome}")
+        }
+
+        String mainOutput = new File(projectDir, 'bin/main').absolutePath
+        String expectedModClasses = "${mod_id}%%${mainOutput}"
+        List<String> forbidden = [
+                'src/test', 'bin/test', 'build/classes/java/test',
+                'com.mcmoddev.cakeworld', 'agent-notes', '.codex',
+                'C:\\Users\\John', 'D:\\CakeWorld\\agent-notes'
+        ]
+        ['Client', 'Server', 'GameTestServer', 'Data'].each { runName ->
+            File launch = file("run${runName}.launch")
+            String text = launch.getText('UTF-8')
+            List<String> leaked = forbidden.findAll { text.contains(it) }
+            if (!leaked.isEmpty()
+                    || !text.contains(
+                            "key=\"MOD_CLASSES\" value=\"${expectedModClasses}\"")
+                    || !text.contains(
+                            'org.eclipse.jdt.launching.ATTR_EXCLUDE_TEST_CODE')
+                    || !text.contains('PROJECT_ATTR" value="CakeWorld"')) {
+                throw new GradleException(
+                        "Eclipse launch is not isolated: ${launch}; leaked=${leaked}")
+            }
+        }
+
+        File modMetadata = file('bin/main/META-INF/mods.toml')
+        File provider = file(
+                'bin/main/data/cakeworld/orespawn/provider.json')
+        File oldNamespace = file('bin/main/com/mcmoddev/cakeworld')
+        if (!modMetadata.isFile() || !provider.isFile()
+                || modMetadata.getText('UTF-8').contains('${mod_version}')
+                || !modMetadata.getText('UTF-8').contains(
+                        "version=\"${project.version}\"")
+                || file('bin/main/META-INF/cakeworld/docs/AGENTS.md').exists()
+                || oldNamespace.exists()) {
+            throw new GradleException(
+                    'Eclipse output contains missing, unexpanded, or agent-only resources')
+        }
+    }
+}
+
+tasks.named('eclipse').configure {
+    dependsOn isolateEclipseProductionRuns
+    finalizedBy verifyEclipseProductionClasspath
 }
 
 def prepareGameTestStructures = tasks.register('prepareGameTestStructures', Copy) {
