@@ -1,11 +1,11 @@
 package zone.moddev.mc.cakeworld.world;
 
 import java.util.List;
-import java.util.Queue;
+import java.util.Deque;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentMap;
 
 import zone.moddev.mc.cakeworld.CakeWorld;
@@ -60,8 +60,8 @@ public final class AncientCakeVaultPalette {
 			"cakeworld_ancient_cake_vault_palette";
 	private static final String CONVERTED_STARTS_KEY =
 			"converted_starts";
-	private static final Queue<PendingSlice> PENDING =
-			new ConcurrentLinkedQueue<>();
+	private static final Deque<PendingSlice> PENDING =
+			new ConcurrentLinkedDeque<>();
 	private static final ConcurrentMap<Long, Set<Long>>
 			CONVERTED_STARTS = new ConcurrentHashMap<>();
 	private static final int MAX_REFERENCE_ATTEMPTS = 4;
@@ -124,7 +124,10 @@ public final class AncientCakeVaultPalette {
 						.equals(Level.OVERWORLD)) {
 			return;
 		}
-		PENDING.add(new PendingSlice(
+		// New load edges take precedence over older lifecycle retries. This
+		// keeps the event callback non-reentrant while ensuring a fully loaded
+		// chunk is inspected promptly even after a large world-generation scan.
+		PENDING.addFirst(new PendingSlice(
 				level.dimension(),
 				chunk.getPos(), 0));
 	}
@@ -164,13 +167,7 @@ public final class AncientCakeVaultPalette {
 					pending.chunk().x,
 					pending.chunk().z);
 			ConfiguredStructureFeature<?, ?>
-					stronghold =
-					level.registryAccess()
-							.registryOrThrow(
-									Registry
-											.CONFIGURED_STRUCTURE_FEATURE_REGISTRY)
-							.get(AncientCakeVaultFeature
-									.STRUCTURE_ID);
+					stronghold = configuredStronghold(level);
 			if (stronghold == null) {
 				continue;
 			}
@@ -181,7 +178,7 @@ public final class AncientCakeVaultPalette {
 			if (isCakeWorldVault(
 					level, direct)) {
 				themeLoadedChunks(level, direct);
-				themed = true;
+				themed = isConverted(chunk, direct);
 			}
 			for (long reference
 					: chunk.getReferencesForFeature(
@@ -198,7 +195,7 @@ public final class AncientCakeVaultPalette {
 				if (isCakeWorldVault(
 						level, start)) {
 					themeLoadedChunks(level, start);
-					themed = true;
+					themed |= isConverted(chunk, start);
 				}
 			}
 			boolean hasReferences = !chunk
@@ -215,12 +212,28 @@ public final class AncientCakeVaultPalette {
 							< maximumAttempts
 					&& (startCandidate || direct != null
 							|| hasReferences)) {
-				PENDING.add(new PendingSlice(
+				PENDING.addLast(new PendingSlice(
 						pending.dimension(),
 						pending.chunk(),
 						pending.attempts() + 1));
 			}
 		}
+	}
+
+	private static ConfiguredStructureFeature<?, ?>
+			configuredStronghold(ServerLevel level) {
+		return level.registryAccess()
+				.registryOrThrow(
+						Registry
+								.CONFIGURED_STRUCTURE_FEATURE_REGISTRY)
+				.get(AncientCakeVaultFeature.STRUCTURE_ID);
+	}
+
+	private static boolean isConverted(LevelChunk chunk,
+			StructureStart start) {
+		return CONVERTED_STARTS
+				.getOrDefault(chunk.getPos().toLong(), Set.of())
+				.contains(start.getChunkPos().toLong());
 	}
 
 	@SubscribeEvent
@@ -333,7 +346,7 @@ public final class AncientCakeVaultPalette {
 				chunkPos.getMaxBlockX(),
 				level.getMaxBuildHeight() - 1,
 				chunkPos.getMaxBlockZ());
-		applyEdiblePalette(
+		int changed = applyEdiblePaletteAndCount(
 				level,
 				level.structureFeatureManager(),
 				level.getChunkSource()
@@ -343,8 +356,10 @@ public final class AncientCakeVaultPalette {
 				slice, chunkPos,
 				new PiecesContainer(
 						start.getPieces()));
-		converted.add(startKey);
-		chunk.setUnsaved(true);
+		if (changed > 0) {
+			converted.add(startKey);
+			chunk.setUnsaved(true);
+		}
 	}
 
 	private static Set<Long> convertedStarts(
@@ -402,6 +417,19 @@ public final class AncientCakeVaultPalette {
 			Random random, BoundingBox generationBounds,
 			ChunkPos chunkPos,
 			PiecesContainer pieces) {
+		applyEdiblePaletteAndCount(world, structureManager,
+				chunkGenerator, random, generationBounds,
+				chunkPos, pieces);
+	}
+
+	private static int applyEdiblePaletteAndCount(
+			WorldGenLevel world,
+			StructureFeatureManager structureManager,
+			ChunkGenerator chunkGenerator,
+			Random random, BoundingBox generationBounds,
+			ChunkPos chunkPos,
+			PiecesContainer pieces) {
+		int changed = 0;
 		for (StructurePiece piece : pieces.pieces()) {
 			BoundingBox pieceBounds =
 					piece.getBoundingBox();
@@ -443,13 +471,16 @@ public final class AncientCakeVaultPalette {
 								themedState(
 										current);
 						if (themed != current) {
-							world.setBlock(cursor,
-									themed, 2);
+							if (world.setBlock(cursor,
+									themed, 2)) {
+								changed++;
+							}
 						}
 					}
 				}
 			}
 		}
+		return changed;
 	}
 
 	private static BlockState themedState(

@@ -7031,7 +7031,8 @@ public final class DeepPantryGameTests {
 										.getZ() + 4));
 		setCottageChunksForced(
 				level, forcedBounds, true);
-		helper.runAfterDelay(100, () -> {
+		helper.runAfterDelay(100, () ->
+			helper.succeedWhen(() -> {
 			PicnicWorldAudit audit =
 					auditNaturalPicnic(
 							level,
@@ -7119,8 +7120,7 @@ public final class DeepPantryGameTests {
 			}
 			setCottageChunksForced(
 					level, forcedBounds, false);
-			helper.succeed();
-		});
+			}));
 	}
 
 	@GameTest(template = EMPTY, batch = "struct025world",
