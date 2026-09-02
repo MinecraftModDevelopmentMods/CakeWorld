@@ -65,7 +65,7 @@ public final class AncientCakeVaultPalette {
 	private static final ConcurrentMap<Long, Set<Long>>
 			CONVERTED_STARTS = new ConcurrentHashMap<>();
 	private static final int MAX_REFERENCE_ATTEMPTS = 4;
-	private static final int MAX_START_DISCOVERY_ATTEMPTS = 1200;
+	private static final int MAX_START_ACTIVATION_ATTEMPTS = 1200;
 	private static volatile Set<Long> strongholdStartCandidates;
 
 	private AncientCakeVaultPalette() {
@@ -204,17 +204,16 @@ public final class AncientCakeVaultPalette {
 			boolean hasReferences = !chunk
 					.getReferencesForFeature(stronghold)
 					.isEmpty();
-			boolean awaitingStart = direct == null
-					&& !hasReferences
-					&& isStrongholdStartCandidate(
+			boolean startCandidate =
+					isStrongholdStartCandidate(
 							level, pending.chunk());
-			int maximumAttempts = awaitingStart
-					? MAX_START_DISCOVERY_ATTEMPTS
+			int maximumAttempts = startCandidate
+					? MAX_START_ACTIVATION_ATTEMPTS
 					: MAX_REFERENCE_ATTEMPTS;
 			if (!themed
 					&& pending.attempts()
 							< maximumAttempts
-					&& (awaitingStart || direct != null
+					&& (startCandidate || direct != null
 							|| hasReferences)) {
 				PENDING.add(new PendingSlice(
 						pending.dimension(),
@@ -237,9 +236,10 @@ public final class AncientCakeVaultPalette {
 	 * start chunks.
 	 *
 	 * <p>A {@link LevelChunk} load event can arrive before Minecraft attaches
-	 * its generated structure starts. Only the 128 concentric-ring candidates
-	 * need to survive that lifecycle gap; caching their packed positions keeps
-	 * ordinary chunk-load processing constant-time.</p>
+	 * its generated structure start or before the final wrapped biome is
+	 * observable. Only the 128 concentric-ring candidates need to survive those
+	 * lifecycle gaps; caching their packed positions keeps ordinary chunk-load
+	 * processing constant-time.</p>
 	 */
 	private static boolean isStrongholdStartCandidate(
 			ServerLevel level, ChunkPos chunk) {
