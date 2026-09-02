@@ -62,6 +62,8 @@ public final class AncientCakeVaultPalette {
 			"converted_starts";
 	private static final Deque<PendingSlice> PENDING =
 			new ConcurrentLinkedDeque<>();
+	private static final Deque<PendingSlice> START_CANDIDATES =
+			new ConcurrentLinkedDeque<>();
 	private static final ConcurrentMap<Long, Set<Long>>
 			CONVERTED_STARTS = new ConcurrentHashMap<>();
 	private static final int MAX_REFERENCE_ATTEMPTS = 4;
@@ -124,19 +126,26 @@ public final class AncientCakeVaultPalette {
 						.equals(Level.OVERWORLD)) {
 			return;
 		}
-		// New load edges take precedence over older lifecycle retries. This
-		// keeps the event callback non-reentrant while ensuring a fully loaded
-		// chunk is inspected promptly even after a large world-generation scan.
-		PENDING.addFirst(new PendingSlice(
+		// Keep the callback non-reentrant, but isolate the 128 authoritative
+		// Stronghold start candidates from ordinary chunk-load traffic. A large
+		// world-generation scan can otherwise keep moving a candidate behind
+		// newer loads before the deferred server-tick pass observes its start.
+		PendingSlice pending = new PendingSlice(
 				level.dimension(),
-				chunk.getPos(), 0));
+				chunk.getPos(), 0);
+		if (isStrongholdStartCandidate(level, chunk.getPos())) {
+			START_CANDIDATES.addLast(pending);
+		} else {
+			PENDING.addFirst(pending);
+		}
 	}
 
 	@SubscribeEvent
 	public static void onServerTick(
 			TickEvent.ServerTickEvent event) {
 		if (event.phase != TickEvent.Phase.START
-				|| PENDING.isEmpty()) {
+				|| (START_CANDIDATES.isEmpty()
+						&& PENDING.isEmpty())) {
 			return;
 		}
 		MinecraftServer server =
@@ -146,11 +155,15 @@ public final class AncientCakeVaultPalette {
 			return;
 		}
 		int pendingAtStart =
-				Math.min(PENDING.size(), 256);
+				Math.min(START_CANDIDATES.size()
+						+ PENDING.size(), 256);
 		for (int index = 0;
 				index < pendingAtStart; index++) {
 			PendingSlice pending =
-					PENDING.poll();
+					START_CANDIDATES.pollFirst();
+			if (pending == null) {
+				pending = PENDING.pollFirst();
+			}
 			if (pending == null) {
 				break;
 			}
@@ -212,7 +225,9 @@ public final class AncientCakeVaultPalette {
 							< maximumAttempts
 					&& (startCandidate || direct != null
 							|| hasReferences)) {
-				PENDING.addLast(new PendingSlice(
+				Deque<PendingSlice> retries = startCandidate
+						? START_CANDIDATES : PENDING;
+				retries.addLast(new PendingSlice(
 						pending.dimension(),
 						pending.chunk(),
 						pending.attempts() + 1));
@@ -239,6 +254,7 @@ public final class AncientCakeVaultPalette {
 	@SubscribeEvent
 	public static void onServerStopped(
 			ServerStoppedEvent event) {
+		START_CANDIDATES.clear();
 		PENDING.clear();
 		CONVERTED_STARTS.clear();
 		strongholdStartCandidates = null;
