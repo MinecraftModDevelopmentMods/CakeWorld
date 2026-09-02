@@ -277,13 +277,14 @@ public final class AncientCakeVaultPalette {
 		if (start == null || !start.isValid()) {
 			return false;
 		}
-		BoundingBox bounds =
-				start.getBoundingBox();
-		BlockPos centre = new BlockPos(
-				(bounds.minX() + bounds.maxX()) / 2,
-				level.getSeaLevel(),
-				(bounds.minZ() + bounds.maxZ()) / 2);
-		return level.getBiome(centre).is(
+		// A Stronghold graph can spread across several biomes, and its final
+		// bounding box is allowed to vary with the generated piece graph. The
+		// authoritative placement decision belongs to the start chunk, so use
+		// that stable position rather than a derived centre of the full graph.
+		BlockPos startPosition = start.getChunkPos()
+				.getMiddleBlockPosition(
+						level.getSeaLevel());
+		return level.getBiome(startPosition).is(
 				AncientCakeVaultFeature
 						.GENERATES_IN);
 	}

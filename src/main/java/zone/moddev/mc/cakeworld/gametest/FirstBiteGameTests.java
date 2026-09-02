@@ -12238,6 +12238,14 @@ public final class FirstBiteGameTests {
 						+ fish.blowUpSoundCount());
 		scaryMob.discard();
 		fish.stopGoalNamed("PufferfishPuffGoal");
+		// The reusable full-suite world can contain persistent creatures from
+		// earlier GameTests near this template. Move the unspawned probe above
+		// the build height so only removal of the deliberate Pig controls the
+		// genuine Pufferfish deflation sequence.
+		fish.setPos(anchor.getX(),
+				helper.getLevel().getMaxBuildHeight()
+						+ 128.0D,
+				anchor.getZ());
 		for (int tick = 0; tick < 102; tick++) {
 			fish.tick();
 		}

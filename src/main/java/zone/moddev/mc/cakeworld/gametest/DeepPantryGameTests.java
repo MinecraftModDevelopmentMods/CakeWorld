@@ -4043,16 +4043,9 @@ public final class DeepPantryGameTests {
 									level,
 									vault.corridor());
 			BlockPos vaultBiomePosition =
-					new BlockPos(
-							(vault.bounds().minX()
-									+ vault.bounds()
-											.maxX())
-									/ 2,
-							level.getSeaLevel(),
-							(vault.bounds().minZ()
-									+ vault.bounds()
-											.maxZ())
-									/ 2);
+					vault.startChunk()
+							.getMiddleBlockPosition(
+									level.getSeaLevel());
 			ResourceLocation biome =
 					level.registryAccess()
 							.registryOrThrow(
@@ -4064,6 +4057,11 @@ public final class DeepPantryGameTests {
 					level.getBiome(
 							vaultBiomePosition)
 							.is(BiomeTags.HAS_STRONGHOLD);
+			boolean cakeWorldEligible =
+					level.getBiome(
+							vaultBiomePosition)
+							.is(AncientCakeVaultFeature
+									.GENERATES_IN);
 			boolean portalCompletable =
 					provesCompletableEndPortal(
 							level,
@@ -4084,7 +4082,7 @@ public final class DeepPantryGameTests {
 					"Natural Ancient Cake Vault chunk-load palette work is still pending: portal="
 							+ portal + ", library="
 							+ library);
-			LOGGER.info("Focused Ancient Cake Vault audit: locate={}, eyeLocate={}, bounds={}, biome={}, pieces={}, portals={}, libraries={}, corridors={}, junctions={}, maxDepth={}, portalPalette={}, portalFrames={}, portalSpawner={}, libraryPalette={}, libraryLoot={}, corridorPalette={}, corridorLoot={}, literalEligible={}, portalCompletable={}",
+			LOGGER.info("Focused Ancient Cake Vault audit: locate={}, eyeLocate={}, bounds={}, startBiome={}, pieces={}, portals={}, libraries={}, corridors={}, junctions={}, maxDepth={}, portalPalette={}, portalFrames={}, portalSpawner={}, libraryPalette={}, libraryLoot={}, corridorPalette={}, corridorLoot={}, literalEligible={}, cakeworldEligible={}, portalCompletable={}",
 					vault.located(),
 					vault.eyeLocated(),
 					vault.bounds(),
@@ -4111,6 +4109,7 @@ public final class DeepPantryGameTests {
 							? Set.of()
 							: corridor.loot(),
 					literalEligible,
+					cakeWorldEligible,
 					portalCompletable);
 			require(helper,
 					vault.located().getX()
@@ -4120,6 +4119,7 @@ public final class DeepPantryGameTests {
 									== vault.eyeLocated()
 											.getZ()
 							&& !literalEligible
+							&& cakeWorldEligible
 							&& biome != null
 							&& CakeWorld.MODID.equals(
 									biome.getNamespace())
@@ -4137,7 +4137,9 @@ public final class DeepPantryGameTests {
 							+ vault.eyeLocated()
 							+ ", biome=" + biome
 							+ ", literal="
-							+ literalEligible);
+							+ literalEligible
+							+ ", cakeworldEligible="
+							+ cakeWorldEligible);
 			require(helper,
 					vault.pieces() >= 12
 							&& vault.portalRooms()
