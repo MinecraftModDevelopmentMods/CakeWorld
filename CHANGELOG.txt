@@ -1,0 +1,13 @@
+CakeWorld 0.2.0.118021
+
+- Expands CakeWorld into an edible Overworld, Nether, and End with themed
+  biomes, terrain, fluids, structures, creatures, foods, and gadgets.
+- Adds the Explorer's Cookbook discovery system and child-friendly mob
+  behaviour on Easy and Normal difficulty.
+- Adds themed vanilla ores and optional Base Metals compatibility.
+- Uses the published MMD OreSpawn 4.0.16.118021 integration.
+- Adopts the MMD Java namespace, target-qualified version format,
+  ForgeGradle 7 build, and guarded release pipeline.
+
+CakeWorld remains an alpha. Original artwork, audio, balance, accessibility,
+multiplayer, and family playtesting are still in progress.
