@@ -66,7 +66,18 @@ public final class AncientCakeVaultPalette {
 			new ConcurrentLinkedDeque<>();
 	private static final ConcurrentMap<Long, Set<Long>>
 			CONVERTED_STARTS = new ConcurrentHashMap<>();
-	private static final int MAX_REFERENCE_ATTEMPTS = 4;
+	// A marker read from or written to chunk data is durable. Keep that
+	// distinction so a later load never rewrites a player's authored blocks,
+	// while a second event in the same generation session can repair an early,
+	// superseded palette pass.
+	private static final ConcurrentMap<Long, Set<Long>>
+			PERSISTED_CONVERTED_STARTS =
+					new ConcurrentHashMap<>();
+	// Structure starts can become visible before their final blocks do. Require
+	// one second of consecutive server-tick visibility before first conversion.
+	private static final int REQUIRED_VISIBLE_ATTEMPTS = 20;
+	private static final int MAX_REFERENCE_ATTEMPTS =
+			REQUIRED_VISIBLE_ATTEMPTS + 4;
 	private static final int MAX_START_ACTIVATION_ATTEMPTS = 1200;
 	private static volatile Set<Long> strongholdStartCandidates;
 
@@ -85,11 +96,14 @@ public final class AncientCakeVaultPalette {
 		}
 		CompoundTag persistent = event.getData()
 				.getCompound(PERSISTENT_KEY);
-		Set<Long> starts = convertedStarts(
-				event.getChunk().getPos().toLong());
+		long chunkKey = event.getChunk().getPos().toLong();
+		Set<Long> starts = convertedStarts(chunkKey);
+		Set<Long> persisted = persistedConvertedStarts(
+				chunkKey);
 		for (long start : persistent.getLongArray(
 				CONVERTED_STARTS_KEY)) {
 			starts.add(start);
+			persisted.add(start);
 		}
 	}
 
@@ -115,6 +129,9 @@ public final class AncientCakeVaultPalette {
 						.sorted().toArray());
 		event.getData().put(PERSISTENT_KEY,
 				persistent);
+		persistedConvertedStarts(
+				event.getChunk().getPos().toLong())
+				.addAll(starts);
 	}
 
 	@SubscribeEvent
@@ -130,11 +147,14 @@ public final class AncientCakeVaultPalette {
 		// starts and the 128 early-load candidates from ordinary chunk traffic.
 		// A large world-generation scan can otherwise keep moving a start behind
 		// newer loads before the deferred server-tick pass observes it.
+		boolean savedStart = hasSavedStrongholdStart(
+				level, chunk);
 		PendingSlice pending = new PendingSlice(
 				level.dimension(),
-				chunk.getPos(), 0);
-		if (hasSavedStrongholdStart(level, chunk)
-				|| isStrongholdStartCandidate(
+				chunk.getPos(), 0, 0, savedStart);
+		if (savedStart) {
+			START_CANDIDATES.addFirst(pending);
+		} else if (isStrongholdStartCandidate(
 						level, chunk.getPos())) {
 			START_CANDIDATES.addLast(pending);
 		} else {
@@ -198,15 +218,12 @@ public final class AncientCakeVaultPalette {
 			if (stronghold == null) {
 				continue;
 			}
-			boolean themed = false;
 			StructureStart direct =
 					chunk.getStartForFeature(
 							stronghold);
-			if (isCakeWorldVault(
-					level, direct)) {
-				themeLoadedChunks(level, direct);
-				themed = isConverted(chunk, direct);
-			}
+			StructureStart visibleVault =
+					isCakeWorldVault(level, direct)
+							? direct : null;
 			for (long reference
 					: chunk.getReferencesForFeature(
 							stronghold)) {
@@ -219,11 +236,23 @@ public final class AncientCakeVaultPalette {
 				StructureStart start =
 						owner.getStartForFeature(
 								stronghold);
-				if (isCakeWorldVault(
-						level, start)) {
-					themeLoadedChunks(level, start);
-					themed |= isConverted(chunk, start);
+				if (visibleVault == null
+						&& isCakeWorldVault(
+								level, start)) {
+					visibleVault = start;
 				}
+			}
+			int visibleAttempts = visibleVault == null
+					? 0 : pending.visibleAttempts() + 1;
+			boolean themed = false;
+			// Do not let host/JVM scheduling decide whether the palette runs before
+			// or after the native structure writes its final blocks.
+			if (visibleVault != null
+					&& visibleAttempts
+							>= REQUIRED_VISIBLE_ATTEMPTS) {
+				themeLoadedChunks(level, visibleVault,
+						pending.refreshSessionConversion());
+				themed = isConverted(chunk, visibleVault);
 			}
 			boolean hasReferences = !chunk
 					.getReferencesForFeature(stronghold)
@@ -240,11 +269,19 @@ public final class AncientCakeVaultPalette {
 					&& (startCandidate || direct != null
 							|| hasReferences)) {
 				Deque<PendingSlice> retries = startCandidate
+						|| pending.refreshSessionConversion()
 						? START_CANDIDATES : PENDING;
-				retries.addLast(new PendingSlice(
+				PendingSlice retry = new PendingSlice(
 						pending.dimension(),
 						pending.chunk(),
-						pending.attempts() + 1));
+						pending.attempts() + 1,
+						visibleAttempts,
+						pending.refreshSessionConversion());
+				if (pending.refreshSessionConversion()) {
+					retries.addFirst(retry);
+				} else {
+					retries.addLast(retry);
+				}
 			}
 		}
 	}
@@ -271,6 +308,7 @@ public final class AncientCakeVaultPalette {
 		START_CANDIDATES.clear();
 		PENDING.clear();
 		CONVERTED_STARTS.clear();
+		PERSISTED_CONVERTED_STARTS.clear();
 		strongholdStartCandidates = null;
 	}
 
@@ -334,7 +372,8 @@ public final class AncientCakeVaultPalette {
 
 	private static void themeLoadedChunks(
 			ServerLevel level,
-			StructureStart start) {
+			StructureStart start,
+			boolean refreshSessionConversion) {
 		BoundingBox bounds = start.getBoundingBox();
 		int minimumChunkX =
 				Math.floorDiv(bounds.minX(), 16);
@@ -352,7 +391,8 @@ public final class AncientCakeVaultPalette {
 					themeChunk(level,
 							level.getChunk(
 									chunkX, chunkZ),
-							start);
+							start,
+							refreshSessionConversion);
 				}
 			}
 		}
@@ -361,11 +401,16 @@ public final class AncientCakeVaultPalette {
 	private static void themeChunk(
 			ServerLevel level,
 			LevelChunk chunk,
-			StructureStart start) {
+			StructureStart start,
+			boolean refreshSessionConversion) {
 		Set<Long> converted = convertedStarts(
 				chunk.getPos().toLong());
 		long startKey = start.getChunkPos().toLong();
-		if (converted.contains(startKey)) {
+		if (converted.contains(startKey)
+				&& (!refreshSessionConversion
+						|| persistedConvertedStarts(
+								chunk.getPos().toLong())
+								.contains(startKey))) {
 			return;
 		}
 		ChunkPos chunkPos = chunk.getPos();
@@ -398,6 +443,14 @@ public final class AncientCakeVaultPalette {
 				chunkKey,
 				ignored -> ConcurrentHashMap
 						.newKeySet());
+	}
+
+	private static Set<Long> persistedConvertedStarts(
+			long chunkKey) {
+		return PERSISTED_CONVERTED_STARTS
+				.computeIfAbsent(chunkKey,
+						ignored -> ConcurrentHashMap
+								.newKeySet());
 	}
 
 	/**
@@ -565,6 +618,8 @@ public final class AncientCakeVaultPalette {
 			net.minecraft.resources.ResourceKey<Level>
 					dimension,
 			ChunkPos chunk,
-			int attempts) {
+			int attempts,
+			int visibleAttempts,
+			boolean refreshSessionConversion) {
 	}
 }
