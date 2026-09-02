@@ -161,6 +161,7 @@ import net.minecraft.world.level.levelgen.structure.StrongholdPieces;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.levelgen.structure.TemplateStructurePiece;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.portal.PortalShape;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 import net.minecraft.world.level.storage.loot.LootContext;
@@ -170,6 +171,8 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.common.BiomeDictionary;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.world.ChunkEvent;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
@@ -10588,7 +10591,15 @@ public final class DeepPantryGameTests {
 	private static void loadVaultChunks(
 			ServerLevel level, LocatedVault vault) {
 		for (ChunkPos chunk : vaultChunks(vault)) {
-			level.getChunk(chunk.x, chunk.z);
+			LevelChunk loaded = level.getChunk(
+					chunk.x, chunk.z);
+			// Other fixed-world GameTests may have loaded one of these chunks
+			// before this focused audit began. Re-post the public Forge load
+			// event after the complete Stronghold graph is observable so the
+			// fixture owns the lifecycle edge it is asserting. This still
+			// exercises CakeWorld through its production event subscriber.
+			MinecraftForge.EVENT_BUS.post(
+					new ChunkEvent.Load(loaded));
 		}
 	}
 
