@@ -283,6 +283,8 @@ public final class AncientCakeVaultPalette {
 			boolean startCandidate =
 					isStrongholdStartCandidate(
 							level, pending.chunk());
+			boolean authoritativeStart = startCandidate
+					|| pending.refreshSessionConversion();
 			if (fixedWorldgenEvidence()
 					&& (pending.refreshSessionConversion()
 							|| direct != null || hasReferences)
@@ -306,16 +308,15 @@ public final class AncientCakeVaultPalette {
 						PERSISTED_CONVERTED_STARTS.getOrDefault(
 								pending.chunk().toLong(), Set.of()));
 			}
-			int maximumAttempts = startCandidate
+			int maximumAttempts = authoritativeStart
 					? MAX_START_ACTIVATION_ATTEMPTS
 					: MAX_REFERENCE_ATTEMPTS;
 			if (!themed
 					&& pending.attempts()
 							< maximumAttempts
-					&& (startCandidate || direct != null
+					&& (authoritativeStart || direct != null
 							|| hasReferences)) {
-				Deque<PendingSlice> retries = startCandidate
-						|| pending.refreshSessionConversion()
+				Deque<PendingSlice> retries = authoritativeStart
 						? START_CANDIDATES : PENDING;
 				PendingSlice retry = new PendingSlice(
 						pending.dimension(),
